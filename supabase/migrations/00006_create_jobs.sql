@@ -2,7 +2,7 @@
 -- Generation job tracking
 
 CREATE TABLE public.jobs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   upload_id UUID REFERENCES public.uploads(id) ON DELETE SET NULL,
   status job_status NOT NULL DEFAULT 'pending',
@@ -43,7 +43,7 @@ DECLARE
   v_credit_result RECORD;
 BEGIN
   -- Generate job ID first
-  v_new_job_id := uuid_generate_v4();
+  v_new_job_id := gen_random_uuid();
 
   -- Try to consume credits
   SELECT * INTO v_credit_result FROM consume_credits(

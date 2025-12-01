@@ -2,7 +2,7 @@
 -- Source images uploaded by users
 
 CREATE TABLE public.uploads (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   filename TEXT NOT NULL,
   file_key TEXT NOT NULL UNIQUE,

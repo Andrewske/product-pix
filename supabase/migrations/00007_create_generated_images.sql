@@ -2,7 +2,7 @@
 -- AI-generated image results
 
 CREATE TABLE public.generated_images (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id UUID NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   file_key TEXT NOT NULL UNIQUE,

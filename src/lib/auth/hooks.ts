@@ -67,7 +67,7 @@ export function useUserProfile(): UseUserProfileResult {
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
       .then(({ data, error }) => {
         if (error) {
           console.error('Error fetching profile:', error);
