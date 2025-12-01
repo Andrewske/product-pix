@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { ImageCard } from './image-card';
+import { Button } from '@/components/ui/button';
 import type { GeneratedImage } from '@/types';
 
 interface ImageGalleryProps {
@@ -53,19 +54,29 @@ export function ImageGallery({ images: initialImages }: ImageGalleryProps) {
   return (
     <div className="space-y-4">
       {/* Filter tabs */}
-      <div className="flex space-x-4 border-b">
-        <button
+      <div className="flex gap-4 border-b">
+        <Button
+          variant="ghost"
           onClick={() => setFilter('all')}
-          className={`pb-2 px-1 ${filter === 'all' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
+          className={`rounded-none border-b-2 px-1 ${
+            filter === 'all'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           All ({images.length})
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           onClick={() => setFilter('favorites')}
-          className={`pb-2 px-1 ${filter === 'favorites' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
+          className={`rounded-none border-b-2 px-1 ${
+            filter === 'favorites'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           Favorites ({images.filter((img) => img.is_favorite).length})
-        </button>
+        </Button>
       </div>
 
       {/* Image grid */}
@@ -82,7 +93,7 @@ export function ImageGallery({ images: initialImages }: ImageGalleryProps) {
       </div>
 
       {filteredImages.length === 0 && (
-        <p className="text-center text-gray-500 py-8">
+        <p className="text-center text-muted-foreground py-8">
           {filter === 'favorites' ? 'No favorites yet' : 'No images'}
         </p>
       )}

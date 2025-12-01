@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface GenerationResultProps {
   imageUrl: string;
@@ -37,19 +38,13 @@ export function GenerationResult({
         )}
       </div>
 
-      <div className="flex space-x-3">
-        <button
-          onClick={onDownload}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
+      <div className="flex gap-3">
+        <Button onClick={onDownload} className="flex-1">
           Download
-        </button>
-        <button
-          onClick={onRegenerate}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-        >
+        </Button>
+        <Button onClick={onRegenerate} variant="outline" className="flex-1">
           Regenerate
-        </button>
+        </Button>
       </div>
     </div>
   );

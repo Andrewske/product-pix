@@ -4,6 +4,9 @@
 import Link from 'next/link';
 import { useUserProfile, signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function Header() {
   const { user, profile, loading } = useUserProfile();
@@ -16,59 +19,44 @@ export function Header() {
   };
 
   return (
-    <header className="border-b border-gray-200 bg-white">
+    <header className="border-b bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center">
-            <span className="text-xl font-bold text-gray-900">ProductPix</span>
+            <span className="text-xl font-bold">ProductPix</span>
           </Link>
 
           {/* Navigation */}
-          <nav className="flex items-center space-x-4">
+          <nav className="flex items-center gap-4">
             {loading ? (
-              <div className="h-8 w-24 bg-gray-200 animate-pulse rounded" />
+              <Skeleton className="h-8 w-24" />
             ) : user ? (
               <>
-                <Link
-                  href="/dashboard"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2"
-                >
-                  Gallery
+                <Link href="/dashboard">
+                  <Button variant="ghost">Gallery</Button>
                 </Link>
-                <Link
-                  href="/generate"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2"
-                >
-                  Generate
+                <Link href="/generate">
+                  <Button variant="ghost">Generate</Button>
                 </Link>
 
                 {/* Credits badge */}
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                <Badge variant="secondary">
                   {profile?.credit_balance ?? 0} credits
-                </span>
+                </Badge>
 
                 {/* User menu */}
-                <button
-                  onClick={handleSignOut}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2"
-                >
+                <Button variant="ghost" onClick={handleSignOut}>
                   Sign out
-                </button>
+                </Button>
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2"
-                >
-                  Log in
+                <Link href="/login">
+                  <Button variant="ghost">Log in</Button>
                 </Link>
-                <Link
-                  href="/signup"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                >
-                  Sign up
+                <Link href="/signup">
+                  <Button>Sign up</Button>
                 </Link>
               </>
             )}

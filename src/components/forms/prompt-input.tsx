@@ -2,6 +2,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 
 interface PromptInputProps {
   value: string;
@@ -33,48 +35,50 @@ export function PromptInput({ value, onChange, disabled }: PromptInputProps) {
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="block text-sm font-medium">
         Generation Prompt
       </label>
 
       <div className="relative">
-        <textarea
+        <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           rows={3}
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
           placeholder="Describe how you want the product photo to look..."
         />
 
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="link"
           onClick={() => setShowTemplates(!showTemplates)}
-          className="absolute right-2 bottom-2 text-xs text-blue-600 hover:text-blue-700"
+          className="absolute right-2 bottom-2 text-xs"
         >
           Templates
-        </button>
+        </Button>
       </div>
 
       {showTemplates && (
         <div className="grid grid-cols-2 gap-2">
           {PROMPT_TEMPLATES.map((template) => (
-            <button
+            <Button
               key={template.label}
               type="button"
+              variant="outline"
               onClick={() => {
                 onChange(template.prompt);
                 setShowTemplates(false);
               }}
-              className="text-left p-2 text-sm border rounded-md hover:bg-gray-50"
+              className="text-left justify-start h-auto py-2"
             >
               <span className="font-medium">{template.label}</span>
-            </button>
+            </Button>
           ))}
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         {value.length}/1000 characters
       </p>
     </div>
