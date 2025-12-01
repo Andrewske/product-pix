@@ -6,14 +6,14 @@ interface SkeletonProps {
 export function Skeleton({ className = '' }: SkeletonProps) {
   return (
     <div
-      className={`animate-pulse bg-gray-200 rounded ${className}`}
+      className={`animate-pulse bg-muted rounded ${className}`}
     />
   );
 }
 
 export function ImageSkeleton() {
   return (
-    <div className="aspect-square bg-gray-200 rounded-lg animate-pulse" />
+    <div className="aspect-square bg-muted rounded-lg animate-pulse" />
   );
 }
 

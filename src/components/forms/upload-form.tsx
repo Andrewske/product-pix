@@ -138,8 +138,8 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
         relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
         transition-colors duration-200
         ${isDragging
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-300 hover:border-gray-400'
+          ? 'border-primary bg-primary/10'
+          : 'border-border hover:border-input'
         }
         ${uploading ? 'pointer-events-none opacity-50' : ''}
       `}
@@ -161,15 +161,15 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
           />
           {uploading && (
             <div className="flex items-center justify-center space-x-2">
-              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-              <span className="text-gray-600">Uploading...</span>
+              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+              <span className="text-muted-foreground">Uploading...</span>
             </div>
           )}
         </div>
       ) : (
         <div className="space-y-2">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-muted-foreground/60"
             stroke="currentColor"
             fill="none"
             viewBox="0 0 48 48"
@@ -182,10 +182,10 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
               strokeLinejoin="round"
             />
           </svg>
-          <div className="text-gray-600">
-            <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+          <div className="text-muted-foreground">
+            <span className="font-medium text-primary">Click to upload</span> or drag and drop
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             PNG, JPG, WebP up to 10MB
           </p>
         </div>

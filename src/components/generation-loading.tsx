@@ -19,7 +19,7 @@ export function GenerationLoading({ stage = 0 }: GenerationLoadingProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-4">
       <Spinner size="lg" />
-      <p className="text-gray-600">{message}</p>
+      <p className="text-muted-foreground">{message}</p>
     </div>
   );
 }
