@@ -1,13 +1,13 @@
 // src/lib/db/jobs.ts
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import type { Job, JobStatus, CreateJobResult } from '@/types';
+import type { Job, JobStatus, CreateJobResult, Json } from '@/types';
 
 export const createGenerationJob = async (
   userId: string,
   uploadId: string | null,
   prompt: string,
-  parameters: Record<string, unknown> = {},
+  parameters: Json = {},
   credits = 1
 ): Promise<CreateJobResult> => {
   const supabase = createAdminClient();

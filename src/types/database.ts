@@ -4,7 +4,9 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[]
+  | Json[];
+
+export type { Json as JsonType };
 
 export interface Database {
   public: {
@@ -303,7 +305,7 @@ export interface Database {
       create_generation_job: {
         Args: {
           p_user_id: string
-          p_upload_id: string
+          p_upload_id?: string | null
           p_prompt: string
           p_parameters?: Json
           p_credits?: number

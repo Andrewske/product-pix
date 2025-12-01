@@ -16,9 +16,9 @@ export const addCredits = async (
     p_user_id: userId,
     p_amount: amount,
     p_type: type,
-    p_description: description ?? null,
-    p_reference_id: referenceId ?? null,
-    p_idempotency_key: idempotencyKey ?? null,
+    p_description: description,
+    p_reference_id: referenceId,
+    p_idempotency_key: idempotencyKey,
   });
 
   if (error) {
