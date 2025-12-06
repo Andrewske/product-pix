@@ -4,104 +4,125 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
-export type { Json as JsonType };
-
-export interface Database {
+export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       credit_transactions: {
         Row: {
-          id: string
-          user_id: string
           amount: number
           balance_after: number
-          transaction_type: Database["public"]["Enums"]["transaction_type"]
-          reference_id: string | null
-          description: string | null
-          idempotency_key: string | null
           created_at: string
+          description: string | null
+          id: string
+          idempotency_key: string | null
+          reference_id: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
           amount: number
           balance_after: number
-          transaction_type: Database["public"]["Enums"]["transaction_type"]
-          reference_id?: string | null
-          description?: string | null
-          idempotency_key?: string | null
           created_at?: string
+          description?: string | null
+          id?: string
+          idempotency_key?: string | null
+          reference_id?: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
           amount?: number
           balance_after?: number
-          transaction_type?: Database["public"]["Enums"]["transaction_type"]
-          reference_id?: string | null
-          description?: string | null
-          idempotency_key?: string | null
           created_at?: string
+          description?: string | null
+          id?: string
+          idempotency_key?: string | null
+          reference_id?: string | null
+          transaction_type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "credit_transactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            isOneToMany: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       generated_images: {
         Row: {
-          id: string
-          job_id: string
-          user_id: string
-          file_key: string
-          public_url: string
-          width: number | null
-          height: number | null
-          file_size: number | null
-          is_favorite: boolean
           created_at: string
           deleted_at: string | null
+          file_key: string
+          file_size: number | null
+          height: number | null
+          id: string
+          is_favorite: boolean
+          job_id: string
+          public_url: string
+          user_id: string
+          width: number | null
         }
         Insert: {
-          id?: string
-          job_id: string
-          user_id: string
-          file_key: string
-          public_url: string
-          width?: number | null
-          height?: number | null
-          file_size?: number | null
-          is_favorite?: boolean
           created_at?: string
           deleted_at?: string | null
+          file_key: string
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          is_favorite?: boolean
+          job_id: string
+          public_url: string
+          user_id: string
+          width?: number | null
         }
         Update: {
-          id?: string
-          job_id?: string
-          user_id?: string
-          file_key?: string
-          public_url?: string
-          width?: number | null
-          height?: number | null
-          file_size?: number | null
-          is_favorite?: boolean
           created_at?: string
           deleted_at?: string | null
+          file_key?: string
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          is_favorite?: boolean
+          job_id?: string
+          public_url?: string
+          user_id?: string
+          width?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "generated_images_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
-            isOneToMany: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -109,64 +130,62 @@ export interface Database {
             foreignKeyName: "generated_images_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            isOneToMany: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       jobs: {
         Row: {
-          id: string
-          user_id: string
-          upload_id: string | null
-          status: Database["public"]["Enums"]["job_status"]
-          prompt: string
-          parameters: Json
-          credits_charged: number
-          error_message: string | null
-          retry_count: number
-          max_retries: number
-          started_at: string | null
           completed_at: string | null
           created_at: string
+          credits_charged: number
+          error_message: string | null
+          id: string
+          max_retries: number
+          parameters: Json | null
+          prompt: string
+          retry_count: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          upload_id: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          upload_id?: string | null
-          status?: Database["public"]["Enums"]["job_status"]
-          prompt: string
-          parameters?: Json
-          credits_charged?: number
-          error_message?: string | null
-          retry_count?: number
-          max_retries?: number
-          started_at?: string | null
           completed_at?: string | null
           created_at?: string
+          credits_charged?: number
+          error_message?: string | null
+          id?: string
+          max_retries?: number
+          parameters?: Json | null
+          prompt: string
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          upload_id?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          upload_id?: string | null
-          status?: Database["public"]["Enums"]["job_status"]
-          prompt?: string
-          parameters?: Json
-          credits_charged?: number
-          error_message?: string | null
-          retry_count?: number
-          max_retries?: number
-          started_at?: string | null
           completed_at?: string | null
           created_at?: string
+          credits_charged?: number
+          error_message?: string | null
+          id?: string
+          max_retries?: number
+          parameters?: Json | null
+          prompt?: string
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          upload_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "jobs_upload_id_fkey"
             columns: ["upload_id"]
             isOneToOne: false
-            isOneToMany: false
             referencedRelation: "uploads"
             referencedColumns: ["id"]
           },
@@ -174,101 +193,131 @@ export interface Database {
             foreignKeyName: "jobs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            isOneToMany: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          }
+          },
+        ]
+      }
+      prompt_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          slug: string
+          status: string
+          template_data: Json
+          variables_schema: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          slug: string
+          status?: string
+          template_data: Json
+          variables_schema: Json
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          slug?: string
+          status?: string
+          template_data?: Json
+          variables_schema?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       uploads: {
         Row: {
-          id: string
-          user_id: string
-          filename: string
-          file_key: string
-          file_size: number
-          mime_type: string
-          width: number | null
-          height: number | null
           created_at: string
           deleted_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          filename: string
           file_key: string
           file_size: number
+          filename: string
+          height: number | null
+          id: string
           mime_type: string
-          width?: number | null
-          height?: number | null
+          user_id: string
+          width: number | null
+        }
+        Insert: {
           created_at?: string
           deleted_at?: string | null
+          file_key: string
+          file_size: number
+          filename: string
+          height?: number | null
+          id?: string
+          mime_type: string
+          user_id: string
+          width?: number | null
         }
         Update: {
-          id?: string
-          user_id?: string
-          filename?: string
-          file_key?: string
-          file_size?: number
-          mime_type?: string
-          width?: number | null
-          height?: number | null
           created_at?: string
           deleted_at?: string | null
+          file_key?: string
+          file_size?: number
+          filename?: string
+          height?: number | null
+          id?: string
+          mime_type?: string
+          user_id?: string
+          width?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "uploads_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            isOneToMany: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       users: {
         Row: {
-          id: string
-          email: string
-          display_name: string | null
-          credit_balance: number
-          tier: Database["public"]["Enums"]["user_tier"]
-          preferences: Json
           created_at: string
+          credit_balance: number
+          display_name: string | null
+          email: string
+          id: string
+          preferences: Json | null
+          tier: Database["public"]["Enums"]["user_tier"]
           updated_at: string
         }
         Insert: {
-          id: string
-          email: string
-          display_name?: string | null
-          credit_balance?: number
-          tier?: Database["public"]["Enums"]["user_tier"]
-          preferences?: Json
           created_at?: string
+          credit_balance?: number
+          display_name?: string | null
+          email: string
+          id: string
+          preferences?: Json | null
+          tier?: Database["public"]["Enums"]["user_tier"]
           updated_at?: string
         }
         Update: {
-          id?: string
-          email?: string
-          display_name?: string | null
-          credit_balance?: number
-          tier?: Database["public"]["Enums"]["user_tier"]
-          preferences?: Json
           created_at?: string
+          credit_balance?: number
+          display_name?: string | null
+          email?: string
+          id?: string
+          preferences?: Json | null
+          tier?: Database["public"]["Enums"]["user_tier"]
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "users_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            isOneToMany: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -277,61 +326,73 @@ export interface Database {
     Functions: {
       add_credits: {
         Args: {
-          p_user_id: string
           p_amount: number
-          p_type: Database["public"]["Enums"]["transaction_type"]
           p_description?: string
-          p_reference_id?: string
           p_idempotency_key?: string
+          p_reference_id?: string
+          p_type: Database["public"]["Enums"]["transaction_type"]
+          p_user_id: string
         }
         Returns: {
-          success: boolean
           new_balance: number
+          success: boolean
           transaction_id: string
         }[]
       }
       consume_credits: {
         Args: {
-          p_user_id: string
           p_amount: number
-          p_job_id: string
           p_description?: string
+          p_job_id: string
+          p_user_id: string
         }
         Returns: {
-          success: boolean
           new_balance: number
+          success: boolean
         }[]
       }
       create_generation_job: {
         Args: {
-          p_user_id: string
-          p_upload_id?: string | null
-          p_prompt: string
-          p_parameters?: Json
           p_credits?: number
+          p_parameters?: Json
+          p_prompt: string
+          p_upload_id: string
+          p_user_id: string
         }
         Returns: {
-          success: boolean
           job_id: string
           message: string
+          success: boolean
         }[]
       }
       refund_credits: {
         Args: {
-          p_user_id: string
           p_amount: number
-          p_job_id: string
           p_description?: string
+          p_job_id: string
+          p_user_id: string
         }
         Returns: {
-          success: boolean
           new_balance: number
+          success: boolean
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
-      job_status: "pending" | "processing" | "completed" | "failed" | "cancelled"
-      transaction_type: "purchase" | "generation" | "refund" | "bonus" | "expiration"
+      job_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      transaction_type:
+        | "purchase"
+        | "generation"
+        | "refund"
+        | "bonus"
+        | "expiration"
       user_tier: "free" | "pro" | "business"
     }
     CompositeTypes: {
@@ -339,3 +400,140 @@ export interface Database {
     }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      job_status: ["pending", "processing", "completed", "failed", "cancelled"],
+      transaction_type: [
+        "purchase",
+        "generation",
+        "refund",
+        "bonus",
+        "expiration",
+      ],
+      user_tier: ["free", "pro", "business"],
+    },
+  },
+} as const
+

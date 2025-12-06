@@ -14,7 +14,7 @@ export const createGenerationJob = async (
 
   const { data, error } = await supabase.rpc('create_generation_job', {
     p_user_id: userId,
-    p_upload_id: uploadId,
+    p_upload_id: uploadId || '',
     p_prompt: prompt,
     p_parameters: parameters,
     p_credits: credits,
