@@ -6,7 +6,7 @@ CREATE TYPE prompt_test_status AS ENUM ('pending', 'generating', 'evaluating', '
 
 CREATE TABLE public.prompt_tests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  template_id UUID REFERENCES public.prompt_templates(id),
+  template_id UUID REFERENCES public.prompt_templates(id) ON DELETE CASCADE,
 
   -- Idempotency (prevents duplicate tests from script reruns)
   idempotency_key TEXT UNIQUE,
@@ -27,7 +27,7 @@ CREATE TABLE public.prompt_tests (
   duration_ms INTEGER,
   cost_usd DECIMAL(10,5),
 
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at TIMESTAMPTZ
 );
 

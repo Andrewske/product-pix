@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ProductPix
+
+AI-powered product photo generator for e-commerce sellers. Transform ordinary product images into professional studio-quality photos for Poshmark, eBay, Etsy, and Amazon.
+
+## Features
+
+- **AI Image Generation**: Professional product photos using Google Gemini
+- **Background Replacement**: Clean white backgrounds, lifestyle settings, studio looks
+- **Multiple Aspect Ratios**: 1:1, 4:3, 16:9, and more for different platforms
+- **Credit System**: Pay-per-generation pricing model
+- **Image Gallery**: Manage, favorite, and download your generated images
+- **Prompt Testing**: A/B test prompt templates with statistical analysis
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router, React 19)
+- **Database**: Supabase (PostgreSQL with RLS)
+- **Storage**: Cloudflare R2 (S3-compatible, zero egress)
+- **AI**: Vercel AI SDK + Google Gemini
+- **Evaluation**: Anthropic Claude (prompt testing)
+- **Styling**: Tailwind CSS v4
+- **Testing**: Jest with ts-jest
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Install dependencies
+pnpm install
+
+# Start development server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm dev          # Start dev server
+pnpm build        # Production build
+pnpm test         # Run tests
+pnpm lint         # Run ESLint
+```
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Copy `.env.example` to `.env.local` and fill in:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `GOOGLE_GENERATIVE_AI_API_KEY` — Gemini API key
+- `ANTHROPIC_API_KEY` — Claude API key (for evaluation)
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase anon key
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
+- `R2_*` — Cloudflare R2 credentials
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentation
 
-## Deploy on Vercel
+- [R2 CORS Setup](docs/r2-cors-setup.md) — Configure Cloudflare R2 for browser uploads
+- [Prompt Techniques](docs/image-generation-prompt-techniques-for-ecommerce.md) — AI prompt engineering for product photography
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private — All rights reserved.

@@ -1,0 +1,31 @@
+import type { Config } from 'jest';
+
+const config: Config = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/__tests__/**/*.test.ts'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      useESM: true,
+    }],
+  },
+  collectCoverageFrom: [
+    'src/lib/prompts/**/*.ts',
+    '!src/lib/prompts/**/*.test.ts',
+    '!src/lib/prompts/index.ts',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
+};
+
+export default config;

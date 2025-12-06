@@ -17,7 +17,7 @@ CREATE TABLE public.prompt_evaluations (
   cost_usd DECIMAL(10,5),
   tokens_used INTEGER,
 
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Indexes for common queries

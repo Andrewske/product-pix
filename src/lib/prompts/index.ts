@@ -109,11 +109,15 @@ export {
   TEMPLATE_REGISTRY,
   getRegisteredTemplate,
   getRegisteredSlugs,
+} from './registry';
+
+// Database operations
+export {
   fetchTemplate,
   syncTemplate,
   syncAllTemplates,
   updateTemplateStatus,
-} from './registry';
+} from './db/templates';
 
 // Evaluator
 export {

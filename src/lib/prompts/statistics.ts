@@ -176,15 +176,29 @@ export const welchTTest = (a: number[], b: number[]): TTestResult => {
   // Standard error of the difference
   const se = Math.sqrt(varA / nA + varB / nB);
 
+  // Mean difference (B - A, so positive means B is better)
+  const meanDiff = meanB - meanA;
+
+  // Guard against division by zero when standard error is 0
+  // This happens when both samples have zero variance (all identical values)
+  if (se === 0) {
+    return {
+      tStatistic: 0,
+      pValue: 1, // No significant difference detectable
+      significant: false,
+      meanDiff,
+      confidenceInterval: [meanDiff, meanDiff],
+      effectSize: 0,
+      effectInterpretation: 'negligible',
+    };
+  }
+
   // T-statistic
   const t = (meanA - meanB) / se;
 
   // Approximate p-value using normal distribution (valid for n > 30)
   // For smaller samples, this is conservative
   const p = 2 * (1 - normalCDF(Math.abs(t)));
-
-  // Mean difference (B - A, so positive means B is better)
-  const meanDiff = meanB - meanA;
 
   // 95% confidence interval
   const criticalValue = 1.96; // z-score for 95% CI
@@ -194,7 +208,11 @@ export const welchTTest = (a: number[], b: number[]): TTestResult => {
   ];
 
   // Cohen's d effect size
-  const pooledStdDev = Math.sqrt(((nA - 1) * varA + (nB - 1) * varB) / (nA + nB - 2));
+  // Guard against division by zero when both samples have size 1
+  const pooledStdDev =
+    nA + nB - 2 > 0
+      ? Math.sqrt(((nA - 1) * varA + (nB - 1) * varB) / (nA + nB - 2))
+      : 0;
   const effectSize = pooledStdDev > 0 ? Math.abs(meanDiff) / pooledStdDev : 0;
 
   // Interpret effect size

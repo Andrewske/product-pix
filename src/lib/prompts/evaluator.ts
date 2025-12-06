@@ -146,7 +146,7 @@ export const evaluateImage = async (
   }
 
   const client = new Anthropic({ apiKey });
-  let lastError: PromptTestError | null = null;
+  let lastError: PromptTestError = createError('EVALUATION_ERROR', 'Evaluation failed after max retries');
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -219,7 +219,7 @@ export const evaluateImage = async (
     }
   }
 
-  return err(lastError!);
+  return err(lastError);
 };
 
 /**

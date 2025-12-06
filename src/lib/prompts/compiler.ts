@@ -286,12 +286,12 @@ export const validateTemplateVariables = (
 ): PromptTestError | null => {
   const templateVars = getTemplateVariables(templateData);
   const schemaVars = Object.keys(variablesSchema);
-  const undefined = templateVars.filter((v) => !schemaVars.includes(v));
+  const undefinedVars = templateVars.filter((v) => !schemaVars.includes(v));
 
-  if (undefined.length > 0) {
+  if (undefinedVars.length > 0) {
     return createError(
       'VALIDATION_ERROR',
-      `Template uses undefined variables: ${undefined.join(', ')}`
+      `Template uses undefined variables: ${undefinedVars.join(', ')}`
     );
   }
 

@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "bench": "tsx scripts/prompt-bench.ts"
+    "bench": "tsx scripts/prompt-bench.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.44",
@@ -29,13 +32,16 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.19.25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.6",
+    "jest": "^30.2.0",
     "supabase": "^2.65.6",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.6",
     "tsx": "^4.21.0",
     "typescript": "^5"
   }

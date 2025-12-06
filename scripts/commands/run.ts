@@ -1,77 +1,20 @@
-# Step 09: Create CLI Runner Script with Run Command
-
-## Objective
-
-Create the main CLI entry point (`scripts/prompt-bench.ts`) with the `run` command for executing batch tests against prompt templates.
-
-## Prerequisites
-
-- Steps 01-08 completed (database, prompts library, and Gemini modifications ready)
-- `tsx` is installed as a dev dependency
-
-## Files to Create
-
-### `scripts/prompt-bench.ts`
-
-```typescript
-#!/usr/bin/env tsx
 /**
- * Prompt Testing CLI
- *
- * Usage:
- *   npm run bench run --template <slug> --batch <file> [options]
- *   npm run bench evaluate --label <batch-label>
- *   npm run bench compare --baseline <label> --candidate <label>
- *   npm run bench report --label <batch-label>
+ * Run Command - Execute prompt tests against templates
  */
 
 import { parseArgs } from 'node:util';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import {
-  BatchFileSchema,
-  RunCommandOptionsSchema,
-  type BatchFile,
-  type PromptTemplate,
-} from '@/lib/prompts/types';
-import {
-  Result,
-  ok,
-  err,
-  createError,
-  formatError,
-  isOk,
-} from '@/lib/prompts/errors';
+import { BatchFileSchema, type BatchFile } from '@/lib/prompts/types';
+import { Result, ok, err, createError, formatError, isOk } from '@/lib/prompts/errors';
 import { compileTemplate, generateIdempotencyKey } from '@/lib/prompts/compiler';
-import { fetchTemplate, syncTemplate } from '@/lib/prompts/registry';
+import { fetchTemplate } from '@/lib/prompts';
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { Json } from '@/types/database';
 import { createGeminiProvider } from '@/lib/ai/providers/gemini';
-import { uploadToR2, getPublicUrl } from '@/lib/r2';
-
-// =============================================================================
-// CLI Parsing
-// =============================================================================
-
-const COMMANDS = ['run', 'evaluate', 'compare', 'report', 'sync'] as const;
-type Command = (typeof COMMANDS)[number];
-
-const parseCommand = (): { command: Command; args: string[] } => {
-  const args = process.argv.slice(2);
-  const command = args[0] as Command;
-
-  if (!COMMANDS.includes(command)) {
-    console.error(`Unknown command: ${command}`);
-    console.error(`Available commands: ${COMMANDS.join(', ')}`);
-    process.exit(1);
-  }
-
-  return { command, args: args.slice(1) };
-};
-
-// =============================================================================
-// Run Command
-// =============================================================================
+import { uploadBuffer, getPublicUrl } from '@/lib/r2';
+import { sleep } from './shared';
 
 interface RunOptions {
   template: string;
@@ -130,9 +73,7 @@ const loadBatchFile = (filePath: string): Result<BatchFile> => {
   }
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const runCommand = async (args: string[]): Promise<void> => {
+export const runCommand = async (args: string[]): Promise<void> => {
   const options = parseRunOptions(args);
 
   console.log(`\n📋 Prompt Bench: Run`);
@@ -255,7 +196,7 @@ const runCommand = async (args: string[]): Promise<void> => {
         template_id: template.id,
         idempotency_key: idempotencyKey,
         status: 'generating',
-        inputs: test.variables,
+        inputs: test.variables as Json,
         final_prompt: compiled.prompt,
         batch_label: batchLabel,
       })
@@ -276,12 +217,15 @@ const runCommand = async (args: string[]): Promise<void> => {
     });
 
     if (!generationResult.success) {
-      await supabase.rpc('update_prompt_test_status', {
+      const { error: rpcError } = await supabase.rpc('update_prompt_test_status', {
         p_test_id: testRecord.id,
         p_new_status: 'failed',
         p_error_message: generationResult.error,
         p_error_code: generationResult.code,
       });
+      if (rpcError) {
+        console.error(`  ⚠️  Failed to update status: ${rpcError.message}`);
+      }
       console.log(`  ❌ Generation failed: ${generationResult.error}`);
       failed++;
       continue;
@@ -292,15 +236,18 @@ const runCommand = async (args: string[]): Promise<void> => {
     const imageBuffer = Buffer.from(generationResult.imageData, 'base64');
 
     try {
-      await uploadToR2(imageKey, imageBuffer, 'image/png');
+      await uploadBuffer(imageBuffer, imageKey, 'image/png');
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : 'Unknown error';
-      await supabase.rpc('update_prompt_test_status', {
+      const { error: rpcError } = await supabase.rpc('update_prompt_test_status', {
         p_test_id: testRecord.id,
         p_new_status: 'failed',
         p_error_message: message,
         p_error_code: 'STORAGE_ERROR',
       });
+      if (rpcError) {
+        console.error(`  ⚠️  Failed to update status: ${rpcError.message}`);
+      }
       console.log(`  ❌ Upload failed: ${message}`);
       failed++;
       continue;
@@ -310,7 +257,7 @@ const runCommand = async (args: string[]): Promise<void> => {
     const durationMs = Date.now() - startTime;
     const imageUrl = getPublicUrl(imageKey);
 
-    await supabase
+    const { error: updateError } = await supabase
       .from('prompt_tests')
       .update({
         status: 'evaluating', // Ready for evaluation
@@ -320,6 +267,10 @@ const runCommand = async (args: string[]): Promise<void> => {
         completed_at: new Date().toISOString(),
       })
       .eq('id', testRecord.id);
+
+    if (updateError) {
+      console.error(`  ⚠️  Failed to update test record: ${updateError.message}`);
+    }
 
     console.log(`  ✅ Generated in ${durationMs}ms`);
     completed++;
@@ -341,145 +292,3 @@ const runCommand = async (args: string[]): Promise<void> => {
   console.log(`Next steps:`);
   console.log(`  npm run bench evaluate --label "${batchLabel}"`);
 };
-
-// =============================================================================
-// Sync Command
-// =============================================================================
-
-const syncCommand = async (): Promise<void> => {
-  console.log(`\n🔄 Syncing templates to database...\n`);
-
-  const { syncAllTemplates } = await import('@/lib/prompts/registry');
-  const result = await syncAllTemplates();
-
-  if (result.synced.length > 0) {
-    console.log(`✅ Synced: ${result.synced.join(', ')}`);
-  }
-
-  if (result.errors.length > 0) {
-    console.log(`❌ Errors:`);
-    for (const e of result.errors) {
-      console.log(`   ${e.slug}: ${e.error}`);
-    }
-  }
-
-  console.log(`\nDone.`);
-};
-
-// =============================================================================
-// Main
-// =============================================================================
-
-const main = async (): Promise<void> => {
-  const { command, args } = parseCommand();
-
-  switch (command) {
-    case 'run':
-      await runCommand(args);
-      break;
-    case 'sync':
-      await syncCommand();
-      break;
-    case 'evaluate':
-      console.log('Evaluate command - see step 10');
-      break;
-    case 'compare':
-      console.log('Compare command - see step 12');
-      break;
-    case 'report':
-      console.log('Report command - see step 12');
-      break;
-    default:
-      console.error(`Command not implemented: ${command}`);
-      process.exit(1);
-  }
-};
-
-main().catch((error) => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
-```
-
-### Update `package.json`
-
-Add the bench script:
-
-```json
-{
-  "scripts": {
-    "bench": "tsx scripts/prompt-bench.ts"
-  }
-}
-```
-
-### Create Example Batch File: `tests/fixtures/products-mix.json`
-
-```json
-{
-  "label": "products-baseline",
-  "tests": [
-    {
-      "variables": {
-        "product": "ceramic coffee mug",
-        "color": "matte black",
-        "material": "glazed ceramic",
-        "background_type": "pure white seamless",
-        "lighting_style": "soft diffused studio",
-        "style": "commercial catalog"
-      }
-    },
-    {
-      "variables": {
-        "product": "wireless earbuds",
-        "color": "white",
-        "material": "plastic",
-        "background_type": "light gray gradient",
-        "lighting_style": "high-key bright",
-        "style": "minimalist"
-      }
-    },
-    {
-      "variables": {
-        "product": "leather wallet",
-        "color": "brown",
-        "material": "genuine leather",
-        "background_type": "marble surface",
-        "lighting_style": "three-point",
-        "style": "luxury advertising"
-      }
-    }
-  ]
-}
-```
-
-## Implementation Steps
-
-1. Create `scripts/` directory if it doesn't exist: `mkdir -p scripts`
-2. Create `scripts/prompt-bench.ts` with the content above
-3. Create `tests/fixtures/` directory: `mkdir -p tests/fixtures`
-4. Create `tests/fixtures/products-mix.json` with the example batch
-5. Update `package.json` to add the `bench` script
-6. Verify the script runs: `npm run bench --help` (should show commands)
-7. Verify dry run works: `npm run bench run --template ecommerce-base --batch tests/fixtures/products-mix.json --dry-run`
-
-## Acceptance Criteria
-
-- [ ] `scripts/prompt-bench.ts` exists and is executable
-- [ ] `package.json` has `"bench": "tsx scripts/prompt-bench.ts"` script
-- [ ] Running `npm run bench` shows available commands
-- [ ] `npm run bench run --help` shows run options
-- [ ] `npm run bench run --template ecommerce-base --batch tests/fixtures/products-mix.json --dry-run` validates inputs
-- [ ] `npm run bench sync` syncs templates to database
-- [ ] Full run command creates test records in `prompt_tests` table
-- [ ] Idempotency prevents duplicate tests on re-run
-- [ ] Tests are left in `evaluating` status after generation
-- [ ] Example batch file exists at `tests/fixtures/products-mix.json`
-
-## Notes
-
-- The script uses Node.js `parseArgs` for argument parsing (built-in, no dependencies)
-- Tests are created with `evaluating` status so the evaluate command knows which ones need processing
-- Idempotency keys are based on template + version + variables + batch label
-- Rate limiting (1 second delay) prevents API throttling
-- The sync command must be run first to populate the database with templates
