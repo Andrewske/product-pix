@@ -198,6 +198,50 @@ export type Database = {
           },
         ]
       }
+      prompt_evaluations: {
+        Row: {
+          cost_usd: number | null
+          created_at: string | null
+          details: Json | null
+          evaluator_model: string | null
+          evaluator_type: string
+          id: string
+          score_overall: number | null
+          test_id: string | null
+          tokens_used: number | null
+        }
+        Insert: {
+          cost_usd?: number | null
+          created_at?: string | null
+          details?: Json | null
+          evaluator_model?: string | null
+          evaluator_type: string
+          id?: string
+          score_overall?: number | null
+          test_id?: string | null
+          tokens_used?: number | null
+        }
+        Update: {
+          cost_usd?: number | null
+          created_at?: string | null
+          details?: Json | null
+          evaluator_model?: string | null
+          evaluator_type?: string
+          id?: string
+          score_overall?: number | null
+          test_id?: string | null
+          tokens_used?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_evaluations_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompt_templates: {
         Row: {
           created_at: string
@@ -235,6 +279,68 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_tests: {
+        Row: {
+          batch_label: string | null
+          completed_at: string | null
+          cost_usd: number | null
+          created_at: string | null
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string | null
+          final_prompt: string
+          id: string
+          idempotency_key: string | null
+          image_key: string | null
+          image_url: string | null
+          inputs: Json
+          status: Database["public"]["Enums"]["prompt_test_status"]
+          template_id: string | null
+        }
+        Insert: {
+          batch_label?: string | null
+          completed_at?: string | null
+          cost_usd?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          final_prompt: string
+          id?: string
+          idempotency_key?: string | null
+          image_key?: string | null
+          image_url?: string | null
+          inputs: Json
+          status?: Database["public"]["Enums"]["prompt_test_status"]
+          template_id?: string | null
+        }
+        Update: {
+          batch_label?: string | null
+          completed_at?: string | null
+          cost_usd?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          final_prompt?: string
+          id?: string
+          idempotency_key?: string | null
+          image_key?: string | null
+          image_url?: string | null
+          inputs?: Json
+          status?: Database["public"]["Enums"]["prompt_test_status"]
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_tests_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -365,6 +471,18 @@ export type Database = {
           success: boolean
         }[]
       }
+      get_batch_stats: {
+        Args: { p_batch_label: string }
+        Returns: {
+          avg_score: number
+          completed_tests: number
+          failed_tests: number
+          max_score: number
+          min_score: number
+          total_cost: number
+          total_tests: number
+        }[]
+      }
       refund_credits: {
         Args: {
           p_amount: number
@@ -379,6 +497,15 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      update_prompt_test_status: {
+        Args: {
+          p_error_code?: string
+          p_error_message?: string
+          p_new_status: Database["public"]["Enums"]["prompt_test_status"]
+          p_test_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       job_status:
@@ -387,6 +514,12 @@ export type Database = {
         | "completed"
         | "failed"
         | "cancelled"
+      prompt_test_status:
+        | "pending"
+        | "generating"
+        | "evaluating"
+        | "completed"
+        | "failed"
       transaction_type:
         | "purchase"
         | "generation"
@@ -525,6 +658,13 @@ export const Constants = {
   public: {
     Enums: {
       job_status: ["pending", "processing", "completed", "failed", "cancelled"],
+      prompt_test_status: [
+        "pending",
+        "generating",
+        "evaluating",
+        "completed",
+        "failed",
+      ],
       transaction_type: [
         "purchase",
         "generation",

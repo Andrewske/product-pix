@@ -4,6 +4,9 @@ const envSchema = z.object({
   // Google AI
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
 
+  // Anthropic (for evaluation)
+  ANTHROPIC_API_KEY: z.string().min(1).optional(), // Required only for evaluation
+
   // Supabase
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
