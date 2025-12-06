@@ -1,0 +1,260 @@
+# Step 04: Create Types Module with Zod Schemas
+
+## Objective
+
+Create the types module that defines all Zod schemas and TypeScript interfaces for the prompt testing framework.
+
+## Prerequisites
+
+- Database migrations completed (Steps 01-03)
+- Zod is already installed in the project
+
+## Files to Create
+
+### `src/lib/prompts/types.ts`
+
+```typescript
+import { z } from 'zod';
+
+// =============================================================================
+// Variable Definition Schemas
+// =============================================================================
+
+/**
+ * Schema for string variable definitions in templates
+ */
+export const StringVariableDefSchema = z.object({
+  type: z.literal('string'),
+  required: z.boolean(),
+  default: z.string().optional(),
+  description: z.string().optional(),
+});
+
+/**
+ * Schema for enum variable definitions in templates
+ */
+export const EnumVariableDefSchema = z.object({
+  type: z.literal('enum'),
+  required: z.boolean(),
+  options: z.array(z.string()).min(1),
+  default: z.string().optional(),
+  description: z.string().optional(),
+});
+
+/**
+ * Union schema for all variable types
+ */
+export const VariableDefSchema = z.discriminatedUnion('type', [
+  StringVariableDefSchema,
+  EnumVariableDefSchema,
+]);
+
+export type VariableDef = z.infer<typeof VariableDefSchema>;
+export type StringVariableDef = z.infer<typeof StringVariableDefSchema>;
+export type EnumVariableDef = z.infer<typeof EnumVariableDefSchema>;
+
+/**
+ * Schema for the variables_schema JSONB field
+ */
+export const VariablesSchemaSchema = z.record(z.string(), VariableDefSchema);
+export type VariablesSchema = z.infer<typeof VariablesSchemaSchema>;
+
+// =============================================================================
+// Template Data Schemas
+// =============================================================================
+
+/**
+ * Schema for template_data JSONB - the actual prompt components
+ */
+export const TemplateDataSchema = z.object({
+  subject: z.string().min(1, 'Subject is required'),
+  background: z.string().optional(),
+  lighting: z.string().optional(),
+  camera: z.string().optional(),
+  style: z.string().optional(),
+  quality: z.string().optional(),
+  negative: z.string().optional(),
+});
+
+export type TemplateData = z.infer<typeof TemplateDataSchema>;
+
+// =============================================================================
+// Prompt Template Schemas
+// =============================================================================
+
+export const TemplateStatusSchema = z.enum(['draft', 'active', 'archived']);
+export type TemplateStatus = z.infer<typeof TemplateStatusSchema>;
+
+/**
+ * Schema for a complete prompt template
+ */
+export const PromptTemplateSchema = z.object({
+  id: z.string().uuid().optional(),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+  version: z.number().int().positive(),
+  status: TemplateStatusSchema,
+  templateData: TemplateDataSchema,
+  variablesSchema: VariablesSchemaSchema,
+  createdBy: z.string().uuid().optional(),
+  createdAt: z.date().optional(),
+});
+
+export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
+
+// =============================================================================
+// Test Schemas
+// =============================================================================
+
+export const TestStatusSchema = z.enum(['pending', 'generating', 'evaluating', 'completed', 'failed']);
+export type TestStatus = z.infer<typeof TestStatusSchema>;
+
+/**
+ * Schema for a single test case in a batch file
+ */
+export const TestCaseSchema = z.object({
+  variables: z.record(z.string(), z.unknown()),
+  notes: z.string().optional(),
+});
+
+export type TestCase = z.infer<typeof TestCaseSchema>;
+
+/**
+ * Schema for a batch file containing multiple test cases
+ */
+export const BatchFileSchema = z.object({
+  label: z.string().optional(),
+  tests: z.array(TestCaseSchema).min(1, 'At least one test is required'),
+});
+
+export type BatchFile = z.infer<typeof BatchFileSchema>;
+
+/**
+ * Schema for a prompt test record from the database
+ */
+export const PromptTestSchema = z.object({
+  id: z.string().uuid(),
+  templateId: z.string().uuid(),
+  idempotencyKey: z.string().nullable(),
+  status: TestStatusSchema,
+  errorMessage: z.string().nullable(),
+  errorCode: z.string().nullable(),
+  inputs: z.record(z.string(), z.unknown()),
+  finalPrompt: z.string(),
+  imageUrl: z.string().nullable(),
+  imageKey: z.string().nullable(),
+  batchLabel: z.string().nullable(),
+  durationMs: z.number().nullable(),
+  costUsd: z.number().nullable(),
+  createdAt: z.date(),
+  completedAt: z.date().nullable(),
+});
+
+export type PromptTest = z.infer<typeof PromptTestSchema>;
+
+// =============================================================================
+// Evaluation Schemas
+// =============================================================================
+
+export const EvaluatorTypeSchema = z.enum(['llm', 'human']);
+export type EvaluatorType = z.infer<typeof EvaluatorTypeSchema>;
+
+/**
+ * Schema for score values (1.0 to 10.0)
+ */
+export const ScoreSchema = z.number().min(1).max(10);
+
+/**
+ * Schema for evaluation details JSONB
+ */
+export const EvaluationDetailsSchema = z.object({
+  composition: ScoreSchema.optional(),
+  lighting: ScoreSchema.optional(),
+  productVisibility: ScoreSchema.optional(),
+  backgroundQuality: ScoreSchema.optional(),
+  professionalQuality: ScoreSchema.optional(),
+  promptAdherence: ScoreSchema.optional(),
+  reasoning: z.string().optional(),
+  suggestions: z.array(z.string()).optional(),
+}).passthrough(); // Allow additional fields
+
+export type EvaluationDetails = z.infer<typeof EvaluationDetailsSchema>;
+
+/**
+ * Schema for a prompt evaluation record
+ */
+export const PromptEvaluationSchema = z.object({
+  id: z.string().uuid(),
+  testId: z.string().uuid(),
+  scoreOverall: ScoreSchema,
+  details: EvaluationDetailsSchema.nullable(),
+  evaluatorModel: z.string().nullable(),
+  evaluatorType: EvaluatorTypeSchema,
+  costUsd: z.number().nullable(),
+  tokensUsed: z.number().nullable(),
+  createdAt: z.date(),
+});
+
+export type PromptEvaluation = z.infer<typeof PromptEvaluationSchema>;
+
+// =============================================================================
+// CLI Command Schemas
+// =============================================================================
+
+/**
+ * Schema for the 'run' command options
+ */
+export const RunCommandOptionsSchema = z.object({
+  template: z.string().min(1),
+  version: z.union([z.literal('latest'), z.number().int().positive()]).default('latest'),
+  batch: z.string().min(1),
+  label: z.string().optional(),
+  dryRun: z.boolean().default(false),
+});
+
+export type RunCommandOptions = z.infer<typeof RunCommandOptionsSchema>;
+
+/**
+ * Schema for the 'evaluate' command options
+ */
+export const EvaluateCommandOptionsSchema = z.object({
+  label: z.string().min(1),
+  model: z.string().default('claude-sonnet-4-20250514'),
+});
+
+export type EvaluateCommandOptions = z.infer<typeof EvaluateCommandOptionsSchema>;
+
+/**
+ * Schema for the 'compare' command options
+ */
+export const CompareCommandOptionsSchema = z.object({
+  baseline: z.string().min(1),
+  candidate: z.string().min(1),
+});
+
+export type CompareCommandOptions = z.infer<typeof CompareCommandOptionsSchema>;
+```
+
+## Implementation Steps
+
+1. Create the directory if it doesn't exist: `mkdir -p src/lib/prompts`
+2. Create the file at `src/lib/prompts/types.ts`
+3. Copy the content exactly as shown
+4. Verify there are no TypeScript errors: `npx tsc --noEmit`
+
+## Acceptance Criteria
+
+- [ ] File exists at `src/lib/prompts/types.ts`
+- [ ] All schemas compile without TypeScript errors
+- [ ] `VariableDefSchema` supports both 'string' and 'enum' types via discriminated union
+- [ ] `TemplateDataSchema` validates prompt components (subject required, others optional)
+- [ ] `BatchFileSchema` validates batch test files with at least one test
+- [ ] `ScoreSchema` constrains values to 1-10 range
+- [ ] All schemas have corresponding TypeScript type exports
+- [ ] CLI command option schemas are defined for all commands
+
+## Notes
+
+- Zod schemas provide runtime validation in addition to compile-time types
+- The `passthrough()` on `EvaluationDetailsSchema` allows future evaluation criteria without schema changes
+- Slug validation ensures URL-safe template identifiers
+- All database fields use camelCase in TypeScript (mapped from snake_case in SQL)
