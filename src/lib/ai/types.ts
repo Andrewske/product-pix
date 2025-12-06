@@ -3,6 +3,11 @@ export interface ImageConfig {
   aspectRatio: '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
   resolution: '1k' | '2k' | '4k';
   quality?: 'standard' | 'hd';
+  /**
+   * If true, use the prompt as-is without any prefixes.
+   * Used by the prompt testing framework for controlled experiments.
+   */
+  rawPrompt?: boolean;
 }
 
 export interface GenerationResult {

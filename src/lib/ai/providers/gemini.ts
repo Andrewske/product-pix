@@ -93,7 +93,9 @@ export const createGeminiProvider = (): ImageProvider => {
               },
             },
           },
-          prompt: `Generate a professional product photo: ${prompt}`,
+          prompt: config.rawPrompt
+            ? prompt
+            : `Generate a professional product photo: ${prompt}`,
         });
 
         // Extract image from response
