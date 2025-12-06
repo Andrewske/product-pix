@@ -1,0 +1,16 @@
+{
+	"label": "image-to-image-baseline",
+	"tests": [
+		{
+			"sourceImage": "./images/tester-1-suitcase.jpg",
+			"variables": {
+				"product": "monos suitcase",
+				"color": "tan",
+				"background_type": "pure white seamless",
+				"lighting_style": "soft diffused studio",
+				"style": "commercial catalog"
+			},
+			"notes": "Test commercial catalog transformation on suitcase photo"
+		}
+	]
+}

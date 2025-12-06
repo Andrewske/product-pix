@@ -15,17 +15,17 @@ export const uploadBuffer = async (
   contentType: string
 ): Promise<UploadResult> => {
   const command = new PutObjectCommand({
-    Bucket: R2_BUCKET,
+    Bucket: R2_BUCKET(),
     Key: fileKey,
     Body: buffer,
     ContentType: contentType,
   });
 
-  await r2Client.send(command);
+  await r2Client().send(command);
 
   return {
     fileKey,
-    publicUrl: `${R2_PUBLIC_URL}/${fileKey}`,
+    publicUrl: `${R2_PUBLIC_URL()}/${fileKey}`,
   };
 };
 

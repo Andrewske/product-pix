@@ -6,10 +6,10 @@ import { parseArgs } from 'node:util';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { BatchFileSchema, type BatchFile } from '@/lib/prompts/types';
+import { BatchFileSchema, type BatchFile, type TestCase } from '@/lib/prompts/types';
 import { Result, ok, err, createError, formatError, isOk } from '@/lib/prompts/errors';
 import { compileTemplate, generateIdempotencyKey } from '@/lib/prompts/compiler';
-import { fetchTemplate } from '@/lib/prompts';
+import { fetchTemplate, resolveSourceImage, type ResolvedSourceImage } from '@/lib/prompts';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Json } from '@/types/database';
 import { createGeminiProvider } from '@/lib/ai/providers/gemini';
@@ -73,6 +73,14 @@ const loadBatchFile = (filePath: string): Result<BatchFile> => {
   }
 };
 
+/**
+ * Get the effective source image for a test
+ * Per-test sourceImage overrides batch-level default
+ */
+const getEffectiveSourceImage = (test: TestCase, batchDefault?: string): string | undefined => {
+  return test.sourceImage ?? batchDefault;
+};
+
 export const runCommand = async (args: string[]): Promise<void> => {
   const options = parseRunOptions(args);
 
@@ -115,6 +123,8 @@ export const runCommand = async (args: string[]): Promise<void> => {
 
     for (let i = 0; i < batch.tests.length; i++) {
       const test = batch.tests[i];
+      const sourceImageRef = getEffectiveSourceImage(test, batch.sourceImage);
+
       const result = compileTemplate(
         template.templateData,
         template.variablesSchema,
@@ -124,6 +134,9 @@ export const runCommand = async (args: string[]): Promise<void> => {
       if (isOk(result)) {
         console.log(`✅ Test ${i + 1}: Valid`);
         console.log(`   Prompt: ${result.data.prompt.slice(0, 80)}...`);
+        if (sourceImageRef) {
+          console.log(`   Source: ${sourceImageRef}`);
+        }
         valid++;
       } else {
         console.log(`❌ Test ${i + 1}: Invalid`);
@@ -140,6 +153,9 @@ export const runCommand = async (args: string[]): Promise<void> => {
   const supabase = createAdminClient();
   const gemini = createGeminiProvider();
 
+  // Cache for uploaded source images (prevents duplicate uploads)
+  const sourceImageCache = new Map<string, ResolvedSourceImage>();
+
   // 5. Run tests
   console.log(`\n🚀 Running ${batch.tests.length} tests...\n`);
 
@@ -151,6 +167,34 @@ export const runCommand = async (args: string[]): Promise<void> => {
     const testNum = i + 1;
 
     console.log(`[${testNum}/${batch.tests.length}] Processing...`);
+
+    // Resolve source image if present
+    const sourceImageRef = getEffectiveSourceImage(test, batch.sourceImage);
+    let resolvedSource: ResolvedSourceImage | undefined;
+
+    if (sourceImageRef) {
+      // Check cache first
+      if (sourceImageCache.has(sourceImageRef)) {
+        resolvedSource = sourceImageCache.get(sourceImageRef)!;
+        console.log(`  📷 Using cached source image`);
+      } else {
+        console.log(`  📷 Loading source image: ${sourceImageRef}`);
+        const sourceResult = await resolveSourceImage(sourceImageRef, {
+          batchFilePath: options.batchFile,
+          skipUpload: false,
+        });
+
+        if (!isOk(sourceResult)) {
+          console.log(`  ❌ Source image error: ${sourceResult.error.message}`);
+          failed++;
+          continue;
+        }
+
+        resolvedSource = sourceResult.data;
+        sourceImageCache.set(sourceImageRef, resolvedSource);
+        console.log(`  ✅ Source image loaded (hash: ${resolvedSource.hash.slice(0, 16)}...)`);
+      }
+    }
 
     // Compile template
     const compileResult = compileTemplate(
@@ -171,7 +215,8 @@ export const runCommand = async (args: string[]): Promise<void> => {
       template.slug,
       template.version,
       test.variables,
-      batchLabel
+      batchLabel,
+      resolvedSource?.hash
     );
 
     // Check for existing test with same idempotency key
@@ -182,10 +227,26 @@ export const runCommand = async (args: string[]): Promise<void> => {
       .single();
 
     if (existing) {
-      console.log(`  ⏭️  Skipping (already exists: ${existing.status})`);
-      if (existing.status === 'completed') completed++;
-      else if (existing.status === 'failed') failed++;
-      continue;
+      if (existing.status === 'failed') {
+        // Failed tests should be retried - delete old record and proceed
+        console.log(`  🔄 Retrying failed test`);
+        const { error: deleteError } = await supabase
+          .from('prompt_tests')
+          .delete()
+          .eq('id', existing.id);
+
+        if (deleteError) {
+          console.log(`  ❌ Failed to delete old test: ${deleteError.message}`);
+          failed++;
+          continue;
+        }
+        // Fall through to create new test record below
+      } else {
+        // Completed, evaluating, generating - skip these
+        console.log(`  ⏭️  Skipping (already exists: ${existing.status})`);
+        if (existing.status === 'completed') completed++;
+        continue;
+      }
     }
 
     // Create test record
@@ -199,6 +260,8 @@ export const runCommand = async (args: string[]): Promise<void> => {
         inputs: test.variables as Json,
         final_prompt: compiled.prompt,
         batch_label: batchLabel,
+        source_image_url: resolvedSource?.r2Url ?? null,
+        source_image_key: resolvedSource?.r2Key ?? null,
       })
       .select()
       .single();
@@ -210,11 +273,30 @@ export const runCommand = async (args: string[]): Promise<void> => {
     }
 
     // Generate image
-    const generationResult = await gemini.generateFromText(compiled.prompt, {
-      aspectRatio: '1:1',
-      resolution: '2k',
-      rawPrompt: true,
-    });
+    let generationResult;
+
+    if (resolvedSource) {
+      // Image-to-image transformation
+      console.log(`  🖼️  Generating (image-to-image)...`);
+      generationResult = await gemini.generateFromImage(
+        resolvedSource.buffer,
+        resolvedSource.mimeType,
+        compiled.prompt,
+        {
+          aspectRatio: '1:1',
+          resolution: '2k',
+          rawPrompt: true,
+        }
+      );
+    } else {
+      // Text-to-image generation
+      console.log(`  🖼️  Generating (text-to-image)...`);
+      generationResult = await gemini.generateFromText(compiled.prompt, {
+        aspectRatio: '1:1',
+        resolution: '2k',
+        rawPrompt: true,
+      });
+    }
 
     if (!generationResult.success) {
       const { error: rpcError } = await supabase.rpc('update_prompt_test_status', {

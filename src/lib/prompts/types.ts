@@ -98,6 +98,7 @@ export type TestStatus = z.infer<typeof TestStatusSchema>;
 export const TestCaseSchema = z.object({
   variables: z.record(z.string(), z.unknown()),
   notes: z.string().optional(),
+  sourceImage: z.string().optional(),
 });
 
 export type TestCase = z.infer<typeof TestCaseSchema>;
@@ -107,6 +108,7 @@ export type TestCase = z.infer<typeof TestCaseSchema>;
  */
 export const BatchFileSchema = z.object({
   label: z.string().optional(),
+  sourceImage: z.string().optional(),
   tests: z.array(TestCaseSchema).min(1, 'At least one test is required'),
 });
 
@@ -126,6 +128,8 @@ export const PromptTestSchema = z.object({
   finalPrompt: z.string(),
   imageUrl: z.string().nullable(),
   imageKey: z.string().nullable(),
+  sourceImageUrl: z.string().nullable(),
+  sourceImageKey: z.string().nullable(),
   batchLabel: z.string().nullable(),
   durationMs: z.number().nullable(),
   costUsd: z.number().nullable(),

@@ -147,3 +147,25 @@ export {
   formatReport,
   getScoreDistribution,
 } from './statistics';
+
+// Source image utilities
+export {
+  type ResolvedSourceImage,
+  type SourceImageOptions,
+  getMimeType,
+  computeHash,
+  resolveSourcePath,
+  loadSourceImage,
+  fetchSourceImage,
+  uploadSourceImage,
+  resolveSourceImage,
+} from './source-image';
+
+// Orchestrator
+export {
+  runPipeline,
+  generateBatchLabel,
+  type PipelineOptions,
+  type PipelineResult,
+  type ProgressCallback,
+} from './orchestrator';

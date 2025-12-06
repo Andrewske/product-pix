@@ -26,17 +26,17 @@ export const getPresignedUploadUrl = async (
   const fileKey = `uploads/${userId}/${timestamp}-${sanitizedFilename}`;
 
   const command = new PutObjectCommand({
-    Bucket: R2_BUCKET,
+    Bucket: R2_BUCKET(),
     Key: fileKey,
     ContentType: contentType,
   });
 
-  const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn });
+  const uploadUrl = await getSignedUrl(r2Client(), command, { expiresIn });
 
   return {
     uploadUrl,
     fileKey,
-    publicUrl: `${R2_PUBLIC_URL}/${fileKey}`,
+    publicUrl: `${R2_PUBLIC_URL()}/${fileKey}`,
   };
 };
 
@@ -48,11 +48,11 @@ export const getPresignedDownloadUrl = async (
   expiresIn = 3600
 ): Promise<string> => {
   const command = new GetObjectCommand({
-    Bucket: R2_BUCKET,
+    Bucket: R2_BUCKET(),
     Key: fileKey,
   });
 
-  return getSignedUrl(r2Client, command, { expiresIn });
+  return getSignedUrl(r2Client(), command, { expiresIn });
 };
 
 /**
@@ -60,16 +60,16 @@ export const getPresignedDownloadUrl = async (
  */
 export const deleteFile = async (fileKey: string): Promise<void> => {
   const command = new DeleteObjectCommand({
-    Bucket: R2_BUCKET,
+    Bucket: R2_BUCKET(),
     Key: fileKey,
   });
 
-  await r2Client.send(command);
+  await r2Client().send(command);
 };
 
 /**
  * Get the public URL for a file
  */
 export const getPublicUrl = (fileKey: string): string => {
-  return `${R2_PUBLIC_URL}/${fileKey}`;
+  return `${R2_PUBLIC_URL()}/${fileKey}`;
 };

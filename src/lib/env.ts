@@ -3,6 +3,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   // Google AI
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
+  GEMINI_MODEL: z.string().optional().default('gemini-2.5-flash-image-preview'),
 
   // Anthropic (for evaluation)
   ANTHROPIC_API_KEY: z.string().min(1).optional(), // Required only for evaluation
@@ -23,4 +24,23 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url(),
 });
 
-export const env = envSchema.parse(process.env);
+type Env = z.infer<typeof envSchema>;
+
+// Lazy validation - only parse when first accessed
+// This allows dotenv to load before validation in CLI scripts
+let _env: Env | null = null;
+
+const getEnv = (): Env => {
+  if (!_env) {
+    _env = envSchema.parse(process.env);
+  }
+  return _env;
+};
+
+// Export a Proxy that lazily validates on first property access
+// This maintains backward compatibility - no code changes needed
+export const env = new Proxy({} as Env, {
+  get(_, prop) {
+    return getEnv()[prop as keyof Env];
+  },
+});

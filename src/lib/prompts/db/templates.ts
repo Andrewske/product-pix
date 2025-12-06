@@ -25,7 +25,7 @@ const parseTemplateRow = (data: Record<string, unknown>): Result<PromptTemplate>
     const id = z.string().uuid().parse(data.id);
     const slug = z.string().min(1).parse(data.slug);
     const version = z.number().int().positive().parse(data.version);
-    const createdAt = z.string().datetime().parse(data.created_at);
+    const createdAtStr = z.string().parse(data.created_at);
     const createdBy = data.created_by
       ? z.string().uuid().parse(data.created_by)
       : undefined;
@@ -38,7 +38,7 @@ const parseTemplateRow = (data: Record<string, unknown>): Result<PromptTemplate>
       templateData,
       variablesSchema,
       createdBy,
-      createdAt: new Date(createdAt),
+      createdAt: new Date(createdAtStr),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid template data';

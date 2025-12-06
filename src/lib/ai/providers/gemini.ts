@@ -1,6 +1,7 @@
 // src/lib/ai/providers/gemini.ts
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
+import { env } from '@/lib/env';
 import type { ImageProvider, ImageConfig, GenerationResponse } from '../types';
 
 // Map our config to Gemini's expected values
@@ -75,8 +76,8 @@ const handleError = (error: unknown): GenerationResponse => {
 };
 
 export const createGeminiProvider = (): ImageProvider => {
-  // Use the correct model ID for image generation
-  const model = google('gemini-2.0-flash-exp'); // Will switch to gemini-3-pro-image-preview when available
+  // Use configurable Gemini model for image generation (supports multi-modal outputs)
+  const model = google(env.GEMINI_MODEL);
 
   return {
     name: 'gemini',
@@ -99,16 +100,43 @@ export const createGeminiProvider = (): ImageProvider => {
         });
 
         // Extract image from response
-        // Gemini image generation returns image data in the response
-        // For now, we'll return a placeholder until we test the actual API response
+        // Gemini 2.5 returns images in the files array
+        const files = result.files;
+
+        if (!files || files.length === 0) {
+          return {
+            success: false,
+            error: 'No image generated in response',
+            code: 'PROVIDER_ERROR',
+            retryable: true,
+          };
+        }
+
+        // Get the first image file
+        const imageFile = files.find((file) => file.mediaType?.startsWith('image/'));
+
+        if (!imageFile || !imageFile.base64) {
+          return {
+            success: false,
+            error: 'No image data found in response',
+            code: 'PROVIDER_ERROR',
+            retryable: true,
+          };
+        }
+
         const dimensions = getResolutionDimensions(config.aspectRatio, config.resolution);
 
-        // TODO: Update this once we test the actual Gemini image response format
+        // Extract base64 data (strip data URL prefix if present)
+        const base64Data = imageFile.base64.includes(',')
+          ? imageFile.base64.split(',')[1]
+          : imageFile.base64;
+
         return {
-          success: false,
-          error: 'Image generation not yet fully implemented - awaiting Gemini 3 Pro Image API access',
-          code: 'PROVIDER_ERROR',
-          retryable: true,
+          success: true,
+          imageData: base64Data,
+          mimeType: imageFile.mediaType || 'image/png',
+          width: dimensions.width,
+          height: dimensions.height,
         };
       } catch (error) {
         return handleError(error);
@@ -138,7 +166,9 @@ export const createGeminiProvider = (): ImageProvider => {
               content: [
                 {
                   type: 'text',
-                  text: `Transform this product photo: ${prompt}. Create a professional e-commerce image with clean background and good lighting.`,
+                  text: config.rawPrompt
+                    ? prompt
+                    : `Transform this product photo: ${prompt}. Create a professional e-commerce image with clean background and good lighting.`,
                 },
                 {
                   type: 'image',
@@ -150,14 +180,43 @@ export const createGeminiProvider = (): ImageProvider => {
         });
 
         // Extract image from response
-        // TODO: Update this once we test the actual Gemini image response format
+        // Gemini 2.5 returns images in the files array
+        const files = result.files;
+
+        if (!files || files.length === 0) {
+          return {
+            success: false,
+            error: 'No image generated in response',
+            code: 'PROVIDER_ERROR',
+            retryable: true,
+          };
+        }
+
+        // Get the first image file
+        const imageFile = files.find((file) => file.mediaType?.startsWith('image/'));
+
+        if (!imageFile || !imageFile.base64) {
+          return {
+            success: false,
+            error: 'No image data found in response',
+            code: 'PROVIDER_ERROR',
+            retryable: true,
+          };
+        }
+
         const dimensions = getResolutionDimensions(config.aspectRatio, config.resolution);
 
+        // Extract base64 data (strip data URL prefix if present)
+        const base64Data = imageFile.base64.includes(',')
+          ? imageFile.base64.split(',')[1]
+          : imageFile.base64;
+
         return {
-          success: false,
-          error: 'Image generation not yet fully implemented - awaiting Gemini 3 Pro Image API access',
-          code: 'PROVIDER_ERROR',
-          retryable: true,
+          success: true,
+          imageData: base64Data,
+          mimeType: imageFile.mediaType || 'image/png',
+          width: dimensions.width,
+          height: dimensions.height,
         };
       } catch (error) {
         return handleError(error);

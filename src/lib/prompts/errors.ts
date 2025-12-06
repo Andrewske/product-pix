@@ -12,7 +12,12 @@ export type ErrorCode =
   | 'EVALUATION_ERROR'    // Image evaluation failed (Claude API)
   | 'DATABASE_ERROR'      // Database operation failed
   | 'STORAGE_ERROR'       // R2 storage operation failed
-  | 'NETWORK_ERROR';      // Network request failed (retryable)
+  | 'NETWORK_ERROR'       // Network request failed (retryable)
+  | 'PIPELINE_ERROR'      // Pipeline orchestration failed
+  | 'SOURCE_IMAGE_ERROR'  // Source image processing failed
+  | 'UPLOAD_ERROR'        // File upload failed
+  | 'RUN_PHASE_ERROR'     // Run phase failed
+  | 'NO_DATA_ERROR';      // No data available for operation
 
 // =============================================================================
 // Error Interface

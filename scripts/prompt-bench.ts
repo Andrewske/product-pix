@@ -3,20 +3,28 @@
  * Prompt Testing CLI
  *
  * Usage:
- *   npm run bench run --template <slug> --batch <file> [options]
- *   npm run bench evaluate --label <batch-label>
- *   npm run bench compare --baseline <label> --candidate <label>
- *   npm run bench report --label <batch-label>
- *   npm run bench sync
+ *   pnpm bench test --template <slug> --batch <file> [options]  # Unified pipeline
+ *   pnpm bench run --template <slug> --batch <file> [options]
+ *   pnpm bench evaluate --label <batch-label>
+ *   pnpm bench compare --baseline <label> --candidate <label>
+ *   pnpm bench report --label <batch-label>
+ *   pnpm bench sync
  */
+
+// IMPORTANT: Load environment variables FIRST before any other imports
+// This ensures R2/Supabase clients get the correct credentials
+// Load .env first, then .env.local (which overrides .env)
+require('dotenv').config({ path: '.env' });
+require('dotenv').config({ path: '.env.local', override: true });
 
 import { runCommand } from './commands/run';
 import { evaluateCommand } from './commands/evaluate';
 import { compareCommand } from './commands/compare';
 import { reportCommand } from './commands/report';
 import { syncCommand } from './commands/sync';
+import { testCommand } from './commands/test';
 
-const COMMANDS = ['run', 'evaluate', 'compare', 'report', 'sync'] as const;
+const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync'] as const;
 type Command = (typeof COMMANDS)[number];
 
 const parseCommand = (): { command: Command; args: string[] } => {
@@ -50,6 +58,9 @@ const main = async (): Promise<void> => {
       break;
     case 'sync':
       await syncCommand();
+      break;
+    case 'test':
+      await testCommand(args);
       break;
   }
 };

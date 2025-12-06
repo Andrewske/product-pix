@@ -9,7 +9,7 @@ async function testAI() {
 
   try {
     const result = await generateText({
-      model: google('gemini-2.0-flash-exp'),
+      model: google('gemini-3-pro-image-preview'),
       prompt: 'Say "Hello ProductPix!"',
     });
 

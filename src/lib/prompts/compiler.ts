@@ -220,13 +220,14 @@ export const compileTemplate = (
 
 /**
  * Generate an idempotency key for a test
- * Combines template slug, version, and sorted variable values
+ * Combines template slug, version, sorted variable values, and optional source image hash
  */
 export const generateIdempotencyKey = (
   templateSlug: string,
   templateVersion: number,
   variables: Record<string, unknown>,
-  batchLabel?: string
+  batchLabel?: string,
+  sourceImageHash?: string
 ): string => {
   const sortedVars = Object.keys(variables)
     .sort()
@@ -238,6 +239,10 @@ export const generateIdempotencyKey = (
     `v${templateVersion}`,
     sortedVars,
   ];
+
+  if (sourceImageHash) {
+    parts.push(`src:${sourceImageHash.slice(0, 16)}`);
+  }
 
   if (batchLabel) {
     parts.push(batchLabel);
