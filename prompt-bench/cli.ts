@@ -23,8 +23,10 @@ import { compareCommand } from '@bench/commands/compare';
 import { reportCommand } from '@bench/commands/report';
 import { syncCommand } from '@bench/commands/sync';
 import { testCommand } from '@bench/commands/test';
+import { openLastReportCommand } from '@bench/commands/open-last-report';
+ 
+const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report'] as const;
 
-const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync'] as const;
 type Command = (typeof COMMANDS)[number];
 
 const showHelp = (): void => {
@@ -35,19 +37,22 @@ Usage:
   bun bench <command> [options]
 
 Commands:
-  test       Run full pipeline: generate → evaluate → report
-  run        Generate images from prompts
-  evaluate   Score generated images with AI evaluator
-  compare    Compare two batch runs (baseline vs candidate)
-  report     Generate HTML report for a batch
-  sync       Sync local templates to database
-
+  test             Run full pipeline: generate → evaluate → report
+  run              Generate images from prompts
+  evaluate         Score generated images with AI evaluator
+  compare          Compare two batch runs (baseline vs candidate)
+  report           Generate HTML report for a batch
+  sync             Sync local templates to database
+  open-last-report Open the most recent HTML report
+ 
 Examples:
   bun bench test --template product-photo --batch ./batches/test.csv
   bun bench run --template product-photo --batch ./batches/test.csv --label v1
   bun bench evaluate --label v1
   bun bench compare --baseline v1 --candidate v2
   bun bench report --label v1
+  bun bench open-last-report
+
 
 Run 'bun bench <command> --help' for command-specific options.
 `);
@@ -96,6 +101,9 @@ const main = async (): Promise<void> => {
       break;
     case 'test':
       await testCommand(args);
+      break;
+    case 'open-last-report':
+      await openLastReportCommand();
       break;
   }
 };

@@ -11,7 +11,7 @@
 template = "ecommerce-base"
 
 # Default batch file path for run/test commands (relative to project root)
-batch_file = "prompt-bench/fixtures/products-mix.json"
+batch_file = "prompt-bench/fixtures/images-batch.json"
 
 # Default label prefix for batches (timestamp will be appended)
 label_prefix = "batch"

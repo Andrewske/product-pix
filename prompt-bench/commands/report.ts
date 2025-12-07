@@ -36,6 +36,7 @@ interface ReportData {
     id: string;
     prompt: string;
     imageUrl: string | null;
+    sourceImageUrl: string | null;
     score: number;
     durationMs: number | null;
     costUsd: number | null;
@@ -100,6 +101,7 @@ const processTests = (
     id: string;
     final_prompt: string;
     image_url: string | null;
+    source_image_url: string | null;
     status: string;
     duration_ms: number | null;
     cost_usd: number | null;
@@ -109,6 +111,7 @@ const processTests = (
   id: string;
   prompt: string;
   imageUrl: string | null;
+  sourceImageUrl: string | null;
   status: string;
   score: number;
   durationMs: number | null;
@@ -122,13 +125,14 @@ const processTests = (
         id: t.id,
         prompt: t.final_prompt,
         imageUrl: t.image_url,
+        sourceImageUrl: t.source_image_url,
         status: t.status,
         score: score ?? null,
         durationMs: t.duration_ms,
         costUsd: t.cost_usd,
       };
     })
-    .filter((t): t is { id: string; prompt: string; imageUrl: string | null; status: string; score: number; durationMs: number | null; costUsd: number | null } =>
+    .filter((t): t is { id: string; prompt: string; imageUrl: string | null; sourceImageUrl: string | null; status: string; score: number; durationMs: number | null; costUsd: number | null } =>
       t.score !== null
     );
 };
@@ -232,10 +236,29 @@ const getStyles = (): string => `
   .mt-1 { margin-top: 0.25rem; }
   .ml-auto { margin-left: auto; }
 
+  /* Image pair (source + generated side-by-side) */
+  .image-pair { display: flex; gap: 0.25rem; }
+  .image-pair .source-image { flex: 0 0 40%; }
+  .image-pair .generated-image { flex: 0 0 60%; }
+  .image-pair img { width: 100%; height: 100%; object-fit: cover; }
+  .image-label {
+    position: absolute;
+    bottom: 0.25rem;
+    left: 0.25rem;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+  }
+  .image-wrapper { position: relative; }
+
   /* Responsive */
   @media (max-width: 768px) {
     .grid-cols-3, .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
     .comparison-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .image-pair { flex-direction: column; }
+    .image-pair .source-image, .image-pair .generated-image { flex: 1; }
   }
 `;
 
@@ -308,15 +331,41 @@ const getDistributionColor = (range: string): string => {
   return 'bg-green-500'; // Excellent
 };
 
+const renderImageSection = (
+  imageUrl: string | null,
+  sourceImageUrl: string | null,
+  showLabels: boolean = true
+): string => {
+  const noImage = `<div class="w-full aspect-square bg-gray-200 flex items-center justify-center text-gray-500">No image</div>`;
+
+  if (!imageUrl) return noImage;
+
+  // Side-by-side when source image exists
+  if (sourceImageUrl) {
+    return `
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="${escapeHtml(sourceImageUrl)}" alt="Source image" loading="lazy">
+          ${showLabels ? '<span class="image-label">Source</span>' : ''}
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="${escapeHtml(imageUrl)}" alt="Generated image" loading="lazy">
+          ${showLabels ? '<span class="image-label">Generated</span>' : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // Single generated image (text-to-image)
+  return `<img src="${escapeHtml(imageUrl)}" alt="Generated image" class="w-full aspect-square object-cover" loading="lazy">`;
+};
+
 const renderTestGrid = (data: ReportData): string => {
   const sortedTests = [...data.tests].sort((a, b) => b.score - a.score);
 
   const cards = sortedTests.map(test => `
     <div class="bg-white rounded-lg shadow overflow-hidden">
-      ${test.imageUrl
-        ? `<img src="${escapeHtml(test.imageUrl)}" alt="Generated image" class="w-full aspect-square object-cover" loading="lazy">`
-        : `<div class="w-full aspect-square bg-gray-200 flex items-center justify-center text-gray-500">No image</div>`
-      }
+      ${renderImageSection(test.imageUrl, test.sourceImageUrl)}
       <div class="p-4">
         <div class="flex items-center justify-between mb-2">
           <span class="font-semibold">${test.score.toFixed(1)}/10</span>
@@ -433,10 +482,7 @@ const renderComparisonGrid = (comparison: ComparisonData): string => {
 
 const renderComparisonCard = (test: ReportData['tests'][0]): string => `
   <div class="bg-white rounded-lg shadow overflow-hidden">
-    ${test.imageUrl
-      ? `<img src="${escapeHtml(test.imageUrl)}" alt="Generated image" class="w-full aspect-square object-cover" loading="lazy">`
-      : `<div class="w-full aspect-square bg-gray-200"></div>`
-    }
+    ${renderImageSection(test.imageUrl, test.sourceImageUrl, false)}
     <div class="p-2">
       <span class="font-semibold">${test.score.toFixed(1)}/10</span>
       ${renderScoreBadge(test.score)}
@@ -446,10 +492,7 @@ const renderComparisonCard = (test: ReportData['tests'][0]): string => `
 
 const renderTestCard = (test: ReportData['tests'][0]): string => `
   <div class="bg-white rounded-lg shadow overflow-hidden">
-    ${test.imageUrl
-      ? `<img src="${escapeHtml(test.imageUrl)}" alt="Generated image" class="w-full aspect-square object-cover" loading="lazy">`
-      : `<div class="w-full aspect-square bg-gray-200 flex items-center justify-center text-gray-500">No image</div>`
-    }
+    ${renderImageSection(test.imageUrl, test.sourceImageUrl)}
     <div class="p-4">
       <div class="flex items-center justify-between mb-2">
         <span class="font-semibold">${test.score.toFixed(1)}/10</span>
@@ -546,9 +589,7 @@ const generateHTML = (data: ReportData, comparison?: ComparisonData | null): str
 </html>
 `;
 
-export const reportCommand = async (args: string[]): Promise<void> => {
-  const options = parseReportOptions(args);
-
+export const runReport = async (options: ReportOptions): Promise<string | null> => {
   console.log(`\n📋 Prompt Bench: Report`);
   console.log(`─────────────────────────────────`);
   console.log(`Label: ${options.label}`);
@@ -566,6 +607,7 @@ export const reportCommand = async (args: string[]): Promise<void> => {
       id,
       final_prompt,
       image_url,
+      source_image_url,
       status,
       duration_ms,
       cost_usd,
@@ -584,7 +626,7 @@ export const reportCommand = async (args: string[]): Promise<void> => {
 
   if (!tests || tests.length === 0) {
     console.log(`No tests found for label "${options.label}"`);
-    return;
+    return null;
   }
 
   // Extract scores and build report data
@@ -593,7 +635,7 @@ export const reportCommand = async (args: string[]): Promise<void> => {
   if (scoredTests.length === 0) {
     console.log(`No evaluated tests found for label "${options.label}"`);
     console.log(`Run: npm run bench evaluate --label "${options.label}"`);
-    return;
+    return null;
   }
 
   const scores = scoredTests.map((t) => t.score);
@@ -615,6 +657,7 @@ export const reportCommand = async (args: string[]): Promise<void> => {
         id,
         final_prompt,
         image_url,
+        source_image_url,
         status,
         duration_ms,
         cost_usd,
@@ -638,7 +681,7 @@ export const reportCommand = async (args: string[]): Promise<void> => {
 
     // Process baseline tests
     const baselineScoredTests = processTests(baselineTests);
-    const baselineScores = baselineScoredTests.map(t => t.score);
+    const baselineScores = baselineScoredTests.map((t) => t.score);
 
     if (baselineScoredTests.length === 0) {
       console.error(`No evaluated tests found for baseline "${options.baseline}"`);
@@ -684,11 +727,11 @@ export const reportCommand = async (args: string[]): Promise<void> => {
       testCount: scoredTests.length,
       stats: summarize(scores),
       scoreDistribution: getScoreDistribution(scores),
-      topTests: sortedByScore.slice(0, 3).map(t => ({
+      topTests: sortedByScore.slice(0, 3).map((t) => ({
         score: t.score,
         prompt: t.prompt,
       })),
-      bottomTests: sortedByScore.slice(-3).reverse().map(t => ({
+      bottomTests: sortedByScore.slice(-3).reverse().map((t) => ({
         score: t.score,
         prompt: t.prompt,
       })),
@@ -756,11 +799,31 @@ export const reportCommand = async (args: string[]): Promise<void> => {
   if (options.showUrls) {
     console.log(`\n📷 Image URLs:`);
     console.log(`─────────────────────────────────`);
-    const sortedByScore = [...scoredTests].sort((a, b) => b.score - a.score);
-    for (const test of sortedByScore) {
+    const sortedByScoreWithUrls = [...scoredTests].sort((a, b) => b.score - a.score);
+    for (const test of sortedByScoreWithUrls) {
       if (test.imageUrl) {
         console.log(`[${test.score.toFixed(1)}] ${test.imageUrl}`);
       }
     }
   }
+
+  return outputPath;
+};
+
+export const reportCommand = async (args: string[]): Promise<void> => {
+  const options = parseReportOptions(args);
+  await runReport(options);
+};
+
+export const autoReportForLabel = async (label: string): Promise<string | null> => {
+  const config = loadConfig();
+
+  const options: ReportOptions = {
+    label,
+    baseline: config?.defaults.baseline_label || undefined,
+    insights: config?.defaults.report?.insights ?? false,
+    showUrls: config?.defaults.report?.show_urls ?? false,
+  };
+
+  return runReport(options);
 };

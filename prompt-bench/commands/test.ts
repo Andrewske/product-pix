@@ -3,10 +3,12 @@
  */
 
 import { parseArgs } from 'node:util';
+ 
+ import { runPipeline, generateBatchLabel } from '@bench/core/orchestrator';
+ import { createProgressBar, displayPipelineSummary } from './progress';
+ import { loadConfig } from './shared';
+ import { autoReportForLabel } from './report';
 
-import { runPipeline, generateBatchLabel } from '@bench/core/orchestrator';
-import { createProgressBar, displayPipelineSummary } from './progress';
-import { loadConfig } from './shared';
 
 interface TestOptions {
   template: string;
@@ -126,7 +128,13 @@ export const testCommand = async (args: string[]): Promise<void> => {
   // Output
   if (options.json) {
     console.log(JSON.stringify(result.data, null, 2));
-  } else if (!options.quiet) {
-    displayPipelineSummary(result.data);
+  } else {
+    if (!options.quiet) {
+      displayPipelineSummary(result.data);
+    }
+
+    if (!options.skipReport) {
+      await autoReportForLabel(batchLabel);
+    }
   }
 };
