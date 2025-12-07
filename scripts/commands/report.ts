@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { summarize } from '@/lib/prompts/statistics';
 import { generateInsights, BatchSummary, InsightResult } from './insights';
+import { loadConfig } from './shared';
 
 const REPORTS_DIR = join(process.cwd(), 'reports');
 
@@ -69,13 +70,15 @@ interface ComparisonData {
 }
 
 const parseReportOptions = (args: string[]): ReportOptions => {
+  const config = loadConfig();
+
   const { values } = parseArgs({
     args,
     options: {
       label: { type: 'string', short: 'l' },
       baseline: { type: 'string', short: 'b' },
-      insights: { type: 'boolean', default: false },
-      urls: { type: 'boolean', default: false },
+      insights: { type: 'boolean' },
+      urls: { type: 'boolean' },
     },
   });
 
@@ -86,9 +89,9 @@ const parseReportOptions = (args: string[]): ReportOptions => {
 
   return {
     label: values.label,
-    baseline: values.baseline,
-    insights: values.insights ?? false,
-    showUrls: values.urls ?? false,
+    baseline: values.baseline || config?.defaults.baseline_label || undefined,
+    insights: values.insights ?? config?.defaults.report?.insights ?? false,
+    showUrls: values.urls ?? config?.defaults.report?.show_urls ?? false,
   };
 };
 

@@ -1,0 +1,30 @@
+# Prompt Bench Configuration
+# This file contains default values for CLI options to reduce repetitive command-line arguments
+#
+# Usage:
+# - Set defaults below to avoid typing common flags
+# - CLI flags will override these defaults
+# - File is optional - commands work without it
+
+[defaults]
+# Default template slug for run/test commands
+template = "ecommerce-base"
+
+# Default batch file path for run/test commands (relative to project root)
+batch_file = "tests/fixtures/products-mix.json"
+
+# Default label prefix for batches (timestamp will be appended)
+label_prefix = "batch"
+
+# Default model for evaluate command
+evaluation_model = "claude-sonnet-4-20250514"
+
+# Default baseline label for report/compare commands
+baseline_label = ""
+
+# Default settings for report command
+[defaults.report]
+# Generate AI insights by default
+insights = false
+# Show image URLs in report output
+show_urls = false

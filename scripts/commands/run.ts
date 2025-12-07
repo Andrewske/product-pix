@@ -14,7 +14,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import type { Json } from '@/types/database';
 import { createGeminiProvider } from '@/lib/ai/providers/gemini';
 import { uploadBuffer, getPublicUrl } from '@/lib/r2';
-import { sleep } from './shared';
+import { sleep, loadConfig } from './shared';
 
 interface RunOptions {
   template: string;
@@ -25,6 +25,8 @@ interface RunOptions {
 }
 
 const parseRunOptions = (args: string[]): RunOptions => {
+  const config = loadConfig();
+
   const { values } = parseArgs({
     args,
     options: {
@@ -36,20 +38,22 @@ const parseRunOptions = (args: string[]): RunOptions => {
     },
   });
 
-  if (!values.template) {
-    console.error('--template is required');
+  const template = values.template || config?.defaults.template;
+  if (!template) {
+    console.error('--template is required (or set template in prompt-bench.toml)');
     process.exit(1);
   }
 
-  if (!values.batch) {
-    console.error('--batch is required');
+  const batch = values.batch || config?.defaults.batch_file;
+  if (!batch) {
+    console.error('--batch is required (or set batch_file in prompt-bench.toml)');
     process.exit(1);
   }
 
   return {
-    template: values.template,
+    template,
     version: values.version === 'latest' ? 'latest' : parseInt(values.version, 10),
-    batchFile: values.batch,
+    batchFile: batch,
     label: values.label,
     dryRun: values['dry-run'] ?? false,
   };
@@ -100,7 +104,9 @@ export const runCommand = async (args: string[]): Promise<void> => {
     process.exit(1);
   }
   const batch = batchResult.data;
-  const batchLabel = options.label || batch.label || `batch-${Date.now()}`;
+  const config = loadConfig();
+  const defaultLabelPrefix = config?.defaults.label_prefix || 'batch';
+  const batchLabel = options.label || batch.label || `${defaultLabelPrefix}-${Date.now()}`;
 
   console.log(`📦 Loaded ${batch.tests.length} tests from batch file`);
 

@@ -5,7 +5,7 @@
 import { parseArgs } from 'node:util';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { fetchBatchScores } from './shared';
+import { fetchBatchScores, loadConfig } from './shared';
 
 interface CompareOptions {
   baseline: string;
@@ -13,6 +13,8 @@ interface CompareOptions {
 }
 
 const parseCompareOptions = (args: string[]): CompareOptions => {
+  const config = loadConfig();
+
   const { values } = parseArgs({
     args,
     options: {
@@ -21,8 +23,9 @@ const parseCompareOptions = (args: string[]): CompareOptions => {
     },
   });
 
-  if (!values.baseline) {
-    console.error('--baseline is required');
+  const baseline = values.baseline || config?.defaults.baseline_label;
+  if (!baseline) {
+    console.error('--baseline is required (or set baseline_label in prompt-bench.toml)');
     process.exit(1);
   }
 
@@ -32,7 +35,7 @@ const parseCompareOptions = (args: string[]): CompareOptions => {
   }
 
   return {
-    baseline: values.baseline,
+    baseline,
     candidate: values.candidate,
   };
 };

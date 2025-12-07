@@ -5,6 +5,7 @@
 import { parseArgs } from 'node:util';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { loadConfig } from './shared';
 import type { Json } from '@/types/database';
 
 interface EvaluateOptions {
@@ -13,11 +14,13 @@ interface EvaluateOptions {
 }
 
 const parseEvaluateOptions = (args: string[]): EvaluateOptions => {
+  const config = loadConfig();
+
   const { values } = parseArgs({
     args,
     options: {
       label: { type: 'string', short: 'l' },
-      model: { type: 'string', short: 'm', default: 'claude-sonnet-4-20250514' },
+      model: { type: 'string', short: 'm' },
     },
   });
 
@@ -28,7 +31,7 @@ const parseEvaluateOptions = (args: string[]): EvaluateOptions => {
 
   return {
     label: values.label,
-    model: values.model ?? 'claude-sonnet-4-20250514',
+    model: values.model || config?.defaults.evaluation_model || 'claude-sonnet-4-20250514',
   };
 };
 

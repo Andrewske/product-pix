@@ -6,6 +6,7 @@ import { parseArgs } from 'node:util';
 
 import { runPipeline, generateBatchLabel } from '@/lib/prompts/orchestrator';
 import { createProgressBar, displayPipelineSummary } from './progress';
+import { loadConfig } from './shared';
 
 interface TestOptions {
   template: string;
@@ -22,6 +23,8 @@ interface TestOptions {
 }
 
 const parseTestOptions = (args: string[]): TestOptions => {
+  const config = loadConfig();
+
   const { values } = parseArgs({
     args,
     options: {
@@ -35,24 +38,27 @@ const parseTestOptions = (args: string[]): TestOptions => {
       'dry-run': { type: 'boolean', default: false },
       quiet: { type: 'boolean', short: 'q', default: false },
       json: { type: 'boolean', default: false },
-      'eval-model': { type: 'string', default: 'claude-sonnet-4-20250514' },
+      'eval-model': { type: 'string' },
     },
   });
 
   // Validation
-  if (!values.template) {
-    console.error('Error: --template is required');
+  const template = values.template || config?.defaults.template;
+  if (!template) {
+    console.error('Error: --template is required (or set template in prompt-bench.toml)');
     process.exit(1);
   }
-  if (!values.batch) {
-    console.error('Error: --batch is required');
+
+  const batch = values.batch || config?.defaults.batch_file;
+  if (!batch) {
+    console.error('Error: --batch is required (or set batch_file in prompt-bench.toml)');
     process.exit(1);
   }
 
   return {
-    template: values.template,
+    template,
     version: values.version === 'latest' ? 'latest' : parseInt(values.version, 10),
-    batchFile: values.batch,
+    batchFile: batch,
     label: values.label,
     skipSync: values['no-sync'] ?? false,
     skipEval: values['no-eval'] ?? false,
@@ -60,7 +66,7 @@ const parseTestOptions = (args: string[]): TestOptions => {
     dryRun: values['dry-run'] ?? false,
     quiet: values.quiet ?? false,
     json: values.json ?? false,
-    evalModel: values['eval-model'] ?? 'claude-sonnet-4-20250514',
+    evalModel: values['eval-model'] || config?.defaults.evaluation_model || 'claude-sonnet-4-20250514',
   };
 };
 
