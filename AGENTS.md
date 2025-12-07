@@ -37,7 +37,7 @@
 
 ## Prompt Bench
 - **Config**: `prompt-bench.toml` in project root for default CLI options
-- **Commands**: `bunbench <command>` (test, run, evaluate, compare, report, sync)
+- **Commands**: `bun bench <command>` (test, run, evaluate, compare, report, sync)
 - **Templates**: Located in `src/lib/prompts/templates/`
 - **Batches**: JSON files in `tests/fixtures/` or custom paths</content>
 <parameter name="filePath">AGENTS.md

@@ -7,6 +7,7 @@ import {
   PromptTestError,
 } from '@bench/core/errors';
 import { EvaluationDetails, ScoreSchema } from '@bench/core/types';
+import { downloadBuffer } from '@/lib/r2';
 
 // =============================================================================
 // Constants
@@ -125,16 +126,21 @@ const parseEvaluationResponse = (text: string): Result<EvaluationDetails & { ove
 // Main Evaluator
 // =============================================================================
 
+export interface ImageInput {
+  type: 'url' | 'key';
+  value: string;
+}
+
 /**
  * Evaluate a generated image using Claude's vision capabilities
  *
- * @param imageUrl - Public URL of the image to evaluate
+ * @param imageInput - Image URL or R2 key
  * @param originalPrompt - The prompt used to generate the image
  * @param options - Evaluation options
  * @returns Result with evaluation scores or error
  */
 export const evaluateImage = async (
-  imageUrl: string,
+  imageInput: ImageInput,
   originalPrompt: string,
   options: EvaluateOptions = {}
 ): Promise<Result<EvaluationResult>> => {
@@ -145,8 +151,37 @@ export const evaluateImage = async (
     return err(createError('VALIDATION_ERROR', 'ANTHROPIC_API_KEY environment variable is required'));
   }
 
+  // Download image if using R2 key
+  let imageBase64: string | undefined;
+  let detectedMediaType: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' = 'image/png';
+
+  if (imageInput.type === 'key') {
+    try {
+      const buffer = await downloadBuffer(imageInput.value);
+      imageBase64 = buffer.toString('base64');
+
+      // Detect image format from magic bytes
+      if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+        detectedMediaType = 'image/jpeg';
+      } else if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+        detectedMediaType = 'image/png';
+      } else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) {
+        detectedMediaType = 'image/webp';
+      } else if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
+        detectedMediaType = 'image/gif';
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return err(createError('EVALUATION_ERROR', `Failed to download image: ${message}`));
+    }
+  }
+
   const client = new Anthropic({ apiKey });
   let lastError: PromptTestError = createError('EVALUATION_ERROR', 'Evaluation failed after max retries');
+
+  const imageSource = imageBase64
+    ? { type: 'base64' as const, media_type: detectedMediaType, data: imageBase64 }
+    : { type: 'url' as const, url: imageInput.value };
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -159,10 +194,7 @@ export const evaluateImage = async (
             content: [
               {
                 type: 'image',
-                source: {
-                  type: 'url',
-                  url: imageUrl,
-                },
+                source: imageSource,
               },
               {
                 type: 'text',
@@ -226,7 +258,7 @@ export const evaluateImage = async (
  * Evaluate multiple images in sequence with rate limiting
  */
 export const evaluateBatch = async (
-  tests: Array<{ id: string; imageUrl: string; prompt: string }>,
+  tests: Array<{ id: string; imageKey: string; prompt: string }>,
   options: EvaluateOptions = {},
   onProgress?: (completed: number, total: number) => void
 ): Promise<Array<{ id: string; result: Result<EvaluationResult> }>> => {
@@ -234,7 +266,7 @@ export const evaluateBatch = async (
 
   for (let i = 0; i < tests.length; i++) {
     const test = tests[i];
-    const result = await evaluateImage(test.imageUrl, test.prompt, options);
+    const result = await evaluateImage({ type: 'key', value: test.imageKey }, test.prompt, options);
     results.push({ id: test.id, result });
 
     if (onProgress) {

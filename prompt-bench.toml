@@ -11,7 +11,7 @@
 template = "ecommerce-base"
 
 # Default batch file path for run/test commands (relative to project root)
-batch_file = "tests/fixtures/products-mix.json"
+batch_file = "prompt-bench/fixtures/products-mix.json"
 
 # Default label prefix for batches (timestamp will be appended)
 label_prefix = "batch"
@@ -25,6 +25,6 @@ baseline_label = ""
 # Default settings for report command
 [defaults.report]
 # Generate AI insights by default
-insights = false
+insights = true
 # Show image URLs in report output
 show_urls = false

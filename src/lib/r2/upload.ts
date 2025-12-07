@@ -1,4 +1,4 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from './client';
 
 interface UploadResult {
@@ -43,4 +43,23 @@ export const uploadBase64Image = async (
   const contentType = `image/${format}`;
 
   return uploadBuffer(buffer, fileKey, contentType);
+};
+
+/**
+ * Download a file from R2 as a Buffer
+ */
+export const downloadBuffer = async (fileKey: string): Promise<Buffer> => {
+  const command = new GetObjectCommand({
+    Bucket: R2_BUCKET(),
+    Key: fileKey,
+  });
+
+  const response = await r2Client().send(command);
+  const bytes = await response.Body?.transformToByteArray();
+
+  if (!bytes) {
+    throw new Error(`Failed to download file: ${fileKey}`);
+  }
+
+  return Buffer.from(bytes);
 };

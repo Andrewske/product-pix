@@ -371,19 +371,24 @@ const evaluatePhase = async (
 
   onProgress?.('evaluate', 0, 1, 'Fetching tests for evaluation...');
 
-  // Fetch tests that need evaluation
-  const { data: tests, error } = await supabase
+  // Fetch tests that need evaluation (no existing evaluation record)
+  // First get all completed tests, then filter out those with evaluations
+  const { data: allTests, error: testsError } = await supabase
     .from('prompt_tests')
-    .select('*')
+    .select('*, prompt_evaluations(id)')
     .eq('batch_label', batchLabel)
-    .eq('status', 'completed')
-    .is('evaluation_id', null);
+    .eq('status', 'completed');
 
-  if (error) {
-    return err(createError('DATABASE_ERROR', `Failed to fetch tests: ${error.message}`));
+  if (testsError) {
+    return err(createError('DATABASE_ERROR', `Failed to fetch tests: ${testsError.message}`));
   }
 
-  if (!tests || tests.length === 0) {
+  // Filter to only tests without evaluations
+  const tests = allTests?.filter(t =>
+    !t.prompt_evaluations || t.prompt_evaluations.length === 0
+  ) ?? [];
+
+  if (tests.length === 0) {
     onProgress?.('evaluate', 1, 1, 'No tests to evaluate');
     return ok({ completed: 0, failed: 0 });
   }
@@ -398,7 +403,7 @@ const evaluatePhase = async (
   // Prepare evaluation inputs
   const evaluationInputs = tests.map(test => ({
     id: test.id,
-    imageUrl: test.image_url!,
+    imageKey: test.image_key!,
     prompt: test.final_prompt,
   }));
 
@@ -443,6 +448,7 @@ const evaluatePhase = async (
       }
     } else {
       // Update test with evaluation error
+      console.error(`Evaluation failed for test ${id}: ${result.error.message}`);
       await (supabase
         .from('prompt_tests')
         .update({
