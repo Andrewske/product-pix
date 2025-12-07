@@ -1,169 +1,202 @@
 # Enhanced Report Generation Plan
 
 ## Overview
-This plan outlines the implementation of an enhanced report generation system for the ProductPix prompt testing framework, replacing basic console output with rich HTML reports, automated insights, and comprehensive analytics.
 
-## Selected Features
+This plan outlines the implementation of an enhanced report generation system for the ProductPix prompt testing framework, replacing basic console output with rich HTML reports and optional AI-powered insights.
 
-### 1. HTML Reports with Version Comparison ✅
-- Replace markdown with responsive HTML using Tailwind CSS
-- Add `--baseline <label>` flag for comparing current batch against previous runs
-- Show side-by-side image comparisons with score deltas
-- Highlight prompt changes with syntax highlighting
+## Design Principles
 
-### 2. Automated Insight Generation ✅
-- Use Claude to analyze completed batch results
-- Generate "Key Findings" section identifying patterns
-- Create "Optimization Recommendations" based on evaluation data
-- Add "Next Steps" with specific prompt improvement suggestions
+1. **Simplicity first** - No external templating engines or chart libraries
+2. **Zero new dependencies** - Use template literals and CSS-based visualizations
+3. **Opt-in complexity** - Expensive operations (Claude insights) require explicit flags
+4. **Leverage existing code** - Reuse `compare.ts` and `statistics.ts` for comparisons
 
-### 3. CSV Export ✅
-- Add `--csv` flag to generate structured data export
-- Include all test details, scores, parameters, and metadata
-- Format suitable for spreadsheet analysis and data science tools
+## Features
 
-### 4. Performance Trend Analysis ✅
-- Track metrics across multiple batches over time
-- Generate trend charts showing score evolution
-- Include generation speed and cost efficiency metrics
-- Add batch-to-batch comparison tables
+### 1. HTML Reports (Default Output)
+- Responsive HTML using inline Tailwind CSS
+- CSS-based bar charts for score visualization
+- Collapsible sections for detailed test data
+- Image gallery with lazy loading
+- Print-friendly styling
 
-### 5. Cost Optimization Insights ✅
-- Calculate cost per score point improvement
-- Identify expensive vs. cost-effective parameter combinations
-- Add budget recommendations for future testing
-- Show ROI analysis for different test strategies
+### 2. Version Comparison
+- `--baseline <label>` flag for comparing against previous batches
+- Side-by-side image comparisons with score deltas
+- Prompt diff highlighting showing what changed
+- Reuses existing `compare.ts` statistical analysis
 
-### 6. Custom Report Templates ✅
-- Create template system using Handlebars or EJS
-- Allow users to define custom sections and layouts
-- Support conditional rendering based on data
-- Include company branding and custom styling options
+### 3. Automated Insights (Opt-in)
+- `--insights` flag to enable Claude-powered analysis
+- Generates "Key Findings" identifying patterns in results
+- Creates "Optimization Recommendations" based on evaluation data
+- Adds "Next Steps" with specific prompt improvement suggestions
 
-### 7. Advanced Analytics Dashboard (Future) 🔮
-- Statistical significance testing between batches
-- Correlation analysis for prompt variables
-- Clustering to identify high-performing prompt patterns
-- Predictive modeling for optimal combinations
+## Deferred Features
 
-## Implementation Phases
+The following features are intentionally deferred to keep the initial implementation focused:
 
-### Phase 1: Core HTML Report Generation
+| Feature | Reason | Add Later If... |
+|---------|--------|-----------------|
+| CSV Export | Console + HTML sufficient for now | Users need spreadsheet analysis |
+| Custom Templates | YAGNI - adds complexity | Multiple teams need different formats |
+| Trend Tracking | Batch comparison covers the key use case | Need historical analysis across 5+ batches |
+| Cost Optimization | Scope creep | Budget tracking becomes a priority |
+
+## Implementation
+
+### Phase 1: Core HTML Report
 **Priority:** High
-**Timeline:** 1-2 weeks
 
-1. **HTML Report Structure**
-   - Create responsive HTML template with Tailwind CSS
-   - Add collapsible sections and image galleries
-   - Include interactive charts using Chart.js
-   - Add print-friendly CSS
+1. **HTML Generation** (`scripts/commands/report.ts`)
+   - Inline HTML generation using template literals
+   - Tailwind CSS embedded in `<style>` tag (no CDN dependency)
+   - CSS-based score bars (no Chart.js)
+   - Responsive grid layout for test results
 
-2. **Version Comparison System**
-   - Extend report command with `--baseline` flag
-   - Implement diff calculation for prompts
-   - Add side-by-side image comparison UI
-   - Syntax highlighting for prompt changes
+2. **Score Visualization**
+   - Horizontal bar charts using CSS `width: ${score * 10}%`
+   - Color coding: green (7+), yellow (5-6), red (<5)
+   - Summary statistics table (mean, median, std dev)
 
-3. **CSV Export**
-   - Add `--csv` flag to report command
-   - Generate comprehensive CSV with all test data
-   - Include metadata and evaluation details
+3. **Image Gallery**
+   - Grid of generated images with scores
+   - Click to expand for full-size view
+   - Lazy loading for performance
 
-### Phase 2: Intelligence Features
+### Phase 2: Comparison & Insights
 **Priority:** High
-**Timeline:** 1 week
 
-4. **Automated Insight Generation**
-   - Create new `insights.ts` module
-   - Integrate Claude API for batch analysis
-   - Generate structured insights and recommendations
-   - Add insights section to HTML reports
+4. **Baseline Comparison** (`--baseline` flag)
+   - Fetch both batches and compute diff
+   - Side-by-side layout in HTML
+   - Highlight score improvements/regressions
+   - Show prompt text diff with highlighting
 
-5. **Performance Trend Analysis**
-   - Create trend tracking system
-   - Generate historical comparison charts
-   - Add trend analysis to reports
-   - Implement batch-to-batch metrics
+5. **AI Insights** (`--insights` flag)
+   - Create `scripts/commands/insights.ts` module
+   - Call Claude with batch summary data
+   - Parse structured response into HTML sections
+   - Display only when flag is provided (saves cost/time)
 
-### Phase 3: Cost & Customization
-**Priority:** Medium
-**Timeline:** 1-2 weeks
+## CLI Interface
 
-6. **Cost Optimization Insights**
-   - Calculate cost efficiency metrics
-   - Add ROI analysis to reports
-   - Generate budget recommendations
-   - Identify cost-effective parameter combinations
-
-7. **Custom Report Templates**
-   - Implement Handlebars templating system
-   - Create default and custom template options
-   - Add template validation and error handling
-   - Support conditional sections and styling
-
-### Phase 4: Future Analytics
-**Priority:** Low
-**Timeline:** Future release
-
-8. **Advanced Analytics Dashboard**
-   - Statistical significance testing
-   - Correlation and clustering analysis
-   - Predictive modeling capabilities
-   - Enhanced visualization options
-
-## Technical Architecture
-
-### CLI Interface
 ```bash
-# Generate HTML report with comparison
-pnpm bench report --label "batch-2025-12-06" --baseline "batch-2025-12-05" --html
+# Generate HTML report (default behavior)
+pnpm bench report --label "batch-2025-12-06"
 
-# Export CSV data
-pnpm bench report --label "batch-2025-12-06" --csv results.csv
+# Compare against baseline batch
+pnpm bench report --label "batch-2025-12-06" --baseline "batch-2025-12-05"
 
-# Use custom template
-pnpm bench report --label "batch-2025-12-06" --template "custom-report.hbs"
+# Include AI-powered insights (costs API credits)
+pnpm bench report --label "batch-2025-12-06" --insights
+
+# Full report with comparison and insights
+pnpm bench report --label "batch-2025-12-06" --baseline "batch-2025-12-05" --insights
 ```
 
-### File Structure
+## File Structure
+
 ```
 scripts/commands/
-├── report.ts              # Enhanced with new options
-├── templates/
-│   ├── default-report.html.hbs
-│   ├── minimal-report.html.hbs
-│   └── custom-report.html.hbs
-└── insights.ts           # New: LLM-powered analysis
+├── report.ts          # Enhanced: HTML generation, comparison
+└── insights.ts        # New: Claude-powered analysis (opt-in)
 
-reports/                   # New directory
-├── batch-2025-12-06.html
-├── batch-2025-12-06.csv
-└── trends/
-    └── score-trends.json
+reports/               # Output directory
+└── batch-2025-12-06.html
 ```
 
-### Dependencies
-- `handlebars` - Template engine
-- `chart.js` - Interactive charts
-- `csv-writer` - CSV export functionality
-- Existing Claude integration for insights
+## Technical Approach
+
+### HTML Generation (No Dependencies)
+
+```typescript
+const generateHTML = (data: ReportData): string => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Report: ${data.label}</title>
+  <style>${getTailwindStyles()}</style>
+</head>
+<body class="bg-gray-50 p-8">
+  ${renderHeader(data)}
+  ${renderSummary(data)}
+  ${renderTestResults(data)}
+  ${data.insights ? renderInsights(data.insights) : ''}
+</body>
+</html>
+`;
+```
+
+### CSS-Based Charts (No Chart.js)
+
+```typescript
+const renderScoreBar = (score: number): string => {
+  const width = score * 10;
+  const color = score >= 7 ? 'bg-green-500' : score >= 5 ? 'bg-yellow-500' : 'bg-red-500';
+  return `
+    <div class="w-full bg-gray-200 rounded h-4">
+      <div class="${color} h-4 rounded" style="width: ${width}%"></div>
+    </div>
+  `;
+};
+```
+
+### Insights Module (Opt-in)
+
+```typescript
+// Only called when --insights flag is provided
+const generateInsights = async (batchData: BatchSummary): Promise<InsightResult> => {
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    messages: [{ role: 'user', content: buildInsightsPrompt(batchData) }],
+  });
+  return parseInsightsResponse(response);
+};
+```
 
 ## Data Flow
-1. Report Command → Fetch test + evaluation data
-2. Insights Engine → Generate AI analysis (optional)
-3. Template Engine → Render HTML with data
-4. CSV Generator → Export structured data
-5. Trend Analyzer → Compute historical metrics
+
+```
+report --label X [--baseline Y] [--insights]
+         │
+         ▼
+┌─────────────────────┐
+│ Fetch batch X data  │
+└─────────────────────┘
+         │
+         ▼ (if --baseline)
+┌─────────────────────┐
+│ Fetch batch Y data  │
+│ Compute comparison  │
+└─────────────────────┘
+         │
+         ▼ (if --insights)
+┌─────────────────────┐
+│ Call Claude API     │
+│ Parse insights      │
+└─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ Render HTML         │
+│ Write to reports/   │
+└─────────────────────┘
+```
 
 ## Success Metrics
-- Report generation time < 30 seconds for typical batches
-- HTML reports load and display correctly in all major browsers
-- CSV exports compatible with Excel/LibreOffice/Google Sheets
-- Insights provide actionable prompt improvement suggestions
-- Version comparison clearly shows prompt evolution and score changes
+
+- Report generation < 5 seconds (without insights)
+- Report generation < 30 seconds (with insights)
+- HTML renders correctly in Chrome, Firefox, Safari
+- No external runtime dependencies (works offline)
+- Clear visual distinction between score levels
 
 ## Risk Mitigation
+
 - Graceful degradation if Claude API unavailable for insights
-- Fallback to basic HTML reports if template rendering fails
-- Comprehensive error handling for data fetching and processing
-- Backward compatibility with existing report command usage
+- Informative error messages for missing batch labels
+- Backward compatibility: existing `report` command still works
+- Output directory created automatically if missing
