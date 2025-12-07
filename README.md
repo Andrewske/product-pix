@@ -25,10 +25,10 @@ AI-powered product photo generator for e-commerce sellers. Transform ordinary pr
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Start development server
-pnpm dev
+bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the app.
@@ -36,10 +36,10 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 ## Development Commands
 
 ```bash
-pnpm dev          # Start dev server
-pnpm build        # Production build
-pnpm test         # Run tests
-pnpm lint         # Run ESLint
+bun dev          # Start dev server
+bun build        # Production build
+bun test         # Run tests
+bun lint         # Run ESLint
 ```
 
 ## Environment Variables

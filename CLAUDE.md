@@ -9,28 +9,33 @@ ProductPix is a SaaS application that uses AI (Gemini) to generate professional 
 ## Commands
 
 ```bash
-pnpm dev      # Start development server (http://localhost:3000)
-pnpm build    # Production build
-pnpm lint     # Run ESLint
-pnpm start    # Start production server
+bun dev      # Start development server (http://localhost:3000)
+bun build    # Production build
+bun lint     # Run ESLint
+bun start    # Start production server
 ```
 
 ### Testing Commands
 
 ```bash
-pnpm test              # Run Jest tests
-pnpm test:watch        # Run tests in watch mode
-pnpm test:coverage     # Run tests with coverage report
+bun test              # Run Jest tests
+bun test:watch        # Run tests in watch mode
+bun test:coverage     # Run tests with coverage report
 ```
 
 ### Prompt Testing CLI
 
 ```bash
-pnpm bench run --template <slug> --batch <file> [--label <name>] [--dry-run]
-pnpm bench evaluate --label <batch-label>
-pnpm bench compare --baseline <label> --candidate <label>
-pnpm bench report --label <batch-label>
-pnpm bench sync    # Sync templates to database
+# Core workflow
+bun bench run --template <slug> --batch <file> [--label <name>] [--dry-run]
+bun bench evaluate --label <batch-label>
+bun bench compare --baseline <label> --candidate <label>
+bun bench report --label <batch-label> [--baseline <label>] [--insights]
+bun bench sync    # Sync templates to database
+
+# Additional commands
+bun bench test --template <slug> --batch <file>  # Full pipeline (sync→run→evaluate→report)
+bun bench progress --label <batch-label>         # Check batch progress
 ```
 
 ### Supabase Commands
@@ -47,8 +52,8 @@ npx supabase migration new    # Create new migration
 - **Framework**: Next.js 16 with App Router (React 19)
 - **Database**: Supabase (PostgreSQL with RLS)
 - **Storage**: Cloudflare R2 (S3-compatible, zero egress)
-- **AI**: Vercel AI SDK with Google Gemini
-- **Evaluation**: Anthropic Claude (for prompt evaluation)
+- **AI Generation**: Vercel AI SDK with Google Gemini (text-to-image and image-to-image)
+- **AI Evaluation**: Anthropic Claude (prompt evaluation and insights)
 - **Styling**: Tailwind CSS v4
 - **Rate Limiting**: Upstash Redis
 - **Testing**: Jest with ts-jest
@@ -68,7 +73,7 @@ src/
 │   └── auth/              # Auth components (login-form, signup-form)
 ├── lib/
 │   ├── ai/                # AI provider implementation
-│   │   ├── providers/     # Gemini provider (supports rawPrompt mode)
+│   │   ├── providers/     # Gemini provider (supports rawPrompt + image-to-image)
 │   │   └── generate-image.ts  # Core generation logic
 │   ├── db/                # Database queries (users, jobs, credits, uploads)
 │   ├── prompts/           # Prompt testing framework
@@ -78,6 +83,8 @@ src/
 │   │   ├── registry.ts    # In-code template definitions
 │   │   ├── evaluator.ts   # LLM-based image evaluation (Claude)
 │   │   ├── statistics.ts  # A/B testing statistics (Welch's t-test)
+│   │   ├── orchestrator.ts # Pipeline coordinator (sync→run→evaluate→report)
+│   │   ├── source-image.ts # Image-to-image source handling and R2 upload
 │   │   ├── db/            # Database operations for templates
 │   │   ├── templates/     # Template definitions (ecommerce-base, lifestyle-product)
 │   │   └── __tests__/     # Unit tests
@@ -94,11 +101,16 @@ scripts/
 │   ├── run.ts             # Execute prompt tests
 │   ├── evaluate.ts        # Score generated images with Claude
 │   ├── compare.ts         # A/B test comparison with statistical analysis
-│   ├── report.ts          # Generate batch reports
-│   └── sync.ts            # Sync templates to database
+│   ├── report.ts          # Generate HTML reports with optional AI insights
+│   ├── insights.ts        # AI-powered batch analysis using Claude
+│   ├── test.ts            # Full pipeline orchestration
+│   ├── progress.ts        # Batch progress monitoring
+│   ├── sync.ts            # Sync templates to database
+│   └── shared.ts          # Shared utilities across commands
 └── test-*.ts              # Ad-hoc AI testing scripts
 tests/
-└── fixtures/              # Test data (products-mix.json)
+└── fixtures/              # Test data (products-mix.json, images-batch.json)
+reports/                   # Generated HTML reports (gitignored)
 ```
 
 ### Database Schema (Supabase)
@@ -110,7 +122,7 @@ Key tables:
 - `generated_images`: Output images with metadata
 - `credit_transactions`: Credit ledger for purchases/generations/refunds
 - `prompt_templates`: Versioned prompt definitions with variable schemas
-- `prompt_tests`: Individual test generations with idempotency tracking
+- `prompt_tests`: Individual test generations with idempotency tracking (supports source images)
 - `prompt_evaluations`: LLM evaluation scores and feedback
 
 Key RPC functions:
@@ -136,12 +148,33 @@ A CLI-driven system for iterating on prompt templates:
 3. **Generation**: Run batches of test cases through Gemini with `rawPrompt` mode
 4. **Evaluation**: Score images 1-10 using Claude (composition, lighting, product visibility, etc.)
 5. **Statistics**: Compare batches with Welch's t-test for statistical significance
+6. **Reporting**: Generate HTML reports with baseline comparison and AI insights
 
 Key patterns:
 - Result type (`ok`/`err`) for error handling without exceptions
 - Idempotency keys prevent duplicate tests on script re-runs
 - Batch labels group tests for A/B comparisons
 - Test status: pending → generating → evaluating → completed/failed
+- Pipeline orchestrator for coordinated execution
+
+### Image-to-Image Testing
+
+The framework supports image-to-image generation for product photo transformation:
+
+```json
+{
+  "label": "my-batch",
+  "tests": [{
+    "sourceImage": "./images/product.jpg",
+    "variables": { "product": "suitcase", "style": "catalog" }
+  }]
+}
+```
+
+Source images are:
+- Resolved relative to batch file location
+- Uploaded to R2 with content-hash keys for deduplication
+- Passed to Gemini with the compiled prompt
 
 ### Storage Pattern (R2)
 
@@ -154,6 +187,7 @@ File paths:
 - Uploads: `uploads/{userId}/{timestamp}-{filename}`
 - Generated: `generated/{userId}/{jobId}.{format}`
 - Prompt tests: `prompt-tests/{testId}.png`
+- Source images: `prompt-tests/sources/{hash}.{ext}`
 
 ### Supabase Client Usage
 
@@ -165,10 +199,13 @@ File paths:
 
 Required variables are validated in `src/lib/env.ts`:
 - `GOOGLE_GENERATIVE_AI_API_KEY`: Gemini API
-- `ANTHROPIC_API_KEY`: Claude API (for prompt evaluation)
+- `GEMINI_MODEL`: Model ID (default: `gemini-3-pro-image-preview`)
+- `ANTHROPIC_API_KEY`: Claude API (for prompt evaluation and insights)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`
 - `NEXT_PUBLIC_APP_URL`
+
+See `.env.example` for full configuration template.
 
 ## Code Conventions
 
@@ -181,20 +218,30 @@ Required variables are validated in `src/lib/env.ts`:
 
 ## Package Manager
 
-This project uses **pnpm**. Do not use npm or yarn.
+This project uses **bun**. Do not use npm, yarn, or pnpm.
 
 ```bash
-pnpm install   # Install dependencies
-pnpm add <pkg> # Add a dependency
+bun install   # Install dependencies
+bun add <pkg> # Add a dependency
 ```
 
-## Recent Updates (2025-12-05)
+## Recent Updates (2025-12-06)
 
-### Prompt Testing Framework (testing-framework branch)
-Added a complete prompt testing system for iterating on image generation prompts:
+### Enhanced Report Generation
+- **HTML Reports**: `bun bench report` generates interactive HTML reports in `reports/` directory
+- **Baseline Comparison**: Compare against baseline batch with `--baseline <label>` flag
+- **AI Insights**: Add `--insights` flag for Claude-powered analysis of batch results
 
-- **New module**: `src/lib/prompts/` with types, compiler, evaluator, statistics
-- **CLI tool**: `pnpm bench` for running tests, evaluations, and A/B comparisons
-- **Database**: New tables for templates, tests, and evaluations (migrations 00009-00013)
-- **Dependencies**: Added `@anthropic-ai/sdk`, `jest`, `ts-jest`, `tsx`
-- **Gemini update**: Provider now supports `rawPrompt` option to bypass internal prompt processing
+### Image-to-Image Support
+- **Source Images**: Batch files can include `sourceImage` field for image-to-image tests
+- **R2 Upload**: Source images are automatically uploaded to R2 with content-hash deduplication
+- **Database**: New `source_image_url` and `source_image_key` columns in `prompt_tests` (migration 00014)
+
+### Pipeline Orchestrator
+- **New Module**: `src/lib/prompts/orchestrator.ts` coordinates sync→run→evaluate→report pipeline
+- **Test Command**: `bun bench test` runs full pipeline with progress callbacks
+- **Progress Command**: `bun bench progress` monitors batch execution status
+
+### CLI Improvements
+- **Insights Command**: Generates AI-powered analysis of batch performance
+- **Shared Utilities**: Common CLI utilities extracted to `scripts/commands/shared.ts`
