@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@bench/*": ["./prompt-bench/*"]
     }
   },
   "include": [

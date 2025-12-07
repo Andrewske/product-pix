@@ -5,7 +5,7 @@
  *
  * @example
  * ```typescript
- * import { compileTemplate, fetchTemplate, evaluateImage } from '@/lib/prompts';
+ * import { compileTemplate, fetchTemplate, evaluateImage } from '@bench/core/compiler';
  *
  * // Fetch a template
  * const template = await fetchTemplate('ecommerce-base', 'latest');
@@ -66,7 +66,7 @@ export {
   RunCommandOptionsSchema,
   EvaluateCommandOptionsSchema,
   CompareCommandOptionsSchema,
-} from './types';
+} from '@bench/core/types';
 
 // Errors
 export {
@@ -86,7 +86,7 @@ export {
   validateRequiredVariables,
   validateEnumValues,
   formatError,
-} from './errors';
+} from '@bench/core/errors';
 
 // Compiler
 export {
@@ -100,7 +100,7 @@ export {
   extractVariableNames,
   getTemplateVariables,
   validateTemplateVariables,
-} from './compiler';
+} from '@bench/core/compiler';
 
 // Registry
 export {
@@ -109,7 +109,7 @@ export {
   TEMPLATE_REGISTRY,
   getRegisteredTemplate,
   getRegisteredSlugs,
-} from './registry';
+} from '@bench/templates/registry';
 
 // Database operations
 export {
@@ -117,7 +117,7 @@ export {
   syncTemplate,
   syncAllTemplates,
   updateTemplateStatus,
-} from './db/templates';
+} from '@bench/db/templates';
 
 // Evaluator
 export {
@@ -125,7 +125,7 @@ export {
   type EvaluateOptions,
   evaluateImage,
   evaluateBatch,
-} from './evaluator';
+} from '@bench/core/evaluator';
 
 // Statistics
 export {
@@ -146,7 +146,7 @@ export {
   formatComparison,
   formatReport,
   getScoreDistribution,
-} from './statistics';
+} from '@bench/core/statistics';
 
 // Source image utilities
 export {
@@ -159,7 +159,7 @@ export {
   fetchSourceImage,
   uploadSourceImage,
   resolveSourceImage,
-} from './source-image';
+} from '@bench/core/source-image';
 
 // Orchestrator
 export {
@@ -168,4 +168,4 @@ export {
   type PipelineOptions,
   type PipelineResult,
   type ProgressCallback,
-} from './orchestrator';
+} from '@bench/core/orchestrator';

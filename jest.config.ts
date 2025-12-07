@@ -3,10 +3,11 @@ import type { Config } from 'jest';
 const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
+  roots: ['<rootDir>/src', '<rootDir>/prompt-bench'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@bench/(.*)$': '<rootDir>/prompt-bench/$1',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
@@ -17,6 +18,10 @@ const config: Config = {
     'src/lib/prompts/**/*.ts',
     '!src/lib/prompts/**/*.test.ts',
     '!src/lib/prompts/index.ts',
+    'prompt-bench/**/*.ts',
+    '!prompt-bench/**/*.test.ts',
+    '!prompt-bench/**/index.ts',
+    '!prompt-bench/fixtures/**',
   ],
   coverageThreshold: {
     global: {

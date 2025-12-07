@@ -38,6 +38,8 @@ bun bench test --template <slug> --batch <file>  # Full pipeline (sync→run→e
 bun bench progress --label <batch-label>         # Check batch progress
 ```
 
+Batch files: `prompt-bench/fixtures/*.json` or provide custom path
+
 ### Supabase Commands
 
 ```bash
@@ -76,41 +78,46 @@ src/
 │   │   ├── providers/     # Gemini provider (supports rawPrompt + image-to-image)
 │   │   └── generate-image.ts  # Core generation logic
 │   ├── db/                # Database queries (users, jobs, credits, uploads)
-│   ├── prompts/           # Prompt testing framework
-│   │   ├── types.ts       # Zod schemas for templates, tests, evaluations
-│   │   ├── errors.ts      # Result type and error handling utilities
-│   │   ├── compiler.ts    # Template compilation and variable substitution
-│   │   ├── registry.ts    # In-code template definitions
-│   │   ├── evaluator.ts   # LLM-based image evaluation (Claude)
-│   │   ├── statistics.ts  # A/B testing statistics (Welch's t-test)
-│   │   ├── orchestrator.ts # Pipeline coordinator (sync→run→evaluate→report)
-│   │   ├── source-image.ts # Image-to-image source handling and R2 upload
-│   │   ├── db/            # Database operations for templates
-│   │   ├── templates/     # Template definitions (ecommerce-base, lifestyle-product)
-│   │   └── __tests__/     # Unit tests
 │   ├── r2/                # R2 client, presigned URLs, upload utilities
 │   ├── supabase/          # Supabase clients (browser, server, admin)
 │   ├── auth/              # Auth utilities and hooks
 │   ├── rate-limit/        # Upstash rate limiting
 │   └── env.ts             # Environment validation (Zod)
-├── types/
-│   └── database.ts        # Generated Supabase types
-scripts/
-├── prompt-bench.ts        # CLI entry point for prompt testing
+└── types/
+    └── database.ts        # Generated Supabase types
+
+prompt-bench/               # Prompt testing CLI framework (isolated from main app)
+├── cli.ts                 # CLI entry point
 ├── commands/              # CLI command implementations
 │   ├── run.ts             # Execute prompt tests
 │   ├── evaluate.ts        # Score generated images with Claude
 │   ├── compare.ts         # A/B test comparison with statistical analysis
 │   ├── report.ts          # Generate HTML reports with optional AI insights
-│   ├── insights.ts        # AI-powered batch analysis using Claude
 │   ├── test.ts            # Full pipeline orchestration
-│   ├── progress.ts        # Batch progress monitoring
 │   ├── sync.ts            # Sync templates to database
+│   ├── progress.ts        # Batch progress monitoring
+│   ├── insights.ts        # AI-powered batch analysis
 │   └── shared.ts          # Shared utilities across commands
-└── test-*.ts              # Ad-hoc AI testing scripts
-tests/
-└── fixtures/              # Test data (products-mix.json, images-batch.json)
-reports/                   # Generated HTML reports (gitignored)
+├── core/                  # Core framework logic
+│   ├── types.ts           # Zod schemas for templates, tests, evaluations
+│   ├── errors.ts          # Result type and error handling utilities
+│   ├── compiler.ts        # Template compilation and variable substitution
+│   ├── evaluator.ts       # LLM-based image evaluation (Claude)
+│   ├── statistics.ts      # A/B testing statistics (Welch's t-test)
+│   ├── orchestrator.ts    # Pipeline coordinator
+│   └── source-image.ts    # Image-to-image source handling
+├── templates/             # Template definitions
+│   ├── registry.ts        # In-memory template registry
+│   ├── ecommerce-base.ts  # E-commerce product template
+│   └── lifestyle-product.ts # Lifestyle photography template
+├── db/                    # Database operations
+│   └── templates.ts       # Template CRUD operations
+├── __tests__/             # Unit tests
+├── fixtures/              # Test data (batch files, images)
+└── index.ts               # Barrel exports
+
+scripts/                    # Ad-hoc utility scripts
+reports/                    # Generated HTML reports (gitignored)
 ```
 
 ### Database Schema (Supabase)
@@ -141,7 +148,7 @@ Key RPC functions:
 
 ### Prompt Testing Framework
 
-A CLI-driven system for iterating on prompt templates:
+A CLI-driven system for iterating on prompt templates, located in `prompt-bench/`:
 
 1. **Templates**: Define prompt components (subject, lighting, background, etc.) with typed variables
 2. **Compilation**: Substitute variables into templates, generate idempotency keys
@@ -156,6 +163,8 @@ Key patterns:
 - Batch labels group tests for A/B comparisons
 - Test status: pending → generating → evaluating → completed/failed
 - Pipeline orchestrator for coordinated execution
+
+Batch file location: `prompt-bench/fixtures/` or custom path
 
 ### Image-to-Image Testing
 
@@ -213,8 +222,9 @@ See `.env.example` for full configuration template.
 - All lib modules export via index.ts barrel files
 - API routes use Zod for request validation
 - Database queries in `src/lib/db/` with typed helpers
-- Result type (`ok`/`err`) for operations that can fail in `src/lib/prompts/`
+- Result type (`ok`/`err`) for operations that can fail in `prompt-bench/core/`
 - Path alias: `@/*` maps to `./src/*`
+- Path alias: `@bench/*` maps to `./prompt-bench/*`
 
 ## Package Manager
 
@@ -238,10 +248,10 @@ bun add <pkg> # Add a dependency
 - **Database**: New `source_image_url` and `source_image_key` columns in `prompt_tests` (migration 00014)
 
 ### Pipeline Orchestrator
-- **New Module**: `src/lib/prompts/orchestrator.ts` coordinates sync→run→evaluate→report pipeline
+- **New Module**: `prompt-bench/core/orchestrator.ts` coordinates sync→run→evaluate→report pipeline
 - **Test Command**: `bun bench test` runs full pipeline with progress callbacks
 - **Progress Command**: `bun bench progress` monitors batch execution status
 
 ### CLI Improvements
 - **Insights Command**: Generates AI-powered analysis of batch performance
-- **Shared Utilities**: Common CLI utilities extracted to `scripts/commands/shared.ts`
+- **Shared Utilities**: Common CLI utilities extracted to `prompt-bench/commands/shared.ts`
