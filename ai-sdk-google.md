@@ -10,7 +10,7 @@ The Google provider is available in the `@ai-sdk/google` module. You can install
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   <Tab>
-    <Snippet text="pnpm add @ai-sdk/google" dark />
+    <Snippet text="bunadd @ai-sdk/google" dark />
   </Tab>
   <Tab>
     <Snippet text="npm install @ai-sdk/google" dark />

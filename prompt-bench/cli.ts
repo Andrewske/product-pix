@@ -3,12 +3,12 @@
  * Prompt Testing CLI
  *
  * Usage:
- *   pnpm bench test --template <slug> --batch <file> [options]  # Unified pipeline
- *   pnpm bench run --template <slug> --batch <file> [options]
- *   pnpm bench evaluate --label <batch-label>
- *   pnpm bench compare --baseline <label> --candidate <label>
- *   pnpm bench report --label <batch-label>
- *   pnpm bench sync
+ *   bunbench test --template <slug> --batch <file> [options]  # Unified pipeline
+ *   bunbench run --template <slug> --batch <file> [options]
+ *   bunbench evaluate --label <batch-label>
+ *   bunbench compare --baseline <label> --candidate <label>
+ *   bunbench report --label <batch-label>
+ *   bunbench sync
  */
 
 // IMPORTANT: Load environment variables FIRST before any other imports
