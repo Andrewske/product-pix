@@ -47,8 +47,7 @@ show_urls = false
 
 [pricing.google]
 "gemini-2.5-pro" = { input = 1.25, output = 5.0 }
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
-"gemini-2.5-flash-image-preview" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 
 # NOTE: No [pricing.fallback] section
 # Fallback is computed dynamically on config load:

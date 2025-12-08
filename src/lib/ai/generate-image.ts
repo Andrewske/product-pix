@@ -97,7 +97,7 @@ export const generateImage = async (
 
     // Calculate and store generation cost
     if (result.usage) {
-      const costResult = calculateCost('gemini-2.5-flash', {
+      const costResult = calculateCost('gemini-3-pro-image-preview', {
         input: result.usage.promptTokens,
         output: result.usage.completionTokens,
       });
@@ -111,7 +111,7 @@ export const generateImage = async (
         await createGenerationCost({
           jobId,
           generatedImageId: generatedImage?.id,
-          modelId: 'gemini-2.5-flash',
+          modelId: 'gemini-3-pro-image-preview',
           provider: costData.provider,
           inputTokens: result.usage.promptTokens,
           outputTokens: result.usage.completionTokens,

@@ -20,7 +20,7 @@ const mockConfig = {
     'gpt-4o-mini': { input: 0.15, output: 0.6 },
   },
   google: {
-    'gemini-2.5-flash': { input: 0.075, output: 0.3 },
+    'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 },
   },
   fallback: { input: 22.5, output: 112.5 },
   fallbackSource: 'anthropic.claude-opus-4-5',
@@ -45,7 +45,7 @@ describe('Model to Provider Mapping', () => {
     });
 
     it('should return google for Gemini models', () => {
-      expect(getProviderForModel('gemini-2.5-flash')).toBe('google');
+      expect(getProviderForModel('gemini-3-pro-image-preview')).toBe('google');
     });
 
     it('should return unknown for unrecognized prefixes', () => {
@@ -78,7 +78,7 @@ describe('Model to Provider Mapping', () => {
     });
 
     it('should return correct pricing for known Google models', () => {
-      expect(getPricingForModel('gemini-2.5-flash')).toEqual({ input: 0.075, output: 0.3 });
+      expect(getPricingForModel('gemini-3-pro-image-preview')).toEqual({ input: 0.075, output: 0.3 });
     });
 
     it('should return fallback pricing for unknown models', () => {
@@ -111,7 +111,7 @@ describe('Model to Provider Mapping', () => {
     });
 
     it('should strip version suffixes (major.minor)', () => {
-      expect(getProviderForModel('gemini-2.5-flash-1.0')).toBe('google');
+      expect(getProviderForModel('gemini-3-pro-image-preview-1.0')).toBe('google');
       expect(getProviderForModel('gpt-4o-2.1')).toBe('openai'); // Strips to gpt-4o
     });
 

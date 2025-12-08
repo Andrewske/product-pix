@@ -77,7 +77,7 @@ const fixtures: ValidationFixture[] = [
     source: 'https://openai.com/pricing (verified 2025-12-08)',
   },
   {
-    modelId: 'gemini-2.5-flash',
+    modelId: 'gemini-3-pro-image-preview',
     usage: { input: 1000000, output: 500000 },
     expectedCost: {
       inputCost: 0.075,

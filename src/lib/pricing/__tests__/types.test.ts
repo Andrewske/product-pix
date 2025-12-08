@@ -28,7 +28,7 @@ describe('Pricing Types', () => {
         'gpt-4o': { input: 2.5, output: 10.0 },
       },
       google: {
-        'gemini-2.5-flash': { input: 0.075, output: 0.3 },
+        'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 },
       },
       fallback: { input: 22.5, output: 112.5 },
       fallbackSource: 'claude-opus-4-5',

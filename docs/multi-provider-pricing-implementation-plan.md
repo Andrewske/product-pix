@@ -62,7 +62,7 @@ Implement a shared pricing calculation system that supports multiple AI provider
   - Models to include:
     - Anthropic: claude-sonnet-4, claude-sonnet-4-20250514, claude-opus-4, claude-opus-4-5, claude-haiku-4
     - OpenAI: gpt-4o, gpt-4o-mini, gpt-4-turbo
-    - Google: gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-image-preview
+    - Google: gemini-2.5-pro, gemini-3-pro-image-preview, gemini-3-pro-image-preview
   - Acceptance: Valid TOML syntax, pricing values are numbers
 
 ### Phase 2: Core Pricing Logic
@@ -202,7 +202,7 @@ Implement a shared pricing calculation system that supports multiple AI provider
   - Test cases:
     - Known Anthropic model (claude-sonnet-4-20250514)
     - Known OpenAI model (gpt-4o)
-    - Known Google model (gemini-2.5-flash)
+    - Known Google model (gemini-3-pro-image-preview)
     - Unknown model uses fallback
     - Zero tokens
     - Negative tokens validation
@@ -386,8 +386,8 @@ Implement a shared pricing calculation system that supports multiple AI provider
 
 [pricing.google]
 "gemini-2.5-pro" = { input = 1.25, output = 5.0 }
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
-"gemini-2.5-flash-image-preview" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 
 # Fallback pricing for unknown models (conservative estimate)
 [pricing.fallback]

@@ -333,7 +333,7 @@ const runPhase = async (
       // Calculate generation cost
       let generationCost = 0;
       if (generationResult.usage) {
-        const costResult = calculateCost('gemini-2.5-flash', {
+        const costResult = calculateCost('gemini-3-pro-image-preview', {
           input: generationResult.usage.promptTokens,
           output: generationResult.usage.completionTokens,
         });

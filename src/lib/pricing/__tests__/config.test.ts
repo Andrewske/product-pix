@@ -30,7 +30,7 @@ describe('Pricing Config Loader', () => {
 "gpt-4o" = { input = 2.5, output = 10.0 }
 
 [pricing.google]
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 `;
 
     mockReadFileSync.mockReturnValue(mockToml);
@@ -38,7 +38,7 @@ describe('Pricing Config Loader', () => {
       pricing: {
         anthropic: { 'claude-sonnet-4': { input: 3.0, output: 15.0 } },
         openai: { 'gpt-4o': { input: 2.5, output: 10.0 } },
-        google: { 'gemini-2.5-flash': { input: 0.075, output: 0.3 } },
+        google: { 'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 } },
       },
     });
 
@@ -46,7 +46,7 @@ describe('Pricing Config Loader', () => {
 
     expect(config.anthropic['claude-sonnet-4']).toEqual({ input: 3.0, output: 15.0 });
     expect(config.openai['gpt-4o']).toEqual({ input: 2.5, output: 10.0 });
-    expect(config.google['gemini-2.5-flash']).toEqual({ input: 0.075, output: 0.3 });
+    expect(config.google['gemini-3-pro-image-preview']).toEqual({ input: 0.075, output: 0.3 });
     expect(config.fallback).toEqual({ input: 22.5, output: 112.5 }); // Based on real config max
     expect(config.fallbackSource).toBe('anthropic.claude-sonnet-4');
   });
@@ -99,13 +99,13 @@ describe('Pricing Config Loader', () => {
 "gpt-4o" = { input = 2.5, output = 10.0 }
 
 [pricing.google]
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 `);
     mockParse.mockReturnValue({
       pricing: {
         anthropic: { 'claude-sonnet-4': { input: '3.0', output: 15.0 } },
         openai: { 'gpt-4o': { input: 2.5, output: 10.0 } },
-        google: { 'gemini-2.5-flash': { input: 0.075, output: 0.3 } },
+        google: { 'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 } },
       },
     });
 
@@ -123,7 +123,7 @@ describe('Pricing Config Loader', () => {
 "gpt-4o" = { input = 2.5, output = 10.0 }
 
 [pricing.google]
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 `;
 
     mockReadFileSync.mockReturnValue(mockToml);
@@ -131,7 +131,7 @@ describe('Pricing Config Loader', () => {
       pricing: {
         anthropic: { 'claude-sonnet-4': { input: 3.0, output: 15.0 } },
         openai: { 'gpt-4o': { input: 2.5, output: 10.0 } },
-        google: { 'gemini-2.5-flash': { input: 0.075, output: 0.3 } },
+        google: { 'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 } },
       },
     });
 
@@ -151,7 +151,7 @@ describe('Pricing Config Loader', () => {
 "gpt-4o" = { input = 2.5, output = 10.0 }
 
 [pricing.google]
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 `;
 
     mockReadFileSync.mockReturnValue(mockToml);
@@ -159,7 +159,7 @@ describe('Pricing Config Loader', () => {
       pricing: {
         anthropic: { 'claude-sonnet-4': { input: 3.0, output: 15.0 } },
         openai: { 'gpt-4o': { input: 2.5, output: 10.0 } },
-        google: { 'gemini-2.5-flash': { input: 0.075, output: 0.3 } },
+        google: { 'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 } },
       },
     });
 
@@ -180,7 +180,7 @@ describe('Pricing Config Loader', () => {
 "gpt-4o" = { input = 2.5, output = 10.0 }
 
 [pricing.google]
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 `;
 
     mockReadFileSync.mockReturnValue(mockToml);
@@ -188,7 +188,7 @@ describe('Pricing Config Loader', () => {
       pricing: {
         anthropic: { 'claude-opus-4-5': { input: 15.0, output: 75.0 } },
         openai: { 'gpt-4o': { input: 2.5, output: 10.0 } },
-        google: { 'gemini-2.5-flash': { input: 0.075, output: 0.3 } },
+        google: { 'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 } },
       },
     });
 

@@ -72,7 +72,7 @@ describe('Cost Calculator', () => {
     mockGetProviderForModel.mockReturnValue('google');
     mockGetPricingForModel.mockReturnValue({ input: 0.075, output: 0.3 });
 
-    const result = calculateCost('gemini-2.5-flash', { input: 10_000_000, output: 5_000_000 });
+    const result = calculateCost('gemini-3-pro-image-preview', { input: 10_000_000, output: 5_000_000 });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -130,7 +130,7 @@ describe('Cost Calculator', () => {
     mockGetProviderForModel.mockReturnValue('google');
     mockGetPricingForModel.mockReturnValue({ input: 0.075, output: 0.3 });
 
-    const result = calculateCost('gemini-2.5-flash', { input: 100_000, output: 50_000 });
+    const result = calculateCost('gemini-3-pro-image-preview', { input: 100_000, output: 50_000 });
 
     expect(result.ok).toBe(true);
     if (result.ok) {

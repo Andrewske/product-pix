@@ -41,6 +41,7 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Regional restrictions**: Image generation NOT available in UK and several EU/ME/Africa countries
 - **Provider abstraction**: Always wrap AI providers to enable swapping without touching business logic
 - **Preview models**: Can change or be deprecated — design for provider flexibility
+- **Gemini 3 image migration**: Standardize on `gemini-3-pro-image-preview`; update env defaults, pricing, docs, and cost reporting together to avoid drift
 - **Zod limitations**: `z.union` and `z.record` don't work with Google Generative AI structured outputs — disable with `structuredOutputs: false`
 - **Thinking config**: Use `thinkingLevel` ('low'|'high') for Gemini 3 models, `thinkingBudget` (number) for Gemini 2.5 models
 - **Gemma system prompts**: Gemma models don't support `systemInstruction` — provider automatically prepends to first user message

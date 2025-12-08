@@ -326,7 +326,7 @@ Compare to Trigger.dev approach: ~$250-900/month (Gemini full price + Trigger.de
 
       // 4. Create batch job
       const batchJob = await client.batches.create({
-        model: 'gemini-2.5-flash-image',
+        model: 'gemini-3-pro-image-preview',
         src: uploadedFile.name,
         config: {
           displayName: params.batchName

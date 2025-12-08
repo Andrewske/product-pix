@@ -40,7 +40,7 @@ For a small number of requests, you can directly embed the[`GenerateContentReque
     ]
 
     inline_batch_job = client.batches.create(
-        model="models/gemini-2.5-flash",
+        model="models/gemini-3-pro-image-preview",
         src=inline_requests,
         config={
             'display_name': "inlined-requests-job-1",
@@ -72,7 +72,7 @@ For a small number of requests, you can directly embed the[`GenerateContentReque
     ]
 
     const response = await ai.batches.create({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-image-preview',
         src: inlinedRequests,
         config: {
             displayName: 'inlined-requests-job-1',
@@ -83,7 +83,7 @@ For a small number of requests, you can directly embed the[`GenerateContentReque
 
 ### REST
 
-    curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:batchGenerateContent \
+    curl https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:batchGenerateContent \
     -H "x-goog-api-key: $GEMINI_API_KEY" \
     -X POST \
     -H "Content-Type:application/json" \
@@ -250,7 +250,7 @@ The following example calls the[`BatchGenerateContent`](https://ai.google.dev/ap
     # Assumes `uploaded_file` is the file object from the previous step
     client = genai.Client()
     file_batch_job = client.batches.create(
-        model="gemini-2.5-flash",
+        model="gemini-3-pro-image-preview",
         src=uploaded_file.name,
         config={
             'display_name': "file-upload-job-1",
@@ -263,7 +263,7 @@ The following example calls the[`BatchGenerateContent`](https://ai.google.dev/ap
 
     // Assumes `uploadedFile` is the file object from the previous step
     const fileBatchJob = await ai.batches.create({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-image-preview',
         src: uploadedFile.name,
         config: {
             displayName: 'file-upload-job-1',
@@ -276,7 +276,7 @@ The following example calls the[`BatchGenerateContent`](https://ai.google.dev/ap
 
     # Set the File ID taken from the upload response.
     BATCH_INPUT_FILE='files/123456'
-    curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:batchGenerateContent \
+    curl https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:batchGenerateContent \
     -X POST \
     -H "x-goog-api-key: $GEMINI_API_KEY" \
     -H "Content-Type:application/json" \
@@ -426,7 +426,7 @@ You can specify[structured output](https://ai.google.dev/gemini-api/docs/structu
     ]
 
     inline_batch_job = client.batches.create(
-        model="models/gemini-2.5-flash",
+        model="models/gemini-3-pro-image-preview",
         src=inline_requests,
         config={
             'display_name': "structured-output-job-1"
@@ -528,7 +528,7 @@ You can specify[structured output](https://ai.google.dev/gemini-api/docs/structu
     ]
 
     const inlinedBatchJob = await ai.batches.create({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-image-preview',
         src: inlinedRequests,
         config: {
             displayName: 'inlined-requests-job-1',
@@ -943,7 +943,7 @@ Inline requestsInput file
 
     # 2. Create batch job
     file_batch_job = client.batches.create(
-        model="gemini-2.5-flash-image",
+        model="gemini-3-pro-image-preview",
         src=uploaded_file.name,
         config={
             'display_name': "file-image-upload-job-1",
@@ -1030,7 +1030,7 @@ Inline requestsInput file
 
         // 2. Create batch job
         const fileBatchJob = await ai.batches.create({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-pro-image-preview',
             src: uploadedFile.name,
             config: {
                 displayName: 'file-image-upload-job-1',
@@ -1111,7 +1111,7 @@ Inline requestsInput file
             "input_config": { "file_name": "%s" }
         }
     }' "$BATCH_INPUT_FILE"
-    curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:batchGenerateContent \
+    curl https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:batchGenerateContent \
       -X POST \
       -H "x-goog-api-key: $GEMINI_API_KEY" \
       -H "Content-Type:application/json" \

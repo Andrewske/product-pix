@@ -68,11 +68,11 @@ You can use the following optional settings to customize the Google Generative A
 ## Language Models
 
 You can create models that call the [Google Generative AI API](https://ai.google.dev/api/rest) using the provider instance.
-The first argument is the model id, e.g. `gemini-2.5-flash`.
+The first argument is the model id, e.g. `gemini-3-pro-image-preview`.
 The models support tool calls and some have multi-modal capabilities.
 
 ```ts
-const model = google('gemini-2.5-flash');
+const model = google('gemini-3-pro-image-preview');
 ```
 
 You can use Google Generative AI language models to generate text with the `generateText` function:
@@ -82,7 +82,7 @@ import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 const { text } = await generateText({
-  model: google('gemini-2.5-flash'),
+  model: google('gemini-3-pro-image-preview'),
   prompt: 'Write a vegetarian lasagna recipe for 4 people.',
 });
 ```
@@ -94,7 +94,7 @@ Google Generative AI also supports some model specific settings that are not par
 You can pass them as an options argument:
 
 ```ts
-const model = google('gemini-2.5-flash');
+const model = google('gemini-3-pro-image-preview');
 
 await generateText({
   model,
@@ -236,7 +236,7 @@ For Gemini 2.5 models, use the `thinkingBudget` parameter to control the number 
 import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-const model = google('gemini-2.5-flash');
+const model = google('gemini-3-pro-image-preview');
 
 const { text, reasoning } = await generateText({
   model: model,
@@ -265,7 +265,7 @@ import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 const result = await generateText({
-  model: google('gemini-2.5-flash'),
+  model: google('gemini-3-pro-image-preview'),
   messages: [
     {
       role: 'user',
@@ -292,7 +292,7 @@ import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 const result = await generateText({
-  model: google('gemini-2.5-flash'),
+  model: google('gemini-3-pro-image-preview'),
   messages: [
     {
       role: 'user',
@@ -458,7 +458,7 @@ import { GoogleGenerativeAIProviderMetadata } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 const { text, sources, providerMetadata } = await generateText({
-  model: google('gemini-2.5-flash'),
+  model: google('gemini-3-pro-image-preview'),
   tools: {
     google_search: google.tools.googleSearch({}),
   },
@@ -560,7 +560,7 @@ import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 const { text, sources, providerMetadata } = await generateText({
-  model: google('gemini-2.5-flash'),
+  model: google('gemini-3-pro-image-preview'),
   prompt: `Based on the document: https://ai.google.dev/gemini-api/docs/url-context.
           Answer this question: How many links we can consume in one request?`,
   tools: {
@@ -641,7 +641,7 @@ import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 const { text, sources, providerMetadata } = await generateText({
-  model: google('gemini-2.5-flash'),
+  model: google('gemini-3-pro-image-preview'),
   prompt: `Based on this context: https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai, tell me how to use Gemini with AI SDK.
     Also, provide the latest news about AI SDK V5.`,
   tools: {
@@ -680,7 +680,7 @@ const vertex = createVertex({
 });
 
 const { text, sources, providerMetadata } = await generateText({
-  model: vertex('gemini-2.5-flash'),
+  model: vertex('gemini-3-pro-image-preview'),
   tools: {
     vertex_rag_store: vertex.tools.vertexRagStore({
       ragCorpus:
@@ -770,14 +770,14 @@ The `vertexRagStore` tool accepts the following configuration options:
 
 ### Image Outputs
 
-Gemini models with image generation capabilities (`gemini-2.5-flash-image-preview`) support image generation. Images are exposed as files in the response.
+Gemini models with image generation capabilities (`gemini-3-pro-image-preview`) support image generation. Images are exposed as files in the response.
 
 ```ts
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 const result = await generateText({
-  model: google('gemini-2.5-flash-image-preview'),
+  model: google('gemini-3-pro-image-preview'),
   prompt:
     'Create a picture of a nano banana dish in a fancy restaurant with a Gemini theme',
 });
@@ -847,7 +847,7 @@ You can disable structured outputs for object generation as a workaround:
 
 ```ts highlight="3,8"
 const { object } = await generateObject({
-  model: google('gemini-2.5-flash'),
+  model: google('gemini-3-pro-image-preview'),
   providerOptions: {
     google: {
       structuredOutputs: false,
@@ -882,9 +882,8 @@ The following Zod features are known to not work with Google Generative AI:
 | ------------------------------------- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------- |
 | `gemini-3-pro-preview`                | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 | `gemini-2.5-pro`                      | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
-| `gemini-2.5-flash`                    | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
-| `gemini-2.5-flash-lite`               | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
-| `gemini-2.5-flash-lite-preview-06-17` | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
+| `gemini-3-pro-image-preview`                    | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
+
 | `gemini-2.0-flash`                    | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 | `gemini-1.5-pro`                      | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Cross size={18} /> |
 | `gemini-1.5-pro-latest`               | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Cross size={18} /> |

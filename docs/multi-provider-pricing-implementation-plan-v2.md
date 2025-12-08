@@ -129,7 +129,7 @@ Implement a shared pricing calculation system that supports multiple AI provider
   - Models to include:
     - Anthropic: claude-sonnet-4, claude-sonnet-4-20250514, claude-opus-4, claude-opus-4-5, claude-haiku-4
     - OpenAI: gpt-4o, gpt-4o-mini, gpt-4-turbo
-    - Google: gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-image-preview
+    - Google: gemini-2.5-pro, gemini-3-pro-image-preview, gemini-3-pro-image-preview
   - Example:
     ```toml
     [pricing.anthropic]
@@ -142,7 +142,7 @@ Implement a shared pricing calculation system that supports multiple AI provider
     "gpt-4-turbo" = { input = 10.0, output = 30.0 }
 
     [pricing.google]
-    "gemini-2.5-flash" = { input = 0.075, output = 0.3 }
+    "gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
     ```
   - Acceptance: Valid TOML syntax, pricing values are numbers
 
@@ -430,7 +430,7 @@ Implement a shared pricing calculation system that supports multiple AI provider
   - Test cases:
     - Known Anthropic model (claude-sonnet-4-20250514)
     - Known OpenAI model (gpt-4o)
-    - Known Google model (gemini-2.5-flash)
+    - Known Google model (gemini-3-pro-image-preview)
     - Unknown model uses fallback (provider='unknown')
     - Zero tokens → ok({ total: 0 })
     - Negative tokens → err(VALIDATION_ERROR)
@@ -677,8 +677,8 @@ After Phase 2 completes, these can run concurrently:
 
 [pricing.google]
 "gemini-2.5-pro" = { input = 1.25, output = 5.0 }
-"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
-"gemini-2.5-flash-image-preview" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
+"gemini-3-pro-image-preview" = { input = 0.075, output = 0.3 }
 
 # NOTE: No [pricing.fallback] section
 # Fallback is computed dynamically on config load:
