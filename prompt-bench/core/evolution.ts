@@ -8,8 +8,11 @@ import {
   IterationState,
   PromptVariation,
   MutationType,
-  VariationSource,
   PopulationEntry,
+  StructuredInsight,
+  IterationConfig,
+  SuccessPattern,
+  FailurePattern,
 } from '@bench/core/iteration-types';
 import type { TemplateData } from '@bench/core/types';
 import { randomUUID } from 'node:crypto';
@@ -223,14 +226,14 @@ export const generateWild = async (
  */
 export const evolvePopulation = async (
   state: IterationState,
-  insights: any, // StructuredInsight
-  config: any // IterationConfig
+  insights: StructuredInsight,
+  config: IterationConfig
 ): Promise<Result<PromptVariation[]>> => {
   const variations: PromptVariation[] = [];
 
   // Extract patterns from insights
-  const successPatterns = insights.successPatterns?.map((p: any) => p.pattern) || [];
-  const failurePatterns = insights.failurePatterns?.map((p: any) => p.pattern) || [];
+  const successPatterns = insights.successPatterns?.map((p: SuccessPattern) => p.pattern) || [];
+  const failurePatterns = insights.failurePatterns?.map((p: FailurePattern) => p.pattern) || [];
   const context: EvolutionContext = { successPatterns, failurePatterns };
 
   // Elite selection - keep top performers unchanged
