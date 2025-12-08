@@ -29,6 +29,7 @@ export const VariationSourceSchema = z.enum([
   'mutation',     // Single parent mutation
   'crossover',    // Two parent combination
   'wild',         // Random exploration
+  'elite',        // Elite performer carried over from previous generation
   'user'          // User-provided custom variation
 ]);
 

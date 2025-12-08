@@ -7,8 +7,6 @@ import {
 } from '@bench/core/iteration-types';
 
 describe('iteration-types', () => {
-
-describe('iteration-types', () => {
   describe('MutationTypeSchema', () => {
     it('accepts valid mutation types', () => {
       expect(MutationTypeSchema.parse('wording')).toBe('wording');
@@ -29,6 +27,7 @@ describe('iteration-types', () => {
       expect(VariationSourceSchema.parse('mutation')).toBe('mutation');
       expect(VariationSourceSchema.parse('crossover')).toBe('crossover');
       expect(VariationSourceSchema.parse('wild')).toBe('wild');
+      expect(VariationSourceSchema.parse('elite')).toBe('elite');
       expect(VariationSourceSchema.parse('user')).toBe('user');
     });
 

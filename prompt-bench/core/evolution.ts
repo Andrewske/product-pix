@@ -344,7 +344,7 @@ const getEliteVariations = (state: IterationState, eliteCount: number): PromptVa
       elites.push({
         id: variationId,
         parentIds: [], // Elites don't have new parents
-        source: 'user', // Mark as preserved
+        source: 'elite', // Elite performer carried over from previous generation
         templateData: template,
         rationale: 'Elite performer carried over from previous generation',
         confidence: 1.0,
