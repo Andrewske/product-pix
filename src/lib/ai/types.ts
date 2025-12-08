@@ -16,6 +16,11 @@ export interface GenerationResult {
   mimeType: string;
   width: number;
   height: number;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
 }
 
 export interface GenerationError {

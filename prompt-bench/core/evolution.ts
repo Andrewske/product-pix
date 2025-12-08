@@ -16,6 +16,7 @@ import {
 } from '@bench/core/iteration-types';
 import type { TemplateData, VariablesSchema, VariableDef } from '@bench/core/types';
 import { randomUUID } from 'node:crypto';
+import { calculateCost } from '@/lib/pricing';
 
 // =============================================================================
 // Types
@@ -101,6 +102,20 @@ export const generateMutation = async (
       return parseResult;
     }
 
+    // Calculate cost for mutation generation
+    if (response.usage) {
+      const costResult = calculateCost('claude-sonnet-4-20250514', {
+        input: response.usage.input_tokens,
+        output: response.usage.output_tokens,
+      });
+
+      if (!costResult.ok) {
+        console.warn(`⚠️  Failed to calculate cost for mutation: ${costResult.error.message}`);
+      } else if (costResult.data.fallbackUsed) {
+        console.warn(`⚠️  Using fallback pricing for mutation generation`);
+      }
+    }
+
     const variation: PromptVariation = {
       id: randomUUID(),
       parentIds: [], // Will be set by caller
@@ -153,6 +168,20 @@ export const generateCrossover = async (
       return parseResult;
     }
 
+    // Calculate cost for crossover generation
+    if (response.usage) {
+      const costResult = calculateCost('claude-sonnet-4-20250514', {
+        input: response.usage.input_tokens,
+        output: response.usage.output_tokens,
+      });
+
+      if (!costResult.ok) {
+        console.warn(`⚠️  Failed to calculate cost for crossover: ${costResult.error.message}`);
+      } else if (costResult.data.fallbackUsed) {
+        console.warn(`⚠️  Using fallback pricing for crossover generation`);
+      }
+    }
+
     const variation: PromptVariation = {
       id: randomUUID(),
       parentIds: [], // Will be set by caller
@@ -201,6 +230,20 @@ export const generateWild = async (
     const parseResult = parseVariationResponse(textContent.text, context.variablesSchema);
     if (!parseResult.ok) {
       return parseResult;
+    }
+
+    // Calculate cost for wild generation
+    if (response.usage) {
+      const costResult = calculateCost('claude-sonnet-4-20250514', {
+        input: response.usage.input_tokens,
+        output: response.usage.output_tokens,
+      });
+
+      if (!costResult.ok) {
+        console.warn(`⚠️  Failed to calculate cost for wild generation: ${costResult.error.message}`);
+      } else if (costResult.data.fallbackUsed) {
+        console.warn(`⚠️  Using fallback pricing for wild generation`);
+      }
     }
 
     const variation: PromptVariation = {

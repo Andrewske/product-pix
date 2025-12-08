@@ -28,3 +28,30 @@ baseline_label = ""
 insights = true
 # Show image URLs in report output
 show_urls = false
+
+# Pricing configuration (USD per 1M tokens)
+# Manually maintained by user when provider rates change
+# Fallback pricing computed dynamically as MAX(all prices) * 1.5
+
+[pricing.anthropic]
+"claude-sonnet-4" = { input = 3.0, output = 15.0 }
+"claude-sonnet-4-20250514" = { input = 3.0, output = 15.0 }
+"claude-opus-4" = { input = 15.0, output = 75.0 }
+"claude-opus-4-5" = { input = 15.0, output = 75.0 }
+"claude-haiku-4" = { input = 0.25, output = 1.25 }
+
+[pricing.openai]
+"gpt-4o" = { input = 2.5, output = 10.0 }
+"gpt-4o-mini" = { input = 0.15, output = 0.6 }
+"gpt-4-turbo" = { input = 10.0, output = 30.0 }
+
+[pricing.google]
+"gemini-2.5-pro" = { input = 1.25, output = 5.0 }
+"gemini-2.5-flash" = { input = 0.075, output = 0.3 }
+"gemini-2.5-flash-image-preview" = { input = 0.075, output = 0.3 }
+
+# NOTE: No [pricing.fallback] section
+# Fallback is computed dynamically on config load:
+#   input = MAX(all input prices) * 1.5
+#   output = MAX(all output prices) * 1.5
+# Based on current config: input=22.5, output=112.5 (from claude-opus-4-5)

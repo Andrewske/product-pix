@@ -1,0 +1,110 @@
+[
+  {
+    "modelId": "claude-sonnet-4-20250514",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "inputCost": 3.00,
+      "outputCost": 7.50,
+      "total": 10.50,
+      "provider": "anthropic",
+      "fallbackUsed": false
+    },
+    "source": "https://anthropic.com/pricing (verified 2025-12-08)"
+  },
+  {
+    "modelId": "claude-sonnet-4",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "inputCost": 3.00,
+      "outputCost": 7.50,
+      "total": 10.50,
+      "provider": "anthropic",
+      "fallbackUsed": false
+    },
+    "source": "Prefix match to claude-sonnet-4-20250514"
+  },
+  {
+    "modelId": "claude-opus-4-5",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "inputCost": 15.00,
+      "outputCost": 37.50,
+      "total": 52.50,
+      "provider": "anthropic",
+      "fallbackUsed": false
+    },
+    "source": "https://anthropic.com/pricing (verified 2025-12-08)"
+  },
+  {
+    "modelId": "gpt-4o",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "inputCost": 2.50,
+      "outputCost": 5.00,
+      "total": 7.50,
+      "provider": "openai",
+      "fallbackUsed": false
+    },
+    "source": "https://openai.com/pricing (verified 2025-12-08)"
+  },
+  {
+    "modelId": "gpt-4o-mini",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "inputCost": 0.15,
+      "outputCost": 0.30,
+      "total": 0.45,
+      "provider": "openai",
+      "fallbackUsed": false
+    },
+    "source": "https://openai.com/pricing (verified 2025-12-08)"
+  },
+  {
+    "modelId": "gemini-2.5-flash",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "inputCost": 0.075,
+      "outputCost": 0.15,
+      "total": 0.225,
+      "provider": "google",
+      "fallbackUsed": false
+    },
+    "source": "https://ai.google.dev/pricing (verified 2025-12-08)"
+  },
+  {
+    "modelId": "unknown-model-xyz",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "provider": "unknown",
+      "fallbackUsed": true
+    },
+    "source": "Fallback pricing (computed as MAX * 1.5)"
+  },
+  {
+    "modelId": "gpt-claude-hybrid",
+    "usage": { "input": 1000000, "output": 500000 },
+    "expectedCost": {
+      "provider": "unknown",
+      "fallbackUsed": true
+    },
+    "source": "Cross-provider confusion, uses fallback"
+  },
+  {
+    "modelId": "claude-sonnet-4-20250514",
+    "usage": { "input": 0, "output": 0 },
+    "expectedCost": {
+      "inputCost": 0,
+      "outputCost": 0,
+      "total": 0,
+      "provider": "anthropic",
+      "fallbackUsed": false
+    },
+    "source": "Zero usage edge case"
+  },
+  {
+    "modelId": "claude-sonnet-4-20250514",
+    "usage": { "input": -100, "output": 500 },
+    "expectedError": "Token counts cannot be negative",
+    "source": "Negative tokens validation"
+  }
+]

@@ -12,6 +12,7 @@ import {
   SuccessPattern,
   FailurePattern,
 } from '@bench/core/iteration-types';
+import { calculateCost } from '@/lib/pricing';
 
 // =============================================================================
 // Types
@@ -135,15 +136,7 @@ Analyze the batch data and return structured insights with concrete prompt varia
 }
 `;
 
-/**
- * Calculate cost based on Claude Sonnet pricing
- * Sonnet 4: $3/1M input, $15/1M output
- */
-const calculateCost = (inputTokens: number, outputTokens: number): number => {
-  const inputCost = (inputTokens / 1_000_000) * 3;
-  const outputCost = (outputTokens / 1_000_000) * 15;
-  return inputCost + outputCost;
-};
+
 
 // =============================================================================
 // Main Function
@@ -190,12 +183,29 @@ export const generateInsights = async (
     }
 
     const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
-    const costUsd = calculateCost(response.usage.input_tokens, response.usage.output_tokens);
+    const costResult = calculateCost('claude-sonnet-4-20250514', {
+      input: response.usage.input_tokens,
+      output: response.usage.output_tokens,
+    });
+
+    if (!costResult.ok) {
+      console.warn(`⚠️  Failed to calculate cost for insights: ${costResult.error.message}`);
+      return err(createError(
+        'EVALUATION_ERROR',
+        `Cost calculation failed: ${costResult.error.message}`,
+        { retryable: false }
+      ));
+    }
+
+    const costData = costResult.data;
+    if (costData.fallbackUsed) {
+      console.warn(`⚠️  Using fallback pricing for insights`);
+    }
 
     return ok({
       ...parseResult.data,
       tokensUsed,
-      costUsd,
+      costUsd: costData.total,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -245,12 +255,29 @@ export const generateStructuredInsights = async (
     }
 
     const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
-    const costUsd = calculateCost(response.usage.input_tokens, response.usage.output_tokens);
+    const costResult = calculateCost('claude-sonnet-4-20250514', {
+      input: response.usage.input_tokens,
+      output: response.usage.output_tokens,
+    });
+
+    if (!costResult.ok) {
+      console.warn(`⚠️  Failed to calculate cost for structured insights: ${costResult.error.message}`);
+      return err(createError(
+        'EVALUATION_ERROR',
+        `Cost calculation failed: ${costResult.error.message}`,
+        { retryable: false }
+      ));
+    }
+
+    const costData = costResult.data;
+    if (costData.fallbackUsed) {
+      console.warn(`⚠️  Using fallback pricing for structured insights`);
+    }
 
     return ok({
       ...parseResult.data,
       tokensUsed,
-      costUsd,
+      costUsd: costData.total,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

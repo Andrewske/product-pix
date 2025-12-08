@@ -23,6 +23,7 @@ import { uploadBuffer, getPublicUrl } from '@/lib/r2';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { resolveSourceImage, type ResolvedSourceImage } from '@bench/core/source-image';
 import type { SourceImageOptions } from '@bench/core/source-image';
+import { calculateCost } from '@/lib/pricing';
 
 // =============================================================================
 // Types
@@ -329,9 +330,28 @@ const runPhase = async (
       const buffer = Buffer.from(generationResult.imageData, 'base64');
       const uploadResult = await uploadBuffer(buffer, imageKey, 'image/png');
 
+      // Calculate generation cost
+      let generationCost = 0;
+      if (generationResult.usage) {
+        const costResult = calculateCost('gemini-2.5-flash', {
+          input: generationResult.usage.promptTokens,
+          output: generationResult.usage.completionTokens,
+        });
+
+        if (costResult.ok) {
+          generationCost = costResult.data.total;
+          if (costResult.data.fallbackUsed) {
+            console.warn(`⚠️  Using fallback pricing for test generation: ${testRecord.id}`);
+          }
+        } else {
+          console.warn(`⚠️  Failed to calculate cost for test generation: ${costResult.error.message}`);
+        }
+      } else {
+        console.warn(`⚠️  No usage data available for cost calculation in test: ${testRecord.id}`);
+      }
+
       // Update test record with success
       const imageUrl = getPublicUrl(imageKey);
-      const generationCost = 0.002; // Rough estimate for Gemini image generation
 
       await (supabase
         .from('prompt_tests')

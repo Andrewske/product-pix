@@ -33,6 +33,7 @@ src/lib/
   auth/         # Hooks, utils
   rate-limit/   # Request throttling
   images/       # Validation
+  pricing/      # Multi-provider cost calculation (Anthropic, OpenAI, Google)
 
 prompt-bench/   # Isolated CLI testing framework
   core/         # types, errors (Result<T>), compiler, evaluator, statistics
@@ -57,6 +58,11 @@ prompt-bench/   # Isolated CLI testing framework
 - **Testing**: Jest for unit tests, 70-80% coverage target
 - **TypeScript**: Strict mode, no `any`, explicit return types
 - **Functions**: ≤20 lines, ≤3 nesting levels
+- **Pricing config**: `prompt-bench.toml` at project root (committed)
+- **Pricing updates**: User manually updates TOML when provider rates change
+- **Fallback pricing**: Computed as MAX(all prices) * 1.5
+- **Model matching**: Exact → prefix → fallback
+- **Unknown models**: Use fallback, never guess provider
 
 ## Gotchas
 

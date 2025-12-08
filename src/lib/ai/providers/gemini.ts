@@ -88,6 +88,8 @@ export const createGeminiProvider = (): ImageProvider => {
           model,
           providerOptions: {
             google: {
+              projectId,
+              location,
               responseModalities: ['TEXT', 'IMAGE'],
               imageConfig: {
                 aspectRatio: aspectRatioMap[config.aspectRatio],
@@ -131,12 +133,20 @@ export const createGeminiProvider = (): ImageProvider => {
           ? imageFile.base64.split(',')[1]
           : imageFile.base64;
 
+        // Extract usage data if available
+        const usage = result.usage ? {
+          promptTokens: (result.usage as any).promptTokenCount || (result.usage as any).promptTokens || 0,
+          completionTokens: (result.usage as any).candidatesTokenCount || (result.usage as any).completionTokens || 0,
+          totalTokens: (result.usage as any).totalTokenCount || (result.usage as any).totalTokens || 0,
+        } : undefined;
+
         return {
           success: true,
           imageData: base64Data,
           mimeType: imageFile.mediaType || 'image/png',
           width: dimensions.width,
           height: dimensions.height,
+          usage,
         };
       } catch (error) {
         return handleError(error);
@@ -154,10 +164,8 @@ export const createGeminiProvider = (): ImageProvider => {
           model,
           providerOptions: {
             google: {
-              responseModalities: ['TEXT', 'IMAGE'],
-              imageConfig: {
-                aspectRatio: aspectRatioMap[config.aspectRatio],
-              },
+              projectId,
+              location,
             },
           },
           messages: [
@@ -211,12 +219,20 @@ export const createGeminiProvider = (): ImageProvider => {
           ? imageFile.base64.split(',')[1]
           : imageFile.base64;
 
+        // Extract usage data if available
+        const usage = result.usage ? {
+          promptTokens: (result.usage as any).promptTokenCount || (result.usage as any).promptTokens || 0,
+          completionTokens: (result.usage as any).candidatesTokenCount || (result.usage as any).completionTokens || 0,
+          totalTokens: (result.usage as any).totalTokenCount || (result.usage as any).totalTokens || 0,
+        } : undefined;
+
         return {
           success: true,
           imageData: base64Data,
           mimeType: imageFile.mediaType || 'image/png',
           width: dimensions.width,
           height: dimensions.height,
+          usage,
         };
       } catch (error) {
         return handleError(error);

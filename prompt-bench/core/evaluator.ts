@@ -8,6 +8,7 @@ import {
 } from '@bench/core/errors';
 import { EvaluationDetails, ScoreSchema } from '@bench/core/types';
 import { downloadBuffer } from '@/lib/r2';
+import { calculateCost } from '@/lib/pricing';
 
 // =============================================================================
 // Constants
@@ -73,15 +74,7 @@ export interface EvaluateOptions {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Calculate cost based on Claude pricing
- * Sonnet 4: $3/1M input, $15/1M output
- */
-const calculateCost = (inputTokens: number, outputTokens: number): number => {
-  const inputCost = (inputTokens / 1_000_000) * 3;
-  const outputCost = (outputTokens / 1_000_000) * 15;
-  return inputCost + outputCost;
-};
+
 
 /**
  * Parse and validate the JSON response from Claude
@@ -225,13 +218,30 @@ export const evaluateImage = async (
 
       const { overall, ...details } = parseResult.data;
       const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
-      const costUsd = calculateCost(response.usage.input_tokens, response.usage.output_tokens);
+      const costResult = calculateCost(model, {
+        input: response.usage.input_tokens,
+        output: response.usage.output_tokens,
+      });
+
+      if (!costResult.ok) {
+        console.warn(`⚠️  Failed to calculate cost for model ${model}: ${costResult.error.message}`);
+        return err(createError(
+          'EVALUATION_ERROR',
+          `Cost calculation failed: ${costResult.error.message}`,
+          { retryable: false }
+        ));
+      }
+
+      const costData = costResult.data;
+      if (costData.fallbackUsed) {
+        console.warn(`⚠️  Using fallback pricing for model: ${model}`);
+      }
 
       return ok({
         overall,
         details,
         tokensUsed,
-        costUsd,
+        costUsd: costData.total,
         model,
       });
     } catch (error) {

@@ -4,6 +4,8 @@ import { uploadBase64Image } from '@/lib/r2';
 import { updateJobStatus, getJob } from '@/lib/db/jobs';
 import { refundCredits } from '@/lib/db/credits';
 import { createGeneratedImage } from '@/lib/db/generated-images';
+import { calculateCost } from '@/lib/pricing';
+import { createGenerationCost } from '@/lib/db/cost-queries';
 
 export interface GenerateImageParams {
   jobId: string;
@@ -83,7 +85,7 @@ export const generateImage = async (
     );
 
     // Save generated image record
-    await createGeneratedImage({
+    const generatedImage = await createGeneratedImage({
       jobId,
       userId,
       fileKey: uploadResult.fileKey,
@@ -92,6 +94,38 @@ export const generateImage = async (
       height: result.height,
       fileSize: Buffer.from(result.imageData, 'base64').length,
     });
+
+    // Calculate and store generation cost
+    if (result.usage) {
+      const costResult = calculateCost('gemini-2.5-flash', {
+        input: result.usage.promptTokens,
+        output: result.usage.completionTokens,
+      });
+
+      if (costResult.ok) {
+        const costData = costResult.data;
+        if (costData.fallbackUsed) {
+          console.warn(`⚠️  Using fallback pricing for image generation`);
+        }
+
+        await createGenerationCost({
+          jobId,
+          generatedImageId: generatedImage?.id,
+          modelId: 'gemini-2.5-flash',
+          provider: costData.provider,
+          inputTokens: result.usage.promptTokens,
+          outputTokens: result.usage.completionTokens,
+          inputCostUsd: costData.inputCost,
+          outputCostUsd: costData.outputCost,
+          totalCostUsd: costData.total,
+          fallbackUsed: costData.fallbackUsed,
+        });
+      } else {
+        console.warn(`⚠️  Failed to calculate cost for image generation: ${costResult.error.message}`);
+      }
+    } else {
+      console.warn(`⚠️  No usage data available for cost calculation`);
+    }
 
     // Mark job as completed
     await updateJobStatus(jobId, 'completed');
