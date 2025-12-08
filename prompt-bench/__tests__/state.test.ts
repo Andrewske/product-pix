@@ -53,10 +53,10 @@ describe('state management', () => {
     it('round-trips session state', async () => {
       const session = createSession('test-template', 1);
 
-      const saveResult = await saveSession(session);
+      const saveResult = await saveSession(session, TEST_SESSIONS_DIR);
       expect(saveResult.ok).toBe(true);
 
-      const loadResult = await loadSession(session.sessionId);
+      const loadResult = await loadSession(session.sessionId, TEST_SESSIONS_DIR);
       expect(loadResult.ok).toBe(true);
       if (loadResult.ok) {
         expect(loadResult.data.sessionId).toBe(session.sessionId);
@@ -65,7 +65,7 @@ describe('state management', () => {
     });
 
     it('returns error for non-existent session', async () => {
-      const result = await loadSession('non-existent-id');
+      const result = await loadSession('non-existent-id', TEST_SESSIONS_DIR);
       expect(result.ok).toBe(false);
     });
   });
@@ -75,10 +75,10 @@ describe('state management', () => {
       const s1 = createSession('template-1', 1);
       const s2 = createSession('template-2', 1);
 
-      await saveSession(s1);
-      await saveSession(s2);
+      await saveSession(s1, TEST_SESSIONS_DIR);
+      await saveSession(s2, TEST_SESSIONS_DIR);
 
-      const result = await listSessions();
+      const result = await listSessions(TEST_SESSIONS_DIR);
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.data.length).toBe(2);
@@ -87,7 +87,7 @@ describe('state management', () => {
     });
 
     it('returns empty array when no sessions exist', async () => {
-      const result = await listSessions();
+      const result = await listSessions(TEST_SESSIONS_DIR);
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.data).toEqual([]);
@@ -98,17 +98,17 @@ describe('state management', () => {
   describe('deleteSession', () => {
     it('deletes existing session', async () => {
       const session = createSession('test-template', 1);
-      await saveSession(session);
+      await saveSession(session, TEST_SESSIONS_DIR);
 
-      const deleteResult = await deleteSession(session.sessionId);
+      const deleteResult = await deleteSession(session.sessionId, TEST_SESSIONS_DIR);
       expect(deleteResult.ok).toBe(true);
 
-      const loadResult = await loadSession(session.sessionId);
+      const loadResult = await loadSession(session.sessionId, TEST_SESSIONS_DIR);
       expect(loadResult.ok).toBe(false);
     });
 
     it('returns error for non-existent session', async () => {
-      const result = await deleteSession('non-existent-id');
+      const result = await deleteSession('non-existent-id', TEST_SESSIONS_DIR);
       expect(result.ok).toBe(false);
     });
   });

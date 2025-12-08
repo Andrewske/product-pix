@@ -66,9 +66,10 @@ export const createSession = (
  * Load a session from disk
  */
 export const loadSession = async (
-  sessionId: string
+  sessionId: string,
+  sessionsDir: string = SESSIONS_DIR
 ): Promise<Result<IterationState>> => {
-  const sessionPath = join(SESSIONS_DIR, `${sessionId}.json`);
+  const sessionPath = join(sessionsDir, `${sessionId}.json`);
 
   try {
     const data = await fs.readFile(sessionPath, 'utf-8');
@@ -98,9 +99,10 @@ export const loadSession = async (
  * Save a session to disk
  */
 export const saveSession = async (
-  state: IterationState
+  state: IterationState,
+  sessionsDir: string = SESSIONS_DIR
 ): Promise<Result<void>> => {
-  const sessionPath = join(SESSIONS_DIR, `${state.sessionId}.json`);
+  const sessionPath = join(sessionsDir, `${state.sessionId}.json`);
 
   try {
     // Update timestamp
@@ -129,19 +131,21 @@ export const saveSession = async (
 /**
  * List all sessions
  */
-export const listSessions = async (): Promise<Result<SessionSummary[]>> => {
+export const listSessions = async (
+  sessionsDir: string = SESSIONS_DIR
+): Promise<Result<SessionSummary[]>> => {
   try {
     // Ensure directory exists
-    await fs.mkdir(SESSIONS_DIR, { recursive: true });
+    await fs.mkdir(sessionsDir, { recursive: true });
 
-    const files = await fs.readdir(SESSIONS_DIR);
+    const files = await fs.readdir(sessionsDir);
     const sessionFiles = files.filter(f => f.endsWith('.json'));
 
     const summaries: SessionSummary[] = [];
 
     for (const file of sessionFiles) {
       const sessionId = file.replace('.json', '');
-      const loadResult = await loadSession(sessionId);
+      const loadResult = await loadSession(sessionId, sessionsDir);
 
       if (loadResult.ok) {
         const state = loadResult.data;
@@ -173,9 +177,10 @@ export const listSessions = async (): Promise<Result<SessionSummary[]>> => {
  * Delete a session
  */
 export const deleteSession = async (
-  sessionId: string
+  sessionId: string,
+  sessionsDir: string = SESSIONS_DIR
 ): Promise<Result<void>> => {
-  const sessionPath = join(SESSIONS_DIR, `${sessionId}.json`);
+  const sessionPath = join(sessionsDir, `${sessionId}.json`);
 
   try {
     await fs.unlink(sessionPath);
@@ -194,9 +199,10 @@ export const deleteSession = async (
  * Get the most recent session, optionally filtered by template
  */
 export const getLatestSession = async (
-  templateSlug?: string
+  templateSlug?: string,
+  sessionsDir: string = SESSIONS_DIR
 ): Promise<Result<IterationState | null>> => {
-  const listResult = await listSessions();
+  const listResult = await listSessions(sessionsDir);
   if (!listResult.ok) {
     return listResult;
   }
