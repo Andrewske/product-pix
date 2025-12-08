@@ -39,8 +39,8 @@ describe('iteration-types', () => {
   describe('PromptVariationSchema', () => {
     it('validates complete variation', () => {
       const variation = {
-        id: 'var-12345678-1234-1234-1234-123456789abc',
-        parentIds: ['parent-1'],
+        id: '12345678-1234-1234-8123-123456789abc',
+        parentIds: ['87654321-4321-4321-8123-cba987654321'],
         source: 'mutation',
         mutationType: 'wording',
         templateData: {
@@ -84,7 +84,7 @@ describe('iteration-types', () => {
 
     it('accepts variation without mutationType for non-mutation sources', () => {
       const variation = {
-        id: 'var-12345678-1234-1234-1234-123456789abc',
+        id: '12345678-1234-1234-8123-123456789abc',
         parentIds: [],
         source: 'wild',
         templateData: { subject: 'Test' },
@@ -132,7 +132,7 @@ describe('iteration-types', () => {
   describe('IterationStateSchema', () => {
     it('validates complete state', () => {
       const state = {
-        sessionId: 'sess-12345678-1234-1234-1234-123456789abc',
+        sessionId: '12345678-1234-1234-8123-123456789abc',
         templateSlug: 'test-template',
         templateVersion: 1,
         createdAt: '2025-12-07T10:00:00.000Z',
@@ -155,7 +155,7 @@ describe('iteration-types', () => {
 
     it('rejects invalid datetime strings', () => {
       const state = {
-        sessionId: 'sess-12345678-1234-1234-1234-123456789abc',
+        sessionId: '12345678-1234-1234-8123-123456789abc',
         templateSlug: 'test-template',
         templateVersion: 1,
         createdAt: 'invalid-date',

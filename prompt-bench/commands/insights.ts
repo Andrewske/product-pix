@@ -2,6 +2,7 @@
  * AI-powered insights generation using Claude
  */
 
+import { randomUUID } from 'node:crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { Result, ok, err, createError } from '@bench/core/errors';
 import type { TemplateData } from '@bench/core/types';
@@ -398,8 +399,8 @@ const parseStructuredInsightsResponse = (
     }
 
     // Generate UUIDs for variations if not provided and validate structure
-    const proposedVariations: PromptVariation[] = parsed.proposedVariations.map((v: any, index: number) => ({
-      id: v.id || `var-${Date.now()}-${index}`,
+    const proposedVariations: PromptVariation[] = parsed.proposedVariations.map((v: any) => ({
+      id: v.id || randomUUID(),
       parentIds: v.parentIds || [],
       source: v.source,
       mutationType: v.mutationType,
