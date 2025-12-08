@@ -4,9 +4,9 @@
 
 import { parseArgs } from 'node:util';
 import { createInterface } from 'node:readline';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
 import { Result, ok, err, createError } from '@bench/core/errors';
 import { createSession, saveSession, loadSession, listSessions } from '@bench/core/state';
 import { checkConvergence, type ConvergenceResult } from '@bench/core/convergence';
@@ -14,8 +14,9 @@ import { evolvePopulation } from '@bench/core/evolution';
 import { generateStructuredInsights } from './insights';
 import { BatchFileSchema, type BatchFile, type TestCase, type TemplateData } from '@bench/core/types';
 import { summarize, getScoreDistribution } from '@bench/core/statistics';
-import type { IterationState, PromptVariation, GenerationRecord } from '@bench/core/iteration-types';
+import type { IterationState, PromptVariation, GenerationRecord, ScoreHistoryEntry } from '@bench/core/iteration-types';
 import type { BatchSummary } from './insights';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // =============================================================================
 // Types
@@ -191,7 +192,7 @@ const createNewSession = async (options: IterateOptions): Promise<IterationState
 
   // Update state with initial population
   state.generations.push(firstGeneration);
-  state.currentPopulation = initialVariations.map((variation, index) => ({
+  state.currentPopulation = initialVariations.map((variation) => ({
     variationId: variation.id,
     fitness: 0, // Will be updated after evaluation
     generation: 1,
@@ -348,12 +349,57 @@ const needsEvaluation = (state: IterationState): boolean => {
 };
 
 const runAndEvaluatePopulation = async (
-  _state: IterationState,
+  state: IterationState,
   _options: IterateOptions
 ): Promise<boolean> => {
-  // TODO: Implement full population evaluation with batch running and evaluation
-  // For now, throw an error indicating this functionality needs to be implemented
-  throw new Error('Population evaluation not yet implemented. This requires integrating with the run and evaluate commands.');
+  try {
+    // 1. Create batch file from current population variations
+    const batchFile = await createBatchFromPopulation(state);
+    if (!batchFile.ok) {
+      console.error(`Failed to create batch file: ${batchFile.error.message}`);
+      return false;
+    }
+
+    // 2. Generate unique batch label for this evaluation
+    const batchLabel = `iteration-${state.sessionId}-gen-${state.generations.length}`;
+
+    // 3. Run the pipeline (run → evaluate)
+    const { runPipeline } = await import('@bench/core/orchestrator');
+    const pipelineResult = await runPipeline({
+      templateSlug: state.templateSlug,
+      templateVersion: state.templateVersion,
+      batchFile: batchFile.data.filePath,
+      label: batchLabel,
+      skipSync: true, // Template should already be synced
+      skipEval: false,
+      skipReport: true, // We'll handle reporting separately
+      dryRun: false,
+      evalModel: 'claude-sonnet-4-20250514', // Use default model
+    });
+
+    if (!pipelineResult.ok) {
+      console.error(`Pipeline failed: ${pipelineResult.error.message}`);
+      return false;
+    }
+
+    // 4. Update state with evaluation results
+    const updateResult = await updateStateWithEvaluationResults(state, batchLabel);
+    if (!updateResult.ok) {
+      console.error(`Failed to update state with results: ${updateResult.error.message}`);
+      return false;
+    }
+
+    // 5. Update score history
+    updateScoreHistory(state);
+
+    console.log(`✅ Evaluated ${state.currentPopulation.length} variations`);
+    return true;
+
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Population evaluation failed: ${message}`);
+    return false;
+  }
 };
 
 const buildSummary = (state: IterationState): BatchSummary => {
@@ -482,6 +528,155 @@ const updateStateWithApproved = (
   }));
 
   // Note: Score history is updated during evaluation, not here
+};
+
+// =============================================================================
+// Population Evaluation Functions
+// =============================================================================
+
+const createBatchFromPopulation = async (
+  state: IterationState
+): Promise<Result<{ filePath: string; batch: BatchFile }>> => {
+  try {
+    // Get current population variations
+    const variations = state.currentPopulation.map(entry => {
+      const variation = state.generations
+        .flatMap(gen => gen.variations)
+        .find(v => v.id === entry.variationId);
+
+      if (!variation) {
+        return null;
+      }
+
+      return {
+        variation,
+        entry,
+      };
+    }).filter((item): item is { variation: PromptVariation; entry: typeof state.currentPopulation[0] } => item !== null);
+
+    if (variations.length === 0) {
+      return err(createError('VALIDATION_ERROR', 'No variations found in current population'));
+    }
+
+    // Create test cases from variations
+    const tests: TestCase[] = variations.map(({ variation }) => ({
+      variables: variation.templateData,
+      notes: `Variation ${variation.id} (${variation.source})`,
+    }));
+
+    // Create batch file
+    const batch: BatchFile = {
+      label: `iteration-${state.sessionId}-population`,
+      tests,
+    };
+
+    // Validate batch
+    const validation = BatchFileSchema.safeParse(batch);
+    if (!validation.success) {
+      return err(createError('VALIDATION_ERROR', `Invalid batch: ${validation.error.message}`));
+    }
+
+    // Write to temporary file
+    const tempDir = process.cwd();
+    const fileName = `temp-batch-${randomUUID()}.json`;
+    const filePath = join(tempDir, fileName);
+
+    writeFileSync(filePath, JSON.stringify(batch, null, 2), 'utf-8');
+
+    return ok({ filePath, batch: validation.data });
+
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(createError('STORAGE_ERROR', `Failed to create batch file: ${message}`));
+  }
+};
+
+const updateStateWithEvaluationResults = async (
+  state: IterationState,
+  batchLabel: string
+): Promise<Result<void>> => {
+  try {
+    const supabase = createAdminClient();
+
+    // Query evaluation results for this batch
+    const { data: evaluations, error } = await supabase
+      .from('prompt_tests')
+      .select(`
+        id,
+        inputs,
+        prompt_evaluations(score_overall)
+      `)
+      .eq('batch_label', batchLabel)
+      .eq('status', 'completed')
+      .not('prompt_evaluations', 'is', null);
+
+    if (error) {
+      return err(createError('DATABASE_ERROR', `Failed to fetch evaluations: ${error.message}`));
+    }
+
+    if (!evaluations || evaluations.length === 0) {
+      return err(createError('NO_DATA_ERROR', 'No evaluation results found'));
+    }
+
+    // Update variations with scores
+    let updatedCount = 0;
+    for (const test of evaluations) {
+      const evaluation = test.prompt_evaluations?.[0];
+      if (!evaluation?.score_overall) continue;
+
+      // Find matching variation by comparing template data
+      for (const gen of state.generations) {
+        const variation = gen.variations.find(v => {
+          // Compare template data (inputs should match variation.templateData)
+          return JSON.stringify(v.templateData) === JSON.stringify(test.inputs);
+        });
+
+        if (variation) {
+          variation.score = evaluation.score_overall;
+
+          // Also update the population entry fitness
+          const populationEntry = state.currentPopulation.find(p => p.variationId === variation.id);
+          if (populationEntry) {
+            populationEntry.fitness = evaluation.score_overall;
+          }
+
+          updatedCount++;
+          break; // Found match, no need to check other generations
+        }
+      }
+    }
+
+    if (updatedCount === 0) {
+      return err(createError('NO_DATA_ERROR', 'No variations could be matched with evaluation results'));
+    }
+
+    console.log(`Updated ${updatedCount} variations with evaluation scores`);
+    return ok(undefined);
+
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(createError('DATABASE_ERROR', `Failed to update state: ${message}`));
+  }
+};
+
+const updateScoreHistory = (state: IterationState): void => {
+  // Get all scores from current population
+  const scores = state.currentPopulation
+    .map(entry => entry.fitness)
+    .filter(score => score > 0); // Only include evaluated scores
+
+  if (scores.length === 0) return;
+
+  const stats = summarize(scores);
+
+  const historyEntry: ScoreHistoryEntry = {
+    generation: state.generations.length,
+    best: stats.max,
+    mean: stats.mean,
+    stdDev: stats.stdDev,
+  };
+
+  state.scoreHistory.push(historyEntry);
 };
 
 // =============================================================================
