@@ -14,7 +14,7 @@ import {
   SuccessPattern,
   FailurePattern,
 } from '@bench/core/iteration-types';
-import type { TemplateData } from '@bench/core/types';
+import type { TemplateData, VariablesSchema, VariableDef } from '@bench/core/types';
 import { randomUUID } from 'node:crypto';
 
 // =============================================================================
@@ -27,6 +27,7 @@ import { randomUUID } from 'node:crypto';
 interface EvolutionContext {
   successPatterns: string[];
   failurePatterns: string[];
+  variablesSchema: VariablesSchema;
 }
 
 // =============================================================================
@@ -95,7 +96,7 @@ export const generateMutation = async (
       return err(createError('EVALUATION_ERROR', 'No text response from Claude'));
     }
 
-    const parseResult = parseVariationResponse(textContent.text);
+    const parseResult = parseVariationResponse(textContent.text, context.variablesSchema);
     if (!parseResult.ok) {
       return parseResult;
     }
@@ -123,7 +124,8 @@ export const generateMutation = async (
 export const generateCrossover = async (
   parent1: TemplateData,
   parent2: TemplateData,
-  weights: { p1: number; p2: number }
+  weights: { p1: number; p2: number },
+  context: EvolutionContext
 ): Promise<Result<PromptVariation>> => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -132,7 +134,7 @@ export const generateCrossover = async (
 
   const client = new Anthropic({ apiKey });
 
-  const prompt = buildCrossoverPrompt(parent1, parent2, weights);
+  const prompt = buildCrossoverPrompt(parent1, parent2, weights, context);
 
   try {
     const response = await client.messages.create({
@@ -146,7 +148,7 @@ export const generateCrossover = async (
       return err(createError('EVALUATION_ERROR', 'No text response from Claude'));
     }
 
-    const parseResult = parseVariationResponse(textContent.text);
+    const parseResult = parseVariationResponse(textContent.text, context.variablesSchema);
     if (!parseResult.ok) {
       return parseResult;
     }
@@ -172,7 +174,8 @@ export const generateCrossover = async (
  */
 export const generateWild = async (
   baseTemplate: TemplateData,
-  avoidPatterns: string[]
+  avoidPatterns: string[],
+  context: EvolutionContext
 ): Promise<Result<PromptVariation>> => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -181,7 +184,7 @@ export const generateWild = async (
 
   const client = new Anthropic({ apiKey });
 
-  const prompt = buildWildPrompt(baseTemplate, avoidPatterns);
+  const prompt = buildWildPrompt(baseTemplate, avoidPatterns, context);
 
   try {
     const response = await client.messages.create({
@@ -195,7 +198,7 @@ export const generateWild = async (
       return err(createError('EVALUATION_ERROR', 'No text response from Claude'));
     }
 
-    const parseResult = parseVariationResponse(textContent.text);
+    const parseResult = parseVariationResponse(textContent.text, context.variablesSchema);
     if (!parseResult.ok) {
       return parseResult;
     }
@@ -227,14 +230,15 @@ export const generateWild = async (
 export const evolvePopulation = async (
   state: IterationState,
   insights: StructuredInsight,
-  config: IterationConfig
+  config: IterationConfig,
+  variablesSchema: VariablesSchema
 ): Promise<Result<PromptVariation[]>> => {
   const variations: PromptVariation[] = [];
 
   // Extract patterns from insights
   const successPatterns = insights.successPatterns?.map((p: SuccessPattern) => p.pattern) || [];
   const failurePatterns = insights.failurePatterns?.map((p: FailurePattern) => p.pattern) || [];
-  const context: EvolutionContext = { successPatterns, failurePatterns };
+  const context: EvolutionContext = { successPatterns, failurePatterns, variablesSchema };
 
   // Elite selection - keep top performers unchanged
   const elites = getEliteVariations(state, config.eliteCount);
@@ -280,7 +284,7 @@ export const evolvePopulation = async (
 
     const weights = { p1: p1Fitness, p2: p2Fitness };
 
-    const result = await generateCrossover(parent1Template, parent2Template, weights);
+    const result = await generateCrossover(parent1Template, parent2Template, weights, context);
     if (result.ok) {
       result.data.parentIds = parentIds;
       variations.push(result.data);
@@ -294,7 +298,7 @@ export const evolvePopulation = async (
   for (let i = 0; i < wilds; i++) {
     const baseTemplate = getBaseTemplate(state);
 
-    const result = await generateWild(baseTemplate, failurePatterns);
+    const result = await generateWild(baseTemplate, failurePatterns, context);
     if (result.ok) {
       variations.push(result.data);
     }
@@ -390,6 +394,27 @@ const getBaseTemplate = (state: IterationState): TemplateData => {
 // Prompt Builders
 // =============================================================================
 
+/**
+ * Build schema description for AI prompts
+ */
+const buildSchemaDescription = (schema: VariablesSchema): string => {
+  const fields = Object.entries(schema).map(([key, spec]) => {
+    const required = spec.required ? '(required)' : '(optional)';
+    const type = spec.type === 'enum' ? `enum [${spec.options?.join(', ')}]` : spec.type;
+    return `  - ${key}: ${type} ${required} - ${spec.description}`;
+  }).join('\n');
+
+  return `Template Variables Schema:\n${fields}`;
+};
+
+/**
+ * Build example JSON structure from schema
+ */
+const buildSchemaExample = (schema: VariablesSchema): string => {
+  const fields = Object.keys(schema).map(key => `"${key}": "..."`).join(', ');
+  return `{ ${fields} }`;
+};
+
 const buildMutationPrompt = (
   parent: TemplateData,
   mutationType: MutationType,
@@ -404,20 +429,27 @@ const buildMutationPrompt = (
     wild: 'Experimental/creative variation',
   };
 
+  const schemaDesc = buildSchemaDescription(context.variablesSchema);
+  const schemaExample = buildSchemaExample(context.variablesSchema);
+
   return `You are an expert AI prompt engineer. Mutate this e-commerce product photo prompt.
 
 Mutation Type: ${mutationType}
 - ${mutationDescriptions[mutationType]}
 
-Current Template:
+${schemaDesc}
+
+Current Template Variables:
 ${JSON.stringify(parent, null, 2)}
 
-Success Patterns to Reinforce: ${context.successPatterns.join(', ')}
-Failure Patterns to Avoid: ${context.failurePatterns.join(', ')}
+Success Patterns to Reinforce: ${context.successPatterns.join(', ') || 'None'}
+Failure Patterns to Avoid: ${context.failurePatterns.join(', ') || 'None'}
+
+IMPORTANT: Your response MUST use the exact variable names from the schema above.
 
 Return JSON only:
 {
-  "templateData": { "subject": "...", "background": "...", "lighting": "...", "camera": "...", "style": "...", "quality": "...", "negative": "..." },
+  "templateData": ${schemaExample},
   "rationale": "Why this mutation should improve scores",
   "confidence": 0.0-1.0
 }`;
@@ -426,11 +458,16 @@ Return JSON only:
 const buildCrossoverPrompt = (
   parent1: TemplateData,
   parent2: TemplateData,
-  weights: { p1: number; p2: number }
+  weights: { p1: number; p2: number },
+  context: EvolutionContext
 ): string => {
   const higherScoring = weights.p1 >= weights.p2 ? 'Parent 1' : 'Parent 2';
+  const schemaDesc = buildSchemaDescription(context.variablesSchema);
+  const schemaExample = buildSchemaExample(context.variablesSchema);
 
   return `You are an expert AI prompt engineer. Combine these two successful prompts.
+
+${schemaDesc}
 
 Parent 1 (Score: ${weights.p1.toFixed(2)}):
 ${JSON.stringify(parent1, null, 2)}
@@ -440,9 +477,11 @@ ${JSON.stringify(parent2, null, 2)}
 
 Create a child that combines the best elements. Weight toward ${higherScoring}.
 
+IMPORTANT: Your response MUST use the exact variable names from the schema above.
+
 Return JSON only:
 {
-  "templateData": { "subject": "...", "background": "...", "lighting": "...", "camera": "...", "style": "...", "quality": "...", "negative": "..." },
+  "templateData": ${schemaExample},
   "rationale": "Why this combination should improve scores",
   "confidence": 0.0-1.0
 }`;
@@ -450,20 +489,28 @@ Return JSON only:
 
 const buildWildPrompt = (
   baseTemplate: TemplateData,
-  avoidPatterns: string[]
+  avoidPatterns: string[],
+  context: EvolutionContext
 ): string => {
+  const schemaDesc = buildSchemaDescription(context.variablesSchema);
+  const schemaExample = buildSchemaExample(context.variablesSchema);
+
   return `You are an expert AI prompt engineer. Create an experimental variation.
+
+${schemaDesc}
 
 Base Template (for reference):
 ${JSON.stringify(baseTemplate, null, 2)}
 
-Patterns to AVOID (known failures): ${avoidPatterns.join(', ')}
+Patterns to AVOID (known failures): ${avoidPatterns.join(', ') || 'None'}
 
 Create something novel and creative that hasn't been tried. Be bold but professional.
 
+IMPORTANT: Your response MUST use the exact variable names from the schema above.
+
 Return JSON only:
 {
-  "templateData": { "subject": "...", "background": "...", "lighting": "...", "camera": "...", "style": "...", "quality": "...", "negative": "..." },
+  "templateData": ${schemaExample},
   "rationale": "Why this experimental approach might work",
   "confidence": 0.0-1.0
 }`;
@@ -473,7 +520,43 @@ Return JSON only:
 // Response Parsers
 // =============================================================================
 
-const parseVariationResponse = (text: string): Result<{ templateData: TemplateData; rationale: string; confidence: number }> => {
+/**
+ * Validate that templateData matches the expected schema
+ */
+const validateTemplateData = (
+  templateData: any,
+  schema: VariablesSchema
+): Result<void> => {
+  const requiredFields = Object.entries(schema)
+    .filter(([_, spec]) => spec.required)
+    .map(([key, _]) => key);
+
+  const dataKeys = Object.keys(templateData);
+  const schemaKeys = Object.keys(schema);
+
+  // Check for missing required fields
+  const missingRequired = requiredFields.filter(key => !dataKeys.includes(key));
+  if (missingRequired.length > 0) {
+    return err(createError('VALIDATION_ERROR',
+      `Missing required variables: ${missingRequired.join(', ')}`
+    ));
+  }
+
+  // Check for unexpected fields
+  const unexpectedFields = dataKeys.filter(key => !schemaKeys.includes(key));
+  if (unexpectedFields.length > 0) {
+    return err(createError('VALIDATION_ERROR',
+      `Unexpected variables: ${unexpectedFields.join(', ')}. Expected: ${schemaKeys.join(', ')}`
+    ));
+  }
+
+  return ok(undefined);
+};
+
+const parseVariationResponse = (
+  text: string,
+  schema: VariablesSchema
+): Result<{ templateData: TemplateData; rationale: string; confidence: number }> => {
   try {
     // Extract JSON from response
     let jsonStr = text;
@@ -493,6 +576,12 @@ const parseVariationResponse = (text: string): Result<{ templateData: TemplateDa
     }
     if (typeof parsed.confidence !== 'number' || parsed.confidence < 0 || parsed.confidence > 1) {
       return err(createError('EVALUATION_ERROR', 'Missing or invalid confidence (must be 0-1)'));
+    }
+
+    // Validate templateData matches schema
+    const validationResult = validateTemplateData(parsed.templateData, schema);
+    if (!validationResult.ok) {
+      return validationResult;
     }
 
     return ok({

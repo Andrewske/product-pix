@@ -5,6 +5,16 @@
 import type { IterationState, ScoreHistoryEntry } from '@bench/core/iteration-types';
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+/**
+ * Minimum generations before convergence checks apply
+ * Prevents premature convergence during initial population building
+ */
+const MIN_GENERATIONS_BEFORE_CONVERGENCE = 3;
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -53,6 +63,15 @@ export const checkConvergence = (
     recentImprovement: calculateImprovementRate(state.scoreHistory),
     populationStdDev: lastHistory?.stdDev ?? 0,
   };
+
+  // Skip convergence checks for early generations to allow population building
+  if (currentGen < MIN_GENERATIONS_BEFORE_CONVERGENCE) {
+    return {
+      converged: false,
+      details: `Building population (gen ${currentGen}/${MIN_GENERATIONS_BEFORE_CONVERGENCE} minimum)`,
+      stats,
+    };
+  }
 
   // Check conditions in order of priority
 

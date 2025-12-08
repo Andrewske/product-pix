@@ -1,15 +1,65 @@
 {
-	"label": "image-to-image-baseline",
+	"label": "cross-product-baseline",
 	"tests": [
 		{
-			"sourceImage": "./images/tester-1-suitcase.jpg",
+			"sourceImage": "./prompt-bench/fixtures/images/tester-1-suitcase.jpg",
 			"variables": {
 				"product": "monos suitcase",
 				"background_type": "pure white seamless",
 				"lighting_style": "soft diffused studio",
 				"style": "commercial catalog"
 			},
-			"notes": "Test commercial catalog transformation on suitcase photo"
+			"notes": "Product 1: Luggage/suitcase"
+		},
+		{
+			"sourceImage": "./prompt-bench/fixtures/images/air-purifier.jpg",
+			"variables": {
+				"product": "air purifier",
+				"background_type": "pure white seamless",
+				"lighting_style": "soft diffused studio lighting",
+				"style": "commercial catalog"
+			},
+			"notes": "Product 2: Home appliances"
+		},
+		{
+			"sourceImage": "./prompt-bench/fixtures/images/coffee-grinder.jpg",
+			"variables": {
+				"product": "burr coffee grinder",
+				"background_type": "clean white background",
+				"lighting_style": "bright studio lighting",
+				"style": "kitchen appliance commercial"
+			},
+			"notes": "Product 3: Kitchen appliances"
+		},
+		{
+			"sourceImage": "./prompt-bench/fixtures/images/espresso-maker.jpg",
+			"variables": {
+				"product": "espresso machine",
+				"background_type": "gradient white to gray",
+				"lighting_style": "professional studio lighting",
+				"style": "premium kitchen appliance"
+			},
+			"notes": "Product 4: Kitchen appliances"
+		},
+		{
+			"sourceImage": "./prompt-bench/fixtures/images/monitor.jpg",
+			"variables": {
+				"product": "computer monitor",
+				"background_type": "pure white seamless",
+				"lighting_style": "professional studio lighting",
+				"style": "tech commercial"
+			},
+			"notes": "Product 5: Electronics"
+		},
+		{
+			"sourceImage": "./prompt-bench/fixtures/images/peanut-butter.jpg",
+			"variables": {
+				"product": "peanut butter jar",
+				"background_type": "soft white backdrop",
+				"lighting_style": "natural soft lighting",
+				"style": "lifestyle product"
+			},
+			"notes": "Product 6: Food products"
 		}
 	]
 }

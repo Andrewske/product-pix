@@ -47,19 +47,16 @@ export const PromptVariationSchema = z.object({
   parentIds: z.array(z.string().uuid()).max(2), // Empty for initial, 1 for mutation, 2 for crossover
   source: VariationSourceSchema,
   mutationType: MutationTypeSchema.optional(),
-  templateData: z.object({
-    subject: z.string().min(1, 'Subject is required'),
-    background: z.string().optional(),
-    lighting: z.string().optional(),
-    camera: z.string().optional(),
-    style: z.string().optional(),
-    quality: z.string().optional(),
-    negative: z.string().optional(),
-  }).passthrough(),
+  // Flexible schema to support different template structures (product vs subject, etc.)
+  templateData: z.record(z.string(), z.unknown()),
   rationale: z.string().min(1, 'Rationale is required'),
   confidence: z.number().min(0).max(1),
   approved: z.boolean().optional(),
-  score: z.number().optional(),
+  score: z.number().optional(), // Aggregated score (mean across all product tests)
+  individualScores: z.array(z.object({
+    productIndex: z.number().int().min(0),
+    score: z.number(),
+  })).optional(), // Per-product scores for analysis
 });
 
 export type PromptVariation = z.infer<typeof PromptVariationSchema>;
@@ -177,6 +174,22 @@ export const ScoreHistoryEntrySchema = z.object({
 export type ScoreHistoryEntry = z.infer<typeof ScoreHistoryEntrySchema>;
 
 // =============================================================================
+// Product Test Case Schema
+// =============================================================================
+
+/**
+ * A fixed product test case (source image + context)
+ * These remain constant across all generations
+ */
+export const ProductTestCaseSchema = z.object({
+  sourceImage: z.string().optional(),
+  variables: z.record(z.string(), z.unknown()),
+  notes: z.string().optional(),
+});
+
+export type ProductTestCase = z.infer<typeof ProductTestCaseSchema>;
+
+// =============================================================================
 // Iteration State Schema
 // =============================================================================
 
@@ -193,6 +206,8 @@ export const IterationStateSchema = z.object({
   currentPopulation: z.array(PopulationEntrySchema),
   scoreHistory: z.array(ScoreHistoryEntrySchema),
   config: IterationConfigSchema,
+  // Product test set: fixed across all generations for cross-product evaluation
+  productTests: z.array(ProductTestCaseSchema),
 });
 
 export type IterationState = z.infer<typeof IterationStateSchema>;

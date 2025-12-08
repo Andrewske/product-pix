@@ -59,6 +59,7 @@ export const createSession = (
     currentPopulation: [],
     scoreHistory: [],
     config: mergedConfig,
+    productTests: [], // Will be populated during session initialization
   };
 };
 

@@ -74,17 +74,15 @@ The `prompt-bench/` directory is a self-contained testing framework for iterativ
 
 Default settings in `prompt-bench.toml`:
 ```toml
-[run]
-api_delay_ms = 3000        # Rate limiting between generations
-default_batch = "tests/fixtures/products-mix.json"
+[defaults]
+template = "ecommerce-base"                             # Default template for iterate/run/test
+batch_file = "prompt-bench/fixtures/images-batch.json"  # Default batch file path
+label_prefix = "batch"                                  # Default label prefix
+evaluation_model = "claude-sonnet-4-20250514"           # Default evaluation model
 
-[evaluate]
-model = "claude-sonnet-4-20250514"
-max_score = 10
-
-[report]
-output_dir = "reports"
-baseline_label = "ecommerce-base-baseline"
+[defaults.report]
+insights = true                                         # Generate AI insights by default
+show_urls = false                                       # Show image URLs in reports
 ```
 
 ### Core Concepts
@@ -117,7 +115,10 @@ bun bench compare --baseline ecommerce-base-baseline --candidate variant-1
 Evolutionary prompt optimization via genetic algorithm approach:
 
 ```bash
-# Start new iteration session
+# Start new iteration session (uses defaults from prompt-bench.toml)
+bun bench iterate
+
+# Start with specific template/batch (overrides defaults)
 bun bench iterate --template ecommerce-base --batch tests/fixtures/products-mix.json
 
 # Resume session

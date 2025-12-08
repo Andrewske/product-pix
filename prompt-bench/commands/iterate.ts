@@ -12,11 +12,12 @@ import { createSession, saveSession, loadSession, listSessions } from '@bench/co
 import { checkConvergence, type ConvergenceResult } from '@bench/core/convergence';
 import { evolvePopulation } from '@bench/core/evolution';
 import { generateStructuredInsights } from './insights';
-import { BatchFileSchema, type BatchFile, type TestCase, type TemplateData } from '@bench/core/types';
+import { BatchFileSchema, type BatchFile, type TestCase, type TemplateData, type VariablesSchema } from '@bench/core/types';
 import { summarize, getScoreDistribution } from '@bench/core/statistics';
 import type { IterationState, PromptVariation, GenerationRecord, ScoreHistoryEntry } from '@bench/core/iteration-types';
 import type { BatchSummary } from './insights';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { loadConfig } from './shared';
 
 // =============================================================================
 // Types
@@ -142,61 +143,111 @@ const loadBatchFile = (filePath: string): Result<BatchFile> => {
   }
 };
 
+/**
+ * Fetch template definition from database
+ */
+const fetchTemplateSchema = async (
+  templateSlug: string,
+  version: number
+): Promise<Result<VariablesSchema>> => {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('prompt_templates')
+      .select('variables_schema')
+      .eq('slug', templateSlug)
+      .eq('version', version)
+      .eq('status', 'active')
+      .single();
+
+    if (error) {
+      return err(createError('DATABASE_ERROR', `Failed to fetch template: ${error.message}`));
+    }
+
+    if (!data || !data.variables_schema) {
+      return err(createError('NO_DATA_ERROR', `Template schema not found for ${templateSlug} v${version}`));
+    }
+
+    return ok(data.variables_schema as VariablesSchema);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(createError('DATABASE_ERROR', `Database query failed: ${message}`));
+  }
+};
+
 // =============================================================================
 // Session Management
 // =============================================================================
 
 const createNewSession = async (options: IterateOptions): Promise<IterationState | null> => {
-  if (!options.template) {
-    console.error('Error: --template is required for new sessions');
+  // Load config for defaults
+  const config = loadConfig();
+
+  const template = options.template || config?.defaults?.template;
+  const batch = options.batch || config?.defaults?.batch_file;
+
+  if (!template) {
+    console.error('Error: --template is required for new sessions (or set defaults.template in prompt-bench.toml)');
     return null;
   }
 
-  if (!options.batch) {
-    console.error('Error: --batch is required for new sessions');
+  if (!batch) {
+    console.error('Error: --batch is required for new sessions (or set defaults.batch_file in prompt-bench.toml)');
     return null;
   }
 
-  console.log(`Creating new iteration session for template: ${options.template}`);
+  console.log(`Creating new iteration session for template: ${template}`);
 
-  const config = {
+  const iterationConfig = {
     populationSize: options.population,
     maxGenerations: options.generations,
   };
 
-  const state = createSession(options.template, 1, config);
+  const state = createSession(template, 1, iterationConfig);
 
-  // Load initial batch and create first generation
-  const batchResult = loadBatchFile(options.batch!);
+  // Load batch file as product test set
+  const batchResult = loadBatchFile(batch);
   if (!batchResult.ok) {
     console.error(`Failed to load batch file: ${batchResult.error.message}`);
     return null;
   }
 
-  const batch = batchResult.data;
-  const initialVariations: PromptVariation[] = batch.tests.map((test: TestCase, index: number) => ({
+  const batchData = batchResult.data;
+
+  // Store product tests (fixed across all generations)
+  state.productTests = batchData.tests.map((test: TestCase) => ({
+    sourceImage: test.sourceImage,
+    variables: test.variables,
+    notes: test.notes,
+  }));
+
+  console.log(`Loaded ${state.productTests.length} product test cases`);
+
+  // Create single base variation from first product's variables
+  const baseVariables = batchData.tests[0].variables;
+  const baseVariation: PromptVariation = {
     id: randomUUID(),
     parentIds: [],
     source: 'user' as const,
-    templateData: test.variables as PromptVariation['templateData'],
-    rationale: `Initial variation from batch test ${index + 1}`,
-    confidence: 0.5,
-  }));
+    templateData: baseVariables as PromptVariation['templateData'],
+    rationale: 'Initial base variation from first product',
+    confidence: 1.0,
+  };
 
-  // Create first generation record
+  // Create first generation record with just the base variation
   const firstGeneration: GenerationRecord = {
     generation: 1,
     batchLabel: `iteration-${state.sessionId}-gen-1`,
-    variations: initialVariations,
+    variations: [baseVariation],
   };
 
-  // Update state with initial population
+  // Update state with initial population (just the base variation)
   state.generations.push(firstGeneration);
-  state.currentPopulation = initialVariations.map((variation) => ({
-    variationId: variation.id,
+  state.currentPopulation = [{
+    variationId: baseVariation.id,
     fitness: 0, // Will be updated after evaluation
     generation: 1,
-  }));
+  }];
 
   const saveResult = await saveSession(state);
   if (!saveResult.ok) {
@@ -205,7 +256,7 @@ const createNewSession = async (options: IterateOptions): Promise<IterationState
   }
 
   console.log(`Session created: ${state.sessionId}`);
-  console.log(`Loaded ${initialVariations.length} initial variations from batch`);
+  console.log(`Created 1 base variation to be tested against ${state.productTests.length} products`);
   return state;
 };
 
@@ -285,33 +336,45 @@ const runIterationLoop = async (
   state: IterationState,
   options: IterateOptions
 ): Promise<void> => {
+  // Fetch template schema once at the start
+  const schemaResult = await fetchTemplateSchema(state.templateSlug, state.templateVersion);
+  if (!schemaResult.ok) {
+    console.error(`Failed to fetch template schema: ${schemaResult.error.message}`);
+    return;
+  }
+  const variablesSchema = schemaResult.data;
+
   while (true) {
-    // 1. Check convergence
+    // 1. Run current population tests if not evaluated
+    if (needsEvaluation(state)) {
+      const evaluated = await runAndEvaluatePopulation(state, options);
+      if (!evaluated) break; // Error occurred
+    }
+
+    // 2. Check convergence (after evaluation)
     const convergence = checkConvergence(state, options.target);
     if (convergence.converged) {
       displayConvergenceMessage(convergence, options);
       break;
     }
 
-    // 2. Run current population tests if not evaluated
-    if (needsEvaluation(state)) {
-      const evaluated = await runAndEvaluatePopulation(state, options);
-      if (!evaluated) break; // Error occurred
-    }
-
     // 3. Generate structured insights
+    console.log('🤖 Generating AI insights...');
     const insights = await generateStructuredInsights(buildSummary(state));
     if (!insights.ok) {
       console.error('Failed to generate insights:', insights.error.message);
       break;
     }
+    console.log('✓ Insights generated');
 
     // 4. Evolve population (generate new variations)
-    const variations = await evolvePopulation(state, insights.data, state.config);
+    console.log('🧬 Evolving population...');
+    const variations = await evolvePopulation(state, insights.data, state.config, variablesSchema);
     if (!variations.ok) {
       console.error('Failed to evolve population:', variations.error.message);
       break;
     }
+    console.log(`✓ Generated ${variations.data.length} variations`);
 
     // 5. Human approval
     const approved = await promptForApproval(variations.data, state, options);
@@ -608,6 +671,7 @@ const writeTempBatchFile = (
 
 /**
  * Creates a temporary batch file from current population for evaluation
+ * Generates cartesian product of variations × product tests
  */
 const createBatchFromPopulation = async (
   state: IterationState
@@ -616,7 +680,25 @@ const createBatchFromPopulation = async (
   if (!variationsResult.ok) return variationsResult;
 
   const variations = variationsResult.data;
-  const tests = createTestCasesFromVariations(variations);
+
+  // Create cartesian product: each variation tested against all products
+  const tests: TestCase[] = [];
+
+  for (const variation of variations) {
+    for (let productIndex = 0; productIndex < state.productTests.length; productIndex++) {
+      const product = state.productTests[productIndex];
+
+      // Merge variation templateData with product source image
+      // Variation provides the evolved prompt, product provides the source image
+      tests.push({
+        sourceImage: product.sourceImage,
+        variables: variation.templateData,
+        notes: `Variation ${variation.id.slice(0, 8)} on product ${productIndex + 1}`,
+      });
+    }
+  }
+
+  console.log(`Created ${tests.length} tests (${variations.length} variations × ${state.productTests.length} products)`);
 
   const batch: BatchFile = {
     label: `iteration-${state.sessionId}-population`,
@@ -668,15 +750,34 @@ const fetchEvaluationResults = async (
 };
 
 /**
- * Find matching variation in current generation only
- * Note: JSON.stringify comparison is order-sensitive; consider deep equality library for production
+ * Deep equality check for objects (order-independent)
+ */
+const deepEqual = (obj1: any, obj2: any): boolean => {
+  if (obj1 === obj2) return true;
+  if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
+    return false;
+  }
+
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+
+  if (keys1.length !== keys2.length) return false;
+
+  return keys1.every(key => {
+    if (!keys2.includes(key)) return false;
+    return deepEqual(obj1[key], obj2[key]);
+  });
+};
+
+/**
+ * Find matching variation in current generation using deep equality
  */
 const findMatchingVariation = (
   currentGeneration: GenerationRecord,
   inputs: any
 ): PromptVariation | null => {
   return currentGeneration.variations.find(v =>
-    JSON.stringify(v.templateData) === JSON.stringify(inputs)
+    deepEqual(v.templateData, inputs)
   ) || null;
 };
 
@@ -708,6 +809,7 @@ const updateVariationWithScore = (
 
 /**
  * Update state with evaluation results from database
+ * Aggregates scores across multiple product tests per variation
  */
 const updateStateWithEvaluationResults = async (
   state: IterationState,
@@ -719,11 +821,44 @@ const updateStateWithEvaluationResults = async (
   const evaluations = evaluationsResult.data;
   const currentGen = state.generations[state.generations.length - 1];
 
-  let updatedCount = 0;
+  // Group evaluations by variation (match by templateData)
+  const variationScores = new Map<string, Array<{ productIndex: number; score: number }>>();
+
   for (const { inputs, score } of evaluations) {
     const variation = findMatchingVariation(currentGen, inputs);
-    if (variation && updateVariationWithScore(state, variation.id, score)) {
+    if (!variation) continue;
+
+    if (!variationScores.has(variation.id)) {
+      variationScores.set(variation.id, []);
+    }
+
+    // Determine product index based on test order
+    const scores = variationScores.get(variation.id)!;
+    const productIndex = scores.length; // Sequential product index for this variation
+
+    scores.push({ productIndex, score });
+  }
+
+  // Aggregate scores and update variations
+  let updatedCount = 0;
+  for (const [variationId, scores] of variationScores.entries()) {
+    // Calculate mean score across all products
+    const meanScore = scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
+
+    // Update variation with aggregated score and individual scores
+    const variation = currentGen.variations.find(v => v.id === variationId);
+    if (variation) {
+      variation.score = meanScore;
+      variation.individualScores = scores;
+
+      // Update population entry fitness
+      const populationEntry = state.currentPopulation.find(p => p.variationId === variationId);
+      if (populationEntry) {
+        populationEntry.fitness = meanScore;
+      }
+
       updatedCount++;
+      console.log(`Variation ${variationId.slice(0, 8)}: mean=${meanScore.toFixed(2)} across ${scores.length} products`);
     }
   }
 
@@ -733,7 +868,7 @@ const updateStateWithEvaluationResults = async (
     ));
   }
 
-  console.log(`Updated ${updatedCount} variations with evaluation scores`);
+  console.log(`Updated ${updatedCount} variations with aggregated scores`);
   return ok(undefined);
 };
 
