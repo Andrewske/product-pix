@@ -60,6 +60,8 @@ export const createSession = (
     scoreHistory: [],
     config: mergedConfig,
     productTests: [], // Will be populated during session initialization
+    costHistory: [],
+    totalCosts: { generation: 0, evaluation: 0, insights: 0 },
   };
 };
 

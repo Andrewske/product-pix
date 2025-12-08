@@ -73,6 +73,7 @@ interface RunPhaseResult {
 interface EvalPhaseResult {
   completed: number;
   failed: number;
+  totalCost: number;
 }
 
 // =============================================================================
@@ -138,7 +139,7 @@ export const runPipeline = async (
       if (!isOk(evalResult)) return evalResult;
 
       result.phases.evaluate = evalResult.data;
-      evaluationCost = evalResult.data.completed * 0.001; // Rough estimate: $0.001 per evaluation
+      evaluationCost = evalResult.data.totalCost;
     }
 
     // Phase 4: Report (optional)
@@ -390,7 +391,7 @@ const evaluatePhase = async (
 
   if (tests.length === 0) {
     onProgress?.('evaluate', 1, 1, 'No tests to evaluate');
-    return ok({ completed: 0, failed: 0 });
+    return ok({ completed: 0, failed: 0, totalCost: 0 });
   }
 
   // Update test statuses to evaluating
@@ -462,7 +463,19 @@ const evaluatePhase = async (
 
   onProgress?.('evaluate', tests.length, tests.length, `Evaluation completed: ${completed} evaluated, ${failed} failed`);
 
-  return ok({ completed, failed });
+  // Aggregate actual evaluation costs from database
+  const { data: evalCosts, error: costError } = await supabase
+    .from('prompt_tests')
+    .select('prompt_evaluations!inner(cost_usd)')
+    .eq('batch_label', batchLabel)
+    .eq('status', 'completed');
+
+  const totalCost = costError
+    ? 0
+    : (evalCosts ?? []).flatMap(test => test.prompt_evaluations ?? []).reduce((sum, e) => sum + (e.cost_usd ?? 0), 0);
+
+
+  return ok({ completed, failed, totalCost });
 };
 
 const reportPhase = async (

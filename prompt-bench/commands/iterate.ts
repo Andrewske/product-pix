@@ -18,6 +18,10 @@ import type { IterationState, PromptVariation, GenerationRecord, ScoreHistoryEnt
 import type { BatchSummary } from './insights';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { loadConfig } from './shared';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { CostRecord, GenerationCostEntry } from '@bench/core/iteration-types';
 
 // =============================================================================
 // Types
@@ -345,10 +349,20 @@ const runIterationLoop = async (
   const variablesSchema = schemaResult.data;
 
   while (true) {
+    // === NEW: Initialize per-generation costs ===
+    const genCosts: CostRecord = { generation: 0, evaluation: 0, insights: 0 };
+
     // 1. Run current population tests if not evaluated
     if (needsEvaluation(state)) {
-      const evaluated = await runAndEvaluatePopulation(state, options);
-      if (!evaluated) break; // Error occurred
+      const evalResult = await runAndEvaluatePopulation(state, options);
+      if (!evalResult.evaluated) {
+        // === NEW: Persist partial costs before breaking ===
+        await persistCosts(state);
+        break;
+      }
+      // === NEW: Capture generation/evaluation costs ===
+      genCosts.generation = evalResult.costs.generation;
+      genCosts.evaluation = evalResult.costs.evaluation;
     }
 
     // 2. Check convergence (after evaluation)
@@ -363,9 +377,19 @@ const runIterationLoop = async (
     const insights = await generateStructuredInsights(buildSummary(state));
     if (!insights.ok) {
       console.error('Failed to generate insights:', insights.error.message);
+      // === NEW: Persist partial costs before breaking ===
+      updateStateCosts(state, genCosts);
+      await persistCosts(state);
       break;
     }
     console.log('✓ Insights generated');
+
+    // === NEW: Update state and display costs ===
+    updateStateCosts(state, genCosts);
+    displayGenerationCosts(state.generations.length, genCosts, options);
+
+    // === NEW: Persist costs incrementally (crash resilience) ===
+    await persistCosts(state);
 
     // 4. Evolve population (generate new variations)
     console.log('🧬 Evolving population...');
@@ -411,10 +435,19 @@ const needsEvaluation = (state: IterationState): boolean => {
          state.currentPopulation.some(p => p.fitness === 0);
 };
 
+// Add interface near top of file (after IterateOptions, around line 45)
+interface EvaluationResult {
+  evaluated: boolean;
+  costs: { generation: number; evaluation: number };
+}
+
+// Default costs for error cases
+const DEFAULT_COSTS = { generation: 0, evaluation: 0 };
+
 const runAndEvaluatePopulation = async (
   state: IterationState,
   _options: IterateOptions
-): Promise<boolean> => {
+): Promise<EvaluationResult> => {
   let tempFilePath: string | null = null;
 
   try {
@@ -423,7 +456,7 @@ const runAndEvaluatePopulation = async (
     if (!batchFile.ok) {
       console.error(`Failed to create batch file for session ${state.sessionId}, gen ${state.generations.length}: ${batchFile.error.message}`);
       console.error(`Population size: ${state.currentPopulation.length}, Template: ${state.templateSlug}`);
-      return false;
+      return { evaluated: false, costs: DEFAULT_COSTS };
     }
 
     tempFilePath = batchFile.data.filePath;
@@ -447,26 +480,26 @@ const runAndEvaluatePopulation = async (
 
     if (!pipelineResult.ok) {
       console.error(`Pipeline failed for session ${state.sessionId}: ${pipelineResult.error.message}`);
-      return false;
+      return { evaluated: false, costs: DEFAULT_COSTS };
     }
 
     // 4. Update state with evaluation results
     const updateResult = await updateStateWithEvaluationResults(state, batchLabel);
     if (!updateResult.ok) {
       console.error(`Failed to update state with results: ${updateResult.error.message}`);
-      return false;
+      return { evaluated: false, costs: DEFAULT_COSTS };
     }
 
     // 5. Update score history
     updateScoreHistory(state);
 
     console.log(`✅ Evaluated ${state.currentPopulation.length} variations`);
-    return true;
+    return { evaluated: true, costs: pipelineResult.data.costs ?? DEFAULT_COSTS };
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Population evaluation failed for session ${state.sessionId}: ${message}`);
-    return false;
+    return { evaluated: false, costs: DEFAULT_COSTS };
   } finally {
     // Clean up temporary batch file
     if (tempFilePath && existsSync(tempFilePath)) {
@@ -935,5 +968,119 @@ const displayFinalSummary = (
   if (state.scoreHistory.length > 0) {
     const final = state.scoreHistory[state.scoreHistory.length - 1];
     console.log(`Final Best Score: ${final.best.toFixed(2)}/10`);
+  }
+
+  // Display total costs
+  const total = state.totalCosts;
+  const grandTotal = total.generation + total.evaluation + total.insights;
+  console.log(`\n--- Total Costs ---`);
+  console.log(`Generation: $${total.generation.toFixed(4)}`);
+  console.log(`Evaluation: $${total.evaluation.toFixed(4)}`);
+  console.log(`Insights:   $${total.insights.toFixed(4)}`);
+  console.log(`Grand Total: $${grandTotal.toFixed(4)}`);
+};
+
+const displayGenerationCosts = (
+  generation: number,
+  costs: CostRecord,
+  options: IterateOptions
+): void => {
+  if (options.quiet) return;
+
+  const total = costs.generation + costs.evaluation + costs.insights;
+  console.log(`\n💰 Generation ${generation} Costs:`);
+  console.log(`   Generation: $${costs.generation.toFixed(4)}`);
+  console.log(`   Evaluation: $${costs.evaluation.toFixed(4)}`);
+  console.log(`   Insights:   $${costs.insights.toFixed(4)}`);
+  console.log(`   Total:      $${total.toFixed(4)}`);
+};
+
+const updateStateCosts = (state: IterationState, costs: CostRecord): void => {
+  const entry: GenerationCostEntry = {
+    generation: state.generations.length,
+    timestamp: new Date().toISOString(),
+    costs,
+    total: costs.generation + costs.evaluation + costs.insights,
+  };
+
+  state.costHistory.push(entry);
+  state.totalCosts.generation += costs.generation;
+  state.totalCosts.evaluation += costs.evaluation;
+  state.totalCosts.insights += costs.insights;
+};
+
+// Note: imports added in Phase 1:
+// import { writeFile, mkdir } from 'node:fs/promises';
+// import { dirname } from 'node:path';
+// import { fileURLToPath } from 'node:url';
+
+// Use module-relative path (not process.cwd() which is fragile)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SESSIONS_DIR = join(__dirname, '..', 'sessions');
+
+const writeCostsToCsv = async (state: IterationState): Promise<Result<void>> => {
+  const csvPath = join(SESSIONS_DIR, `${state.sessionId}-costs.csv`);
+
+  const headers = 'generation,timestamp,generation_cost,evaluation_cost,insights_cost,total\n';
+  const rows = state.costHistory.map(entry =>
+    `${entry.generation},${entry.timestamp},${entry.costs.generation.toFixed(4)},${entry.costs.evaluation.toFixed(4)},${entry.costs.insights.toFixed(4)},${entry.total.toFixed(4)}`
+  ).join('\n');
+
+  const total = state.totalCosts;
+  const grandTotal = total.generation + total.evaluation + total.insights;
+  const summary = `\nTOTAL,,${total.generation.toFixed(4)},${total.evaluation.toFixed(4)},${total.insights.toFixed(4)},${grandTotal.toFixed(4)}`;
+
+  try {
+    // Ensure sessions directory exists (handles fresh clones, gitignored dirs)
+    await mkdir(SESSIONS_DIR, { recursive: true });
+    await writeFile(csvPath, headers + rows + summary, 'utf-8');
+    console.log(`📄 Cost report saved: ${csvPath}`);
+    return ok(undefined);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(createError('STORAGE_ERROR', `Failed to write CSV: ${message}`));
+  }
+};
+
+const writeCostsToDatabase = async (state: IterationState): Promise<Result<void>> => {
+  const supabase = createAdminClient();
+
+  const total = state.totalCosts;
+  const grandTotal = total.generation + total.evaluation + total.insights;
+
+  const { error } = await (supabase as any)
+    .from('iteration_costs')
+    .upsert({
+      session_id: state.sessionId,
+      template_slug: state.templateSlug,
+      generation_count: state.generations.length,
+      generation_cost: total.generation,
+      evaluation_cost: total.evaluation,
+      insights_cost: total.insights,
+      total_cost: grandTotal,
+      cost_details: state.costHistory,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'session_id' });
+
+  if (error) {
+    return err(createError('DATABASE_ERROR', `Failed to save costs: ${error.message}`));
+  }
+
+  return ok(undefined);
+};
+
+const persistCosts = async (state: IterationState): Promise<void> => {
+  if (state.costHistory.length === 0) return;
+
+  // Database is source of truth - persist there first
+  const dbResult = await writeCostsToDatabase(state);
+  if (!dbResult.ok) {
+    console.warn(`⚠️ Database save failed: ${dbResult.error.message}`);
+  }
+
+  // CSV is a derived export for convenience
+  const csvResult = await writeCostsToCsv(state);
+  if (!csvResult.ok) {
+    console.warn(`⚠️ CSV save failed: ${csvResult.error.message}`);
   }
 };

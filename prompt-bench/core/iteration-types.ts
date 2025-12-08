@@ -174,6 +174,27 @@ export const ScoreHistoryEntrySchema = z.object({
 export type ScoreHistoryEntry = z.infer<typeof ScoreHistoryEntrySchema>;
 
 // =============================================================================
+// Cost Tracking Schema
+// =============================================================================
+
+export const CostRecordSchema = z.object({
+  generation: z.number().min(0),
+  evaluation: z.number().min(0),
+  insights: z.number().min(0),
+});
+
+export type CostRecord = z.infer<typeof CostRecordSchema>;
+
+export const GenerationCostEntrySchema = z.object({
+  generation: z.number().int().min(0),
+  timestamp: z.string().datetime(),
+  costs: CostRecordSchema,
+  total: z.number().min(0),
+});
+
+export type GenerationCostEntry = z.infer<typeof GenerationCostEntrySchema>;
+
+// =============================================================================
 // Product Test Case Schema
 // =============================================================================
 
@@ -208,6 +229,8 @@ export const IterationStateSchema = z.object({
   config: IterationConfigSchema,
   // Product test set: fixed across all generations for cross-product evaluation
   productTests: z.array(ProductTestCaseSchema),
+  costHistory: z.array(GenerationCostEntrySchema).default([]),
+  totalCosts: CostRecordSchema.default({ generation: 0, evaluation: 0, insights: 0 }),
 });
 
 export type IterationState = z.infer<typeof IterationStateSchema>;
