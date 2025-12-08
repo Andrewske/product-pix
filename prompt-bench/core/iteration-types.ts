@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { TemplateData } from './types';
 
 // =============================================================================
 // Mutation Types
@@ -47,7 +46,15 @@ export const PromptVariationSchema = z.object({
   parentIds: z.array(z.string().uuid()).max(2), // Empty for initial, 1 for mutation, 2 for crossover
   source: VariationSourceSchema,
   mutationType: MutationTypeSchema.optional(),
-  templateData: z.any(), // TemplateData from types.ts - using any to avoid circular import
+  templateData: z.object({
+    subject: z.string().min(1, 'Subject is required'),
+    background: z.string().optional(),
+    lighting: z.string().optional(),
+    camera: z.string().optional(),
+    style: z.string().optional(),
+    quality: z.string().optional(),
+    negative: z.string().optional(),
+  }).passthrough(),
   rationale: z.string().min(1, 'Rationale is required'),
   confidence: z.number().min(0).max(1),
   approved: z.boolean().optional(),
