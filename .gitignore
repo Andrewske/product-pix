@@ -42,4 +42,8 @@ next-env.d.ts
 !*.example
 
 # reports
-reports/
+# reports/
+
+# iteration sessions (keep .gitkeep, ignore session files)
+prompt-bench/sessions/*.json
+!prompt-bench/sessions/.gitkeep

@@ -24,8 +24,9 @@ import { reportCommand } from '@bench/commands/report';
 import { syncCommand } from '@bench/commands/sync';
 import { testCommand } from '@bench/commands/test';
 import { openLastReportCommand } from '@bench/commands/open-last-report';
- 
-const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report'] as const;
+import { iterateCommand } from '@bench/commands/iterate';
+
+const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report', 'iterate'] as const;
 
 type Command = (typeof COMMANDS)[number];
 
@@ -44,7 +45,8 @@ Commands:
   report           Generate HTML report for a batch
   sync             Sync local templates to database
   open-last-report Open the most recent HTML report
- 
+  iterate          Evolutionary prompt optimization (NEW)
+
 Examples:
   bun bench test --template product-photo --batch ./batches/test.csv
   bun bench run --template product-photo --batch ./batches/test.csv --label v1
@@ -52,7 +54,9 @@ Examples:
   bun bench compare --baseline v1 --candidate v2
   bun bench report --label v1
   bun bench open-last-report
-
+  bun bench iterate --template ecommerce-base --batch ./fixtures/images-batch.json
+  bun bench iterate --session <id> --status
+  bun bench iterate --list
 
 Run 'bun bench <command> --help' for command-specific options.
 `);
@@ -104,6 +108,9 @@ const main = async (): Promise<void> => {
       break;
     case 'open-last-report':
       await openLastReportCommand();
+      break;
+    case 'iterate':
+      await iterateCommand(args);
       break;
   }
 };

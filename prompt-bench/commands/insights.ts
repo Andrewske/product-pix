@@ -4,6 +4,13 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { Result, ok, err, createError } from '@bench/core/errors';
+import type { TemplateData } from '@bench/core/types';
+import {
+  StructuredInsight,
+  PromptVariation,
+  SuccessPattern,
+  FailurePattern,
+} from '@bench/core/iteration-types';
 
 // =============================================================================
 // Types
@@ -23,10 +30,12 @@ export interface BatchSummary {
   topTests: Array<{
     score: number;
     prompt: string;
+    templateData?: TemplateData;  // NEW: structured template data
   }>;
   bottomTests: Array<{
     score: number;
     prompt: string;
+    templateData?: TemplateData;  // NEW: structured template data
   }>;
   comparison?: {
     baselineLabel: string;
@@ -78,6 +87,51 @@ Return ONLY valid JSON:
 }
 
 ## Batch Data:
+`;
+
+const STRUCTURED_INSIGHTS_PROMPT = `You are an expert AI prompt engineer analyzing e-commerce product image generation results.
+
+Analyze the batch data and return structured insights with concrete prompt variations to test.
+
+## Analysis Tasks:
+1. Identify patterns in high-scoring prompts (success patterns)
+2. Identify patterns in low-scoring prompts (failure patterns)
+3. Generate {variationCount} new prompt variations using:
+   - Mutations: modify wording, add/remove elements
+   - Crossovers: combine successful elements from different prompts
+   - Wild: creative experiments avoiding known failures
+
+## Response Format (JSON only):
+{
+  "keyFindings": ["...", "..."],
+  "recommendations": ["...", "..."],
+  "nextSteps": ["...", "..."],
+  "proposedVariations": [
+    {
+      "id": "var-{uuid}",
+      "parentIds": ["parent-id-if-mutation"],
+      "source": "mutation|crossover|wild",
+      "mutationType": "wording|addition|removal|substitution|emphasis|wild",
+      "templateData": {
+        "subject": "...",
+        "background": "...",
+        "lighting": "...",
+        "camera": "...",
+        "style": "...",
+        "quality": "...",
+        "negative": "..."
+      },
+      "rationale": "Why this variation should improve scores",
+      "confidence": 0.75
+    }
+  ],
+  "successPatterns": [
+    { "pattern": "soft diffused lighting", "component": "lighting", "frequency": 0.8, "avgScore": 8.5 }
+  ],
+  "failurePatterns": [
+    { "pattern": "harsh direct light", "component": "lighting", "frequency": 0.6, "avgScore": 5.2 }
+  ]
+}
 `;
 
 /**
@@ -145,6 +199,61 @@ export const generateInsights = async (
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return err(createError('EVALUATION_ERROR', `Insights generation failed: ${message}`));
+  }
+};
+
+/**
+ * Generate AI-powered structured insights with machine-readable prompt variations
+ */
+export const generateStructuredInsights = async (
+  summary: BatchSummary,
+  variationCount: number = 5
+): Promise<Result<StructuredInsight>> => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return err(createError('VALIDATION_ERROR', 'ANTHROPIC_API_KEY environment variable is required'));
+  }
+
+  const client = new Anthropic({ apiKey });
+
+  // Format summary data for the prompt
+  const summaryText = formatSummaryForStructuredPrompt(summary, variationCount);
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2048,
+      messages: [
+        {
+          role: 'user',
+          content: `${STRUCTURED_INSIGHTS_PROMPT.replace('{variationCount}', variationCount.toString())}\n${summaryText}`,
+        },
+      ],
+    });
+
+    // Extract text content
+    const textContent = response.content.find((c) => c.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      return err(createError('EVALUATION_ERROR', 'No text response from Claude'));
+    }
+
+    // Parse JSON response
+    const parseResult = parseStructuredInsightsResponse(textContent.text);
+    if (!parseResult.ok) {
+      return parseResult;
+    }
+
+    const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
+    const costUsd = calculateCost(response.usage.input_tokens, response.usage.output_tokens);
+
+    return ok({
+      ...parseResult.data,
+      tokensUsed,
+      costUsd,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(createError('EVALUATION_ERROR', `Structured insights generation failed: ${message}`));
   }
 };
 
@@ -217,5 +326,98 @@ const parseInsightsResponse = (text: string): Result<Omit<InsightResult, 'tokens
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return err(createError('EVALUATION_ERROR', `Failed to parse insights: ${message}`));
+  }
+};
+
+const formatSummaryForStructuredPrompt = (summary: BatchSummary, variationCount: number): string => {
+  let text = `
+Label: ${summary.label}
+Total Tests: ${summary.testCount}
+
+Statistics:
+- Mean Score: ${summary.stats.mean.toFixed(2)}/10
+- Std Deviation: ${summary.stats.stdDev.toFixed(2)}
+- Range: ${summary.stats.min.toFixed(1)} - ${summary.stats.max.toFixed(1)}
+- Median: ${summary.stats.median.toFixed(1)}
+
+Score Distribution:
+${Object.entries(summary.scoreDistribution)
+  .map(([range, count]) => `- ${range}: ${count} tests`)
+  .join('\n')}
+
+Top 3 Scoring Prompts:
+${summary.topTests.map((t, i) => `${i + 1}. [${t.score.toFixed(1)}/10] "${t.prompt}"${t.templateData ? `\n   Template: ${JSON.stringify(t.templateData)}` : ''}`).join('\n')}
+
+Bottom 3 Scoring Prompts:
+${summary.bottomTests.map((t, i) => `${i + 1}. [${t.score.toFixed(1)}/10] "${t.prompt}"${t.templateData ? `\n   Template: ${JSON.stringify(t.templateData)}` : ''}`).join('\n')}
+`;
+
+  if (summary.comparison) {
+    text += `
+Comparison with Baseline (${summary.comparison.baselineLabel}):
+- Baseline Mean: ${summary.comparison.baselineMean.toFixed(2)}
+- Mean Difference: ${summary.comparison.meanDiff > 0 ? '+' : ''}${summary.comparison.meanDiff.toFixed(3)}
+- Statistically Significant: ${summary.comparison.significant ? 'Yes' : 'No'}
+`;
+  }
+
+  return text;
+};
+
+const parseStructuredInsightsResponse = (
+  text: string
+): Result<Omit<StructuredInsight, 'tokensUsed' | 'costUsd'>> => {
+  try {
+    // Extract JSON from response (handle markdown code blocks)
+    let jsonStr = text;
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1];
+    }
+
+    const parsed = JSON.parse(jsonStr.trim());
+
+    // Validate required fields
+    if (!Array.isArray(parsed.keyFindings)) {
+      return err(createError('EVALUATION_ERROR', 'Missing keyFindings array'));
+    }
+    if (!Array.isArray(parsed.recommendations)) {
+      return err(createError('EVALUATION_ERROR', 'Missing recommendations array'));
+    }
+    if (!Array.isArray(parsed.nextSteps)) {
+      return err(createError('EVALUATION_ERROR', 'Missing nextSteps array'));
+    }
+    if (!Array.isArray(parsed.proposedVariations)) {
+      return err(createError('EVALUATION_ERROR', 'Missing proposedVariations array'));
+    }
+    if (!Array.isArray(parsed.successPatterns)) {
+      return err(createError('EVALUATION_ERROR', 'Missing successPatterns array'));
+    }
+    if (!Array.isArray(parsed.failurePatterns)) {
+      return err(createError('EVALUATION_ERROR', 'Missing failurePatterns array'));
+    }
+
+    // Generate UUIDs for variations if not provided and validate structure
+    const proposedVariations: PromptVariation[] = parsed.proposedVariations.map((v: any, index: number) => ({
+      id: v.id || `var-${Date.now()}-${index}`,
+      parentIds: v.parentIds || [],
+      source: v.source,
+      mutationType: v.mutationType,
+      templateData: v.templateData,
+      rationale: v.rationale,
+      confidence: v.confidence,
+    }));
+
+    return ok({
+      keyFindings: parsed.keyFindings,
+      recommendations: parsed.recommendations,
+      nextSteps: parsed.nextSteps,
+      proposedVariations,
+      successPatterns: parsed.successPatterns,
+      failurePatterns: parsed.failurePatterns,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(createError('EVALUATION_ERROR', `Failed to parse structured insights: ${message}`));
   }
 };
