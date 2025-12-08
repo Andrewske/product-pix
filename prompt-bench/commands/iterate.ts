@@ -5,6 +5,7 @@
 import { parseArgs } from 'node:util';
 import { createInterface } from 'node:readline';
 import { readFileSync, existsSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Result, ok, err, createError } from '@bench/core/errors';
 import { createSession, saveSession, loadSession, listSessions } from '@bench/core/state';
@@ -173,7 +174,7 @@ const createNewSession = async (options: IterateOptions): Promise<IterationState
 
   const batch = batchResult.data;
   const initialVariations: PromptVariation[] = batch.tests.map((test: TestCase, index: number) => ({
-    id: `init-${Date.now()}-${index}`,
+    id: randomUUID(),
     parentIds: [],
     source: 'user' as const,
     templateData: test.variables as PromptVariation['templateData'],
