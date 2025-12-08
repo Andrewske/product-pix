@@ -5,25 +5,42 @@ ProductPix: AI product photo generator (Next.js 16, Supabase, Cloudflare R2, Gem
 ## Commands
 
 ```bash
-bun dev/build/lint/test     # Standard commands
-bun bench run --template <slug> --batch <file> [--label <name>]
-bun bench test --template <slug> --batch <file>  # Full pipeline
-bun bench evaluate/compare/report/sync/progress  # See --help
-```
+# Development
+bun dev/build/lint/test
 
-**Supabase**: `npx supabase db push | gen types ts | migration new`
+# Prompt Bench CLI
+bun bench test --template <slug> --batch <file>    # Full pipeline
+bun bench run --template <slug> --batch <file>     # Generate only
+bun bench evaluate --label <batch-label>           # Score images
+bun bench compare --baseline <l1> --candidate <l2> # A/B testing
+bun bench report --label <batch-label>             # HTML report
+bun bench open-last-report                         # Open latest report
+bun bench sync                                     # Sync templates to DB
+bun bench iterate [options]                        # Evolutionary optimization (experimental)
+
+# Supabase
+npx supabase db push | gen types ts | migration new
+```
 
 ## Architecture
 
 ```
-src/lib/ai/          # Gemini provider (rawPrompt + image-to-image)
-src/lib/db/          # Database queries
-src/lib/supabase/    # client (browser), server (SSR), admin (bypass RLS)
-src/lib/r2/          # Presigned URLs, uploads
-prompt-bench/        # CLI testing framework (isolated)
-  core/              # types, errors (Result type), compiler, evaluator, statistics
-  commands/          # run, evaluate, compare, report, test, sync
-  templates/         # registry + template definitions
+src/lib/
+  ai/           # Gemini provider (rawPrompt + image-to-image)
+  db/           # Database queries (jobs, credits, generated_images, etc.)
+  supabase/     # client (browser), server (SSR), admin (bypass RLS)
+  r2/           # Presigned URLs, uploads (direct browser → R2)
+  auth/         # Hooks, utils
+  rate-limit/   # Request throttling
+  images/       # Validation
+
+prompt-bench/   # Isolated CLI testing framework
+  core/         # types, errors (Result<T>), compiler, evaluator, statistics
+                # evolution, convergence, state, iteration-types
+  commands/     # run, evaluate, compare, report, test, sync, iterate, insights
+  templates/    # registry + template definitions
+  __tests__/    # Unit tests
+  sessions/     # Iteration state (gitignored)
 ```
 
 **Key tables**: users, uploads, jobs, generated_images, credit_transactions, prompt_templates, prompt_tests, prompt_evaluations
@@ -34,12 +51,149 @@ prompt-bench/        # CLI testing framework (isolated)
 
 - **Package manager**: `bun` only (not npm/yarn/pnpm)
 - **Path aliases**: `@/*` → `./src/*`, `@bench/*` → `./prompt-bench/*`
-- **Error handling**: Result type (`ok`/`err`) in prompt-bench
+- **Error handling**: Result type (`ok`/`err`) in prompt-bench, try/catch in app
 - **Barrel exports**: All lib modules via index.ts
 - **API validation**: Zod schemas
+- **Testing**: Jest for unit tests, 70-80% coverage target
+- **TypeScript**: Strict mode, no `any`, explicit return types
+- **Functions**: ≤20 lines, ≤3 nesting levels
 
 ## Gotchas
 
-- **R2 uploads**: Browser → presigned URL → R2 → confirm (not through server)
+- **R2 uploads**: Browser → presigned URL → R2 → confirm (NOT through server)
 - **Source images**: Resolved relative to batch file, hash-deduplicated in R2
 - **Idempotency**: Tests use keys to prevent duplicates on re-runs
+- **Environment**: Load `.env` before `.env.local` (see `prompt-bench/cli.ts:17-18`)
+- **R2 evaluation**: Evaluator fetches images directly from R2 URLs (not local files)
+
+## Prompt Bench Framework
+
+The `prompt-bench/` directory is a self-contained testing framework for iterative prompt engineering.
+
+### Configuration
+
+Default settings in `prompt-bench.toml`:
+```toml
+[run]
+api_delay_ms = 3000        # Rate limiting between generations
+default_batch = "tests/fixtures/products-mix.json"
+
+[evaluate]
+model = "claude-sonnet-4-20250514"
+max_score = 10
+
+[report]
+output_dir = "reports"
+baseline_label = "ecommerce-base-baseline"
+```
+
+### Core Concepts
+
+1. **Templates**: Prompt templates with variables (e.g., `ecommerce-base`)
+2. **Batch files**: JSON test cases with variable values
+3. **Pipeline**: run → evaluate → report (or `bun bench test` for all)
+4. **Result type**: Explicit error handling (no exceptions)
+5. **Idempotency**: Tests tracked by hash keys to prevent duplicate evaluations
+
+### Test Workflow
+
+```bash
+# 1. Sync templates to database
+bun bench sync
+
+# 2. Run full pipeline
+bun bench test --template ecommerce-base --batch tests/fixtures/products-mix.json
+
+# 3. View results
+bun bench open-last-report
+
+# 4. Compare variants
+bun bench test --template ecommerce-variant --batch tests/fixtures/products-mix.json --label variant-1
+bun bench compare --baseline ecommerce-base-baseline --candidate variant-1
+```
+
+### Iteration System (Experimental)
+
+Evolutionary prompt optimization via genetic algorithm approach:
+
+```bash
+# Start new iteration session
+bun bench iterate --template ecommerce-base --batch tests/fixtures/products-mix.json
+
+# Resume session
+bun bench iterate --session <session-id>
+
+# List sessions
+bun bench iterate --list
+
+# Check status
+bun bench iterate --session <session-id> --status
+```
+
+**Components**:
+- `core/iteration-types.ts`: Type definitions for variations, generations, mutations
+- `core/state.ts`: Session persistence (in `sessions/` directory)
+- `core/evolution.ts`: Population evolution (mutation, crossover, elitism)
+- `core/convergence.ts`: Stopping criteria detection
+- `commands/insights.ts`: Structured AI analysis of batch results
+- `commands/iterate.ts`: Main iteration loop with human approval
+
+**Status**: Under development. See `docs/prompt-iterate/` for detailed implementation docs.
+
+## Recent Updates (2025-12-07)
+
+### New Features
+- **Evolutionary iteration system**: Genetic algorithm for prompt optimization with human-in-the-loop approval
+- **Population evaluation**: Automated batch generation, testing, and scoring integration
+- **Structured insights**: AI-powered analysis of test results to guide mutations
+- **Session management**: Persistent iteration state with resume capability
+- **Config file support**: `prompt-bench.toml` for default settings
+
+### Improvements
+- **Enhanced reporting**: HTML reports with score distributions, baseline comparisons, AI insights
+- **R2 integration**: Direct evaluation from R2 URLs instead of local files
+- **Test orchestrator**: Unified pipeline with progress tracking
+- **Source image support**: Image-to-image generation with deduplication
+- **Directory reorganization**: `prompt-bench/` as isolated module with barrel exports
+
+### Bug Fixes
+- Fixed profile fetching errors in auth hooks
+- Improved database migrations with proper ordering
+- Added dependency injection for testable state management
+- Fixed UUID generation for variation IDs
+- Added proper source types for elite variations
+
+### Documentation
+- Comprehensive iteration system docs in `docs/prompt-iterate/`
+- Code review fixes tracked in `docs/prompt-iterate/10-code-review-fixes.md`
+- Agent orchestration learnings in `docs/prompt-iterate/11-agent-orchestration-learnings.md`
+- Slash command guide at `.claude/commands/prompt-iterate.md`
+
+## Development Notes
+
+### Adding New Templates
+
+1. Create template file in `prompt-bench/templates/<name>.ts`
+2. Export from `prompt-bench/templates/index.ts`
+3. Register in `prompt-bench/templates/registry.ts`
+4. Run `bun bench sync` to push to database
+
+### Running Tests
+
+```bash
+# Unit tests
+bun test
+
+# Specific test file
+bun test prompt-bench/__tests__/compiler.test.ts
+
+# With coverage
+bun test --coverage
+```
+
+### Known Issues
+
+- Iteration system has several TODO stubs (see `docs/prompt-iterate/10-code-review-fixes.md`)
+- Some `any` types in evolution engine need proper typing
+- Template data schema uses `z.any()` to avoid circular imports
+- JSON.stringify comparison for variation matching (consider deep equality library)
