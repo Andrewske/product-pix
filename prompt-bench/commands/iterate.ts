@@ -4,12 +4,16 @@
 
 import { parseArgs } from 'node:util';
 import { createInterface } from 'node:readline';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Result, ok, err, createError } from '@bench/core/errors';
 import { createSession, saveSession, loadSession, listSessions } from '@bench/core/state';
-import { checkConvergence } from '@bench/core/convergence';
+import { checkConvergence, type ConvergenceResult } from '@bench/core/convergence';
 import { evolvePopulation } from '@bench/core/evolution';
 import { generateStructuredInsights } from './insights';
-import type { IterationState, PromptVariation } from '@bench/core/iteration-types';
+import { BatchFileSchema, type BatchFile, type TestCase, type TemplateData } from '@bench/core/types';
+import { summarize, getScoreDistribution } from '@bench/core/statistics';
+import type { IterationState, PromptVariation, GenerationRecord } from '@bench/core/iteration-types';
 import type { BatchSummary } from './insights';
 
 // =============================================================================
@@ -115,6 +119,28 @@ const parseIterateOptions = (args: string[]): IterateOptions => {
 };
 
 // =============================================================================
+// Helper Functions
+// =============================================================================
+
+const loadBatchFile = (filePath: string): Result<BatchFile> => {
+  const absolutePath = resolve(process.cwd(), filePath);
+
+  if (!existsSync(absolutePath)) {
+    return err(createError('VALIDATION_ERROR', `Batch file not found: ${absolutePath}`));
+  }
+
+  try {
+    const content = readFileSync(absolutePath, 'utf-8');
+    const parsed = JSON.parse(content);
+    const validated = BatchFileSchema.parse(parsed);
+    return ok(validated);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(createError('VALIDATION_ERROR', `Failed to parse batch file: ${message}`));
+  }
+};
+
+// =============================================================================
 // Session Management
 // =============================================================================
 
@@ -138,8 +164,38 @@ const createNewSession = async (options: IterateOptions): Promise<IterationState
 
   const state = createSession(options.template, 1, config);
 
-  // TODO: Load initial batch and create first generation
-  // For now, just save the empty session
+  // Load initial batch and create first generation
+  const batchResult = loadBatchFile(options.batch!);
+  if (!batchResult.ok) {
+    console.error(`Failed to load batch file: ${batchResult.error.message}`);
+    return null;
+  }
+
+  const batch = batchResult.data;
+  const initialVariations: PromptVariation[] = batch.tests.map((test: TestCase, index: number) => ({
+    id: `init-${Date.now()}-${index}`,
+    parentIds: [],
+    source: 'user' as const,
+    templateData: test.variables as PromptVariation['templateData'],
+    rationale: `Initial variation from batch test ${index + 1}`,
+    confidence: 0.5,
+  }));
+
+  // Create first generation record
+  const firstGeneration: GenerationRecord = {
+    generation: 1,
+    batchLabel: `iteration-${state.sessionId}-gen-1`,
+    variations: initialVariations,
+  };
+
+  // Update state with initial population
+  state.generations.push(firstGeneration);
+  state.currentPopulation = initialVariations.map((variation, index) => ({
+    variationId: variation.id,
+    fitness: 0, // Will be updated after evaluation
+    generation: 1,
+  }));
+
   const saveResult = await saveSession(state);
   if (!saveResult.ok) {
     console.error(`Failed to save session: ${saveResult.error.message}`);
@@ -147,6 +203,7 @@ const createNewSession = async (options: IterateOptions): Promise<IterationState
   }
 
   console.log(`Session created: ${state.sessionId}`);
+  console.log(`Loaded ${initialVariations.length} initial variations from batch`);
   return state;
 };
 
@@ -290,30 +347,60 @@ const needsEvaluation = (state: IterationState): boolean => {
 };
 
 const runAndEvaluatePopulation = async (
-  state: IterationState,
-  options: IterateOptions
+  _state: IterationState,
+  _options: IterateOptions
 ): Promise<boolean> => {
-  // TODO: Implement population evaluation
-  // This would create a batch file from current population
-  // Run evaluation, and update state with results
-
-  if (!options.quiet) {
-    console.log('Evaluating current population...');
-  }
-
-  // Placeholder - mark as evaluated for now
-  return true;
+  // TODO: Implement full population evaluation with batch running and evaluation
+  // For now, throw an error indicating this functionality needs to be implemented
+  throw new Error('Population evaluation not yet implemented. This requires integrating with the run and evaluate commands.');
 };
 
 const buildSummary = (state: IterationState): BatchSummary => {
-  // TODO: Build proper batch summary from state
+  // Collect all scored variations from current population
+  const scoredVariations = state.currentPopulation
+    .map(entry => {
+      const variation = state.generations
+        .flatMap(gen => gen.variations)
+        .find(v => v.id === entry.variationId);
+      return variation && variation.score ? { variation, score: variation.score } : null;
+    })
+    .filter((item): item is { variation: PromptVariation; score: number } => item !== null)
+    .sort((a, b) => b.score - a.score);
+
+  if (scoredVariations.length === 0) {
+    return {
+      label: `iteration-${state.sessionId}`,
+      testCount: 0,
+      stats: { mean: 0, stdDev: 0, min: 0, max: 0, median: 0 },
+      scoreDistribution: {},
+      topTests: [],
+      bottomTests: [],
+    };
+  }
+
+  const scores = scoredVariations.map(item => item.score);
+  const stats = summarize(scores);
+  const scoreDistribution = getScoreDistribution(scores);
+
+  const topTests = scoredVariations.slice(0, 3).map(item => ({
+    score: item.score,
+    prompt: JSON.stringify(item.variation.templateData), // Simplified prompt representation
+    templateData: item.variation.templateData as TemplateData,
+  }));
+
+  const bottomTests = scoredVariations.slice(-3).reverse().map(item => ({
+    score: item.score,
+    prompt: JSON.stringify(item.variation.templateData), // Simplified prompt representation
+    templateData: item.variation.templateData as TemplateData,
+  }));
+
   return {
     label: `iteration-${state.sessionId}`,
-    testCount: 0,
-    stats: { mean: 0, stdDev: 0, min: 0, max: 0, median: 0 },
-    scoreDistribution: {},
-    topTests: [],
-    bottomTests: [],
+    testCount: scoredVariations.length,
+    stats,
+    scoreDistribution,
+    topTests,
+    bottomTests,
   };
 };
 
@@ -374,10 +461,26 @@ const updateStateWithApproved = (
   state: IterationState,
   approved: PromptVariation[]
 ): void => {
-  // TODO: Add approved variations to state
+  const nextGenerationNumber = state.generations.length + 1;
+
   // Create new generation record
-  // Update current population
-  // Update score history
+  const newGeneration: GenerationRecord = {
+    generation: nextGenerationNumber,
+    batchLabel: `iteration-${state.sessionId}-gen-${nextGenerationNumber}`,
+    variations: approved,
+  };
+
+  // Add to generations
+  state.generations.push(newGeneration);
+
+  // Update current population with approved variations
+  state.currentPopulation = approved.map((variation) => ({
+    variationId: variation.id,
+    fitness: 0, // Will be evaluated in next iteration
+    generation: nextGenerationNumber,
+  }));
+
+  // Note: Score history is updated during evaluation, not here
 };
 
 // =============================================================================
@@ -385,7 +488,7 @@ const updateStateWithApproved = (
 // =============================================================================
 
 const displayConvergenceMessage = (
-  convergence: any,
+  convergence: ConvergenceResult,
   options: IterateOptions
 ): void => {
   if (options.json) {
