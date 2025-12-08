@@ -14,3 +14,6 @@ export * from './iteration-types';
 export * from './state';
 export * from './evolution';
 export * from './convergence';
+
+// Refinement system exports
+export * from './refinement-types';
