@@ -88,8 +88,6 @@ export const createGeminiProvider = (): ImageProvider => {
           model,
           providerOptions: {
             google: {
-              projectId,
-              location,
               responseModalities: ['TEXT', 'IMAGE'],
               imageConfig: {
                 aspectRatio: aspectRatioMap[config.aspectRatio],
@@ -164,8 +162,10 @@ export const createGeminiProvider = (): ImageProvider => {
           model,
           providerOptions: {
             google: {
-              projectId,
-              location,
+              responseModalities: ['TEXT', 'IMAGE'],
+              imageConfig: {
+                aspectRatio: aspectRatioMap[config.aspectRatio],
+              },
             },
           },
           messages: [
