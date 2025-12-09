@@ -12,6 +12,8 @@ import type {
   Pattern,
   SegmentAnalysis,
   TestResults,
+  EvaluationBreakdown,
+  ProductScore,
 } from '@bench/core/improvement-types';
 import { calculateCost } from '@/lib/pricing';
 
@@ -335,5 +337,72 @@ const parseSuggestions = (suggestions: unknown[]): Suggestion[] => {
       confidence: typeof s.confidence === 'number' ? s.confidence : 0.5,
       codeChanges: Array.isArray(s.codeChanges) ? s.codeChanges : undefined,
     }));
+};
+
+// =============================================================================
+// Dimension Analysis Formatting Helpers
+// =============================================================================
+
+/**
+ * Format dimension analysis with dimensions sorted worst-first
+ * Includes warning indicators for scores < 7.0
+ */
+export const formatDimensionAnalysis = (breakdown: EvaluationBreakdown): string => {
+  const dimensions = Object.entries(breakdown)
+    .map(([key, score]) => ({ dimension: key, score: score as number }))
+    .sort((a, b) => a.score - b.score); // Worst first
+
+  const lines = dimensions.map(({ dimension, score }) => {
+    const warning = score < 7.0 ? ' ⚠️' : '';
+    const formattedScore = score.toFixed(2);
+    const displayName = dimension.replace(/([A-Z])/g, ' $1').toLowerCase();
+    return `${displayName}: ${formattedScore}${warning}`;
+  });
+
+  return lines.join('\n');
+};
+
+/**
+ * Format per-product feedback with breakdown and reasoning
+ */
+export const formatProductFeedback = (productScores: ProductScore[]): string => {
+  return productScores
+    .map((product) => {
+      const lines = [`**${product.productId}** (Score: ${product.score.toFixed(2)})`];
+
+      if (product.breakdown) {
+        const weakestDim = findWeakestDimension(product.breakdown);
+        lines.push(`  Weakest area: ${weakestDim.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+      }
+
+      if (product.reasoning) {
+        lines.push(`  Reasoning: ${product.reasoning}`);
+      }
+
+      if (product.suggestions && product.suggestions.length > 0) {
+        lines.push(`  Suggestions: ${product.suggestions.join(', ')}`);
+      }
+
+      return lines.join('\n');
+    })
+    .join('\n\n');
+};
+
+/**
+ * Find the dimension with the lowest score for quick diagnosis
+ */
+export const findWeakestDimension = (breakdown: EvaluationBreakdown): string => {
+  let weakestDim = '';
+  let lowestScore = Infinity;
+
+  for (const [dimension, score] of Object.entries(breakdown)) {
+    const numScore = score as number;
+    if (numScore < lowestScore) {
+      lowestScore = numScore;
+      weakestDim = dimension;
+    }
+  }
+
+  return weakestDim;
 };
 
