@@ -19,6 +19,18 @@ export interface CreateBatchJobParams {
   batchName: string;
 }
 
+interface GeminiInlineData {
+  inline_data: {
+    mime_type: string;
+    data: string;
+  };
+}
+
+interface GeminiTextPart {
+  text: string;
+}
+
+type GeminiContentPart = GeminiInlineData | GeminiTextPart;
 export interface BatchJobResult {
   geminiBatchId: string;
   geminiFileId: string;
@@ -69,7 +81,7 @@ export async function createBatchJob(
 
   // 2. Build JSONL content
   const requests = itemsWithImages.map((item) => {
-    const parts: any[] = [];
+    const parts: GeminiContentPart[] = [];
 
     // Add image if present
     if ('imageData' in item && item.imageData) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { fetchUserSubscription, type SubscriptionData } from '@/lib/db/billing';
@@ -75,9 +76,9 @@ export function SubscriptionStatus() {
           <p className="text-sm text-muted-foreground mb-4">
             Subscribe to get monthly credits automatically.
           </p>
-          <a href="/pricing" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+          <ButtonLink href="/pricing">
             View Plans
-          </a>
+          </ButtonLink>
         </CardContent>
       </Card>
     );

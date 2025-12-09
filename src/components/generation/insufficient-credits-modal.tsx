@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X, CreditCard } from 'lucide-react';
@@ -101,9 +102,9 @@ export function InsufficientCreditsModal({
           )}
 
           <div className="flex gap-2">
-            <a href="/pricing" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 flex-1">
+            <ButtonLink href="/pricing" variant="outline" className="flex-1">
               View All Options
-            </a>
+            </ButtonLink>
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>

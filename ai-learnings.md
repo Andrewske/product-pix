@@ -79,3 +79,10 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Dual TypeScript configs for monorepo exclusion**: When keeping tightly-coupled dev tooling in monorepo but excluding from production builds, use separate `tsconfig.build.json` that overrides `include` array to exclude dev directories. Next.js respects `typescript.tsconfigPath` config option
 - **TypeScript include vs exclude precedence**: `include` arrays take precedence over `exclude` — to exclude a directory, override the entire `include` array rather than just adding to `exclude`
 - **Build-time vs runtime separation**: CLI tools can use root tsconfig (with dev dependencies) while production builds use stripped-down config, enabling different compilation rules for same codebase
+
+## Code Review Patterns
+
+- **ButtonLink component**: When Button's asChild prop isn't available, create a dedicated ButtonLink component combining Button styling with Next.js Link for proper navigation
+- **Type safety in API responses**: Define explicit union types for API response structures (like GeminiContentPart) instead of using any[] to maintain strict TypeScript compliance
+- **Error message specificity**: Separate error handling logic for different failure modes (auth errors vs user not found) to provide more actionable debugging information
+- **Import cleanup**: Remove unused imports (like Next.js Link) when replacing raw HTML elements with custom components

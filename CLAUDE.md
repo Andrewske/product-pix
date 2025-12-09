@@ -47,11 +47,7 @@ prompt-bench/   # Isolated CLI testing framework
 **RPC**: `create_generation_job`, `add_credits`, `consume_credits`, `refund_credits`, `update_prompt_test_status`
 ## Architecture Decision: prompt-bench Integration
 
-
-
 **Decision**: Keep prompt-bench as monorepo directory with build exclusion
-
-
 
 **Rationale**: prompt-bench is ProductPix-specific dev tooling with tight coupling to:
 
@@ -63,8 +59,6 @@ prompt-bench/   # Isolated CLI testing framework
 
 - Application pricing logic
 
-
-
 **Implementation**: Dual TypeScript configs
 
 - `tsconfig.json`: Root config for CLI and tests (includes prompt-bench/)
@@ -73,8 +67,6 @@ prompt-bench/   # Isolated CLI testing framework
 - `tsconfig.build.json`: Build config for Next.js (excludes prompt-bench/)
 
 - Next.js uses `typescript.tsconfigPath: './tsconfig.build.json'`
-
-
 
 **Benefits**:
 
@@ -85,8 +77,6 @@ prompt-bench/   # Isolated CLI testing framework
 - No Vercel deployment issues
 
 - One-way dependency flow maintained (prompt-bench → src/)
-
-
 
 **Future**: Migration to separate repo/package possible if coupling decreases
 

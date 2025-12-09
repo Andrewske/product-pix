@@ -17,9 +17,6 @@ export async function POST(req: NextRequest) {
     if (!user.email) {
       return NextResponse.json({ error: 'Email required for checkout' }, { status: 400 });
     }
-    if (!user.email) {
-      return NextResponse.json({ error: 'Email required for checkout' }, { status: 400 });
-    }
     const body = await req.json();
     const { type, packId, tier } = checkoutSchema.parse(body);
 
