@@ -48,6 +48,7 @@ interface ImproveOptions {
   'max-iterations'?: number;
   'target-score'?: number;
   'auto-approve'?: boolean;
+  force?: boolean;
   quiet?: boolean;
   json?: boolean;
 }
@@ -94,20 +95,21 @@ const parseImproveOptions = (args: string[]): ImproveOptions => {
   const config = loadConfig();
   const improveConfig = config?.defaults?.improve;
 
-  const { values } = parseArgs({
-    args,
-    options: {
-      template: { type: 'string', short: 't' },
-      batch: { type: 'string', short: 'b' },
-      continue: { type: 'boolean', short: 'c' },
-      history: { type: 'boolean' },
-      'max-iterations': { type: 'string' },
-      'target-score': { type: 'string' },
-      'auto-approve': { type: 'boolean' },
-      quiet: { type: 'boolean', short: 'q' },
-      json: { type: 'boolean' },
-    },
-  });
+    const { values } = parseArgs({
+      args,
+      options: {
+        template: { type: 'string', short: 't' },
+        batch: { type: 'string', short: 'b' },
+        continue: { type: 'boolean', short: 'c' },
+        history: { type: 'boolean' },
+        'max-iterations': { type: 'string' },
+        'target-score': { type: 'string' },
+        'auto-approve': { type: 'boolean' },
+        force: { type: 'boolean', short: 'f' },
+        quiet: { type: 'boolean', short: 'q' },
+        json: { type: 'boolean' },
+      },
+    });
 
   return {
     template: (values.template as string) || improveConfig?.template || config?.defaults?.template,
@@ -121,6 +123,7 @@ const parseImproveOptions = (args: string[]): ImproveOptions => {
       ? parseFloat(values['target-score'] as string)
       : improveConfig?.target_score || 9.0,
     'auto-approve': (values['auto-approve'] as boolean) || improveConfig?.auto_approve || false,
+    force: values.force as boolean,
     quiet: values.quiet as boolean,
     json: values.json as boolean,
   };
@@ -140,6 +143,14 @@ const createNewSessionForCommand = async (
 
   if (!options.batch) {
     console.error('Error: --batch is required (or set defaults.improve.batch_file in prompt-bench.toml)');
+    return null;
+  }
+
+  // Validate batch size before proceeding
+  const batchLabel = generateBatchLabel(options.template);
+  const validationResult = await validateBatchSize(batchLabel, options.force || false);
+  if (!validationResult.ok) {
+    console.error(`Error: ${validationResult.error.message}`);
     return null;
   }
 
@@ -748,6 +759,35 @@ const calculateDimensionAverages = (evaluations: ProductScore[]): EvaluationBrea
     professionalQuality: sum.professionalQuality / count,
     promptAdherence: sum.promptAdherence / count,
   };
+};
+
+/**
+ * Validate that a batch has minimum required evaluations
+ */
+export const validateBatchSize = async (
+  batchLabel: string,
+  force: boolean = false
+): Promise<Result<void>> => {
+  const supabase = createAdminClient();
+  const evaluations = await fetchBatchEvaluations(supabase, batchLabel);
+
+  const count = evaluations.length;
+
+  if (count < 5) {
+    if (force) {
+      console.warn(`⚠️  Warning: Batch '${batchLabel}' has only ${count} evaluations (minimum 5 required). Proceeding with --force.`);
+      return ok(undefined);
+    } else {
+      return err(
+        createError(
+          'VALIDATION_ERROR',
+          `Batch '${batchLabel}' has only ${count} completed evaluations. Minimum 5 required. Use --force to override.`
+        )
+      );
+    }
+  }
+
+  return ok(undefined);
 };
 
 const requestApproval = async (changes: import('@bench/core/improvement-types').TemplateChange[]): Promise<boolean> => {
