@@ -1,6 +1,6 @@
-import { createAdminClient } from '@/lib/supabase/admin';
 import { addCredits } from '@/lib/db/credits';
 
+const POSTGRES_UNIQUE_VIOLATION = '23505';
 export interface GrantCreditsParams {
   userId: string;
   paymentIntentId: string;
@@ -33,7 +33,7 @@ export async function grantCreditsForPayment(params: GrantCreditsParams): Promis
     .single();
 
   // If insert failed due to conflict, purchase already processed
-  if (error?.code === '23505') { // unique_violation
+  if (error?.code === POSTGRES_UNIQUE_VIOLATION) { // unique_violation
     return { granted: false };
   }
   if (error) throw error;

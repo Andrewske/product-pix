@@ -156,8 +156,9 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 /**
  * Handle subscription tier upgrades with prorated credits
  */
-async function handleSubscriptionTierUpgrade(subscription: Stripe.Subscription) {
-  // This would be called when subscription.updated indicates a tier change
-  // Implementation depends on how Stripe handles upgrades (immediate vs prorated)
-  // For now, we'll handle this in the subscription.updated event if needed
+async function handleSubscriptionTierUpgrade(subscription: Stripe.Subscription): Promise<void> {
+  // TODO: Implement subscription tier upgrade with prorated credits
+  // Business logic needed: How to handle mid-cycle upgrades?
+  // Options: Immediate full credit grant vs prorated amount
+  console.log(`[Stripe] Tier upgrade detected for subscription ${subscription.id}`);
 }

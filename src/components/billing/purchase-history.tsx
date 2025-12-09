@@ -3,41 +3,18 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { createAdminClient } from '@/lib/supabase/admin';
-
-interface PurchaseData {
-  id: string;
-  amount_cents: number;
-  credits_granted: number;
-  purchase_type: string;
-  created_at: string;
-}
+import { fetchUserPurchases, type PurchaseData } from '@/lib/db/billing';
 
 export function PurchaseHistory() {
   const [purchases, setPurchases] = useState<PurchaseData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPurchases = async () => {
-      try {
-        const supabase = createAdminClient();
-        const { data, error } = await supabase
-          .from('stripe_purchases')
-          .select('id, amount_cents, credits_granted, purchase_type, created_at')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .order('created_at', { ascending: false });
-
-        if (!error && data) {
-          setPurchases(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch purchases:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPurchases();
+    fetchUserPurchases()
+      .then(setPurchases)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -49,6 +26,19 @@ export function PurchaseHistory() {
         <CardContent>
           <p className="text-muted-foreground">Loading...</p>
         </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Purchase History</CardTitle>
+          <CardDescription className="text-destructive">
+            Error loading purchases: {error}
+          </CardDescription>
+        </CardHeader>
       </Card>
     );
   }

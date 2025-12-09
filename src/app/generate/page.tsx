@@ -1,13 +1,13 @@
 'use client';
 // src/app/generate/page.tsx
 
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/components/forms/upload-form';
 import { PromptInput } from '@/components/forms/prompt-input';
 import { GenerationResult } from '@/components/generation-result';
 import { GenerationLoading } from '@/components/generation-loading';
+import { InsufficientCreditsModal } from '@/components/generation/insufficient-credits-modal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useCredits } from '@/lib/auth';
@@ -25,6 +25,8 @@ export default function GeneratePage() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{ imageUrl: string; jobId: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [creditsNeeded, setCreditsNeeded] = useState(0);
 
   const handleUploadComplete = (id: string, preview: string) => {
     setUploadId(id);
@@ -62,8 +64,7 @@ export default function GeneratePage() {
       const data = await response.json();
 
       if (response.status === 402) {
-        const errorData = await response.json();
-        setCreditsNeeded(errorData.required);
+        setCreditsNeeded(data.required);
         setShowCreditsModal(true);
         setGenerating(false);
         return;
@@ -128,16 +129,7 @@ export default function GeneratePage() {
                 Remove image
               </Button>
             )}
-          
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
+          </div>
 
           <div>
             <h2 className="text-lg font-medium mb-4">2. Describe the Output</h2>
@@ -146,16 +138,7 @@ export default function GeneratePage() {
               onChange={setPrompt}
               disabled={generating}
             />
-          
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
+          </div>
 
           <div>
             <h2 className="text-lg font-medium mb-4">3. Aspect Ratio</h2>
@@ -170,40 +153,13 @@ export default function GeneratePage() {
                   {ratio}
                 </Button>
               ))}
-            
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
-          
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
+            </div>
+          </div>
 
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded">
               {error}
-            
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
+            </div>
           )}
 
           <Button
@@ -218,16 +174,7 @@ export default function GeneratePage() {
           <p className="text-sm text-muted-foreground text-center">
             You have {credits} credits remaining
           </p>
-        
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
+        </div>
 
         {/* Right column: Output */}
         <div>
@@ -247,35 +194,16 @@ export default function GeneratePage() {
               </p>
             )}
           </Card>
-        
+        </div>
+      </div>
 
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
-      
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
-    </div>
-    
-
-    {showCreditsModal     </div>    </div> (
-      <InsufficientCreditsModal
-        currentBalance={credits}
-        requiredCredits={creditsNeeded}
-        onClose={() => setShowCreditsModal(false)}
-      />
-    )}
+      {showCreditsModal && (
+        <InsufficientCreditsModal
+          currentBalance={credits}
+          requiredCredits={creditsNeeded}
+          onClose={() => setShowCreditsModal(false)}
+        />
+      )}
     </div>
   );
 }

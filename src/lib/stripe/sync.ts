@@ -1,4 +1,5 @@
 import { stripe } from './client';
+import type Stripe from 'stripe';
 import { redis } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserIdByStripeCustomerId } from './customer';
@@ -44,7 +45,7 @@ export async function syncStripeDataToKV(customerId: string): Promise<void> {
 /**
  * Format subscription data for caching
  */
-function formatSubscriptionData(subscription: any) {
+function formatSubscriptionData(subscription: Stripe.Subscription) {
   return {
     id: subscription.id,
     status: subscription.status,
@@ -59,7 +60,7 @@ function formatSubscriptionData(subscription: any) {
 /**
  * Upsert subscription data to database
  */
-async function upsertSubscription(userId: string, subscription: any) {
+async function upsertSubscription(userId: string, subscription: Stripe.Subscription) {
   const tier = subscription.metadata.tier;
   if (!tier) return; // Only track subscriptions with tier metadata
 

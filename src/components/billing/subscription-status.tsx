@@ -1,48 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { createAdminClient } from '@/lib/supabase/admin';
-
-interface SubscriptionData {
-  status: string;
-  tier: string;
-  current_period_end: string;
-  cancel_at_period_end: boolean;
-}
+import { fetchUserSubscription, type SubscriptionData } from '@/lib/db/billing';
 
 export function SubscriptionStatus() {
-  const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
-  // Fetch subscription data on mount
-  useState(() => {
-    const fetchSubscription = async () => {
-      try {
-        const supabase = createAdminClient();
-        const { data, error } = await supabase
-          .from('stripe_subscriptions')
-          .select('status, tier, current_period_end, cancel_at_period_end')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (!error && data) {
-          setSubscription(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch subscription:', error);
-      }
-    };
-
-    fetchSubscription();
-  });
+  useEffect(() => {
+    fetchUserSubscription()
+      .then(setSubscription)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleManageSubscription = async () => {
-    setLoading(true);
+    setPortalLoading(true);
     try {
       const response = await fetch('/api/stripe/portal', {
         method: 'POST',
@@ -58,16 +36,40 @@ export function SubscriptionStatus() {
       console.error('Portal error:', error);
       alert('Failed to open billing portal. Please try again.');
     } finally {
-      setLoading(false);
+      setPortalLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscription Status</CardTitle>
+          <CardDescription>Loading...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscription Status</CardTitle>
+          <CardDescription className="text-destructive">
+            Error loading subscription: {error}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   if (!subscription) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Subscription Status</CardTitle>
-          <CardDescription>You don't have an active subscription</CardDescription>
+          <CardDescription>You donYou don't have an active subscriptionapos;t have an active subscription</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
@@ -116,10 +118,10 @@ export function SubscriptionStatus() {
 
           <Button
             onClick={handleManageSubscription}
-            disabled={loading}
+            disabled={portalLoading}
             variant="outline"
           >
-            {loading ? 'Loading...' : 'Manage Subscription'}
+            {portalLoading ? 'Loading...' : 'Manage Subscription'}
           </Button>
         </div>
       </CardContent>
