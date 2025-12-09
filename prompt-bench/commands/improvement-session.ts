@@ -294,6 +294,29 @@ export const loadIterations = async (
   return ok((data || []).map(parseIterationRow));
 };
 
+/**
+ * Fetch all previous iterations for a session
+ */
+export const fetchPreviousIterations = async (
+  sessionId: string
+): Promise<Result<TemplateIteration[]>> => {
+  const supabase = createAdminClient();
+
+  const { data, error } = await (supabase as any)
+    .from('template_iterations')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('iteration_number', { ascending: true });
+
+  if (error) {
+    return err(
+      createError('DATABASE_ERROR', `Failed to fetch previous iterations: ${error.message}`)
+    );
+  }
+
+  return ok((data || []).map(parseIterationRow));
+};
+
 // =============================================================================
 // Parsing Helpers
 // =============================================================================
