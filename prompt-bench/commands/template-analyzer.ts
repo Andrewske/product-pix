@@ -29,6 +29,7 @@ export interface AnalysisInput {
     category: string;
     score: number;
   }>;
+  iterationHistory?: import('@bench/core/improvement-types').TemplateIteration[];
 }
 
 export interface AnalysisResult {
@@ -45,7 +46,7 @@ export interface AnalysisResult {
  * Build the analyzer prompt with template and evaluation data
  */
 export const buildAnalyzerPrompt = (input: AnalysisInput): string => {
-  const { template, testResults, productDiversity } = input;
+  const { template, testResults, productDiversity, iterationHistory } = input;
 
   const prompt = `You are an expert AI prompt engineer specializing in e-commerce product photography prompts.
 
@@ -90,6 +91,11 @@ ${testResults.dimensionAverages
 
 ## Per-Product Detailed Feedback
 ${formatProductFeedback(testResults.productScores)}
+
+${iterationHistory && iterationHistory.length > 0
+  ? `## Previous Iteration History
+${formatIterationHistory(iterationHistory)}`
+  : ''}
 
 ## Analysis Requirements
 
@@ -412,5 +418,29 @@ export const findWeakestDimension = (breakdown: EvaluationBreakdown): string => 
   }
 
   return weakestDim;
+};
+
+/**
+ * Format iteration history for the analyzer prompt
+ */
+export const formatIterationHistory = (
+  iterations: import('@bench/core/improvement-types').TemplateIteration[]
+): string => {
+  return iterations
+    .map((iteration) => {
+      const lines = [
+        `### Iteration ${iteration.iterationNumber}`,
+        `Score Change: ${iteration.baselineResults.meanScore.toFixed(2)} → ${iteration.improvedResults.meanScore.toFixed(2)} (Δ${iteration.delta.meanDelta >= 0 ? '+' : ''}${iteration.delta.meanDelta.toFixed(2)})`,
+        `Analysis Summary: ${iteration.analysis.summary}`,
+        `Changes Applied: ${iteration.changes.map(c => c.description).join('; ')}`,
+      ];
+
+      if (iteration.analysis.weaknesses && iteration.analysis.weaknesses.length > 0) {
+        lines.push(`Persistent Issues: ${iteration.analysis.weaknesses.join(', ')}`);
+      }
+
+      return lines.join('\n');
+    })
+    .join('\n\n');
 };
 

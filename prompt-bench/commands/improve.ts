@@ -14,6 +14,7 @@ import {
   updateSession,
   listSessions,
   saveIteration,
+  fetchPreviousIterations,
 } from './improvement-session';
 import { analyzeTemplate } from './template-analyzer';
 import { implementSuggestions } from './template-implementer';
@@ -634,10 +635,22 @@ const analyzeWithAI = async (
   const templateResult = await fetchTemplate(session.templateSlug, 'latest');
   if (!templateResult.ok) return templateResult;
 
+  // Fetch previous iterations for context (skip if this is iteration 1)
+  let iterationHistory: TemplateIteration[] | undefined;
+  if (session.currentIteration > 0) {
+    const historyResult = await fetchPreviousIterations(session.sessionId);
+    if (historyResult.ok) {
+      iterationHistory = historyResult.data;
+    } else {
+      console.warn(`⚠️  Failed to fetch iteration history: ${historyResult.error.message}`);
+    }
+  }
+
   const result = await analyzeTemplate(
     {
       template: templateResult.data,
       testResults: baseline.results,
+      iterationHistory,
     },
     session.config.aiModel
   );
