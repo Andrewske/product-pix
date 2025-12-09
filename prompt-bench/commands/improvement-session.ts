@@ -116,6 +116,7 @@ export const updateSession = async (
   sessionId: string,
   updates: Partial<{
     currentIteration: number;
+    initialMeanScore: number | null;
     currentMeanScore: number | null;
     totalImprovement: number;
     totalCostUsd: number;
@@ -130,6 +131,9 @@ export const updateSession = async (
 
   if (updates.currentIteration !== undefined) {
     updateData.current_iteration = updates.currentIteration;
+  }
+  if (updates.initialMeanScore !== undefined) {
+    updateData.initial_mean_score = updates.initialMeanScore;
   }
   if (updates.currentMeanScore !== undefined) {
     updateData.current_mean_score = updates.currentMeanScore;

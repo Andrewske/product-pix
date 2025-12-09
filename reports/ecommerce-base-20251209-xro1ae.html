@@ -1,0 +1,613 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Report: ecommerce-base-20251209-xro1ae</title>
+  <style>
+  /* Reset */
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.5; }
+
+  /* Layout */
+  .max-w-6xl { max-width: 72rem; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .p-8 { padding: 2rem; }
+  .p-4 { padding: 1rem; }
+  .p-2 { padding: 0.5rem; }
+  .mb-8 { margin-bottom: 2rem; }
+  .mb-4 { margin-bottom: 1rem; }
+  .gap-4 { gap: 1rem; }
+  .gap-2 { gap: 0.5rem; }
+
+  /* Grid */
+  .grid { display: grid; }
+  .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  /* Flexbox */
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+
+  /* Colors */
+  .bg-gray-50 { background-color: #f9fafb; }
+  .bg-white { background-color: #fff; }
+  .bg-gray-200 { background-color: #e5e7eb; }
+  .bg-green-500 { background-color: #22c55e; }
+  .bg-yellow-500 { background-color: #eab308; }
+  .bg-red-500 { background-color: #ef4444; }
+  .text-gray-500 { color: #6b7280; }
+  .text-gray-700 { color: #374151; }
+  .text-gray-900 { color: #111827; }
+
+  /* Typography */
+  .text-sm { font-size: 0.875rem; }
+  .text-lg { font-size: 1.125rem; }
+  .text-2xl { font-size: 1.5rem; }
+  .text-3xl { font-size: 1.875rem; }
+  .font-semibold { font-weight: 600; }
+  .font-bold { font-weight: 700; }
+
+  /* Borders & Shadows */
+  .rounded { border-radius: 0.25rem; }
+  .rounded-lg { border-radius: 0.5rem; }
+  .shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .shadow-md { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  .border { border: 1px solid #e5e7eb; }
+
+  /* Images */
+  .aspect-square { aspect-ratio: 1; }
+  .object-cover { object-fit: cover; }
+  .w-full { width: 100%; }
+  .h-4 { height: 1rem; }
+  .min-h-screen { min-height: 100vh; }
+
+  /* Score bar */
+  .score-bar { height: 1rem; border-radius: 0.25rem; transition: width 0.3s; }
+
+  /* Print styles */
+  @media print {
+    body { background: white; }
+    .no-print { display: none; }
+  }
+
+  /* Comparison specific */
+  .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .delta-positive { color: #22c55e; }
+  .delta-negative { color: #ef4444; }
+  .significance-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  .significant { background-color: #dcfce7; color: #166534; }
+  .not-significant { background-color: #f3f4f6; color: #6b7280; }
+  .diff-added { background-color: #dcfce7; }
+  .diff-removed { background-color: #fee2e2; }
+
+  /* Insights section */
+  .from-purple-50 { --tw-gradient-from: #faf5ff; }
+  .to-blue-50 { --tw-gradient-to: #eff6ff; }
+  .bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to)); }
+  .border-purple-100 { border-color: #f3e8ff; }
+  .text-purple-500 { color: #a855f7; }
+  .text-blue-500 { color: #3b82f6; }
+  .text-green-500 { color: #22c55e; }
+  .space-y-2 > * + * { margin-top: 0.5rem; }
+  .mt-1 { margin-top: 0.25rem; }
+  .ml-auto { margin-left: auto; }
+
+  /* Image pair (source + generated side-by-side) */
+  .image-pair { display: flex; gap: 0.25rem; }
+  .image-pair .source-image { flex: 0 0 40%; }
+  .image-pair .generated-image { flex: 0 0 60%; }
+  .image-pair img { width: 100%; height: 100%; object-fit: cover; }
+  .image-label {
+    position: absolute;
+    bottom: 0.25rem;
+    left: 0.25rem;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+  }
+  .image-wrapper { position: relative; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .grid-cols-3, .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+    .comparison-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .image-pair { flex-direction: column; }
+    .image-pair .source-image, .image-pair .generated-image { flex: 1; }
+  }
+</style>
+</head>
+  <body class="bg-gray-50 min-h-screen">
+   <div class="max-w-6xl mx-auto p-8">
+     
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Batch Report: ecommerce-base-20251209-xro1ae</h1>
+    <p class="text-sm text-gray-500">Generated: 2025-12-09T17:01:51.992Z</p>
+    
+  </header>
+ 
+     
+     
+  <section class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow p-6 mb-8 border border-purple-100">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">🔍</span>
+      <h2 class="text-lg font-semibold">Template Improvement Analysis</h2>
+    </div>
+
+    <!-- Summary -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">📊 Summary</h3>
+      <p class="text-gray-700">The template shows moderate performance with a 6.80 score, indicating a solid foundation but significant room for improvement. With only one test result, the analysis is limited, but the template appears to have comprehensive variable coverage while potentially lacking optimization for specific product challenges.</p>
+    </div>
+
+    <!-- Strengths -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">✅ Strengths</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Comprehensive variable schema covering diverse product categories and photography styles</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Good technical foundation with specific camera settings (85mm lens, f/8) and quality specifications</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Well-structured negative prompts targeting common e-commerce photography issues</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Flexible lighting options including specialized setups for different material types</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Clear composition guidance with frame filling specifications (85% of frame)</span>
+          </li>
+        
+      </ul>
+    </div>
+
+    <!-- Weaknesses -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">⚠️ Weaknesses</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-red-500 mt-1">•</span>
+            <span class="text-gray-700">Limited test data makes it difficult to identify specific failure patterns or product-specific issues</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-red-500 mt-1">•</span>
+            <span class="text-gray-700">Prompt structure may be too rigid, potentially limiting AI creativity and natural language flow</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-red-500 mt-1">•</span>
+            <span class="text-gray-700">Subject line combines multiple variables in a way that could create awkward phrasing</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-red-500 mt-1">•</span>
+            <span class="text-gray-700">Quality section might be too prescriptive, potentially conflicting with style variations</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-red-500 mt-1">•</span>
+            <span class="text-gray-700">Template lacks implicit guidance for common e-commerce challenges like reflection control</span>
+          </li>
+        
+      </ul>
+    </div>
+
+    <!-- Patterns -->
+    
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">📈 Patterns</h3>
+      <div class="space-y-3">
+        
+          <div class="bg-white rounded p-3 border-l-4 border-red-500">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-semibold text-sm text-red-700">
+                ✗ Failure Pattern
+              </span>
+              <span class="text-xs text-gray-500">100% frequency</span>
+            </div>
+            <p class="text-sm text-gray-700 mb-2">Insufficient data to identify meaningful patterns - only one test result available</p>
+            
+              <div class="text-xs text-gray-500">
+                <strong>Examples:</strong> Single product test with 6.80 score
+              </div>
+            
+          </div>
+        
+      </div>
+    </div>
+    
+
+    <!-- Prioritized Suggestions -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">💡 Prioritized Suggestions</h3>
+      <div class="space-y-4">
+        
+          <div class="bg-white rounded-lg p-4 border-l-4 border-red-500">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold bg-red-500 text-white rounded px-2 py-1">
+                  HIGH
+                </span>
+                <span class="text-xs text-gray-500">Prompt Structure</span>
+              </div>
+              <span class="text-xs text-gray-500">85% confidence</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">Restructure the subject line to flow more naturally: &#039;Professional {style} photograph of {product}{color}{material} for e-commerce {product_category} catalog&#039;</h4>
+            <p class="text-sm text-gray-600 mb-2"><strong>Rationale:</strong> Current structure can create awkward grammar when variables are empty or combined unexpectedly</p>
+            <p class="text-sm text-gray-600"><strong>Expected Impact:</strong> Improved prompt readability and AI interpretation, leading to more consistent results</p>
+          </div>
+        
+          <div class="bg-white rounded-lg p-4 border-l-4 border-red-500">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold bg-red-500 text-white rounded px-2 py-1">
+                  HIGH
+                </span>
+                <span class="text-xs text-gray-500">Technical</span>
+              </div>
+              <span class="text-xs text-gray-500">80% confidence</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">Enhance lighting section to include anti-reflection guidance: &#039;{lighting_style} lighting with soft fill{lighting_modifier}, anti-glare positioning, optimal for product detail capture&#039;</h4>
+            <p class="text-sm text-gray-600 mb-2"><strong>Rationale:</strong> Many e-commerce products have reflective surfaces that can cause issues without specific guidance</p>
+            <p class="text-sm text-gray-600"><strong>Expected Impact:</strong> Better handling of challenging materials like screens, metal, and glass products</p>
+          </div>
+        
+          <div class="bg-white rounded-lg p-4 border-l-4 border-yellow-500">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold bg-yellow-500 text-white rounded px-2 py-1">
+                  MEDIUM
+                </span>
+                <span class="text-xs text-gray-500">Style Guidance</span>
+              </div>
+              <span class="text-xs text-gray-500">75% confidence</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">Make quality specifications more flexible: &#039;4K resolution with sharp focus on key product features, optimally framed for {composition_style}&#039;</h4>
+            <p class="text-sm text-gray-600 mb-2"><strong>Rationale:</strong> Fixed framing percentages may not work well with all composition styles and product types</p>
+            <p class="text-sm text-gray-600"><strong>Expected Impact:</strong> Better adaptation to different composition styles while maintaining quality standards</p>
+          </div>
+        
+          <div class="bg-white rounded-lg p-4 border-l-4 border-yellow-500">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold bg-yellow-500 text-white rounded px-2 py-1">
+                  MEDIUM
+                </span>
+                <span class="text-xs text-gray-500">Prompt Structure</span>
+              </div>
+              <span class="text-xs text-gray-500">70% confidence</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">Consolidate camera and technical specs: &#039;Professional DSLR photography with 85mm lens at f/8{camera_modifier}, optimized exposure and white balance&#039;</h4>
+            <p class="text-sm text-gray-600 mb-2"><strong>Rationale:</strong> Adding color accuracy guidance directly in technical specs ensures consistent color reproduction</p>
+            <p class="text-sm text-gray-600"><strong>Expected Impact:</strong> More reliable color accuracy across different product categories</p>
+          </div>
+        
+          <div class="bg-white rounded-lg p-4 border-l-4 border-yellow-500">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold bg-yellow-500 text-white rounded px-2 py-1">
+                  MEDIUM
+                </span>
+                <span class="text-xs text-gray-500">Style Guidance</span>
+              </div>
+              <span class="text-xs text-gray-500">65% confidence</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">Enhance background section for better integration: &#039;{background_type} background with seamless product integration, professional studio appearance&#039;</h4>
+            <p class="text-sm text-gray-600 mb-2"><strong>Rationale:</strong> Adding integration language helps ensure products look naturally placed rather than artificially composited</p>
+            <p class="text-sm text-gray-600"><strong>Expected Impact:</strong> More professional and natural-looking product placement</p>
+          </div>
+        
+          <div class="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold bg-blue-500 text-white rounded px-2 py-1">
+                  LOW
+                </span>
+                <span class="text-xs text-gray-500">Prompt Structure</span>
+              </div>
+              <span class="text-xs text-gray-500">60% confidence</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">Expand negative prompts to include e-commerce specific issues: &#039;worst quality, blurry, watermark, text, logo, overexposed highlights, harsh shadows, color distortion, artificial compositing, uneven lighting, distracting reflections&#039;</h4>
+            <p class="text-sm text-gray-600 mb-2"><strong>Rationale:</strong> More comprehensive negative prompts can help avoid common e-commerce photography pitfalls</p>
+            <p class="text-sm text-gray-600"><strong>Expected Impact:</strong> Reduced occurrence of common technical issues in generated images</p>
+          </div>
+        
+      </div>
+    </div>
+
+    <!-- Segment Analysis -->
+    
+    <div>
+      <h3 class="font-semibold text-gray-700 mb-2">📦 Segment Analysis</h3>
+      <div class="space-y-3">
+        
+          <div class="bg-white rounded p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-700">overall</span>
+              <span class="text-sm text-gray-500">Mean Score: 6.80/10</span>
+            </div>
+            
+              <div class="mb-2">
+                <strong class="text-sm text-red-700">Issues:</strong>
+                <ul class="text-sm text-gray-600 ml-4 list-disc">
+                  <li>Limited sample size prevents detailed analysis</li><li>Moderate score suggests room for optimization</li>
+                </ul>
+              </div>
+            
+            
+              <div>
+                <strong class="text-sm text-blue-700">Recommendations:</strong>
+                <ul class="text-sm text-gray-600 ml-4 list-disc">
+                  <li>Need more diverse testing</li><li>Focus on prompt flow improvements</li>
+                </ul>
+              </div>
+            
+          </div>
+        
+      </div>
+    </div>
+    
+  </section>
+  
+     
+  <section class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow p-6 mb-8 border border-purple-100">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">🤖</span>
+      <h2 class="text-lg font-semibold">AI-Powered Insights</h2>
+      <span class="text-xs text-gray-500 ml-auto">Cost: $0.0065</span>
+    </div>
+
+    <!-- Key Findings -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">📊 Key Findings</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">Single test sample provides insufficient data for meaningful pattern analysis - only one prompt tested with 6.8/10 score</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">The prompt shows solid technical photography specifications but achieves only average performance, suggesting room for improvement</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">Notable syntax issue detected: double comma after &#039;computer monitor&#039; indicates potential template formatting problem</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">Zero variance in results prevents identification of effective vs ineffective prompt elements</span>
+          </li>
+        
+      </ul>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">💡 Recommendations</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Fix template syntax error - remove double comma after product name to improve prompt clarity</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Add specific product descriptors and brand context to make the prompt more targeted and compelling</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Include lighting mood descriptors (e.g., &#039;bright&#039;, &#039;crisp&#039;, &#039;professional&#039;) to enhance visual appeal beyond technical specs</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Experiment with different composition ratios - 85% frame fill may be too aggressive for optimal e-commerce presentation</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Add background texture variations like &#039;gradient white background&#039; or &#039;subtle shadow&#039; for more dynamic results</span>
+          </li>
+        
+      </ul>
+    </div>
+
+    <!-- Next Steps -->
+    <div>
+      <h3 class="font-semibold text-gray-700 mb-2">🎯 Next Steps</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Run batch test with 10-15 prompt variations fixing the syntax issue and testing different lighting descriptions, composition ratios, and product-specific details</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">A/B test technical camera specs vs. artistic descriptors to determine which approach yields higher scores for e-commerce imagery</span>
+          </li>
+        
+      </ul>
+    </div>
+  </section>
+
+     
+  <section class="bg-white rounded-lg shadow p-4 mb-8">
+    <h2 class="text-lg font-semibold mb-4">Summary Statistics</h2>
+    <div class="grid grid-cols-3 gap-4">
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Tests</p>
+    <p class="text-2xl font-bold text-gray-900">1</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Mean Score</p>
+    <p class="text-2xl font-bold text-gray-900">6.80/10</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Std Dev</p>
+    <p class="text-2xl font-bold text-gray-900">0.00</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Median</p>
+    <p class="text-2xl font-bold text-gray-900">6.8</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Min</p>
+    <p class="text-2xl font-bold text-gray-900">6.8</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Max</p>
+    <p class="text-2xl font-bold text-gray-900">6.8</p>
+  </div>
+
+    </div>
+  </section>
+
+     
+    <section class="bg-white rounded-lg shadow p-4 mb-8">
+      <h2 class="text-lg font-semibold mb-4">Score Distribution</h2>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">1-3 (Poor)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-red-500" style="width: 0%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">0</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">4-5 (Below Avg)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-yellow-500" style="width: 0%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">0</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">6-7 (Average)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-yellow-500" style="width: 100%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">1</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">8-9 (Good)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-green-500" style="width: 0%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">0</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">10 (Excellent)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-green-500" style="width: 0%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">0</span>
+        </div>
+      
+    </section>
+  
+     
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">Test Results (1 tests)</h2>
+      <div class="grid grid-cols-4 gap-4">
+        
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/a5b31c3b8e7b1992db3ea4be519188a6930c8a27694439a986f1cad595debdd9.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/22234404-4ce7-495b-9b9b-645b1302b233.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-semibold">6.8/10</span>
+          <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+        </div>
+        <p class="text-sm text-gray-500 truncate" title="Professional e-commerce electronics photo of computer monitor,  , on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, centered composition, 4K resolution, sharp focus, product centered filling 85% of frame">
+          Professional e-commerce electronics photo of computer monito...
+        </p>
+      </div>
+    </div>
+  
+      </div>
+    </section>
+  
+     
+  <section class="bg-white rounded-lg shadow p-4">
+    <h2 class="text-lg font-semibold mb-4">Cost Summary</h2>
+    <div class="grid grid-cols-4 gap-4">
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Generation</p>
+    <p class="text-2xl font-bold text-gray-900">$0.0000</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Evaluation</p>
+    <p class="text-2xl font-bold text-gray-900">$0.0086</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Insights</p>
+    <p class="text-2xl font-bold text-gray-900">$0.0065</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Total</p>
+    <p class="text-2xl font-bold text-gray-900">$0.0151</p>
+  </div>
+
+    </div>
+  </section>
+
+   </div>
+  </body>
+</html>

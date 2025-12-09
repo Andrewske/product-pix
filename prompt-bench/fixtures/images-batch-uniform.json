@@ -2,16 +2,64 @@
 	"label": "template-improvement-uniform",
 	"tests": [
 		{
+			"sourceImage": "images/tester-1-suitcase.jpg",
+			"variables": {
+				"product": "monos suitcase",
+				"background_type": "pure white seamless",
+				"lighting_style": "soft diffused studio",
+				"style": "commercial catalog"
+			},
+			"notes": "Product 1: Luggage - matte hard surface"
+		},
+		{
+			"sourceImage": "images/air-purifier.jpg",
+			"variables": {
+				"product": "air purifier",
+				"background_type": "pure white seamless",
+				"lighting_style": "soft diffused studio",
+				"style": "commercial catalog"
+			},
+			"notes": "Product 2: Home appliance - plastic with vents"
+		},
+		{
+			"sourceImage": "images/coffee-grinder.jpg",
+			"variables": {
+				"product": "burr coffee grinder",
+				"background_type": "pure white seamless",
+				"lighting_style": "soft diffused studio",
+				"style": "commercial catalog"
+			},
+			"notes": "Product 3: Kitchen appliance - metallic/glossy surfaces"
+		},
+		{
+			"sourceImage": "images/espresso-maker.jpg",
+			"variables": {
+				"product": "espresso machine",
+				"background_type": "pure white seamless",
+				"lighting_style": "soft diffused studio",
+				"style": "commercial catalog"
+			},
+			"notes": "Product 4: Kitchen appliance - chrome/stainless steel"
+		},
+		{
 			"sourceImage": "images/monitor.jpg",
 			"variables": {
 				"product": "computer monitor",
 				"background_type": "pure white seamless",
 				"lighting_style": "soft diffused studio",
-				"style": "commercial catalog",
-				"product_category": "electronics",
-				"composition_style": "centered composition"
+				"style": "commercial catalog"
 			},
 			"notes": "Product 5: Electronics - screen with reflective surfaces"
+		},
+		{
+			"sourceImage": "images/peanut-butter.jpg",
+			"variables": {
+				"product": "peanut butter jar",
+				"background_type": "pure white seamless",
+				"lighting_style": "soft diffused studio",
+				"style": "commercial catalog"
+			},
+			"notes": "Product 6: Food product - glass jar with label"
 		}
 	]
 }

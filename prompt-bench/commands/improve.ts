@@ -21,7 +21,7 @@ import { generateDiff } from '@bench/core/template-diff';
 import { readTemplateFile, writeTemplateFile, generateVersionedFilename, parseTemplateCode } from '@bench/core/template-io';
 import { runPipeline, generateBatchLabel } from '@bench/core/orchestrator';
 import { fetchTemplate, insertTemplate } from '@bench/db/templates';
-import { fetchBatchScores } from './shared';
+import { fetchBatchEvaluations } from './shared';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { summarize } from '@bench/core/statistics';
 import { autoReportForLabel } from './report';
@@ -419,10 +419,31 @@ const testBaseline = async (
     );
   }
 
-  // Fetch scores
+  // Fetch evaluations
   const supabase = createAdminClient();
-  const scores = await fetchBatchScores(supabase, label);
+  const evaluations = await fetchBatchEvaluations(supabase, label);
+  const scores = evaluations.map(e => e.score);
   const stats = summarize(scores);
+
+  const productScores: ProductScore[] = evaluations.map((evaluation, idx) => {
+    const details = evaluation.details;
+    return {
+      productId: `product-${idx}`,
+      score: evaluation.score,
+      breakdown: details ? {
+        composition: details.composition || 0,
+        lighting: details.lighting || 0,
+        productVisibility: details.productVisibility || 0,
+        backgroundQuality: details.backgroundQuality || 0,
+        professionalQuality: details.professionalQuality || 0,
+        promptAdherence: details.promptAdherence || 0,
+      } : undefined,
+      reasoning: details?.reasoning,
+      suggestions: details?.suggestions,
+    };
+  });
+
+  const dimensionAverages = calculateDimensionAverages(productScores);
 
   const results: TestResults = {
     scores,
@@ -430,10 +451,8 @@ const testBaseline = async (
     medianScore: stats.median,
     minScore: stats.min,
     maxScore: stats.max,
-    productScores: scores.map((score, idx) => ({
-      productId: `product-${idx}`,
-      score,
-    })),
+    productScores,
+    dimensionAverages,
   };
 
   // Set initial score if first iteration
@@ -475,7 +494,7 @@ const testImproved = async (
   const parseResult = await parseTemplateCode(code);
   if (!parseResult.ok) {
     return err(
-      createError('PARSE_ERROR', `Failed to parse template code: ${parseResult.error.message}`)
+      createError('VALIDATION_ERROR', `Failed to parse template code: ${parseResult.error.message}`)
     );
   }
   const template = parseResult.data;
@@ -532,25 +551,45 @@ const testImproved = async (
 
   // Phase 5: Fetch and return results
   const supabase = createAdminClient();
-  const scores = await fetchBatchScores(supabase, improvedLabel);
-  
-  if (scores.length === 0) {
+  const evaluations = await fetchBatchEvaluations(supabase, improvedLabel);
+
+  if (evaluations.length === 0) {
     return err(
       createError('NO_DATA_ERROR', 'No evaluation scores found for improved template')
     );
   }
 
+  const scores = evaluations.map(e => e.score);
   const stats = summarize(scores);
+
+  const productScores: ProductScore[] = evaluations.map((evaluation, idx) => {
+    const details = evaluation.details;
+    return {
+      productId: `product-${idx}`,
+      score: evaluation.score,
+      breakdown: details ? {
+        composition: details.composition || 0,
+        lighting: details.lighting || 0,
+        productVisibility: details.productVisibility || 0,
+        backgroundQuality: details.backgroundQuality || 0,
+        professionalQuality: details.professionalQuality || 0,
+        promptAdherence: details.promptAdherence || 0,
+      } : undefined,
+      reasoning: details?.reasoning,
+      suggestions: details?.suggestions,
+    };
+  });
+
+  const dimensionAverages = calculateDimensionAverages(productScores);
+
   const results: TestResults = {
     scores,
     meanScore: stats.mean,
     medianScore: stats.median,
     minScore: stats.min,
     maxScore: stats.max,
-    productScores: scores.map((score, idx) => ({
-      productId: `product-${idx}`,
-      score,
-    })),
+    productScores,
+    dimensionAverages,
   };
 
   return ok({
