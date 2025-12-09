@@ -32,6 +32,8 @@ import type {
   TestResults,
   ScoreDelta,
   IterationCosts,
+  EvaluationBreakdown,
+  ProductScore,
 } from '@bench/core/improvement-types';
 
 // =============================================================================
@@ -657,6 +659,55 @@ const calculateScoreDelta = (baseline: TestResults, improved: TestResults): Scor
     regressed,
     unchanged,
     productDeltas,
+  };
+};
+
+const calculateDimensionAverages = (evaluations: ProductScore[]): EvaluationBreakdown | undefined => {
+  if (!evaluations || evaluations.length === 0) {
+    return undefined;
+  }
+
+  // Collect all valid breakdowns
+  const breakdowns: EvaluationBreakdown[] = [];
+  for (const evaluation of evaluations) {
+    if (evaluation.breakdown) {
+      breakdowns.push(evaluation.breakdown);
+    }
+  }
+
+  // Return undefined if no valid breakdowns found
+  if (breakdowns.length === 0) {
+    return undefined;
+  }
+
+  // Calculate averages for each dimension
+  const sum = breakdowns.reduce(
+    (acc, breakdown) => ({
+      composition: acc.composition + breakdown.composition,
+      lighting: acc.lighting + breakdown.lighting,
+      productVisibility: acc.productVisibility + breakdown.productVisibility,
+      backgroundQuality: acc.backgroundQuality + breakdown.backgroundQuality,
+      professionalQuality: acc.professionalQuality + breakdown.professionalQuality,
+      promptAdherence: acc.promptAdherence + breakdown.promptAdherence,
+    }),
+    {
+      composition: 0,
+      lighting: 0,
+      productVisibility: 0,
+      backgroundQuality: 0,
+      professionalQuality: 0,
+      promptAdherence: 0,
+    }
+  );
+
+  const count = breakdowns.length;
+  return {
+    composition: sum.composition / count,
+    lighting: sum.lighting / count,
+    productVisibility: sum.productVisibility / count,
+    backgroundQuality: sum.backgroundQuality / count,
+    professionalQuality: sum.professionalQuality / count,
+    promptAdherence: sum.promptAdherence / count,
   };
 };
 
