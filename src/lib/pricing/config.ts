@@ -3,6 +3,15 @@ import { resolve } from 'path';
 import { parse } from '@iarna/toml';
 import type { PricingConfig } from './types';
 
+// Parsed TOML structure
+interface ParsedToml {
+  pricing?: {
+    anthropic?: Record<string, { input: number; output: number }>;
+    openai?: Record<string, { input: number; output: number }>;
+    google?: Record<string, { input: number; output: number }>;
+  };
+}
+
 // Module-scoped cache for pricing config
 let pricingConfigCache: PricingConfig | null = null;
 
@@ -28,9 +37,9 @@ export function loadPricingConfig(): PricingConfig {
     throw new Error(`Pricing config file not found at: ${configPath}. Please ensure prompt-bench.toml exists in the project root.`);
   }
 
-  let parsedToml: any;
+  let parsedToml: ParsedToml;
   try {
-    parsedToml = parse(fileContent);
+    parsedToml = parse(fileContent) as ParsedToml;
   } catch (error) {
     const parseError = error as Error;
     throw new Error(`Invalid TOML syntax in pricing config at ${configPath}: ${parseError.message}`);
@@ -43,7 +52,7 @@ export function loadPricingConfig(): PricingConfig {
   const pricing = parsedToml.pricing;
 
   // Validate required provider sections
-  const requiredProviders = ['anthropic', 'openai', 'google'];
+  const requiredProviders: Array<'anthropic' | 'openai' | 'google'> = ['anthropic', 'openai', 'google'];
   for (const provider of requiredProviders) {
     if (!pricing[provider]) {
       throw new Error(`Missing [pricing.${provider}] section in config file at ${configPath}`);
@@ -54,7 +63,10 @@ export function loadPricingConfig(): PricingConfig {
   const allPrices: Array<{ input: number; output: number; modelId: string }> = [];
 
   for (const provider of requiredProviders) {
-    for (const [modelId, modelPricing] of Object.entries(pricing[provider] as Record<string, any>)) {
+    const providerPricing = pricing[provider];
+    if (!providerPricing) continue;
+
+    for (const [modelId, modelPricing] of Object.entries(providerPricing)) {
       if (typeof modelPricing.input !== 'number' || typeof modelPricing.output !== 'number') {
         throw new Error(`Invalid pricing for ${provider}.${modelId}: input and output must be numbers`);
       }
@@ -75,9 +87,9 @@ export function loadPricingConfig(): PricingConfig {
   const fallbackSource = allPrices.find(p => p.input === maxInput && p.output === maxOutput)?.modelId || 'unknown';
 
   const config: PricingConfig = {
-    anthropic: pricing.anthropic,
-    openai: pricing.openai,
-    google: pricing.google,
+    anthropic: pricing.anthropic || {},
+    openai: pricing.openai || {},
+    google: pricing.google || {},
     fallback: {
       input: maxInput * 1.5,
       output: maxOutput * 1.5,

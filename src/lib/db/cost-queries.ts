@@ -1,6 +1,11 @@
 // src/lib/db/cost-queries.ts
 import { createAdminClient } from '@/lib/supabase/admin';
 
+interface GenerationCostRecord {
+  total_cost_usd: number;
+  created_at?: string;
+}
+
 export interface CreateGenerationCostParams {
   jobId?: string;
   generatedImageId?: string;
@@ -19,7 +24,7 @@ export const createGenerationCost = async (
 ): Promise<boolean> => {
   const supabase = createAdminClient();
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('generation_costs')
     .insert({
       job_id: params.jobId ?? null,
@@ -45,7 +50,7 @@ export const createGenerationCost = async (
 export const getTotalCostByJob = async (jobId: string): Promise<number> => {
   const supabase = createAdminClient();
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('generation_costs')
     .select('total_cost_usd')
     .eq('job_id', jobId);
@@ -55,7 +60,7 @@ export const getTotalCostByJob = async (jobId: string): Promise<number> => {
     return 0;
   }
 
-  return data.reduce((sum: number, record: any) => sum + Number((record as any).total_cost_usd), 0);
+  return data.reduce((sum: number, record: GenerationCostRecord) => sum + Number(record.total_cost_usd), 0);
 };
 
 export const getTotalCostByDateRange = async (
@@ -64,7 +69,7 @@ export const getTotalCostByDateRange = async (
 ): Promise<Array<{ date: string; totalCost: number }>> => {
   const supabase = createAdminClient();
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('generation_costs')
     .select('total_cost_usd, created_at')
     .gte('created_at', start.toISOString())
@@ -78,7 +83,8 @@ export const getTotalCostByDateRange = async (
 
   // Group by date
   const grouped: Record<string, number> = {};
-  data.forEach((record: any) => {
+  data.forEach((record) => {
+    if (!record.created_at) return;
     const date = new Date(record.created_at).toISOString().split('T')[0];
     grouped[date] = (grouped[date] || 0) + Number(record.total_cost_usd);
   });
@@ -92,7 +98,7 @@ export const getTotalCostByDateRange = async (
 export const getTotalCostByModel = async (modelId: string): Promise<number> => {
   const supabase = createAdminClient();
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('generation_costs')
     .select('total_cost_usd')
     .eq('model_id', modelId);
@@ -102,13 +108,13 @@ export const getTotalCostByModel = async (modelId: string): Promise<number> => {
     return 0;
   }
 
-  return data.reduce((sum: number, record: any) => sum + Number((record as any).total_cost_usd), 0);
+  return data.reduce((sum: number, record: GenerationCostRecord) => sum + Number(record.total_cost_usd), 0);
 };
 
 export const getFallbackUsageCount = async (): Promise<number> => {
   const supabase = createAdminClient();
 
-  const { count, error } = await (supabase as any)
+  const { count, error } = await supabase
     .from('generation_costs')
     .select('*', { count: 'exact', head: true })
     .eq('fallback_used', true);

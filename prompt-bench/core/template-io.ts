@@ -226,7 +226,7 @@ export const parseTemplateCode = async (
     
     const message = error instanceof Error ? error.message : 'Unknown error';
     return err(
-      createError('PARSE_ERROR', `Failed to parse template code: ${message}`)
+      createError('VALIDATION_ERROR', `Failed to parse template code: ${message}`)
     );
   }
 };

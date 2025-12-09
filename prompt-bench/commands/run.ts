@@ -183,9 +183,14 @@ export const runCommand = async (args: string[]): Promise<void> => {
     if (sourceImageRef) {
       // Check cache first
       if (sourceImageCache.has(sourceImageRef)) {
-        resolvedSource = sourceImageCache.get(sourceImageRef)!;
-        console.log(`  📷 Using cached source image`);
-      } else {
+        const cachedSource = sourceImageCache.get(sourceImageRef);
+        if (cachedSource) {
+          resolvedSource = cachedSource;
+          console.log(`  📷 Using cached source image`);
+        }
+      }
+
+      if (!resolvedSource) {
         console.log(`  📷 Loading source image: ${sourceImageRef}`);
         const sourceResult = await resolveSourceImage(sourceImageRef, {
           batchFilePath: options.batchFile,

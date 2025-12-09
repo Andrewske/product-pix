@@ -64,11 +64,17 @@ export interface PipelineResult {
 // Phase Result Types
 // =============================================================================
 
+interface PromptTestRecord {
+  id: string;
+  cost_usd?: number;
+  [key: string]: unknown;
+}
+
 interface RunPhaseResult {
   completed: number;
   failed: number;
   skipped: number;
-  tests: any[]; // Database records
+  tests: PromptTestRecord[];
 }
 
 interface EvalPhaseResult {
@@ -132,7 +138,7 @@ export const runPipeline = async (
     };
 
     // Track generation costs
-    generationCost = runPhaseResult.tests.reduce((sum: number, test: any) => sum + (test.cost_usd || 0), 0);
+    generationCost = runPhaseResult.tests.reduce((sum: number, test: PromptTestRecord) => sum + (test.cost_usd || 0), 0);
 
     // Phase 3: Evaluate (optional)
     if (!options.skipEval) {
@@ -264,11 +270,18 @@ const runPhase = async (
         continue;
       }
 
+      if (!template.id) {
+        return err(createError(
+          'VALIDATION_ERROR',
+          `Template ${template.slug} has no ID. Ensure template is synced to database first.`
+        ));
+      }
+
       // Create test record
       const { data: testRecord, error: insertError } = await (supabase
         .from('prompt_tests')
         .insert({
-          template_id: template.id!,
+          template_id: template.id,
           idempotency_key: idempotencyKey,
           status: 'generating',
           inputs: testCase.variables as any,
@@ -368,7 +381,16 @@ const runPhase = async (
       const imageUrl = getPublicUrl(imageKey);
 
       // Store token usage for cost recalculation if available
-      const updateData: any = {
+      const updateData: {
+        status: 'completed';
+        image_url: string;
+        image_key: string;
+        completed_at: string;
+        duration_ms: number;
+        cost_usd: number;
+        input_tokens?: number;
+        output_tokens?: number;
+      } = {
         status: 'completed',
         image_url: imageUrl,
         image_key: imageKey,
@@ -382,10 +404,10 @@ const runPhase = async (
         updateData.output_tokens = generationResult.usage.completionTokens;
       }
 
-      await (supabase
+      await supabase
         .from('prompt_tests')
         .update(updateData)
-        .eq('id', testRecord.id) as any);
+        .eq('id', testRecord.id);
 
       completed++;
       tests.push(testRecord);
@@ -444,11 +466,13 @@ const evaluatePhase = async (
     .in('id', testIds) as any);
 
   // Prepare evaluation inputs
-  const evaluationInputs = tests.map(test => ({
-    id: test.id,
-    imageKey: test.image_key!,
-    prompt: test.final_prompt,
-  }));
+  const evaluationInputs = tests
+    .filter(test => test.image_key !== null && test.image_key !== undefined)
+    .map(test => ({
+      id: test.id,
+      imageKey: test.image_key as string,
+      prompt: test.final_prompt,
+    }));
 
   // Run evaluations
   const evalOptions: EvaluateOptions = { model: evalModel };

@@ -3,6 +3,10 @@ import { stripe } from './client';
 import { syncStripeDataToKV } from './sync';
 import { grantCreditsForPayment } from './credits';
 import { CREDIT_PACKS, SUBSCRIPTION_TIERS } from './products';
+import {
+  getInvoiceSubscriptionId,
+  getSubscriptionTimestamps,
+} from './sdk-extensions';
 
 /**
  * Process Stripe webhook events
@@ -72,12 +76,13 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 /**
  * Handle successful invoice payment (subscription renewal)
  */
-async function handleInvoicePaid(invoice: Stripe.Invoice) {
-  if (!(invoice as any).subscription || invoice.billing_reason !== 'subscription_cycle') {
+async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  const subscriptionId = getInvoiceSubscriptionId(invoice);
+  if (!subscriptionId || invoice.billing_reason !== 'subscription_cycle') {
     return; // Only process subscription renewals
   }
 
-  const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const tier = subscription.metadata.tier as keyof typeof SUBSCRIPTION_TIERS;
 
   if (!tier || !SUBSCRIPTION_TIERS[tier]) {
@@ -86,27 +91,36 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   }
 
   // Get customer to find userId
-  const customer = await stripe.customers.retrieve(subscription.customer as string);
-  const userId = (customer as any).metadata?.userId;
+  const customerId =
+    typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+  const customer = await stripe.customers.retrieve(customerId);
+
+  if (customer.deleted) {
+    console.error(`[Stripe Webhook] Customer ${customerId} is deleted`);
+    return;
+  }
+
+  const userId = customer.metadata?.userId;
 
   if (!userId) {
-    console.error(`[Stripe Webhook] No userId in customer metadata for ${subscription.customer}`);
+    console.error(`[Stripe Webhook] No userId in customer metadata for ${customerId}`);
     return;
   }
 
   // Grant renewal credits
+  const timestamps = getSubscriptionTimestamps(subscription);
   await grantCreditsForPayment({
     userId,
     paymentIntentId: `invoice_${invoice.id}`, // Use invoice ID as unique identifier
-    customerId: subscription.customer as string,
+    customerId,
     credits: SUBSCRIPTION_TIERS[tier].credits,
     amountCents: invoice.amount_due,
     purchaseType: 'subscription_renewal',
     metadata: {
       subscriptionId: subscription.id,
       tier,
-      periodStart: (subscription as any).current_period_start,
-      periodEnd: (subscription as any).current_period_end,
+      periodStart: timestamps.currentPeriodStart,
+      periodEnd: timestamps.currentPeriodEnd,
     },
   });
 }
@@ -140,7 +154,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     customerId: paymentIntent.customer as string,
     credits: CREDIT_PACKS[packId].credits,
     amountCents: paymentIntent.amount,
-    purchaseType: 'pack',
+    purchaseType: 'pack_purchase',
     metadata: { packId },
   });
 }

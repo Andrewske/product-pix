@@ -980,7 +980,7 @@ export const runReport = async (
   const totalEvalCost = (evalCosts || []).reduce((sum, e) => sum + (e.cost_usd || 0), 0);
 
   // Fallback usage tracking
-  let fallbackUsage = undefined;
+  let fallbackUsage: { count: number; models: string[]; source: string } | undefined = undefined;
   try {
     const { data: fallbackCosts } = await (supabase as any)
       .from('generation_costs')
@@ -989,10 +989,11 @@ export const runReport = async (
       .in('job_id', tests.map((t) => t.id).filter(Boolean));
 
     if (fallbackCosts && fallbackCosts.length > 0) {
-      const uniqueModels = [...new Set(fallbackCosts.map((c: any) => c.model_id as string))];
+      const modelIds = fallbackCosts.map((c: { model_id: string }) => c.model_id);
+      const uniqueModels: string[] = [...new Set<string>(modelIds)];
       fallbackUsage = {
         count: fallbackCosts.length,
-        models: uniqueModels as string[],
+        models: uniqueModels,
         source: 'Computed as MAX(all prices) * 1.5 for safety',
       };
     }

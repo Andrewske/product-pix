@@ -129,7 +129,7 @@ export const fetchBatchScores = async (
 export const fetchBatchEvaluations = async (
   supabase: ReturnType<typeof createAdminClient>,
   batchLabel: string
-): Promise<Array<{ testId: string; score: number; details: any }>> => {
+): Promise<Array<{ testId: string; score: number; details: Record<string, unknown> }>> => {
   const { data, error } = await supabase
     .from('prompt_tests')
     .select(`
@@ -150,7 +150,7 @@ export const fetchBatchEvaluations = async (
     .map((test) => {
       const evals = test.prompt_evaluations as Array<{
         score_overall: number | null;
-        details: any;
+        details: Record<string, unknown>;
       }> | null;
 
       if (!evals?.[0]?.score_overall) {
@@ -163,7 +163,7 @@ export const fetchBatchEvaluations = async (
         details: evals[0].details,
       };
     })
-    .filter((result): result is { testId: string; score: number; details: any } => result !== null);
+    .filter((result): result is { testId: string; score: number; details: Record<string, unknown> } => result !== null);
 };
 
 /**

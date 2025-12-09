@@ -80,9 +80,13 @@ export const evaluateCommand = async (args: string[]): Promise<void> => {
       continue;
     }
 
-    const result = await evaluateImage(test.image_url, test.final_prompt, {
-      model: options.model,
-    });
+    const result = await evaluateImage(
+      { type: 'url', value: test.image_url },
+      test.final_prompt,
+      {
+        model: options.model,
+      }
+    );
 
     if (!result.ok) {
       console.log(`  ❌ Failed: ${result.error.message}`);

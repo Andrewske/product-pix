@@ -18,9 +18,9 @@ export async function getOrCreateStripeCustomer(userId: string, email: string): 
     .eq('id', userId)
     .single();
 
-  if ((user as any)?.stripe_customer_id) {
-    await redis?.set(`stripe:user:${userId}`, (user as any).stripe_customer_id, { ex: 86400 }); // 24h
-    return (user as any).stripe_customer_id;
+  if (user?.stripe_customer_id) {
+    await redis?.set(`stripe:user:${userId}`, user.stripe_customer_id, { ex: 86400 }); // 24h
+    return user.stripe_customer_id;
   }
 
   // 3. Create new customer with userId in metadata (CRITICAL for reverse lookup)
@@ -32,7 +32,7 @@ export async function getOrCreateStripeCustomer(userId: string, email: string): 
   // 4. Store in DB and cache
   await createAdminClient()
     .from('users')
-    .update({ stripe_customer_id: customer.id } as any)
+    .update({ stripe_customer_id: customer.id })
     .eq('id', userId);
 
   await redis?.set(`stripe:user:${userId}`, customer.id, { ex: 86400 });
@@ -63,5 +63,5 @@ export async function getUserStripeCustomerId(userId: string): Promise<string | 
     .eq('id', userId)
     .single();
 
-  return (data as any)?.stripe_customer_id || null;
+  return data?.stripe_customer_id || null;
 }

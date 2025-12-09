@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       batch_items: {
@@ -575,6 +600,103 @@ export type Database = {
           },
         ]
       }
+      stripe_purchases: {
+        Row: {
+          amount_cents: number
+          created_at: string | null
+          credits_granted: number
+          id: string
+          metadata: Json | null
+          purchase_type: string
+          stripe_customer_id: string
+          stripe_payment_intent_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string | null
+          credits_granted: number
+          id?: string
+          metadata?: Json | null
+          purchase_type: string
+          stripe_customer_id: string
+          stripe_payment_intent_id: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string | null
+          credits_granted?: number
+          id?: string
+          metadata?: Json | null
+          purchase_type?: string
+          stripe_customer_id?: string
+          stripe_payment_intent_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          tier: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          tier: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          price_id?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          tier?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_improvement_sessions: {
         Row: {
           config: Json
@@ -743,6 +865,7 @@ export type Database = {
           email: string
           id: string
           preferences: Json | null
+          stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
           updated_at: string
         }
@@ -753,6 +876,7 @@ export type Database = {
           email: string
           id: string
           preferences?: Json | null
+          stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
           updated_at?: string
         }
@@ -763,6 +887,7 @@ export type Database = {
           email?: string
           id?: string
           preferences?: Json | null
+          stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
           updated_at?: string
         }
@@ -895,6 +1020,9 @@ export type Database = {
         | "refund"
         | "bonus"
         | "expiration"
+        | "pack_purchase"
+        | "subscription_renewal"
+        | "subscription_upgrade"
       user_tier: "free" | "pro" | "business"
     }
     CompositeTypes: {
@@ -1021,6 +1149,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       batch_item_status: ["pending", "processing", "completed", "failed"],
@@ -1045,6 +1176,9 @@ export const Constants = {
         "refund",
         "bonus",
         "expiration",
+        "pack_purchase",
+        "subscription_renewal",
+        "subscription_upgrade",
       ],
       user_tier: ["free", "pro", "business"],
     },

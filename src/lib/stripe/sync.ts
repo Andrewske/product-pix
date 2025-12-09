@@ -3,6 +3,8 @@ import type Stripe from 'stripe';
 import { redis } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserIdByStripeCustomerId } from './customer';
+import { formatSubscriptionForDb } from './types';
+import { getSubscriptionTimestamps } from './sdk-extensions';
 
 /**
  * Sync Stripe data to KV store (Redis) and database
@@ -45,38 +47,39 @@ export async function syncStripeDataToKV(customerId: string): Promise<void> {
 /**
  * Format subscription data for caching
  */
-function formatSubscriptionData(subscription: Stripe.Subscription) {
+function formatSubscriptionData(subscription: Stripe.Subscription): {
+  id: string;
+  status: Stripe.Subscription.Status;
+  priceId: string | undefined;
+  tier: string | undefined;
+  currentPeriodStart: number;
+  currentPeriodEnd: number;
+  cancelAtPeriodEnd: boolean;
+} {
+  const timestamps = getSubscriptionTimestamps(subscription);
   return {
     id: subscription.id,
     status: subscription.status,
     priceId: subscription.items.data[0]?.price.id,
     tier: subscription.metadata.tier,
-    currentPeriodStart: (subscription as any).current_period_start,
-    currentPeriodEnd: (subscription as any).current_period_end,
-    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
+    currentPeriodStart: timestamps.currentPeriodStart,
+    currentPeriodEnd: timestamps.currentPeriodEnd,
+    cancelAtPeriodEnd: timestamps.cancelAtPeriodEnd,
   };
 }
 
 /**
  * Upsert subscription data to database
  */
-async function upsertSubscription(userId: string, subscription: Stripe.Subscription) {
+async function upsertSubscription(userId: string, subscription: Stripe.Subscription): Promise<void> {
   const tier = subscription.metadata.tier;
   if (!tier) return; // Only track subscriptions with tier metadata
 
+  const dbData = formatSubscriptionForDb(userId, subscription);
+
   await createAdminClient()
-    .from('stripe_subscriptions' as any)
-    .upsert({
-      user_id: userId,
-      stripe_subscription_id: subscription.id,
-      stripe_customer_id: subscription.customer,
-      status: subscription.status,
-      price_id: subscription.items.data[0]?.price.id,
-      tier,
-      current_period_start: new Date((subscription as any).current_period_start * 1000),
-      current_period_end: new Date((subscription as any).current_period_end * 1000),
-      cancel_at_period_end: (subscription as any).cancel_at_period_end,
-    }, {
-      onConflict: 'stripe_subscription_id'
+    .from('stripe_subscriptions')
+    .upsert(dbData, {
+      onConflict: 'stripe_subscription_id',
     });
 }

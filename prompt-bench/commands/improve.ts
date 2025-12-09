@@ -513,19 +513,37 @@ const testBaseline = async (
 
   const productScores: ProductScore[] = evaluations.map((evaluation, idx) => {
     const details = evaluation.details;
+
+    // Type guard for breakdown structure
+    const hasBreakdown = (d: Record<string, unknown>): d is {
+      composition: number;
+      lighting: number;
+      productVisibility: number;
+      backgroundQuality: number;
+      professionalQuality: number;
+      promptAdherence: number;
+    } => {
+      return typeof d.composition === 'number' &&
+             typeof d.lighting === 'number' &&
+             typeof d.productVisibility === 'number' &&
+             typeof d.backgroundQuality === 'number' &&
+             typeof d.professionalQuality === 'number' &&
+             typeof d.promptAdherence === 'number';
+    };
+
     return {
       productId: `product-${idx}`,
       score: evaluation.score,
-      breakdown: details ? {
-        composition: details.composition || 0,
-        lighting: details.lighting || 0,
-        productVisibility: details.productVisibility || 0,
-        backgroundQuality: details.backgroundQuality || 0,
-        professionalQuality: details.professionalQuality || 0,
-        promptAdherence: details.promptAdherence || 0,
+      breakdown: details && hasBreakdown(details) ? {
+        composition: details.composition,
+        lighting: details.lighting,
+        productVisibility: details.productVisibility,
+        backgroundQuality: details.backgroundQuality,
+        professionalQuality: details.professionalQuality,
+        promptAdherence: details.promptAdherence,
       } : undefined,
-      reasoning: details?.reasoning,
-      suggestions: details?.suggestions,
+      reasoning: typeof details?.reasoning === 'string' ? details.reasoning : undefined,
+      suggestions: Array.isArray(details?.suggestions) ? details.suggestions as string[] : undefined,
     };
   });
 
@@ -650,19 +668,37 @@ const testImproved = async (
 
   const productScores: ProductScore[] = evaluations.map((evaluation, idx) => {
     const details = evaluation.details;
+
+    // Type guard for breakdown structure
+    const hasBreakdown = (d: Record<string, unknown>): d is {
+      composition: number;
+      lighting: number;
+      productVisibility: number;
+      backgroundQuality: number;
+      professionalQuality: number;
+      promptAdherence: number;
+    } => {
+      return typeof d.composition === 'number' &&
+             typeof d.lighting === 'number' &&
+             typeof d.productVisibility === 'number' &&
+             typeof d.backgroundQuality === 'number' &&
+             typeof d.professionalQuality === 'number' &&
+             typeof d.promptAdherence === 'number';
+    };
+
     return {
       productId: `product-${idx}`,
       score: evaluation.score,
-      breakdown: details ? {
-        composition: details.composition || 0,
-        lighting: details.lighting || 0,
-        productVisibility: details.productVisibility || 0,
-        backgroundQuality: details.backgroundQuality || 0,
-        professionalQuality: details.professionalQuality || 0,
-        promptAdherence: details.promptAdherence || 0,
+      breakdown: details && hasBreakdown(details) ? {
+        composition: details.composition,
+        lighting: details.lighting,
+        productVisibility: details.productVisibility,
+        backgroundQuality: details.backgroundQuality,
+        professionalQuality: details.professionalQuality,
+        promptAdherence: details.promptAdherence,
       } : undefined,
-      reasoning: details?.reasoning,
-      suggestions: details?.suggestions,
+      reasoning: typeof details?.reasoning === 'string' ? details.reasoning : undefined,
+      suggestions: Array.isArray(details?.suggestions) ? details.suggestions as string[] : undefined,
     };
   });
 
@@ -724,7 +760,7 @@ const analyzeWithAI = async (
     {
       template: templateResult.data,
       testResults: baseline.results,
-      iterationHistory,
+      previousIterations: iterationHistory,
     },
     session.config.aiModel
   );

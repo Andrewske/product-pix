@@ -94,7 +94,8 @@ export const testCommand = async (args: string[]): Promise<void> => {
         if (!bars.has(phase)) {
           bars.set(phase, createProgressBar(phase));
         }
-        const bar = bars.get(phase)!;
+        const bar = bars.get(phase);
+        if (!bar) return;
         if (current === total) {
           bar.complete(message);
         } else {

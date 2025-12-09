@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getBatchJob, getBatchItems, refundBatchFailures } from '@/lib/db/batch';
 import { cancelBatch } from '@/lib/ai/gemini-batch';
+import { getBatchItemParameters } from '@/lib/db/types';
 
 export async function POST(
   request: NextRequest,
@@ -72,12 +73,11 @@ export async function POST(
       const creditsPerItem = { '1k': 1, '2k': 2, '4k': 3 } as const;
       // Get resolution from first item
       const firstItem = items[0];
-      const resolution =
-        (firstItem?.parameters as any)?.resolution || '1k';
+      const params = firstItem ? getBatchItemParameters(firstItem.parameters) : null;
+      const resolution = params?.resolution || '1k';
 
       // Calculate refund for pending items
-      const creditsPerPendingItem =
-        creditsPerItem[resolution as keyof typeof creditsPerItem];
+      const creditsPerPendingItem = creditsPerItem[resolution];
       refundAmount = pendingItems.length * creditsPerPendingItem;
 
       // Refund credits using the add_credits RPC function

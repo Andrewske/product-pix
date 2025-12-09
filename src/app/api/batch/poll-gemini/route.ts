@@ -11,6 +11,7 @@ import {
 } from '@/lib/db/batch';
 import { uploadBuffer } from '@/lib/r2/upload';
 import { createGeneratedImage } from '@/lib/db/generated-images';
+import { getBatchItemParameters } from '@/lib/db/types';
 
 export async function POST(request: NextRequest) {
   // Verify Vercel Cron secret
@@ -79,10 +80,10 @@ export async function POST(request: NextRequest) {
               if (parsed.response) {
                 // Extract image from response
                 const imagePart = parsed.response.candidates?.[0]?.content?.parts?.find(
-                  (p: any) => p.inlineData
+                  (p: { inlineData?: unknown }) => p.inlineData
                 );
 
-                if (imagePart?.inlineData) {
+                if (imagePart?.inlineData && typeof imagePart.inlineData === 'object' && imagePart.inlineData !== null && 'data' in imagePart.inlineData) {
                   // Upload to R2
                   const imageBuffer = Buffer.from(
                     imagePart.inlineData.data,
@@ -168,12 +169,12 @@ export async function POST(request: NextRequest) {
             // Get resolution from first item
             const batchItems = await getBatchItems(batch.id);
             const firstItem = batchItems[0];
-            const resolution =
-              (firstItem?.parameters as any)?.resolution || '1k';
+            const params = firstItem ? getBatchItemParameters(firstItem.parameters) : null;
+            const resolution = params?.resolution || '1k';
 
             await refundBatchFailures(
               batch.id,
-              creditsPerItem[resolution as keyof typeof creditsPerItem]
+              creditsPerItem[resolution]
             );
           }
 

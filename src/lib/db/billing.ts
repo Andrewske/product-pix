@@ -23,7 +23,7 @@ export async function fetchUserSubscription(): Promise<SubscriptionData | null> 
   if (!user) return null;
 
   const { data, error } = await supabase
-    .from('stripe_subscriptions' as any)
+    .from('stripe_subscriptions')
     .select('status, tier, current_period_end, cancel_at_period_end')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -31,7 +31,7 @@ export async function fetchUserSubscription(): Promise<SubscriptionData | null> 
     .single();
 
   if (error || !data) return null;
-  return data as unknown as SubscriptionData;
+  return data as SubscriptionData;
 }
 
 export async function fetchUserPurchases(): Promise<PurchaseData[]> {
@@ -40,11 +40,11 @@ export async function fetchUserPurchases(): Promise<PurchaseData[]> {
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from('stripe_purchases' as any)
+    .from('stripe_purchases')
     .select('id, amount_cents, credits_granted, purchase_type, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error || !data) return [];
-  return data as unknown as PurchaseData[];
+  return data as PurchaseData[];
 }

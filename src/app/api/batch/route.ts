@@ -8,6 +8,7 @@ import {
   updateBatchStatus,
 } from '@/lib/db/batch';
 import { createBatchJob as createGeminiBatch } from '@/lib/ai/gemini-batch';
+import { getBatchItemParameters } from '@/lib/db/types';
 import { z } from 'zod';
 
 const createBatchSchema = z.object({
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
         totalItems: items.length,
         creditsToCharge: totalCredits,
         defaultPrompt: parameters.defaultPrompt,
-        parameters: parameters as any,
+        parameters,
       });
 
       // Insert batch_items
@@ -109,13 +110,16 @@ export async function POST(request: NextRequest) {
 
       // Submit to Gemini Batch API
       const { geminiBatchId, geminiFileId } = await createGeminiBatch({
-        items: itemRecords.map((r) => ({
-          id: r.id,
-          prompt: r.prompt,
-          sourceImageUrl: r.source_image_url || undefined,
-          aspectRatio: (r.parameters as any).aspect_ratio || '1:1',
-          resolution: (r.parameters as any).resolution || '1k',
-        })),
+        items: itemRecords.map((r) => {
+          const params = getBatchItemParameters(r.parameters);
+          return {
+            id: r.id,
+            prompt: r.prompt,
+            sourceImageUrl: r.source_image_url || undefined,
+            aspectRatio: params.aspect_ratio,
+            resolution: params.resolution,
+          };
+        }),
         batchName: name,
       });
 

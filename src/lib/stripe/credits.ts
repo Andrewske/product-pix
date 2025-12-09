@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { addCredits } from '@/lib/db/credits';
+import type { Json } from '@/types';
 
 const POSTGRES_UNIQUE_VIOLATION = '23505';
 export interface GrantCreditsParams {
@@ -8,7 +9,7 @@ export interface GrantCreditsParams {
   customerId: string;
   credits: number;
   amountCents: number;
-  purchaseType: 'pack' | 'subscription_renewal' | 'subscription_upgrade';
+  purchaseType: 'pack_purchase' | 'subscription_renewal' | 'subscription_upgrade';
   metadata?: Record<string, unknown>;
 }
 
@@ -20,7 +21,7 @@ export async function grantCreditsForPayment(params: GrantCreditsParams): Promis
   // Use INSERT ... ON CONFLICT DO NOTHING for atomic idempotency
   // Only grant credits if the insert succeeded (returned a row)
   const { data, error } = await createAdminClient()
-    .from('stripe_purchases' as any)
+    .from('stripe_purchases')
     .insert({
       user_id: params.userId,
       stripe_payment_intent_id: params.paymentIntentId,
@@ -28,13 +29,13 @@ export async function grantCreditsForPayment(params: GrantCreditsParams): Promis
       amount_cents: params.amountCents,
       credits_granted: params.credits,
       purchase_type: params.purchaseType,
-      metadata: params.metadata,
+      metadata: (params.metadata as Json) ?? null,
     })
     .select('id')
     .single();
 
   // If insert failed due to conflict, purchase already processed
-  if (error?.code === POSTGRES_UNIQUE_VIOLATION) { // unique_violation
+  if (error?.code === POSTGRES_UNIQUE_VIOLATION) {
     return { granted: false };
   }
   if (error) throw error;
@@ -44,9 +45,9 @@ export async function grantCreditsForPayment(params: GrantCreditsParams): Promis
   await addCredits(
     params.userId,
     params.credits,
-    params.purchaseType as any,
+    params.purchaseType,
     `pi_${params.paymentIntentId}`,
-    `${params.credits} credits from ${params.purchaseType}`,
+    `${params.credits} credits from ${params.purchaseType}`
   );
 
   return { granted: true };

@@ -34,13 +34,15 @@ describe('validateBatchSize', () => {
       { testId: '2', score: 6.8, details: {} },
       { testId: '3', score: 8.2, details: {} },
     ];
-    
+
     mockFetchBatchEvaluations.mockResolvedValue(mockData);
-    
+
     const result = await validateBatchSize('test-batch', false);
-    
+
     expect(result.ok).toBe(false);
-    expect(result.error.message).toContain('has only 3 completed evaluations');
+    if (!result.ok) {
+      expect(result.error.message).toContain('has only 3 completed evaluations');
+    }
   });
 
   it('should allow small batches when force is true', async () => {
@@ -57,10 +59,12 @@ describe('validateBatchSize', () => {
 
   it('should handle empty batch results', async () => {
     mockFetchBatchEvaluations.mockResolvedValue([]);
-    
+
     const result = await validateBatchSize('test-batch', false);
-    
+
     expect(result.ok).toBe(false);
-    expect(result.error.message).toContain('has only 0 completed evaluations');
+    if (!result.ok) {
+      expect(result.error.message).toContain('has only 0 completed evaluations');
+    }
   });
 });

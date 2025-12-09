@@ -3,6 +3,7 @@ import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import { env } from '@/lib/env';
 import type { ImageProvider, ImageConfig, GenerationResponse } from '../types';
+import { normalizeUsage } from '../usage-types';
 
 // Map our config to Gemini's expected values
 const aspectRatioMap: Record<ImageConfig['aspectRatio'], string> = {
@@ -132,11 +133,7 @@ export const createGeminiProvider = (): ImageProvider => {
           : imageFile.base64;
 
         // Extract usage data if available
-        const usage = result.usage ? {
-          promptTokens: (result.usage as any).promptTokenCount || (result.usage as any).promptTokens || 0,
-          completionTokens: (result.usage as any).candidatesTokenCount || (result.usage as any).completionTokens || 0,
-          totalTokens: (result.usage as any).totalTokenCount || (result.usage as any).totalTokens || 0,
-        } : undefined;
+        const usage = result.usage ? normalizeUsage(result.usage) : undefined;
 
         return {
           success: true,
@@ -220,11 +217,7 @@ export const createGeminiProvider = (): ImageProvider => {
           : imageFile.base64;
 
         // Extract usage data if available
-        const usage = result.usage ? {
-          promptTokens: (result.usage as any).promptTokenCount || (result.usage as any).promptTokens || 0,
-          completionTokens: (result.usage as any).candidatesTokenCount || (result.usage as any).completionTokens || 0,
-          totalTokens: (result.usage as any).totalTokenCount || (result.usage as any).totalTokens || 0,
-        } : undefined;
+        const usage = result.usage ? normalizeUsage(result.usage) : undefined;
 
         return {
           success: true,

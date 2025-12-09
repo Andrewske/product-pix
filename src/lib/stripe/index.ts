@@ -5,3 +5,4 @@ export * from './customer';
 export * from './sync';
 export * from './credits';
 export * from './webhook-handlers';
+export * from './sdk-extensions';
