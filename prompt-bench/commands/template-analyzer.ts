@@ -95,6 +95,27 @@ ${productDiversity
    - Expected impact
    - Confidence (0-1)
 
+## CRITICAL CONSTRAINT FOR SUGGESTIONS
+
+All suggestions MUST be implementable by modifying ONLY the templateData prompts.
+**DO NOT suggest:**
+- Adding new variables to variablesSchema
+- Removing existing variables
+- Changing variable names, types, or options
+- Product-specific conditional logic
+
+**INSTEAD, suggest:**
+- Rewriting prompts to be more universal and robust
+- Adding specific guidance within existing prompt text (e.g., anti-glare language)
+- Improving how existing variables are used in the templates
+- Making technical specifications more flexible for diverse products
+
+**Example GOOD suggestion:**
+"Modify the lighting section in templateData to include anti-reflection guidance by default, making it work better for electronics with screens"
+
+**Example BAD suggestion:**
+"Add a product_category variable to handle electronics differently from other products"
+
 ## Response Format
 
 Return ONLY valid JSON:

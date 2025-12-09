@@ -367,16 +367,24 @@ const runPhase = async (
       // Update test record with success
       const imageUrl = getPublicUrl(imageKey);
 
+      // Store token usage for cost recalculation if available
+      const updateData: any = {
+        status: 'completed',
+        image_url: imageUrl,
+        image_key: imageKey,
+        completed_at: new Date().toISOString(),
+        duration_ms: Date.now() - generationStart,
+        cost_usd: generationCost,
+      };
+
+      if (generationResult.usage) {
+        updateData.input_tokens = generationResult.usage.promptTokens;
+        updateData.output_tokens = generationResult.usage.completionTokens;
+      }
+
       await (supabase
         .from('prompt_tests')
-        .update({
-          status: 'completed',
-          image_url: imageUrl,
-          image_key: imageKey,
-          completed_at: new Date().toISOString(),
-          duration_ms: Date.now() - generationStart,
-          cost_usd: generationCost,
-        })
+        .update(updateData)
         .eq('id', testRecord.id) as any);
 
       completed++;

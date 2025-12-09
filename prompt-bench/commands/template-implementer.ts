@@ -78,9 +78,33 @@ ${idx + 1}. **[${s.priority.toUpperCase()}] ${s.category}**: ${s.description}
 1. **Generate complete TypeScript code** for the improved template
 2. **Preserve the template structure** - same export format, same interface
 3. **Implement all high-priority suggestions** and as many medium-priority as feasible
-4. **Maintain variable schema compatibility** - don't break existing variable usage
-5. **Include clear comments** explaining key changes
-6. **Ensure valid TypeScript syntax** - the code must compile
+4. **DO NOT MODIFY THE variablesSchema** - You MUST NOT add, remove, or change any variables
+5. **ONLY MODIFY templateData** - Improve the prompt text to work better with EXISTING variables
+6. **Make prompts more robust** - The goal is to make the same variables produce better results for diverse products
+7. **Include clear comments** explaining key changes
+8. **Ensure valid TypeScript syntax** - the code must compile
+
+## CRITICAL CONSTRAINTS
+
+**FORBIDDEN:**
+- ❌ Adding new variables to variablesSchema
+- ❌ Removing existing variables
+- ❌ Changing variable names, types, or options
+- ❌ Adding conditional logic based on product categories
+
+**ALLOWED:**
+- ✅ Rewriting templateData prompts to be more universal
+- ✅ Adding anti-glare/reflection handling to existing lighting descriptions
+- ✅ Making composition guidance work for both compact and flat/wide products
+- ✅ Improving negative prompts to exclude more unwanted elements
+- ✅ Adjusting technical specifications for better cross-product performance
+
+**Example of GOOD changes:**
+- Before: "{{lighting_style}} studio lighting"
+- After: "{{lighting_style}} studio lighting, optimized to minimize reflections and glare while maintaining depth"
+
+**Example of BAD changes:**
+- Adding "product_category" variable and using it conditionally
 
 ## Response Format
 

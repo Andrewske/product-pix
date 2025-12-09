@@ -135,6 +135,108 @@ export type Database = {
           },
         ]
       }
+      generation_costs: {
+        Row: {
+          created_at: string | null
+          fallback_used: boolean | null
+          generated_image_id: string | null
+          id: string
+          input_cost_usd: number
+          input_tokens: number
+          job_id: string | null
+          model_id: string
+          output_cost_usd: number
+          output_tokens: number
+          provider: string
+          total_cost_usd: number
+        }
+        Insert: {
+          created_at?: string | null
+          fallback_used?: boolean | null
+          generated_image_id?: string | null
+          id?: string
+          input_cost_usd: number
+          input_tokens: number
+          job_id?: string | null
+          model_id: string
+          output_cost_usd: number
+          output_tokens: number
+          provider: string
+          total_cost_usd: number
+        }
+        Update: {
+          created_at?: string | null
+          fallback_used?: boolean | null
+          generated_image_id?: string | null
+          id?: string
+          input_cost_usd?: number
+          input_tokens?: number
+          job_id?: string | null
+          model_id?: string
+          output_cost_usd?: number
+          output_tokens?: number
+          provider?: string
+          total_cost_usd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_costs_generated_image_id_fkey"
+            columns: ["generated_image_id"]
+            isOneToOne: false
+            referencedRelation: "generated_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_costs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iteration_costs: {
+        Row: {
+          cost_details: Json | null
+          created_at: string
+          evaluation_cost: number
+          generation_cost: number
+          generation_count: number
+          id: string
+          insights_cost: number
+          session_id: string
+          template_slug: string
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          cost_details?: Json | null
+          created_at?: string
+          evaluation_cost?: number
+          generation_cost?: number
+          generation_count?: number
+          id?: string
+          insights_cost?: number
+          session_id: string
+          template_slug: string
+          total_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_details?: Json | null
+          created_at?: string
+          evaluation_cost?: number
+          generation_cost?: number
+          generation_count?: number
+          id?: string
+          insights_cost?: number
+          session_id?: string
+          template_slug?: string
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           completed_at: string | null
@@ -201,7 +303,7 @@ export type Database = {
       prompt_evaluations: {
         Row: {
           cost_usd: number | null
-          created_at: string | null
+          created_at: string
           details: Json | null
           evaluator_model: string | null
           evaluator_type: string
@@ -212,7 +314,7 @@ export type Database = {
         }
         Insert: {
           cost_usd?: number | null
-          created_at?: string | null
+          created_at?: string
           details?: Json | null
           evaluator_model?: string | null
           evaluator_type: string
@@ -223,7 +325,7 @@ export type Database = {
         }
         Update: {
           cost_usd?: number | null
-          created_at?: string | null
+          created_at?: string
           details?: Json | null
           evaluator_model?: string | null
           evaluator_type?: string
@@ -288,7 +390,7 @@ export type Database = {
           batch_label: string | null
           completed_at: string | null
           cost_usd: number | null
-          created_at: string | null
+          created_at: string
           duration_ms: number | null
           error_code: string | null
           error_message: string | null
@@ -298,6 +400,8 @@ export type Database = {
           image_key: string | null
           image_url: string | null
           inputs: Json
+          source_image_key: string | null
+          source_image_url: string | null
           status: Database["public"]["Enums"]["prompt_test_status"]
           template_id: string | null
         }
@@ -305,7 +409,7 @@ export type Database = {
           batch_label?: string | null
           completed_at?: string | null
           cost_usd?: number | null
-          created_at?: string | null
+          created_at?: string
           duration_ms?: number | null
           error_code?: string | null
           error_message?: string | null
@@ -315,6 +419,8 @@ export type Database = {
           image_key?: string | null
           image_url?: string | null
           inputs: Json
+          source_image_key?: string | null
+          source_image_url?: string | null
           status?: Database["public"]["Enums"]["prompt_test_status"]
           template_id?: string | null
         }
@@ -322,7 +428,7 @@ export type Database = {
           batch_label?: string | null
           completed_at?: string | null
           cost_usd?: number | null
-          created_at?: string | null
+          created_at?: string
           duration_ms?: number | null
           error_code?: string | null
           error_message?: string | null
@@ -332,6 +438,8 @@ export type Database = {
           image_key?: string | null
           image_url?: string | null
           inputs?: Json
+          source_image_key?: string | null
+          source_image_url?: string | null
           status?: Database["public"]["Enums"]["prompt_test_status"]
           template_id?: string | null
         }
@@ -342,6 +450,119 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "prompt_templates"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_improvement_sessions: {
+        Row: {
+          config: Json
+          current_iteration: number
+          current_mean_score: number | null
+          initial_mean_score: number | null
+          max_iterations: number
+          session_id: string
+          started_at: string
+          status: string
+          target_score: number | null
+          template_slug: string
+          total_cost_usd: number | null
+          total_improvement: number | null
+          updated_at: string
+        }
+        Insert: {
+          config: Json
+          current_iteration?: number
+          current_mean_score?: number | null
+          initial_mean_score?: number | null
+          max_iterations: number
+          session_id?: string
+          started_at?: string
+          status?: string
+          target_score?: number | null
+          template_slug: string
+          total_cost_usd?: number | null
+          total_improvement?: number | null
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          current_iteration?: number
+          current_mean_score?: number | null
+          initial_mean_score?: number | null
+          max_iterations?: number
+          session_id?: string
+          started_at?: string
+          status?: string
+          target_score?: number | null
+          template_slug?: string
+          total_cost_usd?: number | null
+          total_improvement?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      template_iterations: {
+        Row: {
+          analysis: Json
+          baseline_batch_label: string
+          baseline_results: Json
+          baseline_template: Json
+          changes: Json
+          costs: Json
+          delta: Json
+          id: string
+          improved_batch_label: string
+          improved_results: Json
+          improved_template: Json
+          iteration_number: number
+          session_id: string
+          suggestions: Json
+          timestamp: string
+          user_modifications: string | null
+        }
+        Insert: {
+          analysis: Json
+          baseline_batch_label: string
+          baseline_results: Json
+          baseline_template: Json
+          changes: Json
+          costs: Json
+          delta: Json
+          id?: string
+          improved_batch_label: string
+          improved_results: Json
+          improved_template: Json
+          iteration_number: number
+          session_id: string
+          suggestions: Json
+          timestamp?: string
+          user_modifications?: string | null
+        }
+        Update: {
+          analysis?: Json
+          baseline_batch_label?: string
+          baseline_results?: Json
+          baseline_template?: Json
+          changes?: Json
+          costs?: Json
+          delta?: Json
+          id?: string
+          improved_batch_label?: string
+          improved_results?: Json
+          improved_template?: Json
+          iteration_number?: number
+          session_id?: string
+          suggestions?: Json
+          timestamp?: string
+          user_modifications?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_iterations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "template_improvement_sessions"
+            referencedColumns: ["session_id"]
           },
         ]
       }

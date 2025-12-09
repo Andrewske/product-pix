@@ -927,7 +927,50 @@ export const runReport = async (
   }
 
   // Cost summary
-  const totalGenerationCost = tests.reduce((sum, t) => sum + (t.cost_usd || 0), 0);
+  // Calculate generation costs - use stored costs if available, otherwise recalculate from token usage
+  let totalGenerationCost = tests.reduce((sum, t) => sum + (t.cost_usd || 0), 0);
+  
+  // If no costs stored, recalculate from stored token usage
+  if (totalGenerationCost === 0) {
+    const { calculateCost } = await import('@/lib/pricing');
+    let recalculatedCost = 0;
+    let testsWithTokens = 0;
+    
+    // Fetch token usage data for tests that don't have costs
+    const { data: testsWithUsage } = await (supabase as any)
+      .from('prompt_tests')
+      .select('id, input_tokens, output_tokens')
+      .eq('batch_label', options.label)
+      .not('input_tokens', 'is', null)
+      .not('output_tokens', 'is', null);
+    
+    if (testsWithUsage && testsWithUsage.length > 0) {
+      for (const test of testsWithUsage as Array<{ id: string; input_tokens: number; output_tokens: number }>) {
+        if (test.input_tokens !== null && test.output_tokens !== null) {
+          const costResult = calculateCost('gemini-3-pro-image-preview', {
+            input: test.input_tokens,
+            output: test.output_tokens,
+          });
+          
+          if (costResult.ok) {
+            recalculatedCost += costResult.data.total;
+            testsWithTokens++;
+          }
+        }
+      }
+      
+      if (recalculatedCost > 0) {
+        totalGenerationCost = recalculatedCost;
+        console.log(`📊 Recalculated generation costs from token usage: $${totalGenerationCost.toFixed(4)} (${testsWithTokens}/${tests.length} tests with token data)`);
+      }
+    }
+    
+    // If still no cost, warn that we can't calculate
+    if (totalGenerationCost === 0) {
+      console.warn(`⚠️  No generation costs found and no token usage data available for recalculation`);
+    }
+  }
+  
   const { data: evalCosts } = await supabase
     .from('prompt_evaluations')
     .select('cost_usd')
