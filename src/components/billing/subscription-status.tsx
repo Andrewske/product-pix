@@ -69,7 +69,7 @@ export function SubscriptionStatus() {
       <Card>
         <CardHeader>
           <CardTitle>Subscription Status</CardTitle>
-          <CardDescription>You donYou don't have an active subscriptionapos;t have an active subscription</CardDescription>
+          <CardDescription>You don't have an active subscription</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">

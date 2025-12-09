@@ -19,7 +19,8 @@ const ALLOWED_EVENTS: Stripe.Event.Type[] = [
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
-    const headersList = await headers(); const sig = headersList.get('stripe-signature');
+    const headersList = await headers();
+    const sig = headersList.get('stripe-signature');
 
     if (!sig) {
       return NextResponse.json({ error: 'No signature' }, { status: 400 });

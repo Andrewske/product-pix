@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin';
 import { addCredits } from '@/lib/db/credits';
 
 const POSTGRES_UNIQUE_VIOLATION = '23505';
