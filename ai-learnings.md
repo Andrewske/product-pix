@@ -50,3 +50,11 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 
 - **Database to app mapping**: Supabase uses `snake_case`, app interfaces use `camelCase` — create `dbToApp()`/`appToDb()` helper functions
 - **Result type access**: Use `.data` property for successful Result values (not `.value`)
+
+## Template Improvement System
+
+- **Dimension-level feedback crucial**: Overall scores mask specific issues. AI needs breakdown of composition, lighting, product visibility, etc. to make targeted improvements
+- **Iteration history prevents regression**: Without previous attempt tracking, AI repeatedly tries failed approaches (e.g., anti-glare fixes that don't help)
+- **Statistical significance matters**: Minimum 5 evaluations needed for reliable improvement analysis; smaller batches lead to random variation dominating signal
+- **Evaluator reasoning goldmine**: The "why" behind scores contains actionable insights that overall numbers miss
+- **Structured prompt sections**: Breaking AI analysis into "Dimension Analysis" and "Per-Product Feedback" sections produces more focused improvements than free-form analysis

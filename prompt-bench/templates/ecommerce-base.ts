@@ -5,7 +5,7 @@ import { type PromptTemplate } from '@bench/core/types';
  */
 export const ECOMMERCE_BASE: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdAt'> = {
   slug: 'ecommerce-base',
-  version: 1,
+  version: 3,
   status: 'active',
   templateData: {
     subject: 'Professional e-commerce photo of {product}, {color} {material}',

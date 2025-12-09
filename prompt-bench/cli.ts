@@ -54,9 +54,10 @@ Examples:
   bun bench compare --baseline v1 --candidate v2
   bun bench report --label v1
   bun bench open-last-report
-  bun bench improve                    # Uses config defaults
-  bun bench improve --continue         # Resume previous session
-  bun bench improve --history          # View past sessions
+   bun bench improve                    # Uses config defaults
+   bun bench improve --continue         # Resume previous session
+   bun bench improve --new              # End previous session and start new one
+   bun bench improve --history          # View past sessions
 
 Run 'bun bench <command> --help' for command-specific options.
 `);

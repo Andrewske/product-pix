@@ -38,6 +38,39 @@ import type {
 } from '@bench/core/improvement-types';
 
 // =============================================================================
+// Help
+// =============================================================================
+
+const showImproveHelp = (): void => {
+  console.log(`
+AI-powered template improvement
+
+Usage:
+  bun bench improve [options]
+
+Options:
+  -t, --template <slug>        Template to improve
+  -b, --batch <file>           Batch file path
+  -c, --continue               Resume previous active session
+  -n, --new                    End previous session and start new one
+      --history                Show improvement history for template
+      --max-iterations <num>   Maximum iterations (default: 5)
+      --target-score <score>   Target score to achieve (default: 9.0)
+      --auto-approve           Auto-approve AI suggestions
+  -f, --force                  Force operation
+  -q, --quiet                  Suppress progress output
+      --json                   Output in JSON format
+  -h, --help                   Show this help
+
+Examples:
+  bun bench improve --template ecommerce-base
+  bun bench improve --new --template ecommerce-base
+  bun bench improve --continue --template ecommerce-base
+  bun bench improve --history --template ecommerce-base
+`);
+};
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -46,6 +79,7 @@ interface ImproveOptions {
   batch?: string;
   continue?: boolean;
   history?: boolean;
+  new?: boolean;
   'max-iterations'?: number;
   'target-score'?: number;
   'auto-approve'?: boolean;
@@ -62,6 +96,12 @@ interface ImproveOptions {
  * Main improve command entry point
  */
 export const improveCommand = async (args: string[]): Promise<void> => {
+  // Handle help
+  if (args.includes('--help') || args.includes('-h')) {
+    showImproveHelp();
+    return;
+  }
+
   const options = parseImproveOptions(args);
 
   try {
@@ -69,6 +109,11 @@ export const improveCommand = async (args: string[]): Promise<void> => {
     if (options.history) {
       await showHistoryCommand(options);
       return;
+    }
+
+    // Handle new session mode - end any existing active session first
+    if (options.new) {
+      await endActiveSessionForCommand(options);
     }
 
     // Load or create session
@@ -103,6 +148,7 @@ const parseImproveOptions = (args: string[]): ImproveOptions => {
         batch: { type: 'string', short: 'b' },
         continue: { type: 'boolean', short: 'c' },
         history: { type: 'boolean' },
+        new: { type: 'boolean', short: 'n' },
         'max-iterations': { type: 'string' },
         'target-score': { type: 'string' },
         'auto-approve': { type: 'boolean' },
@@ -117,6 +163,7 @@ const parseImproveOptions = (args: string[]): ImproveOptions => {
     batch: (values.batch as string) || improveConfig?.batch_file || config?.defaults?.batch_file,
     continue: values.continue as boolean,
     history: values.history as boolean,
+    new: values.new as boolean,
     'max-iterations': values['max-iterations']
       ? parseInt(values['max-iterations'] as string)
       : improveConfig?.max_iterations || 5,
@@ -147,13 +194,7 @@ const createNewSessionForCommand = async (
     return null;
   }
 
-  // Validate batch size before proceeding
-  const batchLabel = generateBatchLabel(options.template);
-  const validationResult = await validateBatchSize(batchLabel, options.force || false);
-  if (!validationResult.ok) {
-    console.error(`Error: ${validationResult.error.message}`);
-    return null;
-  }
+  // Note: Batch validation is done during baseline testing, not here
 
   const config: ImprovementConfig = {
     template: options.template,
@@ -179,6 +220,39 @@ const createNewSessionForCommand = async (
   }
 
   return result.data;
+};
+
+const endActiveSessionForCommand = async (
+  options: ImproveOptions
+): Promise<void> => {
+  if (!options.template) {
+    console.error('Error: --template is required with --new');
+    return;
+  }
+
+  const result = await loadActiveSession(options.template);
+  if (!result.ok) {
+    console.error(`Failed to load active session: ${result.error.message}`);
+    return;
+  }
+
+  if (!result.data) {
+    if (!options.quiet && !options.json) {
+      console.log(`No active session found for template: ${options.template}`);
+    }
+    return;
+  }
+
+  // Mark the active session as abandoned
+  const updateResult = await updateSession(result.data.sessionId, { status: 'abandoned' });
+  if (!updateResult.ok) {
+    console.error(`Failed to end session: ${updateResult.error.message}`);
+    return;
+  }
+
+  if (!options.quiet && !options.json) {
+    console.log(`✅ Ended previous session: ${result.data.sessionId}`);
+  }
 };
 
 const loadActiveSessionForCommand = async (
