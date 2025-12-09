@@ -5,12 +5,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { Result } from '@bench/core/errors';
 import { ok, err, createError } from '@bench/core/errors';
-import type { PromptTemplate, TestResults } from '@bench/core/types';
+import type { PromptTemplate } from '@bench/core/types';
 import type {
   StructuredAnalysis,
   Suggestion,
   Pattern,
   SegmentAnalysis,
+  TestResults,
 } from '@bench/core/improvement-types';
 import { calculateCost } from '@/lib/pricing';
 

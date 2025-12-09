@@ -74,16 +74,31 @@ export interface TemplateChange {
 // Test Results Types
 // =============================================================================
 
+export interface EvaluationBreakdown {
+  composition: number;
+  lighting: number;
+  productVisibility: number;
+  backgroundQuality: number;
+  professionalQuality: number;
+  promptAdherence: number;
+}
+
+export interface ProductScore {
+  productId: string;
+  score: number;
+  breakdown?: EvaluationBreakdown;
+  reasoning?: string;
+  suggestions?: string[];
+}
+
 export interface TestResults {
   scores: number[];
   meanScore: number;
   medianScore: number;
   minScore: number;
   maxScore: number;
-  productScores: Array<{
-    productId: string;
-    score: number;
-  }>;
+  productScores: ProductScore[];
+  dimensionAverages?: EvaluationBreakdown;
 }
 
 // =============================================================================
