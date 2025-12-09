@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/auth/hooks';
+import { requireAuth } from '@/lib/auth/server';
 import { getUserStripeCustomerId } from '@/lib/stripe/customer';
 import { syncStripeDataToKV } from '@/lib/stripe/sync';
 import { SubscriptionStatus } from '@/components/billing/subscription-status';

@@ -45,6 +45,50 @@ prompt-bench/   # Isolated CLI testing framework
 **Key tables**: users, uploads, jobs, generated_images, credit_transactions, prompt_templates, prompt_tests, prompt_evaluations
 
 **RPC**: `create_generation_job`, `add_credits`, `consume_credits`, `refund_credits`, `update_prompt_test_status`
+## Architecture Decision: prompt-bench Integration
+
+
+
+**Decision**: Keep prompt-bench as monorepo directory with build exclusion
+
+
+
+**Rationale**: prompt-bench is ProductPix-specific dev tooling with tight coupling to:
+
+- Supabase schema (prompt_templates, prompt_tests, generated_images tables)
+
+- R2 storage infrastructure
+
+- Gemini AI provider configuration
+
+- Application pricing logic
+
+
+
+**Implementation**: Dual TypeScript configs
+
+- `tsconfig.json`: Root config for CLI and tests (includes prompt-bench/)
+- **Next.js build uses tsconfig.build.json (excludes prompt-bench/)**, CLI uses root tsconfig.json
+
+- `tsconfig.build.json`: Build config for Next.js (excludes prompt-bench/)
+
+- Next.js uses `typescript.tsconfigPath: './tsconfig.build.json'`
+
+
+
+**Benefits**:
+
+- Clean separation without synchronization overhead
+
+- Full functionality preserved for development/testing
+
+- No Vercel deployment issues
+
+- One-way dependency flow maintained (prompt-bench → src/)
+
+
+
+**Future**: Migration to separate repo/package possible if coupling decreases
 
 ## Conventions
 

@@ -51,9 +51,9 @@ function formatSubscriptionData(subscription: Stripe.Subscription) {
     status: subscription.status,
     priceId: subscription.items.data[0]?.price.id,
     tier: subscription.metadata.tier,
-    currentPeriodStart: subscription.current_period_start,
-    currentPeriodEnd: subscription.current_period_end,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    currentPeriodStart: (subscription as any).current_period_start,
+    currentPeriodEnd: (subscription as any).current_period_end,
+    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
   };
 }
 
@@ -65,7 +65,7 @@ async function upsertSubscription(userId: string, subscription: Stripe.Subscript
   if (!tier) return; // Only track subscriptions with tier metadata
 
   await createAdminClient()
-    .from('stripe_subscriptions')
+    .from('stripe_subscriptions' as any)
     .upsert({
       user_id: userId,
       stripe_subscription_id: subscription.id,
@@ -73,9 +73,9 @@ async function upsertSubscription(userId: string, subscription: Stripe.Subscript
       status: subscription.status,
       price_id: subscription.items.data[0]?.price.id,
       tier,
-      current_period_start: new Date(subscription.current_period_start * 1000),
-      current_period_end: new Date(subscription.current_period_end * 1000),
-      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_period_start: new Date((subscription as any).current_period_start * 1000),
+      current_period_end: new Date((subscription as any).current_period_end * 1000),
+      cancel_at_period_end: (subscription as any).cancel_at_period_end,
     }, {
       onConflict: 'stripe_subscription_id'
     });

@@ -16,7 +16,7 @@ import type { Json } from '@/types/database';
 import { createGeminiProvider } from '@/lib/ai/providers/gemini';
 import { uploadBuffer, getPublicUrl } from '@/lib/r2';
 import { sleep, loadConfig } from './shared';
-import { calculateCost } from '@/lib/pricing';
+import { calculateCost } from '@bench/core/cost';
 
 interface RunOptions {
   template: string;

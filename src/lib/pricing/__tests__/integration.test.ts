@@ -136,33 +136,27 @@ describe('Pricing Validation Fixtures', () => {
 
   it('should validate all pricing fixtures against actual calculations', () => {
     for (const fixture of fixtures) {
-      const result = calculateCost(fixture.modelId, fixture.usage);
-
       if (fixture.expectedError) {
-        // Should return an error
-        expect(result.ok).toBe(false);
-        if (!result.ok) {
-          expect(result.error.message).toBe(fixture.expectedError);
-        }
+        // Should throw an error
+        expect(() => {
+          calculateCost(fixture.modelId, fixture.usage);
+        }).toThrow(fixture.expectedError);
       } else if (fixture.expectedCost) {
         // Should return success with expected cost
-        expect(result.ok).toBe(true);
-        if (result.ok) {
-          const cost = result.data;
+        const cost = calculateCost(fixture.modelId, fixture.usage);
 
-          // Check exact values for known models
-          if (!fixture.expectedCost.fallbackUsed && fixture.expectedCost.inputCost !== undefined &&
-              fixture.expectedCost.outputCost !== undefined && fixture.expectedCost.total !== undefined) {
-            expect(cost.inputCost).toBeCloseTo(fixture.expectedCost.inputCost, 2);
-            expect(cost.outputCost).toBeCloseTo(fixture.expectedCost.outputCost, 2);
-            expect(cost.total).toBeCloseTo(fixture.expectedCost.total, 2);
-          }
-
-          // Always check provider and fallback status
-          expect(cost.provider).toBe(fixture.expectedCost.provider);
-          expect(cost.fallbackUsed).toBe(fixture.expectedCost.fallbackUsed);
-          expect(cost.modelId).toBe(fixture.modelId);
+        // Check exact values for known models
+        if (!fixture.expectedCost.fallbackUsed && fixture.expectedCost.inputCost !== undefined &&
+            fixture.expectedCost.outputCost !== undefined && fixture.expectedCost.total !== undefined) {
+          expect(cost.inputCost).toBeCloseTo(fixture.expectedCost.inputCost, 2);
+          expect(cost.outputCost).toBeCloseTo(fixture.expectedCost.outputCost, 2);
+          expect(cost.total).toBeCloseTo(fixture.expectedCost.total, 2);
         }
+
+        // Always check provider and fallback status
+        expect(cost.provider).toBe(fixture.expectedCost.provider);
+        expect(cost.fallbackUsed).toBe(fixture.expectedCost.fallbackUsed);
+        expect(cost.modelId).toBe(fixture.modelId);
       }
     }
   });
@@ -171,14 +165,11 @@ describe('Pricing Validation Fixtures', () => {
     const zeroUsageFixtures = fixtures.filter(f => f.usage.input === 0 && f.usage.output === 0);
 
     for (const fixture of zeroUsageFixtures) {
-      const result = calculateCost(fixture.modelId, fixture.usage);
+      const cost = calculateCost(fixture.modelId, fixture.usage);
 
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.data.total).toBe(0);
-        expect(result.data.inputCost).toBe(0);
-        expect(result.data.outputCost).toBe(0);
-      }
+      expect(cost.total).toBe(0);
+      expect(cost.inputCost).toBe(0);
+      expect(cost.outputCost).toBe(0);
     }
   });
 
@@ -186,15 +177,12 @@ describe('Pricing Validation Fixtures', () => {
     const fallbackFixtures = fixtures.filter(f => f.expectedCost?.fallbackUsed);
 
     for (const fixture of fallbackFixtures) {
-      const result = calculateCost(fixture.modelId, fixture.usage);
+      const cost = calculateCost(fixture.modelId, fixture.usage);
 
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.data.provider).toBe('unknown');
-        expect(result.data.fallbackUsed).toBe(true);
-        // Fallback pricing should be higher than any known model pricing
-        expect(result.data.total).toBeGreaterThan(0);
-      }
+      expect(cost.provider).toBe('unknown');
+      expect(cost.fallbackUsed).toBe(true);
+      // Fallback pricing should be higher than any known model pricing
+      expect(cost.total).toBeGreaterThan(0);
     }
   });
 
@@ -204,17 +192,16 @@ describe('Pricing Validation Fixtures', () => {
     );
 
     for (const fixture of knownModelFixtures) {
-      const result = calculateCost(fixture.modelId, fixture.usage);
+      const cost = calculateCost(fixture.modelId, fixture.usage);
 
-      expect(result.ok).toBe(true);
-      if (result.ok && fixture.expectedCost) {
+      if (fixture.expectedCost) {
         if (fixture.expectedCost.inputCost !== undefined && fixture.expectedCost.outputCost !== undefined && fixture.expectedCost.total !== undefined) {
-          expect(result.data.inputCost).toBeCloseTo(fixture.expectedCost.inputCost, 2);
-          expect(result.data.outputCost).toBeCloseTo(fixture.expectedCost.outputCost, 2);
-          expect(result.data.total).toBeCloseTo(fixture.expectedCost.total, 2);
+          expect(cost.inputCost).toBeCloseTo(fixture.expectedCost.inputCost, 2);
+          expect(cost.outputCost).toBeCloseTo(fixture.expectedCost.outputCost, 2);
+          expect(cost.total).toBeCloseTo(fixture.expectedCost.total, 2);
         }
-        expect(result.data.provider).not.toBe('unknown');
-        expect(result.data.fallbackUsed).toBe(false);
+        expect(cost.provider).not.toBe('unknown');
+        expect(cost.fallbackUsed).toBe(false);
       }
     }
   });
@@ -226,13 +213,12 @@ describe('Pricing Validation Fixtures', () => {
     );
 
     for (const fixture of prefixFixtures) {
-      const result = calculateCost(fixture.modelId, fixture.usage);
+      const cost = calculateCost(fixture.modelId, fixture.usage);
 
-      expect(result.ok).toBe(true);
-      if (result.ok && fixture.expectedCost) {
+      if (fixture.expectedCost) {
         // Should get same pricing as the base model
-        expect(result.data.provider).toBe(fixture.expectedCost.provider);
-        expect(result.data.fallbackUsed).toBe(false);
+        expect(cost.provider).toBe(fixture.expectedCost.provider);
+        expect(cost.fallbackUsed).toBe(false);
       }
     }
   });

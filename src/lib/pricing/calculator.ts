@@ -1,34 +1,30 @@
 import type { TokenUsage, CostResult } from './types';
 import { getProviderForModel, getPricingForModel } from './models';
-import { ok, err, createError } from '@bench/core/errors';
 
 /**
  * Calculate the cost for AI model usage.
  *
  * @param modelId - The model identifier used
  * @param usage - Token usage statistics
- * @returns Result containing cost breakdown or validation error
+ * @returns Cost breakdown
+ * @throws Error if token counts are negative
  */
-export function calculateCost(modelId: string, usage: TokenUsage): ReturnType<typeof ok<CostResult> | typeof err> {
+export function calculateCost(modelId: string, usage: TokenUsage): CostResult {
   // Validate token counts
   if (usage.input < 0 || usage.output < 0) {
-    return err(createError(
-      'VALIDATION_ERROR',
-      'Token counts cannot be negative',
-      { retryable: false }
-    ));
+    throw new Error('Token counts cannot be negative');
   }
 
   // Handle zero usage (valid case)
   if (usage.input === 0 && usage.output === 0) {
-    return ok({
+    return {
       inputCost: 0,
       outputCost: 0,
       total: 0,
       modelId,
       provider: getProviderForModel(modelId),
       fallbackUsed: false,
-    });
+    };
   }
 
   const provider = getProviderForModel(modelId);
@@ -41,12 +37,12 @@ export function calculateCost(modelId: string, usage: TokenUsage): ReturnType<ty
   const outputCost = (usage.output / 1_000_000) * pricing.output;
   const total = inputCost + outputCost;
 
-  return ok({
+  return {
     inputCost,
     outputCost,
     total,
     modelId,
     provider,
     fallbackUsed,
-  });
+  };
 }

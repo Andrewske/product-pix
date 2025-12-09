@@ -15,7 +15,7 @@ import type {
   EvaluationBreakdown,
   ProductScore,
 } from '@bench/core/improvement-types';
-import { calculateCost } from '@/lib/pricing';
+import { calculateCost } from '@bench/core/cost';
 
 // =============================================================================
 // Types

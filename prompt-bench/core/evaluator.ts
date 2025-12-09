@@ -8,7 +8,7 @@ import {
 } from '@bench/core/errors';
 import { EvaluationDetails, ScoreSchema } from '@bench/core/types';
 import { downloadBuffer } from '@/lib/r2';
-import { calculateCost } from '@/lib/pricing';
+import { calculateCost } from '@bench/core/cost';
 
 // =============================================================================
 // Constants

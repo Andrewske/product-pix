@@ -219,4 +219,3 @@ export const CompareCommandOptionsSchema = z.object({
   candidate: z.string().min(1),
 });
 
-export type CompareCommandOptions = z.infer<typeof CompareCommandOptionsSchema>;

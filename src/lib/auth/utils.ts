@@ -28,3 +28,4 @@ export const updatePassword = async (newPassword: string): Promise<AuthResult> =
 
   return { error: error?.message ?? null };
 };
+

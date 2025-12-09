@@ -5,7 +5,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { Result, ok, err, createError } from '@bench/core/errors';
 import type { TemplateData } from '@bench/core/types';
-import { calculateCost } from '@/lib/pricing';
+import { calculateCost } from '@bench/core/cost';
 
 // =============================================================================
 // Types

@@ -33,15 +33,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Process async but return 200 immediately (per notes-on-stripe.md)
-    // Using edge runtime for waitUntil support
-    if (typeof req.waitUntil === 'function') {
-      req.waitUntil(processStripeEvent(event));
-    } else {
-      // Fallback for non-edge runtime
-      processStripeEvent(event).catch((error) => {
-        console.error('[Stripe Webhook] Async processing failed:', error);
-      });
-    }
+    processStripeEvent(event).catch((error) => {
+      console.error('[Stripe Webhook] Async processing failed:', error);
+    });
 
     return NextResponse.json({ received: true });
   } catch (error) {

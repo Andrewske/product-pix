@@ -22,15 +22,12 @@ describe('Cost Calculator', () => {
 
     const result = calculateCost('claude-sonnet-4', { input: 1_000_000, output: 500_000 });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.inputCost).toBe(3.0); // (1M / 1M) * 3.0
-      expect(result.data.outputCost).toBe(7.5); // (500K / 1M) * 15.0
-      expect(result.data.total).toBe(10.5);
-      expect(result.data.modelId).toBe('claude-sonnet-4');
-      expect(result.data.provider).toBe('anthropic');
-      expect(result.data.fallbackUsed).toBe(false);
-    }
+    expect(result.inputCost).toBe(3.0); // (1M / 1M) * 3.0
+    expect(result.outputCost).toBe(7.5); // (500K / 1M) * 15.0
+    expect(result.total).toBe(10.5);
+    expect(result.modelId).toBe('claude-sonnet-4');
+    expect(result.provider).toBe('anthropic');
+    expect(result.fallbackUsed).toBe(false);
   });
 
   it('should handle zero token usage', () => {
@@ -38,34 +35,22 @@ describe('Cost Calculator', () => {
 
     const result = calculateCost('gpt-4o', { input: 0, output: 0 });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.inputCost).toBe(0);
-      expect(result.data.outputCost).toBe(0);
-      expect(result.data.total).toBe(0);
-      expect(result.data.fallbackUsed).toBe(false);
-    }
+    expect(result.inputCost).toBe(0);
+    expect(result.outputCost).toBe(0);
+    expect(result.total).toBe(0);
+    expect(result.fallbackUsed).toBe(false);
   });
 
-  it('should return error for negative input tokens', () => {
-    const result = calculateCost('claude-sonnet-4', { input: -100, output: 500 });
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('VALIDATION_ERROR');
-      expect(result.error.message).toBe('Token counts cannot be negative');
-      expect(result.error.retryable).toBe(false);
-    }
+  it('should throw error for negative input tokens', () => {
+    expect(() => {
+      calculateCost('claude-sonnet-4', { input: -100, output: 500 });
+    }).toThrow('Token counts cannot be negative');
   });
 
-  it('should return error for negative output tokens', () => {
-    const result = calculateCost('claude-sonnet-4', { input: 100, output: -500 });
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('VALIDATION_ERROR');
-      expect(result.error.message).toBe('Token counts cannot be negative');
-    }
+  it('should throw error for negative output tokens', () => {
+    expect(() => {
+      calculateCost('claude-sonnet-4', { input: 100, output: -500 });
+    }).toThrow('Token counts cannot be negative');
   });
 
   it('should handle large token counts', () => {
@@ -74,12 +59,9 @@ describe('Cost Calculator', () => {
 
     const result = calculateCost('gemini-3-pro-image-preview', { input: 10_000_000, output: 5_000_000 });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.inputCost).toBe(0.75); // (10M / 1M) * 0.075
-      expect(result.data.outputCost).toBe(1.5); // (5M / 1M) * 0.3
-      expect(result.data.total).toBe(2.25);
-    }
+    expect(result.inputCost).toBe(0.75); // (10M / 1M) * 0.075
+    expect(result.outputCost).toBe(1.5); // (5M / 1M) * 0.3
+    expect(result.total).toBe(2.25);
   });
 
   it('should handle fractional token costs', () => {
@@ -88,12 +70,9 @@ describe('Cost Calculator', () => {
 
     const result = calculateCost('gpt-4o', { input: 500_000, output: 250_000 });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.inputCost).toBe(1.25); // (500K / 1M) * 2.5
-      expect(result.data.outputCost).toBe(2.5); // (250K / 1M) * 10.0
-      expect(result.data.total).toBe(3.75);
-    }
+    expect(result.inputCost).toBe(1.25); // (500K / 1M) * 2.5
+    expect(result.outputCost).toBe(2.5); // (250K / 1M) * 10.0
+    expect(result.total).toBe(3.75);
   });
 
   it('should mark fallback usage for unknown models', () => {
@@ -102,14 +81,11 @@ describe('Cost Calculator', () => {
 
     const result = calculateCost('unknown-model-xyz', { input: 1_000_000, output: 500_000 });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.provider).toBe('unknown');
-      expect(result.data.fallbackUsed).toBe(true);
-      expect(result.data.inputCost).toBe(22.5);
-      expect(result.data.outputCost).toBe(56.25);
-      expect(result.data.total).toBe(78.75);
-    }
+    expect(result.provider).toBe('unknown');
+    expect(result.fallbackUsed).toBe(true);
+    expect(result.inputCost).toBe(22.5);
+    expect(result.outputCost).toBe(56.25);
+    expect(result.total).toBe(78.75);
   });
 
   it('should handle mixed zero and non-zero tokens', () => {
@@ -118,12 +94,9 @@ describe('Cost Calculator', () => {
 
     const result = calculateCost('claude-sonnet-4', { input: 0, output: 500_000 });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.inputCost).toBe(0);
-      expect(result.data.outputCost).toBe(7.5);
-      expect(result.data.total).toBe(7.5);
-    }
+    expect(result.inputCost).toBe(0);
+    expect(result.outputCost).toBe(7.5);
+    expect(result.total).toBe(7.5);
   });
 
   it('should calculate costs with very small pricing', () => {
@@ -132,11 +105,8 @@ describe('Cost Calculator', () => {
 
     const result = calculateCost('gemini-3-pro-image-preview', { input: 100_000, output: 50_000 });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.inputCost).toBe(0.0075); // (100K / 1M) * 0.075
-      expect(result.data.outputCost).toBe(0.015); // (50K / 1M) * 0.3
-      expect(result.data.total).toBe(0.0225);
-    }
+    expect(result.inputCost).toBe(0.0075); // (100K / 1M) * 0.075
+    expect(result.outputCost).toBe(0.015); // (50K / 1M) * 0.3
+    expect(result.total).toBe(0.0225);
   });
 });

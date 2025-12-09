@@ -75,9 +75,9 @@ export function SubscriptionStatus() {
           <p className="text-sm text-muted-foreground mb-4">
             Subscribe to get monthly credits automatically.
           </p>
-          <Button asChild>
-            <a href="/pricing">View Plans</a>
-          </Button>
+          <a href="/pricing" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+            View Plans
+          </a>
         </CardContent>
       </Card>
     );

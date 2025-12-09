@@ -97,13 +97,12 @@ export const generateImage = async (
 
     // Calculate and store generation cost
     if (result.usage) {
-      const costResult = calculateCost('gemini-3-pro-image-preview', {
-        input: result.usage.promptTokens,
-        output: result.usage.completionTokens,
-      });
+      try {
+        const costData = calculateCost('gemini-3-pro-image-preview', {
+          input: result.usage.promptTokens,
+          output: result.usage.completionTokens,
+        });
 
-      if (costResult.ok) {
-        const costData = costResult.data;
         if (costData.fallbackUsed) {
           console.warn(`⚠️  Using fallback pricing for image generation`);
         }
@@ -120,8 +119,9 @@ export const generateImage = async (
           totalCostUsd: costData.total,
           fallbackUsed: costData.fallbackUsed,
         });
-      } else {
-        console.warn(`⚠️  Failed to calculate cost for image generation: ${costResult.error.message}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.warn(`⚠️  Failed to calculate cost for image generation: ${message}`);
       }
     } else {
       console.warn(`⚠️  No usage data available for cost calculation`);

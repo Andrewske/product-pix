@@ -73,11 +73,11 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
  * Handle successful invoice payment (subscription renewal)
  */
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
-  if (!invoice.subscription || invoice.billing_reason !== 'subscription_cycle') {
+  if (!(invoice as any).subscription || invoice.billing_reason !== 'subscription_cycle') {
     return; // Only process subscription renewals
   }
 
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+  const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
   const tier = subscription.metadata.tier as keyof typeof SUBSCRIPTION_TIERS;
 
   if (!tier || !SUBSCRIPTION_TIERS[tier]) {
@@ -87,7 +87,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
 
   // Get customer to find userId
   const customer = await stripe.customers.retrieve(subscription.customer as string);
-  const userId = customer.metadata.userId;
+  const userId = (customer as any).metadata?.userId;
 
   if (!userId) {
     console.error(`[Stripe Webhook] No userId in customer metadata for ${subscription.customer}`);
@@ -105,8 +105,8 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     metadata: {
       subscriptionId: subscription.id,
       tier,
-      periodStart: subscription.current_period_start,
-      periodEnd: subscription.current_period_end,
+      periodStart: (subscription as any).current_period_start,
+      periodEnd: (subscription as any).current_period_end,
     },
   });
 }

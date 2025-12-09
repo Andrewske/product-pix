@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { stripe } from '@/lib/stripe/client';
 import { getOrCreateStripeCustomer } from '@/lib/stripe/customer';
 import { CREDIT_PACKS, SUBSCRIPTION_TIERS } from '@/lib/stripe/products';
-import { requireAuth } from '@/lib/auth/hooks';
+import { requireAuth } from '@/lib/auth/server';
 
 const checkoutSchema = z.object({
   type: z.enum(['pack', 'subscription']),
@@ -14,6 +14,12 @@ const checkoutSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
+    if (!user.email) {
+      return NextResponse.json({ error: 'Email required for checkout' }, { status: 400 });
+    }
+    if (!user.email) {
+      return NextResponse.json({ error: 'Email required for checkout' }, { status: 400 });
+    }
     const body = await req.json();
     const { type, packId, tier } = checkoutSchema.parse(body);
 

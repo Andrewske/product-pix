@@ -73,3 +73,9 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Webhook async processing**: Return 200 immediately, process events with `waitUntil` or background processing
 - **Redis caching strategy**: Long TTL (24h) for customer IDs, short TTL (5min) for subscription state
 - **Transaction types**: Extend enum with `pack_purchase`, `subscription_renewal`, `subscription_upgrade` for proper categorization
+
+## Build System Patterns
+
+- **Dual TypeScript configs for monorepo exclusion**: When keeping tightly-coupled dev tooling in monorepo but excluding from production builds, use separate `tsconfig.build.json` that overrides `include` array to exclude dev directories. Next.js respects `typescript.tsconfigPath` config option
+- **TypeScript include vs exclude precedence**: `include` arrays take precedence over `exclude` — to exclude a directory, override the entire `include` array rather than just adding to `exclude`
+- **Build-time vs runtime separation**: CLI tools can use root tsconfig (with dev dependencies) while production builds use stripped-down config, enabling different compilation rules for same codebase

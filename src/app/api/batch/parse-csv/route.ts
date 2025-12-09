@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       if (result.success) {
         items.push({ ...result.data, sequence: i });
       } else {
-        errors.push({ line: i + 1, errors: result.error.errors });
+        errors.push({ line: i + 1, errors: result.error.issues });
       }
     }
 

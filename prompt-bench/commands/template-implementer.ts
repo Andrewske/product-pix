@@ -7,7 +7,7 @@ import type { Result } from '@bench/core/errors';
 import { ok, err, createError } from '@bench/core/errors';
 import type { PromptTemplate } from '@bench/core/types';
 import type { Suggestion, TemplateChange } from '@bench/core/improvement-types';
-import { calculateCost } from '@/lib/pricing';
+import { calculateCost } from '@bench/core/cost';
 import { validateTemplateCode } from '@bench/core/template-io';
 
 // =============================================================================

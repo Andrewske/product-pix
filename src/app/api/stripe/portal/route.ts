@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/client';
 import { getUserStripeCustomerId } from '@/lib/stripe/customer';
-import { requireAuth } from '@/lib/auth/hooks';
+import { requireAuth } from '@/lib/auth/server';
 
 export async function POST() {
   try {

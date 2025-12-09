@@ -77,7 +77,7 @@ export const createBatchJob = async (
     p_name: params.name,
     p_total_items: params.totalItems,
     p_credits_to_charge: params.creditsToCharge,
-    p_default_prompt: params.defaultPrompt ?? null,
+    p_default_prompt: params.defaultPrompt || undefined,
     p_parameters: params.parameters ?? {},
   });
 

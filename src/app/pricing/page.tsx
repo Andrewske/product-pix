@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/auth/hooks';
+import { requireAuth } from '@/lib/auth/server';
 import { getUserStripeCustomerId } from '@/lib/stripe/customer';
 import { syncStripeDataToKV } from '@/lib/stripe/sync';
 import { CreditPacks } from '@/components/pricing/credit-packs';
@@ -6,10 +6,16 @@ import { SubscriptionTiers } from '@/components/pricing/subscription-tiers';
 
 export default async function PricingPage() {
   // Sync Stripe data on page load to ensure fresh subscription status
+  // If sync fails, still render page - components will show cached/stale data
   const user = await requireAuth();
   const customerId = await getUserStripeCustomerId(user.id);
   if (customerId) {
-    await syncStripeDataToKV(customerId);
+    try {
+      await syncStripeDataToKV(customerId);
+    } catch (error) {
+      // Log but don't block page render - components can work with stale data
+      console.error('[Pricing Page] Sync failed, rendering with cached data:', error);
+    }
   }
 
   return (

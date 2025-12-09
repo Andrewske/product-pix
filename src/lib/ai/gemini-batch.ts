@@ -123,9 +123,12 @@ export async function createBatchJob(
     });
 
     // 4. Create batch job
+    if (!uploadedFile.uri && !uploadedFile.name) {
+      throw new Error('File upload failed - no uri or name returned');
+    }
     const batchJob = await client.batches.create({
       model: env.GEMINI_MODEL || 'gemini-3-pro-image-preview',
-      src: uploadedFile.name,
+      src: (uploadedFile.uri || uploadedFile.name) as string,
       config: {
         displayName: params.batchName,
       },
@@ -183,13 +186,11 @@ export async function cancelBatch(geminiBatchId: string): Promise<void> {
  */
 export async function downloadResults(fileName: string): Promise<string> {
   // Download the results file
-  const fileContent = await client.files.download({ file: fileName });
+  const tempPath = "/tmp/temp.jsonl";
+  await client.files.download({ file: fileName, downloadPath: tempPath });
+  const fs = await import('fs/promises');
+  const fileContent = await fs.readFile(tempPath, 'utf-8');
   
-  // fileContent is a Buffer, convert to string
-  if (Buffer.isBuffer(fileContent)) {
-    return fileContent.toString('utf-8');
-  }
-  
-  return String(fileContent);
+  return fileContent;
 }
 
