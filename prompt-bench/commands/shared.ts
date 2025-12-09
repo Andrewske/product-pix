@@ -124,6 +124,49 @@ export const fetchBatchScores = async (
 };
 
 /**
+ * Fetch evaluation details for a batch by label
+ */
+export const fetchBatchEvaluations = async (
+  supabase: ReturnType<typeof createAdminClient>,
+  batchLabel: string
+): Promise<Array<{ testId: string; score: number; details: any }>> => {
+  const { data, error } = await supabase
+    .from('prompt_tests')
+    .select(`
+      id,
+      prompt_evaluations (
+        score_overall,
+        details
+      )
+    `)
+    .eq('batch_label', batchLabel)
+    .eq('status', 'completed');
+
+  if (error) {
+    throw new Error(`Failed to fetch evaluations for ${batchLabel}: ${error.message}`);
+  }
+
+  return (data || [])
+    .map((test) => {
+      const evals = test.prompt_evaluations as Array<{
+        score_overall: number | null;
+        details: any;
+      }> | null;
+
+      if (!evals?.[0]?.score_overall) {
+        return null;
+      }
+
+      return {
+        testId: test.id,
+        score: evals[0].score_overall,
+        details: evals[0].details,
+      };
+    })
+    .filter((result): result is { testId: string; score: number; details: any } => result !== null);
+};
+
+/**
  * Sleep utility for rate limiting
  */
 export const sleep = (ms: number): Promise<void> =>
