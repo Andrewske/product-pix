@@ -1,0 +1,5 @@
+product_name,prompt,source_image_url,aspect_ratio,resolution
+"Example Product 1","Professional product photo on white background, soft shadows, studio lighting","https://example.com/product1.jpg","1:1","1k"
+"Example Product 2","E-commerce product image with clean background, natural lighting","","1:1","1k"
+"Example Product 3","Product photography with minimalist style, high quality","https://example.com/product3.jpg","16:9","2k"
+

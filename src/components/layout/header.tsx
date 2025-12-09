@@ -39,6 +39,9 @@ export function Header() {
                 <Link href="/generate">
                   <Button variant="ghost">Generate</Button>
                 </Link>
+                <Link href="/batch">
+                  <Button variant="ghost">Batches</Button>
+                </Link>
 
                 {/* Credits badge */}
                 <Badge variant="secondary">

@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/batch/poll-gemini",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
+
