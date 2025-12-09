@@ -29,7 +29,7 @@ export interface AnalysisInput {
     category: string;
     score: number;
   }>;
-  iterationHistory?: import('@bench/core/improvement-types').TemplateIteration[];
+  previousIterations?: import('@bench/core/improvement-types').TemplateIteration[];
 }
 
 export interface AnalysisResult {
@@ -46,7 +46,7 @@ export interface AnalysisResult {
  * Build the analyzer prompt with template and evaluation data
  */
 export const buildAnalyzerPrompt = (input: AnalysisInput): string => {
-  const { template, testResults, productDiversity, iterationHistory } = input;
+  const { template, testResults, productDiversity, previousIterations } = input;
 
   const prompt = `You are an expert AI prompt engineer specializing in e-commerce product photography prompts.
 
@@ -92,10 +92,12 @@ ${testResults.dimensionAverages
 ## Per-Product Detailed Feedback
 ${formatProductFeedback(testResults.productScores)}
 
-${iterationHistory && iterationHistory.length > 0
-  ? `## Previous Iteration History
-${formatIterationHistory(iterationHistory)}`
-  : ''}
+${previousIterations && previousIterations.length > 0
+  ? `## Previous Improvement Attempts
+${formatPreviousAttempts(previousIterations)}
+
+**IMPORTANT**: Review the previous attempts above and avoid repeating approaches that failed to improve scores or that led to score decreases. Focus on new strategies that address persistent weaknesses.`
+  : '## Previous Improvement Attempts\nNone - this is the first iteration.'}
 
 ## Analysis Requirements
 
@@ -421,22 +423,32 @@ export const findWeakestDimension = (breakdown: EvaluationBreakdown): string => 
 };
 
 /**
- * Format iteration history for the analyzer prompt
+ * Format previous improvement attempts for the analyzer prompt
  */
-export const formatIterationHistory = (
+export const formatPreviousAttempts = (
   iterations: import('@bench/core/improvement-types').TemplateIteration[]
 ): string => {
   return iterations
     .map((iteration) => {
+      const delta = iteration.delta.meanDelta;
+      const deltaSymbol = delta >= 0 ? '+' : '';
+      const successIndicator = delta > 0 ? '✅' : delta < 0 ? '❌' : '➖';
+
       const lines = [
-        `### Iteration ${iteration.iterationNumber}`,
-        `Score Change: ${iteration.baselineResults.meanScore.toFixed(2)} → ${iteration.improvedResults.meanScore.toFixed(2)} (Δ${iteration.delta.meanDelta >= 0 ? '+' : ''}${iteration.delta.meanDelta.toFixed(2)})`,
-        `Analysis Summary: ${iteration.analysis.summary}`,
-        `Changes Applied: ${iteration.changes.map(c => c.description).join('; ')}`,
+        `### Attempt ${iteration.iterationNumber} ${successIndicator}`,
+        `**Score Delta**: ${iteration.baselineResults.meanScore.toFixed(2)} → ${iteration.improvedResults.meanScore.toFixed(2)} (${deltaSymbol}${delta.toFixed(2)})`,
+        `**Changes Tried**: ${iteration.changes.map(c => c.description).join('; ')}`,
+        `**Outcome**: ${iteration.analysis.summary}`,
       ];
 
+      if (delta < 0) {
+        lines.push(`**Issues**: This approach decreased performance - avoid similar changes`);
+      } else if (delta === 0) {
+        lines.push(`**Issues**: No improvement - consider different strategies`);
+      }
+
       if (iteration.analysis.weaknesses && iteration.analysis.weaknesses.length > 0) {
-        lines.push(`Persistent Issues: ${iteration.analysis.weaknesses.join(', ')}`);
+        lines.push(`**Persistent Weaknesses**: ${iteration.analysis.weaknesses.join(', ')}`);
       }
 
       return lines.join('\n');
