@@ -1,6 +1,6 @@
 // src/app/api/upload/confirm/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/auth/server';
 import { createUpload } from '@/lib/db/uploads';
 import { z } from 'zod';
 
@@ -13,19 +13,8 @@ const requestSchema = z.object({
   height: z.number().positive().optional(),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request) => {
   try {
-    // Authenticate user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Validate request
     const body = await request.json();
     const parsed = requestSchema.safeParse(body);
@@ -40,7 +29,7 @@ export async function POST(request: NextRequest) {
     const { fileKey, filename, mimeType, fileSize, width, height } = parsed.data;
 
     // Verify the file key belongs to this user
-    if (!fileKey.startsWith(`uploads/${user.id}/`)) {
+    if (!fileKey.startsWith(`uploads/${request.user.id}/`)) {
       return NextResponse.json(
         { error: 'Invalid file key' },
         { status: 403 }
@@ -49,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Create upload record
     const upload = await createUpload({
-      user_id: user.id,
+      user_id: request.user.id,
       filename,
       file_key: fileKey,
       file_size: fileSize,
@@ -76,4 +65,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

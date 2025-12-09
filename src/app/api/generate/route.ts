@@ -1,11 +1,13 @@
 // src/app/api/generate/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/auth/server';
 import { createClient } from '@/lib/supabase/server';
 import { createGenerationJob, getJob } from '@/lib/db/jobs';
 import { getUpload } from '@/lib/db/uploads';
 import { generateImage } from '@/lib/ai/generate-image';
 import { getPublicUrl } from '@/lib/r2';
 import { rateLimiters } from '@/lib/rate-limit';
+import { getCreditsForResolution } from '@/lib/pricing/credits';
 import { z } from 'zod';
 
 const requestSchema = z.object({
@@ -15,21 +17,11 @@ const requestSchema = z.object({
   resolution: z.enum(['1k', '2k', '4k']).default('1k'),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request) => {
   try {
-    // Authenticate user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
 
     // Rate limit check
-    const rateLimitResult = await rateLimiters.generation(user.id);
+    const rateLimitResult = await rateLimiters.generation(request.user.id);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         {
@@ -60,7 +52,7 @@ export async function POST(request: NextRequest) {
     const { uploadId, prompt, aspectRatio, resolution } = parsed.data;
 
     // Calculate credits based on resolution
-    const creditCost = resolution === '4k' ? 3 : resolution === '2k' ? 2 : 1;
+    const creditCost = getCreditsForResolution(resolution);
 
     // If uploadId provided, fetch the upload
     let sourceImage: Buffer | undefined;
@@ -76,7 +68,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Verify ownership
-      if (upload.user_id !== user.id) {
+      if (upload.user_id !== request.user.id) {
         return NextResponse.json(
           { error: 'Not authorized to use this upload' },
           { status: 403 }
@@ -99,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     // Create job with credit consumption
     const jobResult = await createGenerationJob(
-      user.id,
+      request.user.id,
       uploadId ?? null,
       prompt,
       { aspectRatio, resolution },
@@ -113,7 +105,7 @@ export async function POST(request: NextRequest) {
       const { data: userData } = await supabase
         .from("users")
         .select("credit_balance")
-        .eq("id", user.id)
+        .eq("id", request.user.id)
         .single();
       
       return NextResponse.json(
@@ -135,7 +127,7 @@ export async function POST(request: NextRequest) {
     // Start generation (synchronous for MVP, async with Trigger.dev in Phase 2)
     const result = await generateImage({
       jobId: jobResult.job_id,
-      userId: user.id,
+      userId: request.user.id,
       prompt,
       sourceImage,
       sourceMimeType,
@@ -162,10 +154,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // Get job status
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request) => {
   const { searchParams } = new URL(request.url);
   const jobId = searchParams.get('jobId');
 
@@ -176,19 +168,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
   const job = await getJob(jobId);
 
-  if (!job || job.user_id !== user.id) {
+  if (!job || job.user_id !== request.user.id) {
     return NextResponse.json(
       { error: 'Job not found' },
       { status: 404 }
@@ -196,4 +178,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ job });
-}
+});

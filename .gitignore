@@ -13,6 +13,7 @@ bun.lock
 
 # testing
 /coverage
+/coverage-pricing
 
 # next.js
 /.next/

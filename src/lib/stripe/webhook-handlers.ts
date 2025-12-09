@@ -7,12 +7,13 @@ import {
   getInvoiceSubscriptionId,
   getSubscriptionTimestamps,
 } from './sdk-extensions';
+import { logger } from '../logging';
 
 /**
  * Process Stripe webhook events
  */
 export async function processStripeEvent(event: Stripe.Event): Promise<void> {
-  console.log(`[Stripe Webhook] Processing ${event.type}`);
+  logger.info('Processing Stripe webhook event', { eventType: event.type });
 
   try {
     switch (event.type) {
@@ -47,7 +48,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
         break;
     }
   } catch (error) {
-    console.error(`[Stripe Webhook] Error processing ${event.type}:`, error);
+    logger.error('Error processing Stripe webhook event', { eventType: event.type, error });
     throw error;
   }
 }
@@ -67,10 +68,9 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   // Sync subscription data
   await syncStripeDataToKV(subscription.customer as string);
 
-  // Handle tier upgrades (immediate credit grants)
-  if (subscription.metadata.tier) {
-    await handleSubscriptionTierUpgrade(subscription);
-  }
+  // TODO: Implement subscription tier upgrade handling with prorated credits
+  // Business logic needed: How to handle mid-cycle upgrades?
+  // Options: Immediate full credit grant vs prorated amount
 }
 
 /**
@@ -86,7 +86,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   const tier = subscription.metadata.tier as keyof typeof SUBSCRIPTION_TIERS;
 
   if (!tier || !SUBSCRIPTION_TIERS[tier]) {
-    console.warn(`[Stripe Webhook] Unknown tier ${tier} for subscription ${subscription.id}`);
+    logger.warn('Unknown subscription tier', { tier, subscriptionId: subscription.id });
     return;
   }
 
@@ -96,14 +96,14 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   const customer = await stripe.customers.retrieve(customerId);
 
   if (customer.deleted) {
-    console.error(`[Stripe Webhook] Customer ${customerId} is deleted`);
+    logger.error('Customer is deleted', { customerId });
     return;
   }
 
   const userId = customer.metadata?.userId;
 
   if (!userId) {
-    console.error(`[Stripe Webhook] No userId in customer metadata for ${customerId}`);
+    logger.error('No userId in customer metadata', { customerId });
     return;
   }
 
@@ -129,7 +129,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
  * Handle failed invoice payment
  */
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  console.warn(`[Stripe Webhook] Invoice payment failed: ${invoice.id}`);
+  logger.warn('Invoice payment failed', { invoiceId: invoice.id });
   // Could send notification to user, but subscription stays active until retry limit
 }
 
@@ -143,7 +143,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   const packId = metadata.packId as keyof typeof CREDIT_PACKS;
   if (!packId || !CREDIT_PACKS[packId]) {
-    console.warn(`[Stripe Webhook] Unknown pack ${packId} for payment ${paymentIntent.id}`);
+    logger.warn('Unknown credit pack', { packId, paymentIntentId: paymentIntent.id });
     return;
   }
 
@@ -163,16 +163,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
  * Handle failed payment intent
  */
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
-  console.warn(`[Stripe Webhook] Payment intent failed: ${paymentIntent.id}`);
+  logger.warn('Payment intent failed', { paymentIntentId: paymentIntent.id });
   // Could send notification, but payment intent status is already failed
 }
 
-/**
- * Handle subscription tier upgrades with prorated credits
- */
-async function handleSubscriptionTierUpgrade(subscription: Stripe.Subscription): Promise<void> {
-  // TODO: Implement subscription tier upgrade with prorated credits
-  // Business logic needed: How to handle mid-cycle upgrades?
-  // Options: Immediate full credit grant vs prorated amount
-  console.log(`[Stripe] Tier upgrade detected for subscription ${subscription.id}`);
-}

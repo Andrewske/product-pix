@@ -9,3 +9,6 @@ export { getProviderForModel, getPricingForModel } from './models';
 
 // Cost calculation
 export { calculateCost } from './calculator';
+
+// Credit calculation
+export * from './credits';

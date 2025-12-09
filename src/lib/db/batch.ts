@@ -1,6 +1,7 @@
 // src/lib/db/batch.ts
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '../logging';
 import type { Json } from '@/types';
 
 export type BatchJobStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'failed';
@@ -82,7 +83,7 @@ export const createBatchJob = async (
   });
 
   if (error) {
-    console.error('Error creating batch job:', error);
+    logger.error('Error creating batch job', { userId: params.userId, error });
     throw new Error(`Failed to create batch job: ${error.message}`);
   }
 
@@ -102,7 +103,7 @@ export const getBatchJob = async (batchId: string): Promise<BatchJob | null> => 
     .single();
 
   if (error) {
-    console.error('Error fetching batch job:', error);
+    logger.error('Error fetching batch job', { batchId, error });
     return null;
   }
 
@@ -139,7 +140,7 @@ export const getUserBatches = async (
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching batches:', error);
+    logger.error('Error fetching batches', { userId, error });
     return [];
   }
 
@@ -174,7 +175,7 @@ export const updateBatchStatus = async (
     .eq('id', batchId);
 
   if (error) {
-    console.error('Error updating batch status:', error);
+    logger.error('Error updating batch status', { batchId, status, error });
     return false;
   }
 
@@ -200,7 +201,7 @@ export const updateBatchGeminiIds = async (
     .eq('id', batchId);
 
   if (error) {
-    console.error('Error updating batch Gemini IDs:', error);
+    logger.error('Error updating batch Gemini IDs', { batchId, geminiBatchId, geminiFileId, error });
     return false;
   }
 
@@ -220,7 +221,7 @@ export const getBatchItems = async (batchId: string): Promise<BatchItem[]> => {
     .order('sequence_number', { ascending: true });
 
   if (error) {
-    console.error('Error fetching batch items:', error);
+    logger.error('Error fetching batch items', { batchId, error });
     return [];
   }
 
@@ -261,7 +262,7 @@ export const updateBatchItem = async (
     .eq('id', itemId);
 
   if (error) {
-    console.error('Error updating batch item:', error);
+    logger.error('Error updating batch item', { itemId, error });
     return false;
   }
 
@@ -285,7 +286,7 @@ export const updateBatchProgress = async (
   });
 
   if (error) {
-    console.error('Error updating batch progress:', error);
+    logger.error('Error updating batch progress', { batchId, completed, failed, error });
     return false;
   }
 
@@ -307,7 +308,7 @@ export const refundBatchFailures = async (
   });
 
   if (error) {
-    console.error('Error refunding batch failures:', error);
+    logger.error('Error refunding batch failures', { batchId, creditsPerItem, error });
     return 0;
   }
 

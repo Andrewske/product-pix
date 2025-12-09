@@ -5,6 +5,14 @@ import { env } from '@/lib/env';
 import type { ImageProvider, ImageConfig, GenerationResponse } from '../types';
 import { normalizeUsage } from '../usage-types';
 
+interface GenerateTextResult {
+  files?: Array<{
+    mediaType?: string;
+    base64?: string;
+  }>;
+  usage?: unknown;
+}
+
 // Map our config to Gemini's expected values
 const aspectRatioMap: Record<ImageConfig['aspectRatio'], string> = {
   '1:1': '1:1',
@@ -33,6 +41,55 @@ const getResolutionDimensions = (
   } else {
     return { width: Math.round(baseSize * ratio), height: baseSize };
   }
+};
+
+const extractImageFromResponse = (
+  result: GenerateTextResult,
+  config: ImageConfig
+): GenerationResponse => {
+  // Extract image from response
+  // Gemini 2.5 returns images in the files array
+  const files = result.files;
+
+  if (!files || files.length === 0) {
+    return {
+      success: false,
+      error: 'No image generated in response',
+      code: 'PROVIDER_ERROR',
+      retryable: true,
+    };
+  }
+
+  // Get the first image file
+  const imageFile = files.find((file) => file.mediaType?.startsWith('image/'));
+
+  if (!imageFile || !imageFile.base64) {
+    return {
+      success: false,
+      error: 'No image data found in response',
+      code: 'PROVIDER_ERROR',
+      retryable: true,
+    };
+  }
+
+  const dimensions = getResolutionDimensions(config.aspectRatio, config.resolution);
+
+  // Extract base64 data (strip data URL prefix if present)
+  const base64Data = imageFile.base64.includes(',')
+    ? imageFile.base64.split(',')[1]
+    : imageFile.base64;
+
+  // Extract usage data if available
+  const usage = result.usage ? normalizeUsage(result.usage) : undefined;
+
+  return {
+    success: true,
+    imageData: base64Data,
+    mimeType: imageFile.mediaType || 'image/png',
+    width: dimensions.width,
+    height: dimensions.height,
+    usage,
+  };
 };
 
 const handleError = (error: unknown): GenerationResponse => {
@@ -100,49 +157,7 @@ export const createGeminiProvider = (): ImageProvider => {
             : `Generate a professional product photo: ${prompt}`,
         });
 
-        // Extract image from response
-        // Gemini 2.5 returns images in the files array
-        const files = result.files;
-
-        if (!files || files.length === 0) {
-          return {
-            success: false,
-            error: 'No image generated in response',
-            code: 'PROVIDER_ERROR',
-            retryable: true,
-          };
-        }
-
-        // Get the first image file
-        const imageFile = files.find((file) => file.mediaType?.startsWith('image/'));
-
-        if (!imageFile || !imageFile.base64) {
-          return {
-            success: false,
-            error: 'No image data found in response',
-            code: 'PROVIDER_ERROR',
-            retryable: true,
-          };
-        }
-
-        const dimensions = getResolutionDimensions(config.aspectRatio, config.resolution);
-
-        // Extract base64 data (strip data URL prefix if present)
-        const base64Data = imageFile.base64.includes(',')
-          ? imageFile.base64.split(',')[1]
-          : imageFile.base64;
-
-        // Extract usage data if available
-        const usage = result.usage ? normalizeUsage(result.usage) : undefined;
-
-        return {
-          success: true,
-          imageData: base64Data,
-          mimeType: imageFile.mediaType || 'image/png',
-          width: dimensions.width,
-          height: dimensions.height,
-          usage,
-        };
+        return extractImageFromResponse(result, config);
       } catch (error) {
         return handleError(error);
       }
@@ -184,49 +199,7 @@ export const createGeminiProvider = (): ImageProvider => {
           ],
         });
 
-        // Extract image from response
-        // Gemini 2.5 returns images in the files array
-        const files = result.files;
-
-        if (!files || files.length === 0) {
-          return {
-            success: false,
-            error: 'No image generated in response',
-            code: 'PROVIDER_ERROR',
-            retryable: true,
-          };
-        }
-
-        // Get the first image file
-        const imageFile = files.find((file) => file.mediaType?.startsWith('image/'));
-
-        if (!imageFile || !imageFile.base64) {
-          return {
-            success: false,
-            error: 'No image data found in response',
-            code: 'PROVIDER_ERROR',
-            retryable: true,
-          };
-        }
-
-        const dimensions = getResolutionDimensions(config.aspectRatio, config.resolution);
-
-        // Extract base64 data (strip data URL prefix if present)
-        const base64Data = imageFile.base64.includes(',')
-          ? imageFile.base64.split(',')[1]
-          : imageFile.base64;
-
-        // Extract usage data if available
-        const usage = result.usage ? normalizeUsage(result.usage) : undefined;
-
-        return {
-          success: true,
-          imageData: base64Data,
-          mimeType: imageFile.mediaType || 'image/png',
-          width: dimensions.width,
-          height: dimensions.height,
-          usage,
-        };
+        return extractImageFromResponse(result, config);
       } catch (error) {
         return handleError(error);
       }

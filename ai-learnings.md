@@ -86,3 +86,15 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Type safety in API responses**: Define explicit union types for API response structures (like GeminiContentPart) instead of using any[] to maintain strict TypeScript compliance
 - **Error message specificity**: Separate error handling logic for different failure modes (auth errors vs user not found) to provide more actionable debugging information
 - **Import cleanup**: Remove unused imports (like Next.js Link) when replacing raw HTML elements with custom components
+
+## Code Reduction Patterns
+
+- **Auth middleware pattern**: Higher-order function `withAuth()` wraps route handlers, guaranteeing authenticated `user` in handler scope. Follows Next.js 15 patterns with proper generic typing for route params
+- **Centralized logging**: Structured JSON logging with configurable log levels. Supports future log aggregation (Datadog, CloudWatch). Use `logger.info('msg', { context })` instead of console methods
+- **Credit pricing utilities**: Single source of truth in dedicated module with typed accessors. Resolution-based pricing constants with `getCreditsForResolution()` and `calculateBatchCredits()` functions
+- **Dead code removal**: Regularly audit for unimplemented handlers and unused functions. Add TODO comments for future work needed
+- **Helper function extraction**: Deduplicate complex logic (like Gemini response parsing) into internal helper functions to reduce ~80 lines while maintaining identical behavior
+- **Testing new utilities**: 100% coverage for utility functions with comprehensive edge case testing. Use Jest with ts-jest for TypeScript-first testing
+- **Barrel exports**: Export utilities from index.ts files for clean imports. Use `export * from './module'` pattern for re-exports
+- **Type safety in refactoring**: Maintain explicit return types and avoid any/unknown/! during code consolidation
+- **Incremental migration**: Phase code changes to avoid breaking existing functionality. Test each phase before proceeding

@@ -1,6 +1,6 @@
 // src/app/api/batch/parse-csv/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-middleware';
 import { z } from 'zod';
 
 const batchItemSchema = z.object({
@@ -11,18 +11,8 @@ const batchItemSchema = z.object({
   resolution: z.enum(['1k', '2k', '4k']).default('1k'),
 });
 
-export async function POST(request: NextRequest) {
+const parseCsvHandler = async (request: AuthenticatedRequest): Promise<NextResponse> => {
   try {
-    // Authenticate user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
 
     // Get file from form data
     const formData = await request.formData();
@@ -115,5 +105,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+};
+
+export const POST = withAuth(parseCsvHandler);
 

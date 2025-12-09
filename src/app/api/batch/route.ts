@@ -1,6 +1,5 @@
 // src/app/api/batch/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
   createBatchJob,
@@ -9,6 +8,9 @@ import {
 } from '@/lib/db/batch';
 import { createBatchJob as createGeminiBatch } from '@/lib/ai/gemini-batch';
 import { getBatchItemParameters } from '@/lib/db/types';
+import { calculateBatchCredits } from '@/lib/pricing/credits';
+import { logger } from '@/lib/logging';
+import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-middleware';
 import { z } from 'zod';
 
 const createBatchSchema = z.object({
@@ -34,19 +36,8 @@ const createBatchSchema = z.object({
 });
 
 // POST: Create a new batch
-export async function POST(request: NextRequest) {
+const createBatchHandler = async (request: AuthenticatedRequest): Promise<NextResponse> => {
   try {
-    // Authenticate user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Validate request
     const body = await request.json();
     const parsed = createBatchSchema.safeParse(body);
@@ -60,19 +51,15 @@ export async function POST(request: NextRequest) {
 
     const { name, items, parameters } = parsed.data;
 
-    // Calculate credits (1k=1, 2k=2, 4k=3 per item)
-    const creditsPerItem = { '1k': 1, '2k': 2, '4k': 3 } as const;
-    const totalCredits = items.reduce(
-      (sum, item) => sum + creditsPerItem[item.resolution || '1k'],
-      0
-    );
+    // Calculate credits using centralized pricing
+    const totalCredits = calculateBatchCredits(items);
 
     const adminSupabase = createAdminClient();
 
     try {
       // Create batch in DB (atomic credit consumption)
       const batchId = await createBatchJob({
-        userId: user.id,
+        userId: request.user.id,
         name,
         totalItems: items.length,
         creditsToCharge: totalCredits,
@@ -87,7 +74,7 @@ export async function POST(request: NextRequest) {
             .from('batch_items')
             .insert({
               batch_id: batchId,
-              user_id: user.id,
+              user_id: request.user.id,
               sequence_number: idx,
               product_name: item.product_name || null,
               prompt: item.prompt || parameters.defaultPrompt || '',
@@ -132,34 +119,26 @@ export async function POST(request: NextRequest) {
         geminiBatchId,
         creditsCharged: totalCredits,
       });
-    } catch (error) {
-      console.error('Batch creation failed:', error);
-      const message =
-        error instanceof Error ? error.message : 'Failed to create batch';
-      return NextResponse.json({ error: message }, { status: 500 });
-    }
-  } catch (error) {
-    console.error('Batch creation error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+     } catch (error) {
+       logger.error('Batch creation failed', { error });
+       const message =
+         error instanceof Error ? error.message : 'Failed to create batch';
+       return NextResponse.json({ error: message }, { status: 500 });
+     }
+   } catch (error) {
+     logger.error('Batch creation error', { error });
+     return NextResponse.json(
+       { error: 'Internal server error' },
+       { status: 500 }
+     );
+   }
+};
+
+export const POST = withAuth(createBatchHandler);
 
 // GET: List user's batches
-export async function GET(request: NextRequest) {
+const getBatchesHandler = async (request: AuthenticatedRequest): Promise<NextResponse> => {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as
       | 'pending'
@@ -170,18 +149,20 @@ export async function GET(request: NextRequest) {
       | null;
 
     const { getUserBatches } = await import('@/lib/db/batch');
-    const batches = await getUserBatches(user.id, {
+    const batches = await getUserBatches(request.user.id, {
       status: status || undefined,
       limit: 50,
     });
 
     return NextResponse.json({ batches });
   } catch (error) {
-    console.error('Error fetching batches:', error);
+    logger.error('Error fetching batches:', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
+};
+
+export const GET = withAuth(getBatchesHandler);
 

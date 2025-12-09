@@ -1,0 +1,3 @@
+product_name,prompt,source_image_url,aspect_ratio,resolution
+"Test Product 1","A beautiful product photo of a smartphone","https://example.com/image1.jpg","1:1","1k"
+"Test Product 2","Professional product shot of headphones",,"16:9","2k"

@@ -6,6 +6,7 @@ import { refundCredits } from '@/lib/db/credits';
 import { createGeneratedImage } from '@/lib/db/generated-images';
 import { calculateCost } from '@/lib/pricing';
 import { createGenerationCost } from '@/lib/db/cost-queries';
+import { logger } from '@/lib/logging';
 
 export interface GenerateImageParams {
   jobId: string;
@@ -104,7 +105,7 @@ export const generateImage = async (
         });
 
         if (costData.fallbackUsed) {
-          console.warn(`⚠️  Using fallback pricing for image generation`);
+          logger.warn('Using fallback pricing for image generation');
         }
 
         await createGenerationCost({
@@ -121,10 +122,10 @@ export const generateImage = async (
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.warn(`⚠️  Failed to calculate cost for image generation: ${message}`);
+        logger.warn('Failed to calculate cost for image generation', { error: message });
       }
     } else {
-      console.warn(`⚠️  No usage data available for cost calculation`);
+      logger.warn('No usage data available for cost calculation');
     }
 
     // Mark job as completed
