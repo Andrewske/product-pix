@@ -3,6 +3,7 @@
  */
 
 import { parseArgs } from 'node:util';
+import { resolve } from 'node:path';
 import type { Result } from '@bench/core/errors';
 import { ok, err, createError, isOk } from '@bench/core/errors';
 import { loadConfig } from './shared';
@@ -17,9 +18,9 @@ import {
 import { analyzeTemplate } from './template-analyzer';
 import { implementSuggestions } from './template-implementer';
 import { generateDiff } from '@bench/core/template-diff';
-import { readTemplateFile, writeTemplateFile, generateVersionedFilename } from '@bench/core/template-io';
+import { readTemplateFile, writeTemplateFile, generateVersionedFilename, parseTemplateCode } from '@bench/core/template-io';
 import { runPipeline, generateBatchLabel } from '@bench/core/orchestrator';
-import { fetchTemplate } from '@bench/db/templates';
+import { fetchTemplate, insertTemplate } from '@bench/db/templates';
 import { fetchBatchScores } from './shared';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { summarize } from '@bench/core/statistics';
@@ -454,21 +455,100 @@ const testImproved = async (
   iteration: number,
   options: ImproveOptions
 ): Promise<Result<ImprovedTestResult>> => {
-  // TODO: Implement improved template testing
-  // This requires:
-  // 1. Parse the generated TypeScript code to extract template object
-  // 2. Write to file (versioned if config.versionTemplates is true)
-  // 3. Sync template to database
-  // 4. Run pipeline with new template version
-  // 5. Fetch and return results
+  // Phase 1: Parse TypeScript code
+  const parseResult = await parseTemplateCode(code);
+  if (!parseResult.ok) {
+    return err(
+      createError('PARSE_ERROR', `Failed to parse template code: ${parseResult.error.message}`)
+    );
+  }
+  const template = parseResult.data;
+
+  // Phase 2: Write to file (versioned if config.versionTemplates is true)
+  const baseFileName = `${template.slug}.ts`;
+  const baseFilePath = `prompt-bench/templates/${baseFileName}`;
+
+  let filePath: string;
+  if (session.config.versionTemplates) {
+    // Use versioned filename
+    filePath = generateVersionedFilename(baseFilePath, template.version);
+  } else {
+    // Overwrite existing file
+    filePath = baseFilePath;
+  }
+
+  const writeResult = writeTemplateFile(template, filePath);
+  if (!writeResult.ok) {
+    return err(
+      createError('STORAGE_ERROR', `Failed to write template file: ${writeResult.error.message}`)
+    );
+  }
+
+  // Phase 3: Sync template to database
+  const insertResult = await insertTemplate(template);
+  if (!insertResult.ok) {
+    return err(
+      createError('DATABASE_ERROR', `Failed to sync template: ${insertResult.error.message}`)
+    );
+  }
+  const syncedTemplate = insertResult.data;
+
+  // Phase 4: Run pipeline with new template version
+  const improvedLabel = `${template.slug}-improved-iter${iteration}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const pipelineResult = await runPipeline({
+    templateSlug: template.slug,
+    templateVersion: syncedTemplate.version,
+    batchFile: session.config.batchFile,
+    label: improvedLabel,
+    skipSync: true, // Already synced in Phase 3
+    skipEval: false,
+    skipReport: true, // Skip report for now (can be enabled later)
+    dryRun: false,
+    evalModel: 'claude-sonnet-4-20250514', // TODO: add to config
+  });
+
+  if (!pipelineResult.ok) {
+    return err(
+      createError('PIPELINE_ERROR', `Pipeline failed: ${pipelineResult.error.message}`)
+    );
+  }
+
+  // Phase 5: Fetch and return results
+  const supabase = createAdminClient();
+  const scores = await fetchBatchScores(supabase, improvedLabel);
   
-  // For now, return a placeholder that indicates this needs implementation
-  return err(
-    createError(
-      'VALIDATION_ERROR',
-      'Improved test not yet fully implemented. This requires parsing TypeScript code and syncing to database.'
-    )
-  );
+  if (scores.length === 0) {
+    return err(
+      createError('NO_DATA_ERROR', 'No evaluation scores found for improved template')
+    );
+  }
+
+  const stats = summarize(scores);
+  const results: TestResults = {
+    scores,
+    meanScore: stats.mean,
+    medianScore: stats.median,
+    minScore: stats.min,
+    maxScore: stats.max,
+    productScores: scores.map((score, idx) => ({
+      productId: `product-${idx}`,
+      score,
+    })),
+  };
+
+  return ok({
+    template: {
+      slug: syncedTemplate.slug,
+      version: syncedTemplate.version,
+      status: syncedTemplate.status,
+      templateData: syncedTemplate.templateData,
+      variablesSchema: syncedTemplate.variablesSchema,
+    },
+    label: improvedLabel,
+    results,
+    costs: pipelineResult.data.costs,
+  });
 };
 
 // =============================================================================

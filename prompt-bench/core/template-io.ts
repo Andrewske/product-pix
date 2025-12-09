@@ -2,8 +2,9 @@
  * Template file I/O utilities
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, basename, extname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import type { Result } from '@bench/core/errors';
 import { ok, err, createError } from '@bench/core/errors';
 import type { PromptTemplate } from '@bench/core/types';
@@ -86,11 +87,9 @@ export const writeTemplateFile = (
     const absolutePath = resolve(process.cwd(), filePath);
     const dir = dirname(absolutePath);
     
-    // Ensure directory exists
+    // Ensure directory exists (create if needed)
     if (!existsSync(dir)) {
-      return err(
-        createError('VALIDATION_ERROR', `Directory does not exist: ${dir}`)
-      );
+      mkdirSync(dir, { recursive: true });
     }
 
     // Generate TypeScript code
@@ -157,6 +156,79 @@ export const validateTemplateCode = (code: string): Result<void> => {
   }
 
   return ok(undefined);
+};
+
+/**
+ * Parse TypeScript code string to extract template object
+ * Uses temporary file approach for safer parsing (reuses readTemplateFile)
+ * 
+ * Expected format: Code that exports a const matching PromptTemplate structure
+ */
+export const parseTemplateCode = async (
+  code: string
+): Promise<Result<Omit<PromptTemplate, 'id' | 'createdBy' | 'createdAt'>>> => {
+  // Basic validation first
+  const validationResult = validateTemplateCode(code);
+  if (!validationResult.ok) {
+    return validationResult;
+  }
+
+  // Security check: reject dangerous patterns (but allow import statements)
+  const dangerousPatterns = [
+    /require\s*\(/,
+    /process\./,
+    /__dirname/,
+    /__filename/,
+    /fs\./,
+    /child_process/,
+    /eval\s*\(/,
+    /Function\s*\(/,
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(code)) {
+      return err(
+        createError(
+          'VALIDATION_ERROR',
+          `Template code contains potentially dangerous pattern: ${pattern.source}`
+        )
+      );
+    }
+  }
+
+  // Write to temporary file and use existing readTemplateFile
+  const tempFile = join(tmpdir(), `template-${Date.now()}-${Math.random().toString(36).slice(2)}.ts`);
+  
+  try {
+    // Write code to temp file
+    writeFileSync(tempFile, code, 'utf-8');
+    
+    // Use existing readTemplateFile to parse it
+    const result = await readTemplateFile(tempFile);
+    
+    // Clean up temp file
+    try {
+      unlinkSync(tempFile);
+    } catch {
+      // Ignore cleanup errors
+    }
+    
+    return result;
+  } catch (error) {
+    // Clean up temp file on error
+    try {
+      if (existsSync(tempFile)) {
+        unlinkSync(tempFile);
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+    
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(
+      createError('PARSE_ERROR', `Failed to parse template code: ${message}`)
+    );
+  }
 };
 
 /**

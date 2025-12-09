@@ -170,6 +170,61 @@ export const syncAllTemplates = async (
 };
 
 /**
+ * Insert a template directly into the database (bypasses registry)
+ * Useful for improved templates that haven't been registered yet
+ */
+export const insertTemplate = async (
+  template: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdAt'>,
+  userId?: string
+): Promise<Result<PromptTemplate>> => {
+  // Validate template variables match schema
+  const validationError = validateTemplateVariables(
+    template.templateData,
+    template.variablesSchema
+  );
+  if (validationError) {
+    return err(validationError);
+  }
+
+  const supabase = createAdminClient();
+
+  // Check if this exact version already exists
+  const { data: existing } = await supabase
+    .from('prompt_templates')
+    .select('id')
+    .eq('slug', template.slug)
+    .eq('version', template.version)
+    .single();
+
+  if (existing) {
+    // Already exists, fetch and return
+    return fetchTemplate(template.slug, template.version);
+  }
+
+  // Insert new template
+  const { data, error } = await supabase
+    .from('prompt_templates')
+    .insert({
+      slug: template.slug,
+      version: template.version,
+      status: template.status,
+      template_data: template.templateData,
+      variables_schema: template.variablesSchema,
+      created_by: userId,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return err(
+      createError('DATABASE_ERROR', `Failed to insert template: ${error.message}`)
+    );
+  }
+
+  return parseTemplateRow(data as Record<string, unknown>);
+};
+
+/**
  * Update template status (draft -> active -> archived)
  */
 export const updateTemplateStatus = async (
