@@ -25,8 +25,9 @@ import { syncCommand } from '@bench/commands/sync';
 import { testCommand } from '@bench/commands/test';
 import { openLastReportCommand } from '@bench/commands/open-last-report';
 import { iterateCommand } from '@bench/commands/iterate';
+import { improveCommand } from '@bench/commands/improve';
 
-const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report', 'iterate'] as const;
+const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report', 'iterate', 'improve'] as const;
 
 type Command = (typeof COMMANDS)[number];
 
@@ -46,6 +47,7 @@ Commands:
   sync             Sync local templates to database
   open-last-report Open the most recent HTML report
   iterate          Evolutionary prompt optimization (NEW)
+  improve          AI-powered template improvement (NEW)
 
 Examples:
   bun bench test --template product-photo --batch ./batches/test.csv
@@ -57,6 +59,9 @@ Examples:
   bun bench iterate --template ecommerce-base --batch ./fixtures/images-batch.json
   bun bench iterate --session <id> --status
   bun bench iterate --list
+  bun bench improve                    # Uses config defaults
+  bun bench improve --continue         # Resume previous session
+  bun bench improve --history          # View past sessions
 
 Run 'bun bench <command> --help' for command-specific options.
 `);
@@ -111,6 +116,9 @@ const main = async (): Promise<void> => {
       break;
     case 'iterate':
       await iterateCommand(args);
+      break;
+    case 'improve':
+      await improveCommand(args);
       break;
   }
 };

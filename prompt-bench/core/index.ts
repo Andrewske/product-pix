@@ -17,3 +17,8 @@ export * from './convergence';
 
 // Refinement system exports
 export * from './refinement-types';
+
+// Improvement system exports
+export * from './improvement-types';
+export * from './template-diff';
+export * from './template-io';

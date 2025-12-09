@@ -17,6 +17,15 @@ interface PromptBenchConfig {
       insights?: boolean;
       show_urls?: boolean;
     };
+    improve?: {
+      template?: string;
+      batch_file?: string;
+      max_iterations?: number;
+      target_score?: number;
+      auto_approve?: boolean;
+      version_templates?: boolean;
+      ai_model?: string;
+    };
   };
 }
 
@@ -44,6 +53,8 @@ export const loadConfig = (): PromptBenchConfig | null => {
         currentSection = line.slice(1, -1);
         if (currentSection === 'defaults.report') {
           config.defaults.report = config.defaults.report || {};
+        } else if (currentSection === 'defaults.improve') {
+          config.defaults.improve = config.defaults.improve || {};
         }
         continue;
       }
@@ -58,6 +69,20 @@ export const loadConfig = (): PromptBenchConfig | null => {
       } else if (currentSection === 'defaults.report') {
         config.defaults.report = config.defaults.report || {};
         (config.defaults.report as any)[key.trim()] = value === 'true';
+      } else if (currentSection === 'defaults.improve') {
+        config.defaults.improve = config.defaults.improve || {};
+        const keyName = key.trim();
+        // Parse numeric values
+        if (keyName === 'max_iterations' || keyName === 'target_score') {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue)) {
+            (config.defaults.improve as any)[keyName] = numValue;
+          }
+        } else if (keyName === 'auto_approve' || keyName === 'version_templates') {
+          (config.defaults.improve as any)[keyName] = value === 'true';
+        } else {
+          (config.defaults.improve as any)[keyName] = value;
+        }
       }
     }
 
