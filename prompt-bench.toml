@@ -11,7 +11,7 @@
 template = "ecommerce-base"
 
 # Default batch file path for run/test commands (relative to project root)
-batch_file = "prompt-bench/fixtures/images-batch.json"
+batch_file = "prompt-bench/fixtures/images-batch-uniform.json"
 
 # Default label prefix for batches (timestamp will be appended)
 label_prefix = "batch"
@@ -28,6 +28,24 @@ baseline_label = ""
 insights = true
 # Show image URLs in report output
 show_urls = false
+
+# Default settings for improve command
+[defaults.improve]
+# Template slug to improve (uses defaults.template if not set)
+template = "ecommerce-base"
+# Batch file for testing (uses defaults.batch_file if not set)
+# Use uniform variables to get clear signal on template structure issues
+batch_file = "prompt-bench/fixtures/images-batch-uniform.json"
+# Maximum number of iterations before stopping
+max_iterations = 5
+# Target mean score to stop at (0 = no target)
+target_score = 9.0
+# Auto-approve changes without confirmation (false = ask for approval)
+auto_approve = false
+# Save improved templates as new versions (true) or overwrite original (false)
+version_templates = true
+# Model to use for AI analysis and code generation
+ai_model = "claude-sonnet-4-20250514"
 
 # Pricing configuration (USD per 1M tokens)
 # Manually maintained by user when provider rates change

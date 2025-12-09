@@ -1,0 +1,65 @@
+{
+  "label": "iteration-aace9e63-ded2-42e3-996f-9a99268f0b57-population",
+  "tests": [
+    {
+      "variables": {
+        "product": "monos suitcase",
+        "background_type": "pure white seamless",
+        "lighting_style": "soft diffused studio",
+        "style": "commercial catalog"
+      },
+      "notes": "Variation 90cc4452 on product 1",
+      "sourceImage": "./prompt-bench/fixtures/images/tester-1-suitcase.jpg"
+    },
+    {
+      "variables": {
+        "product": "monos suitcase",
+        "background_type": "pure white seamless",
+        "lighting_style": "soft diffused studio",
+        "style": "commercial catalog"
+      },
+      "notes": "Variation 90cc4452 on product 2",
+      "sourceImage": "./prompt-bench/fixtures/images/air-purifier.jpg"
+    },
+    {
+      "variables": {
+        "product": "monos suitcase",
+        "background_type": "pure white seamless",
+        "lighting_style": "soft diffused studio",
+        "style": "commercial catalog"
+      },
+      "notes": "Variation 90cc4452 on product 3",
+      "sourceImage": "./prompt-bench/fixtures/images/coffee-grinder.jpg"
+    },
+    {
+      "variables": {
+        "product": "monos suitcase",
+        "background_type": "pure white seamless",
+        "lighting_style": "soft diffused studio",
+        "style": "commercial catalog"
+      },
+      "notes": "Variation 90cc4452 on product 4",
+      "sourceImage": "./prompt-bench/fixtures/images/espresso-maker.jpg"
+    },
+    {
+      "variables": {
+        "product": "monos suitcase",
+        "background_type": "pure white seamless",
+        "lighting_style": "soft diffused studio",
+        "style": "commercial catalog"
+      },
+      "notes": "Variation 90cc4452 on product 5",
+      "sourceImage": "./prompt-bench/fixtures/images/monitor.jpg"
+    },
+    {
+      "variables": {
+        "product": "monos suitcase",
+        "background_type": "pure white seamless",
+        "lighting_style": "soft diffused studio",
+        "style": "commercial catalog"
+      },
+      "notes": "Variation 90cc4452 on product 6",
+      "sourceImage": "./prompt-bench/fixtures/images/peanut-butter.jpg"
+    }
+  ]
+}

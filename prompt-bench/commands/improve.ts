@@ -552,14 +552,14 @@ const calculateScoreDelta = (baseline: TestResults, improved: TestResults): Scor
     };
   });
 
-  const improved = productDeltas.filter((p) => p.delta > 0).length;
+  const improvedCount = productDeltas.filter((p) => p.delta > 0).length;
   const regressed = productDeltas.filter((p) => p.delta < 0).length;
   const unchanged = productDeltas.filter((p) => p.delta === 0).length;
 
   return {
     meanDelta: improved.meanScore - baseline.meanScore,
     medianDelta: improved.medianScore - baseline.medianScore,
-    improved,
+    improved: improvedCount,
     regressed,
     unchanged,
     productDeltas,

@@ -384,6 +384,9 @@ const runIterationLoop = async (
     }
     console.log('✓ Insights generated');
 
+    // === NEW: Capture insights cost ===
+    genCosts.insights = insights.data.costUsd;
+
     // === NEW: Update state and display costs ===
     updateStateCosts(state, genCosts);
     displayGenerationCosts(state.generations.length, genCosts, options);
@@ -464,7 +467,7 @@ const runAndEvaluatePopulation = async (
     // 2. Generate unique batch label for this evaluation
     const batchLabel = `iteration-${state.sessionId}-gen-${state.generations.length}`;
 
-    // 3. Run the pipeline (run → evaluate)
+    // 3. Run the pipeline (run → evaluate → report)
     const { runPipeline } = await import('@bench/core/orchestrator');
     const pipelineResult = await runPipeline({
       templateSlug: state.templateSlug,
@@ -473,7 +476,7 @@ const runAndEvaluatePopulation = async (
       label: batchLabel,
       skipSync: true, // Template should already be synced
       skipEval: false,
-      skipReport: true, // We'll handle reporting separately
+      skipReport: false, // Generate HTML report after each generation
       dryRun: false,
       evalModel: 'claude-sonnet-4-20250514', // Use default model
     });

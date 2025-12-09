@@ -347,7 +347,21 @@ const runPhase = async (
           console.warn(`⚠️  Failed to calculate cost for test generation: ${costResult.error.message}`);
         }
       } else {
-        console.warn(`⚠️  No usage data available for cost calculation in test: ${testRecord.id}`);
+        // Fallback cost for image generation when usage data is not available
+        // Estimate based on typical image generation complexity
+        const estimatedInputTokens = 1000;  // Prompt tokens
+        const estimatedOutputTokens = 50000; // Estimated "complexity" tokens for image
+        const costResult = calculateCost('gemini-3-pro-image-preview', {
+          input: estimatedInputTokens,
+          output: estimatedOutputTokens,
+        });
+
+        if (costResult.ok) {
+          generationCost = costResult.data.total;
+          console.log(`📊 Using estimated cost for test generation: ${testRecord.id} (${generationCost.toFixed(6)})`);
+        } else {
+          console.warn(`⚠️  Failed to calculate estimated cost for test generation: ${costResult.error.message}`);
+        }
       }
 
       // Update test record with success
