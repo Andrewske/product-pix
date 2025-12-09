@@ -16,6 +16,7 @@ import type { Json } from '@/types/database';
 import { createGeminiProvider } from '@/lib/ai/providers/gemini';
 import { uploadBuffer, getPublicUrl } from '@/lib/r2';
 import { sleep, loadConfig } from './shared';
+import { calculateCost } from '@/lib/pricing';
 
 interface RunOptions {
   template: string;
@@ -346,6 +347,25 @@ export const runCommand = async (args: string[]): Promise<void> => {
     const durationMs = Date.now() - startTime;
     const imageUrl = getPublicUrl(imageKey);
 
+    // Calculate cost from token usage
+    let costUsd: number | null = null;
+    let inputTokens: number | null = null;
+    let outputTokens: number | null = null;
+
+    if (generationResult.usage) {
+      inputTokens = generationResult.usage.promptTokens;
+      outputTokens = generationResult.usage.completionTokens;
+
+      const costResult = calculateCost('gemini-3-pro-image-preview', {
+        input: inputTokens,
+        output: outputTokens,
+      });
+
+      if (costResult.ok) {
+        costUsd = costResult.data.total;
+      }
+    }
+
     const { error: updateError } = await supabase
       .from('prompt_tests')
       .update({
@@ -354,6 +374,9 @@ export const runCommand = async (args: string[]): Promise<void> => {
         image_key: imageKey,
         duration_ms: durationMs,
         completed_at: new Date().toISOString(),
+        cost_usd: costUsd,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
       })
       .eq('id', testRecord.id);
 

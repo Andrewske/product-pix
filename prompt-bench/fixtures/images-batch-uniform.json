@@ -7,7 +7,9 @@
 				"product": "computer monitor",
 				"background_type": "pure white seamless",
 				"lighting_style": "soft diffused studio",
-				"style": "commercial catalog"
+				"style": "commercial catalog",
+				"product_category": "electronics",
+				"composition_style": "centered composition"
 			},
 			"notes": "Product 5: Electronics - screen with reflective surfaces"
 		}

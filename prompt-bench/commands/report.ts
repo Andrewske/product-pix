@@ -170,6 +170,7 @@ const getStyles = (): string => `
 
   /* Grid */
   .grid { display: grid; }
+  .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
   .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
   .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
   .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
@@ -408,7 +409,7 @@ const renderTestGrid = (data: ReportData): string => {
   return `
     <section class="mb-8">
       <h2 class="text-lg font-semibold mb-4">Test Results (${data.tests.length} tests)</h2>
-      <div class="grid grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         ${cards}
       </div>
     </section>
@@ -482,7 +483,7 @@ const renderComparisonGrid = (comparison: ComparisonData): string => {
         <!-- Baseline Column -->
         <div>
           <h3 class="font-semibold text-gray-700 mb-4">${escapeHtml(baseline.label)} (Top ${topN})</h3>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             ${baselineTop.map(test => renderComparisonCard(test)).join('')}
           </div>
         </div>
@@ -490,7 +491,7 @@ const renderComparisonGrid = (comparison: ComparisonData): string => {
         <!-- Candidate Column -->
         <div>
           <h3 class="font-semibold text-gray-700 mb-4">${escapeHtml(candidate.label)} (Top ${topN})</h3>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             ${candidateTop.map(test => renderComparisonCard(test)).join('')}
           </div>
         </div>
@@ -500,7 +501,7 @@ const renderComparisonGrid = (comparison: ComparisonData): string => {
     <!-- Full results for candidate (current batch) -->
     <section class="mb-8">
       <h2 class="text-lg font-semibold mb-4">All ${escapeHtml(candidate.label)} Results (${candidate.tests.length} tests)</h2>
-      <div class="grid grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         ${candidateSorted.map(test => renderTestCard(test)).join('')}
       </div>
     </section>
