@@ -25,6 +25,14 @@ const envSchema = z.object({
 
   // Cron
   CRON_SECRET: z.string().min(1).optional(),
+  // Stripe
+  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  STRIPE_PRICE_PACK_50: z.string().min(1),
+  STRIPE_PRICE_PACK_200: z.string().min(1),
+  STRIPE_PRICE_PACK_500: z.string().min(1),
+  STRIPE_PRICE_PRO_MONTHLY: z.string().min(1),
+  STRIPE_PRICE_BUSINESS_MONTHLY: z.string().min(1),
 });
 
 type Env = z.infer<typeof envSchema>;

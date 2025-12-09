@@ -34,6 +34,147 @@ export type Database = {
   }
   public: {
     Tables: {
+      batch_items: {
+        Row: {
+          batch_id: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          generated_image_id: string | null
+          id: string
+          parameters: Json | null
+          product_name: string | null
+          prompt: string
+          sequence_number: number
+          source_image_url: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["batch_item_status"]
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          generated_image_id?: string | null
+          id?: string
+          parameters?: Json | null
+          product_name?: string | null
+          prompt: string
+          sequence_number: number
+          source_image_url?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["batch_item_status"]
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          generated_image_id?: string | null
+          id?: string
+          parameters?: Json | null
+          product_name?: string | null
+          prompt?: string
+          sequence_number?: number
+          source_image_url?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["batch_item_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batch_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_items_generated_image_id_fkey"
+            columns: ["generated_image_id"]
+            isOneToOne: false
+            referencedRelation: "generated_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batch_jobs: {
+        Row: {
+          completed_at: string | null
+          completed_items: number
+          created_at: string
+          credits_charged: number
+          credits_refunded: number
+          default_prompt: string | null
+          error_message: string | null
+          failed_items: number
+          gemini_batch_id: string | null
+          gemini_file_id: string | null
+          id: string
+          name: string
+          parameters: Json | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["batch_job_status"]
+          total_items: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_items?: number
+          created_at?: string
+          credits_charged: number
+          credits_refunded?: number
+          default_prompt?: string | null
+          error_message?: string | null
+          failed_items?: number
+          gemini_batch_id?: string | null
+          gemini_file_id?: string | null
+          id?: string
+          name: string
+          parameters?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["batch_job_status"]
+          total_items: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_items?: number
+          created_at?: string
+          credits_charged?: number
+          credits_refunded?: number
+          default_prompt?: string | null
+          error_message?: string | null
+          failed_items?: number
+          gemini_batch_id?: string | null
+          gemini_file_id?: string | null
+          id?: string
+          name?: string
+          parameters?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["batch_job_status"]
+          total_items?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -399,7 +540,9 @@ export type Database = {
           idempotency_key: string | null
           image_key: string | null
           image_url: string | null
+          input_tokens: number | null
           inputs: Json
+          output_tokens: number | null
           source_image_key: string | null
           source_image_url: string | null
           status: Database["public"]["Enums"]["prompt_test_status"]
@@ -418,7 +561,9 @@ export type Database = {
           idempotency_key?: string | null
           image_key?: string | null
           image_url?: string | null
+          input_tokens?: number | null
           inputs: Json
+          output_tokens?: number | null
           source_image_key?: string | null
           source_image_url?: string | null
           status?: Database["public"]["Enums"]["prompt_test_status"]
@@ -437,7 +582,9 @@ export type Database = {
           idempotency_key?: string | null
           image_key?: string | null
           image_url?: string | null
+          input_tokens?: number | null
           inputs?: Json
+          output_tokens?: number | null
           source_image_key?: string | null
           source_image_url?: string | null
           status?: Database["public"]["Enums"]["prompt_test_status"]
@@ -678,6 +825,17 @@ export type Database = {
           success: boolean
         }[]
       }
+      create_batch_job: {
+        Args: {
+          p_credits_to_charge: number
+          p_default_prompt?: string
+          p_name: string
+          p_parameters?: Json
+          p_total_items: number
+          p_user_id: string
+        }
+        Returns: string
+      }
       create_generation_job: {
         Args: {
           p_credits?: number
@@ -704,6 +862,10 @@ export type Database = {
           total_tests: number
         }[]
       }
+      refund_batch_failures: {
+        Args: { p_batch_id: string; p_credits_per_item: number }
+        Returns: number
+      }
       refund_credits: {
         Args: {
           p_amount: number
@@ -718,6 +880,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      update_batch_progress: {
+        Args: { p_batch_id: string; p_completed: number; p_failed: number }
+        Returns: undefined
+      }
       update_prompt_test_status: {
         Args: {
           p_error_code?: string
@@ -729,6 +895,13 @@ export type Database = {
       }
     }
     Enums: {
+      batch_item_status: "pending" | "processing" | "completed" | "failed"
+      batch_job_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "cancelled"
+        | "failed"
       job_status:
         | "pending"
         | "processing"
@@ -878,6 +1051,14 @@ export const Constants = {
   },
   public: {
     Enums: {
+      batch_item_status: ["pending", "processing", "completed", "failed"],
+      batch_job_status: [
+        "pending",
+        "processing",
+        "completed",
+        "cancelled",
+        "failed",
+      ],
       job_status: ["pending", "processing", "completed", "failed", "cancelled"],
       prompt_test_status: [
         "pending",

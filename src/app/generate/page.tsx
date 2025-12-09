@@ -1,5 +1,6 @@
-// src/app/generate/page.tsx
 'use client';
+// src/app/generate/page.tsx
+
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -60,6 +61,14 @@ export default function GeneratePage() {
 
       const data = await response.json();
 
+      if (response.status === 402) {
+        const errorData = await response.json();
+        setCreditsNeeded(errorData.required);
+        setShowCreditsModal(true);
+        setGenerating(false);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Generation failed');
       }
@@ -119,7 +128,16 @@ export default function GeneratePage() {
                 Remove image
               </Button>
             )}
-          </div>
+          
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
 
           <div>
             <h2 className="text-lg font-medium mb-4">2. Describe the Output</h2>
@@ -128,7 +146,16 @@ export default function GeneratePage() {
               onChange={setPrompt}
               disabled={generating}
             />
-          </div>
+          
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
 
           <div>
             <h2 className="text-lg font-medium mb-4">3. Aspect Ratio</h2>
@@ -143,13 +170,40 @@ export default function GeneratePage() {
                   {ratio}
                 </Button>
               ))}
-            </div>
-          </div>
+            
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
+          
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
 
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded">
               {error}
-            </div>
+            
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
           )}
 
           <Button
@@ -164,7 +218,16 @@ export default function GeneratePage() {
           <p className="text-sm text-muted-foreground text-center">
             You have {credits} credits remaining
           </p>
-        </div>
+        
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
 
         {/* Right column: Output */}
         <div>
@@ -184,8 +247,35 @@ export default function GeneratePage() {
               </p>
             )}
           </Card>
-        </div>
-      </div>
+        
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
+      
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
+    </div>
+    
+
+    {showCreditsModal     </div>    </div> (
+      <InsufficientCreditsModal
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
+    )}
     </div>
   );
 }

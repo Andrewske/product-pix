@@ -64,6 +64,8 @@ export const rateLimit = async (
 /**
  * Different rate limits for different operations
  */
+// Export Redis client for use in other modules
+export { redis };
 export const rateLimiters = {
   // Generation: 10 per minute per user
   generation: async (userId: string) => rateLimit(`generation:${userId}`),

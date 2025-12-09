@@ -58,3 +58,18 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Statistical significance matters**: Minimum 5 evaluations needed for reliable improvement analysis; smaller batches lead to random variation dominating signal
 - **Evaluator reasoning goldmine**: The "why" behind scores contains actionable insights that overall numbers miss
 - **Structured prompt sections**: Breaking AI analysis into "Dimension Analysis" and "Per-Product Feedback" sections produces more focused improvements than free-form analysis
+
+## Stripe Payments Integration
+
+- **Customer creation timing**: Always create Stripe customer BEFORE checkout session (not after payment). Critical for webhook processing and userId mapping
+- **Single sync function pattern**: Use one `syncStripeDataToKV()` function called from both webhook and success route to prevent split-brain state
+- **Payment intent metadata**: For credit packs, put metadata on `payment_intent_data` (not session). For subscriptions, use `subscription_data.metadata`
+- **Webhook signature verification**: Always verify signatures to prevent spoofing. Use raw request body
+- **Database-level atomicity**: Use `INSERT ... ON CONFLICT DO NOTHING` with unique constraints for race-safe credit granting
+- **Idempotency keys**: Format as `pi_${paymentIntentId}` for globally unique credit transactions
+- **Credits never expire**: Once granted, credits belong to user permanently. Subscription credits and purchased credits behave identically
+- **Customer portal**: Use Stripe's hosted portal instead of custom subscription management UI (production-ready, handles edge cases)
+- **Environment variable validation**: Use Zod schemas for all Stripe env vars to catch configuration issues early
+- **Webhook async processing**: Return 200 immediately, process events with `waitUntil` or background processing
+- **Redis caching strategy**: Long TTL (24h) for customer IDs, short TTL (5min) for subscription state
+- **Transaction types**: Extend enum with `pack_purchase`, `subscription_renewal`, `subscription_upgrade` for proper categorization

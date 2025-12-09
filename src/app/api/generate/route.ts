@@ -106,6 +106,25 @@ export async function POST(request: NextRequest) {
       creditCost
     );
 
+    // Check for insufficient credits
+    if (jobResult.message === "Insufficient credits") {
+      // Get current balance for the modal
+      const supabase = await createClient();
+      const { data: userData } = await supabase
+        .from("users")
+        .select("credit_balance")
+        .eq("id", user.id)
+        .single();
+      
+      return NextResponse.json(
+        {
+          error: "Insufficient credits",
+          balance: userData?.credit_balance || 0,
+          required: creditCost
+        },
+        { status: 402 }
+      );
+    }
     if (!jobResult.success || !jobResult.job_id) {
       return NextResponse.json(
         { error: jobResult.message },
