@@ -24,6 +24,7 @@ import { fetchTemplate, insertTemplate } from '@bench/db/templates';
 import { fetchBatchScores } from './shared';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { summarize } from '@bench/core/statistics';
+import { autoReportForLabel } from './report';
 import type {
   ImprovementConfig,
   ImprovementSession,
@@ -266,6 +267,19 @@ const runIterationLoop = async (
   if (!implementationResult.ok) {
     console.error(`Implementation failed: ${implementationResult.error.message}`);
     return;
+  }
+
+  // Step 3.5: Generate report for baseline analysis and suggestions
+  if (!options.quiet && !options.json) {
+    console.log('\n📊 Generating report for analysis and suggestions...');
+  }
+  const reportPath = await autoReportForLabel(
+    baselineResult.data.label,
+    analysisResult.data.analysis
+  );
+  if (reportPath && !options.quiet && !options.json) {
+    console.log(`✅ Report generated: ${reportPath}`);
+    console.log('   Review the report to see baseline results, analysis, and suggestions.\n');
   }
 
   // Step 4: Approval (if not auto-approve)

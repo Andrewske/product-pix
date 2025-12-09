@@ -16,7 +16,7 @@ bun bench compare --baseline <l1> --candidate <l2> # A/B testing
 bun bench report --label <batch-label>             # HTML report
 bun bench open-last-report                         # Open latest report
 bun bench sync                                     # Sync templates to DB
-bun bench iterate [options]                        # Evolutionary optimization (experimental)
+bun bench improve                                  # AI-powered template improvement
 
 # Supabase
 npx supabase db push | gen types ts | migration new
@@ -37,11 +37,9 @@ src/lib/
 
 prompt-bench/   # Isolated CLI testing framework
   core/         # types, errors (Result<T>), compiler, evaluator, statistics
-                # evolution, convergence, state, iteration-types
-  commands/     # run, evaluate, compare, report, test, sync, iterate, insights
+  commands/     # run, evaluate, compare, report, test, sync, improve, insights
   templates/    # registry + template definitions
   __tests__/    # Unit tests
-  sessions/     # Iteration state (gitignored)
 ```
 
 **Key tables**: users, uploads, jobs, generated_images, credit_transactions, prompt_templates, prompt_tests, prompt_evaluations
@@ -81,7 +79,7 @@ The `prompt-bench/` directory is a self-contained testing framework for iterativ
 Default settings in `prompt-bench.toml`:
 ```toml
 [defaults]
-template = "ecommerce-base"                             # Default template for iterate/run/test
+template = "ecommerce-base"                             # Default template for run/test/improve
 batch_file = "prompt-bench/fixtures/images-batch.json"  # Default batch file path
 label_prefix = "batch"                                  # Default label prefix
 evaluation_model = "claude-sonnet-4-20250514"           # Default evaluation model
@@ -116,44 +114,10 @@ bun bench test --template ecommerce-variant --batch tests/fixtures/products-mix.
 bun bench compare --baseline ecommerce-base-baseline --candidate variant-1
 ```
 
-### Iteration System (Experimental)
-
-Evolutionary prompt optimization via genetic algorithm approach:
-
-```bash
-# Start new iteration session (uses defaults from prompt-bench.toml)
-bun bench iterate
-
-# Start with specific template/batch (overrides defaults)
-bun bench iterate --template ecommerce-base --batch tests/fixtures/products-mix.json
-
-# Resume session
-bun bench iterate --session <session-id>
-
-# List sessions
-bun bench iterate --list
-
-# Check status
-bun bench iterate --session <session-id> --status
-```
-
-**Components**:
-- `core/iteration-types.ts`: Type definitions for variations, generations, mutations
-- `core/state.ts`: Session persistence (in `sessions/` directory)
-- `core/evolution.ts`: Population evolution (mutation, crossover, elitism)
-- `core/convergence.ts`: Stopping criteria detection
-- `commands/insights.ts`: Structured AI analysis of batch results
-- `commands/iterate.ts`: Main iteration loop with human approval
-
-**Status**: Under development. See `docs/prompt-iterate/` for detailed implementation docs.
-
 ## Recent Updates (2025-12-07)
 
 ### New Features
-- **Evolutionary iteration system**: Genetic algorithm for prompt optimization with human-in-the-loop approval
-- **Population evaluation**: Automated batch generation, testing, and scoring integration
-- **Structured insights**: AI-powered analysis of test results to guide mutations
-- **Session management**: Persistent iteration state with resume capability
+- **Template improvement system**: AI-powered diagnostic approach for iterative template refinement
 - **Config file support**: `prompt-bench.toml` for default settings
 
 ### Improvements
@@ -171,10 +135,7 @@ bun bench iterate --session <session-id> --status
 - Added proper source types for elite variations
 
 ### Documentation
-- Comprehensive iteration system docs in `docs/prompt-iterate/`
-- Code review fixes tracked in `docs/prompt-iterate/10-code-review-fixes.md`
-- Agent orchestration learnings in `docs/prompt-iterate/11-agent-orchestration-learnings.md`
-- Slash command guide at `.claude/commands/prompt-iterate.md`
+- Template improvement system documentation
 
 ## Development Notes
 
@@ -200,7 +161,4 @@ bun test --coverage
 
 ### Known Issues
 
-- Iteration system has several TODO stubs (see `docs/prompt-iterate/10-code-review-fixes.md`)
-- Some `any` types in evolution engine need proper typing
 - Template data schema uses `z.any()` to avoid circular imports
-- JSON.stringify comparison for variation matching (consider deep equality library)

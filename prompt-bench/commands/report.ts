@@ -10,6 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { summarize } from '@bench/core/statistics';
 import { generateInsights, BatchSummary, InsightResult } from './insights';
 import { loadConfig } from './shared';
+import type { StructuredAnalysis } from '@bench/core/improvement-types';
 
 const REPORTS_DIR = join(process.cwd(), 'reports');
 
@@ -52,6 +53,7 @@ interface ReportData {
     source: string;
   };
   insights?: InsightResult;
+  improvementAnalysis?: StructuredAnalysis;
 }
 
 interface ComparisonData {
@@ -530,6 +532,143 @@ const renderTestCard = (test: ReportData['tests'][0]): string => `
   </div>
 `;
 
+const renderImprovementAnalysis = (analysis: StructuredAnalysis): string => {
+  const priorityColors = {
+    high: 'bg-red-500',
+    medium: 'bg-yellow-500',
+    low: 'bg-blue-500',
+  };
+
+  const categoryLabels = {
+    prompt_structure: 'Prompt Structure',
+    variable_usage: 'Variable Usage',
+    style_guidance: 'Style Guidance',
+    technical: 'Technical',
+  };
+
+  return `
+  <section class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow p-6 mb-8 border border-purple-100">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">🔍</span>
+      <h2 class="text-lg font-semibold">Template Improvement Analysis</h2>
+    </div>
+
+    <!-- Summary -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">📊 Summary</h3>
+      <p class="text-gray-700">${escapeHtml(analysis.summary)}</p>
+    </div>
+
+    <!-- Strengths -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">✅ Strengths</h3>
+      <ul class="space-y-2">
+        ${analysis.strengths.map(strength => `
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">${escapeHtml(strength)}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+
+    <!-- Weaknesses -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">⚠️ Weaknesses</h3>
+      <ul class="space-y-2">
+        ${analysis.weaknesses.map(weakness => `
+          <li class="flex items-start gap-2">
+            <span class="text-red-500 mt-1">•</span>
+            <span class="text-gray-700">${escapeHtml(weakness)}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+
+    <!-- Patterns -->
+    ${analysis.patterns.length > 0 ? `
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">📈 Patterns</h3>
+      <div class="space-y-3">
+        ${analysis.patterns.map(pattern => `
+          <div class="bg-white rounded p-3 border-l-4 ${pattern.type === 'success' ? 'border-green-500' : 'border-red-500'}">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-semibold text-sm ${pattern.type === 'success' ? 'text-green-700' : 'text-red-700'}">
+                ${pattern.type === 'success' ? '✓ Success' : '✗ Failure'} Pattern
+              </span>
+              <span class="text-xs text-gray-500">${(pattern.frequency * 100).toFixed(0)}% frequency</span>
+            </div>
+            <p class="text-sm text-gray-700 mb-2">${escapeHtml(pattern.description)}</p>
+            ${pattern.examples.length > 0 ? `
+              <div class="text-xs text-gray-500">
+                <strong>Examples:</strong> ${pattern.examples.map(e => escapeHtml(e)).join(', ')}
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- Prioritized Suggestions -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">💡 Prioritized Suggestions</h3>
+      <div class="space-y-4">
+        ${analysis.prioritizedSuggestions.map(suggestion => `
+          <div class="bg-white rounded-lg p-4 border-l-4 ${suggestion.priority === 'high' ? 'border-red-500' : suggestion.priority === 'medium' ? 'border-yellow-500' : 'border-blue-500'}">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold ${priorityColors[suggestion.priority]} text-white rounded px-2 py-1">
+                  ${suggestion.priority.toUpperCase()}
+                </span>
+                <span class="text-xs text-gray-500">${categoryLabels[suggestion.category]}</span>
+              </div>
+              <span class="text-xs text-gray-500">${(suggestion.confidence * 100).toFixed(0)}% confidence</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">${escapeHtml(suggestion.description)}</h4>
+            <p class="text-sm text-gray-600 mb-2"><strong>Rationale:</strong> ${escapeHtml(suggestion.rationale)}</p>
+            <p class="text-sm text-gray-600"><strong>Expected Impact:</strong> ${escapeHtml(suggestion.expectedImpact)}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Segment Analysis -->
+    ${analysis.segmentAnalysis.length > 0 ? `
+    <div>
+      <h3 class="font-semibold text-gray-700 mb-2">📦 Segment Analysis</h3>
+      <div class="space-y-3">
+        ${analysis.segmentAnalysis.map(segment => `
+          <div class="bg-white rounded p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-700">${escapeHtml(segment.segment)}</span>
+              <span class="text-sm text-gray-500">Mean Score: ${segment.meanScore.toFixed(2)}/10</span>
+            </div>
+            ${segment.issues.length > 0 ? `
+              <div class="mb-2">
+                <strong class="text-sm text-red-700">Issues:</strong>
+                <ul class="text-sm text-gray-600 ml-4 list-disc">
+                  ${segment.issues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+            ${segment.recommendations.length > 0 ? `
+              <div>
+                <strong class="text-sm text-blue-700">Recommendations:</strong>
+                <ul class="text-sm text-gray-600 ml-4 list-disc">
+                  ${segment.recommendations.map(rec => `<li>${escapeHtml(rec)}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+  </section>
+  `;
+};
+
 const renderInsights = (insights: InsightResult): string => `
   <section class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow p-6 mb-8 border border-purple-100">
     <div class="flex items-center gap-2 mb-4">
@@ -604,6 +743,7 @@ const generateHTML = (data: ReportData, comparison?: ComparisonData | null): str
    <div class="max-w-6xl mx-auto p-8">
      ${renderHeader(data, comparison)}
      ${comparison ? renderComparisonSummary(comparison) : ''}
+     ${data.improvementAnalysis ? renderImprovementAnalysis(data.improvementAnalysis) : ''}
      ${data.insights ? renderInsights(data.insights) : ''}
      ${renderSummaryStats(data)}
      ${renderScoreDistribution(data)}
@@ -614,7 +754,10 @@ const generateHTML = (data: ReportData, comparison?: ComparisonData | null): str
 </html>
 `;
 
-export const runReport = async (options: ReportOptions): Promise<string | null> => {
+export const runReport = async (
+  options: ReportOptions,
+  improvementAnalysis?: StructuredAnalysis
+): Promise<string | null> => {
   console.log(`\n📋 Prompt Bench: Report`);
   console.log(`─────────────────────────────────`);
   console.log(`Label: ${options.label}`);
@@ -827,6 +970,7 @@ export const runReport = async (options: ReportOptions): Promise<string | null> 
     },
     fallbackUsage,
     insights: insights ?? undefined,
+    improvementAnalysis: improvementAnalysis ?? undefined,
   };
 
   // Generate HTML
@@ -862,7 +1006,10 @@ export const reportCommand = async (args: string[]): Promise<void> => {
   await runReport(options);
 };
 
-export const autoReportForLabel = async (label: string): Promise<string | null> => {
+export const autoReportForLabel = async (
+  label: string,
+  improvementAnalysis?: StructuredAnalysis
+): Promise<string | null> => {
   const config = loadConfig();
 
   const options: ReportOptions = {
@@ -872,5 +1019,6 @@ export const autoReportForLabel = async (label: string): Promise<string | null> 
     showUrls: config?.defaults.report?.show_urls ?? false,
   };
 
-  return runReport(options);
+  return runReport(options, improvementAnalysis);
 };
+
