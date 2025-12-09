@@ -24,10 +24,9 @@ import { reportCommand } from '@bench/commands/report';
 import { syncCommand } from '@bench/commands/sync';
 import { testCommand } from '@bench/commands/test';
 import { openLastReportCommand } from '@bench/commands/open-last-report';
-import { iterateCommand } from '@bench/commands/iterate';
 import { improveCommand } from '@bench/commands/improve';
 
-const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report', 'iterate', 'improve'] as const;
+const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report', 'improve'] as const;
 
 type Command = (typeof COMMANDS)[number];
 
@@ -46,8 +45,7 @@ Commands:
   report           Generate HTML report for a batch
   sync             Sync local templates to database
   open-last-report Open the most recent HTML report
-  iterate          Evolutionary prompt optimization (NEW)
-  improve          AI-powered template improvement (NEW)
+  improve          AI-powered template improvement
 
 Examples:
   bun bench test --template product-photo --batch ./batches/test.csv
@@ -56,9 +54,6 @@ Examples:
   bun bench compare --baseline v1 --candidate v2
   bun bench report --label v1
   bun bench open-last-report
-  bun bench iterate --template ecommerce-base --batch ./fixtures/images-batch.json
-  bun bench iterate --session <id> --status
-  bun bench iterate --list
   bun bench improve                    # Uses config defaults
   bun bench improve --continue         # Resume previous session
   bun bench improve --history          # View past sessions
@@ -113,9 +108,6 @@ const main = async (): Promise<void> => {
       break;
     case 'open-last-report':
       await openLastReportCommand();
-      break;
-    case 'iterate':
-      await iterateCommand(args);
       break;
     case 'improve':
       await improveCommand(args);
