@@ -83,6 +83,14 @@ ${productDiversity
   .join('\n')}`
   : ''}
 
+## Dimension Analysis
+${testResults.dimensionAverages
+  ? formatDimensionAnalysis(testResults.dimensionAverages)
+  : 'Dimension averages not available'}
+
+## Per-Product Detailed Feedback
+${formatProductFeedback(testResults.productScores)}
+
 ## Analysis Requirements
 
 1. **Summary**: 2-3 sentence overview of template performance
