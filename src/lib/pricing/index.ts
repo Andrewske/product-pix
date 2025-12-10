@@ -1,6 +1,6 @@
 // Types
 export type { Provider, ModelPricing, PricingConfig, TokenUsage, CostResult } from './types';
-export type { PricingData, PricingPack, PricingSubscription, PricingEconomy } from './actions';
+export type { PricingData, PricingPack, PricingSubscription, PricingEconomy } from './utils';
 
 // Config loading
 export { loadPricingConfig, clearPricingCache } from './config';
@@ -17,5 +17,8 @@ export { calculateCost } from './calculator';
 // Credit calculation
 export * from './credits';
 
+// Utility functions
+export { mergePacks, mergeSubscriptions } from './utils';
+
 // Server actions
-export { getPricing, mergePacks, mergeSubscriptions } from './actions';
+export { getPricing } from './actions';

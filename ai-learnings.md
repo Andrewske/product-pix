@@ -108,3 +108,14 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Module initialization timing**: Define constants inside functions when using unstable_cache to avoid circular dependencies
 - **Server component data distribution**: Fetch pricing once in server component, pass as props to avoid duplicate client fetches
 - **Type-safe pricing data**: Zod-validated config with literal types, explicit interfaces for server action responses
+
+## Server Actions Migration Patterns
+
+- **API Route to Server Action Migration**: Replace `/api/stripe/checkout` with direct server action calls for better type safety, reduced network overhead, and simpler code. Server actions eliminate HTTP fetch calls and provide direct Stripe SDK integration
+- **'use server' directive placement**: Must be first line of server action files. Requires moving utility functions to separate files since server actions must export only async functions
+- **Direct Stripe SDK calls**: Server actions call `stripe.checkout.sessions.create()` directly instead of HTTP fetch to internal API routes, eliminating unnecessary network round-trips
+- **Type consolidation strategy**: Remove duplicate type definitions (CreditPack, SubscriptionTier, etc.) in favor of single source of truth in dedicated type files
+- **Consistent price formatting**: Use `Intl.NumberFormat` with USD currency across all pricing components for uniform display
+- **Utility function separation**: When adding 'use server' to existing files, extract non-async utility functions to separate `utils.ts` files to maintain clean separation of concerns
+- **Barrel export updates**: Update index.ts files to re-export new server action functions for clean imports
+- **Component migration order**: Update components to use server actions before deleting API routes to maintain working checkout flows during transition

@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { getPricing, mergePacks, mergeSubscriptions, type PricingData } from '../actions';
+import { getPricing } from '../actions';
+import { mergePacks, mergeSubscriptions, type PricingData } from '../utils';
 import { creditEconomy } from '../pricing.config';
 import { fetchStripePrices, type StripePriceData } from '@/lib/stripe/fetch-prices';
 

@@ -1,9 +1,10 @@
- import { requireAuth } from '@/lib/auth/server';
- import { getUserStripeCustomerId } from '@/lib/stripe/customer';
- import { syncStripeDataToKV } from '@/lib/stripe/sync';
- import { getPricing, type PricingData } from '@/lib/pricing/actions';
- import { CreditPacks } from '@/components/pricing/credit-packs';
- import { SubscriptionTiers } from '@/components/pricing/subscription-tiers';
+import { requireAuth } from '@/lib/auth/server';
+import { getUserStripeCustomerId } from '@/lib/stripe/customer';
+import { syncStripeDataToKV } from '@/lib/stripe/sync';
+import { getPricing } from '@/lib/pricing/actions';
+import { type PricingData } from '@/lib/pricing/utils';
+import { CreditPacks } from '@/components/pricing/credit-packs';
+import { SubscriptionTiers } from '@/components/pricing/subscription-tiers';
 
 export default async function PricingPage() {
   // Sync Stripe data on page load to ensure fresh subscription status

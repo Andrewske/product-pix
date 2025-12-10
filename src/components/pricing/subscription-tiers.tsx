@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { type PricingData } from '@/lib/pricing/actions';
+import { type PricingData } from '@/lib/pricing/utils';
+import { createSubscriptionCheckout } from '@/lib/stripe/checkout-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,20 +15,17 @@ interface SubscriptionTiersProps {
 export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
-  const handleSubscribe = async (tier: string) => {
+  const formatPrice = (priceCents: number, currency: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    }).format(priceCents / 100);
+  };
+
+  const handleSubscribe = async (tier: 'pro' | 'business') => {
     setLoading(tier);
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'subscription', tier }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-
-      const { url } = await response.json();
+      const { url } = await createSubscriptionCheckout(tier);
       window.location.href = url;
     } catch (error) {
       console.error('Checkout error:', error);
@@ -56,9 +54,9 @@ export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
                 {tierId === 'pro' ? 'Pro Plan' : 'Business Plan'}
                 {tierId === 'business' && <Badge variant="secondary">Best Value</Badge>}
               </CardTitle>
-              <CardDescription>
-                ${(tier.priceCents / 100).toFixed(2)}/{tier.currency.toUpperCase()} per month
-              </CardDescription>
+               <CardDescription>
+                 {formatPrice(tier.priceCents, tier.currency)} per month
+               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-sm text-muted-foreground mb-4">
@@ -87,7 +85,7 @@ export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
               <Button
                 className="w-full"
                 variant={tierId === 'business' ? 'default' : 'outline'}
-                onClick={() => handleSubscribe(tierId)}
+                 onClick={() => handleSubscribe(tierId as 'pro' | 'business')}
                 disabled={loading === tierId}
               >
                 {loading === tierId ? 'Creating...' : `Subscribe to ${tierId === 'pro' ? 'Pro' : 'Business'}`}

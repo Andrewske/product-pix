@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { type PricingData } from '@/lib/pricing/actions';
+import { type PricingData } from '@/lib/pricing';
+import { createPackCheckout } from '@/lib/stripe/checkout-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,17 +17,7 @@ export function CreditPacks({ pricingData }: CreditPacksProps) {
   const handlePurchase = async (packId: string) => {
     setCheckoutLoading(packId);
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'pack', packId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-
-      const { url } = await response.json();
+      const { url } = await createPackCheckout(packId as 'pack_50' | 'pack_200' | 'pack_500');
       window.location.href = url;
     } catch (error) {
       console.error('Checkout error:', error);

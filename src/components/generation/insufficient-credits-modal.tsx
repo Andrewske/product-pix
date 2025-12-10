@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { X, CreditCard } from 'lucide-react';
 import { getPricingForModal, createPackCheckout } from '@/lib/stripe/checkout-actions';
-import type { PricingPack } from '@/lib/pricing/actions';
+import type { PricingPack } from '@/lib/pricing/utils';
+import type { CreditPackId } from '@/lib/stripe/products';
 
 interface InsufficientCreditsModalProps {
   currentBalance: number;
@@ -25,6 +26,13 @@ export function InsufficientCreditsModal({
   const [error, setError] = useState<string | null>(null);
   const deficit = requiredCredits - currentBalance;
 
+  const formatPrice = (priceCents: number, currency: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    }).format(priceCents / 100);
+  };
+
   useEffect(() => {
     getPricingForModal()
       .then(setPacks)
@@ -41,7 +49,7 @@ export function InsufficientCreditsModal({
   const handlePurchase = async (packId: string) => {
     setLoading(packId);
     try {
-      const { url } = await createPackCheckout(packId);
+      const { url } = await createPackCheckout(packId as CreditPackId);
       window.location.href = url;
     } catch (error) {
       console.error('Checkout error:', error);
@@ -79,12 +87,31 @@ export function InsufficientCreditsModal({
               <p className="text-sm font-medium mb-2">Recommended purchase:</p>
               <Card className="border-2 border-primary">
                 <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">
-                        {recommendedPack[1].credits} Credits
-                      </span>
-                      <Badge variant="secondary">Best fit</Badge>
-                    </div>
+                     <div className="flex items-center justify-between mb-2">
+                       <span className="font-medium">
+                         {recommendedPack[1].credits} Credits
+                       </span>
+                       <Badge variant="secondary">Best fit</Badge>
+                     </div>
+                     <div className="flex items-center justify-between mb-2">
+                       <span className="text-sm text-muted-foreground">
+                         {formatPrice(recommendedPack[1].priceCents, recommendedPack[1].currency)}
+                       </span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <Button
+                         size="sm"
+                         onClick={() => handlePurchase(recommendedPack[0])}
+                         disabled={loading === recommendedPack[0] || !packs}
+                       >
+                         {loading === recommendedPack[0] ? '...' : 'Buy'}
+                       </Button>
+                     </div>
+                     <div className="flex items-center justify-between mb-2">
+                       <span className="text-sm text-muted-foreground">
+                         {formatPrice(recommendedPack[1].priceCents, recommendedPack[1].currency)}
+                       </span>
+                     </div>
                     <div className="flex items-center justify-between">
                       <Button
                         size="sm"

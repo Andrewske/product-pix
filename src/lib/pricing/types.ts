@@ -27,38 +27,3 @@ export interface CostResult {
   fallbackUsed: boolean;
 }
 
-// Hybrid pricing types for credit-based billing
-export interface CreditPack {
-  id: string;
-  credits: number;
-  price: number;        // USD
-  displayName: string;
-  description?: string;
-  popular?: boolean;    // For UI highlighting
-}
-
-export interface SubscriptionTier {
-  id: string;
-  credits: number;      // Monthly credits
-  price: number;        // USD per month
-  displayName: string;
-  description?: string;
-  stripePriceId?: string;
-  popular?: boolean;    // For UI highlighting
-}
-
-export interface CreditEconomy {
-  creditsPerResolution: Record<'1k' | '2k' | '4k', number>;
-  creditToUsdRatio: number;  // How many credits per USD
-  usdToCreditRatio: number;  // How many USD per credit
-  minimumPurchase: number;   // Minimum USD for credit packs
-  freeCredits: number;       // Credits given to new users
-}
-
-export interface PricingData {
-  creditPacks: CreditPack[];
-  subscriptionTiers: SubscriptionTier[];
-  creditEconomy: CreditEconomy;
-  currentCredits?: number;     // User's current credit balance
-  activeSubscription?: SubscriptionTier;
-}
