@@ -31,8 +31,8 @@ export function getProviderForModel(modelId: string, config?: PricingConfig): Pr
     if (pricingConfig.google[baseModelId]) return 'google';
   }
 
-  // Rule 3: No match found
-  return 'unknown';
+  // Rule 3: No match found - throw error instead of returning 'unknown'
+  throw new Error(`Model '${modelId}' is not configured in pricing. Add it to the [pricing.*] section in prompt-bench.toml`);
 }
 
 /**
@@ -60,6 +60,6 @@ export function getPricingForModel(modelId: string, config?: PricingConfig): Mod
     if (pricingConfig.google[baseModelId]) return pricingConfig.google[baseModelId];
   }
 
-  // Rule 3: No match found, return fallback pricing
-  return pricingConfig.fallback;
+  // Rule 3: No match found - throw error instead of using fallback
+  throw new Error(`Model '${modelId}' is not configured in pricing. Add it to the [pricing.*] section in prompt-bench.toml`);
 }

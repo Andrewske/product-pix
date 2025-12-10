@@ -1,25 +1,26 @@
 // src/lib/ai/__tests__/prompt-builder.test.ts
-import { buildPromptFromTemplate, buildPromptFromTemplateSlug } from '../prompt-builder';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import type { ProductAnalysis } from '../types';
 
 // Mock the database functions
-jest.mock('@/lib/db/templates', () => ({
-  getTemplateById: jest.fn(),
-  getTemplateBySlug: jest.fn(),
+mock.module('@/lib/db/templates', () => ({
+  getTemplateById: mock(),
+  getTemplateBySlug: mock(),
 }));
 
 // Mock the compiler
-jest.mock('@bench/core/compiler', () => ({
-  compileTemplate: jest.fn(),
+mock.module('@bench/core/compiler', () => ({
+  compileTemplate: mock(),
 }));
 
-// Import the mocked functions
-import { getTemplateById, getTemplateBySlug } from '@/lib/db/templates';
-import { compileTemplate } from '@bench/core/compiler';
+// Import the mocked functions after mocking
+const { getTemplateById, getTemplateBySlug } = await import('@/lib/db/templates');
+const { compileTemplate } = await import('@bench/core/compiler');
+const { buildPromptFromTemplate, buildPromptFromTemplateSlug } = await import('../prompt-builder');
 
-const mockGetTemplateById = getTemplateById as jest.MockedFunction<typeof getTemplateById>;
-const mockGetTemplateBySlug = getTemplateBySlug as jest.MockedFunction<typeof getTemplateBySlug>;
-const mockCompileTemplate = compileTemplate as jest.MockedFunction<typeof compileTemplate>;
+const mockGetTemplateById = getTemplateById as ReturnType<typeof mock>;
+const mockGetTemplateBySlug = getTemplateBySlug as ReturnType<typeof mock>;
+const mockCompileTemplate = compileTemplate as ReturnType<typeof mock>;
 
 const mockTemplate = {
   id: 'template-123',
@@ -51,7 +52,9 @@ const mockAnalysis: ProductAnalysis = {
 
 describe('buildPromptFromTemplate', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetTemplateById.mockReset();
+    mockGetTemplateBySlug.mockReset();
+    mockCompileTemplate.mockReset();
   });
 
   it('should successfully build prompt with analysis data', async () => {
@@ -176,7 +179,9 @@ describe('buildPromptFromTemplateSlug', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetTemplateById.mockReset();
+    mockGetTemplateBySlug.mockReset();
+    mockCompileTemplate.mockReset();
   });
 
   it('should successfully build prompt using slug', async () => {

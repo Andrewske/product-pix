@@ -353,9 +353,6 @@ const runPhase = async (
 
         if (costResult.ok) {
           generationCost = costResult.data.total;
-          if (costResult.data.fallbackUsed) {
-            console.warn(`⚠️  Using fallback pricing for test generation: ${testRecord.id}`);
-          }
         } else {
           console.warn(`⚠️  Failed to calculate cost for test generation: ${costResult.error.message}`);
         }

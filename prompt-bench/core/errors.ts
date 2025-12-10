@@ -1,4 +1,6 @@
 // =============================================================================
+import type { TemplateData } from '@bench/core/types';
+
 // Error Code Types
 // =============================================================================
 
@@ -117,13 +119,44 @@ export const validateCompiledPrompt = (prompt: string): PromptTestError | null =
  * Validate that all required variables are provided
  */
 export const validateRequiredVariables = (
-  variablesSchema: Record<string, { required: boolean }>,
+  templateData: TemplateData,
+  variablesSchema: Record<string, { required: boolean; default?: unknown }>,
   providedVariables: Record<string, unknown>
 ): PromptTestError | null => {
   const missing: string[] = [];
 
+  // Import getUsedVariables here to avoid circular dependency
+  const getUsedVariables = (templateData: TemplateData): Set<string> => {
+    const usedVars = new Set<string>();
+    const placeholderRegex = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
+
+    const components = [
+      templateData.subject,
+      templateData.background,
+      templateData.lighting,
+      templateData.camera,
+      templateData.style,
+      templateData.quality,
+      templateData.negative,
+    ];
+
+    for (const component of components) {
+      if (!component) continue;
+
+      let match;
+      while ((match = placeholderRegex.exec(component)) !== null) {
+        usedVars.add(match[1]);
+      }
+    }
+
+    return usedVars;
+  };
+
+  const usedVars = getUsedVariables(templateData);
+
   for (const [name, def] of Object.entries(variablesSchema)) {
-    if (def.required && !(name in providedVariables)) {
+    // Only validate if variable is actually used in template AND required AND no default AND not provided
+    if (usedVars.has(name) && def.required && !def.default && !(name in providedVariables)) {
       missing.push(name);
     }
   }

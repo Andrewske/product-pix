@@ -144,9 +144,6 @@ export const generateInsights = async (
     }
 
     const costData = costResult.data;
-    if (costData.fallbackUsed) {
-      console.warn(`⚠️  Using fallback pricing for insights`);
-    }
 
     return ok({
       ...parseResult.data,

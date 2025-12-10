@@ -9,9 +9,10 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('prompt_templates')
-    .select('id, slug, template_data')
+    .select('id, slug, version, template_data')
     .eq('status', 'active')
-    .order('slug');
+    .order('slug')
+    .order('version', { ascending: false }); // Highest version first
 
   if (error) {
     return NextResponse.json(
@@ -20,12 +21,20 @@ export async function GET() {
     );
   }
 
+  // Deduplicate by slug, keeping highest version
+  const templateMap = new Map<string, typeof data[0]>();
+  for (const template of data) {
+    if (!templateMap.has(template.slug)) {
+      templateMap.set(template.slug, template);
+    }
+  }
+
   // Transform the data to extract display information
-  const templates = data.map((template) => {
+  const templates = Array.from(templateMap.values()).map((template) => {
     const templateData = template.template_data as Record<string, unknown>;
     return {
-      id: template.id,
       slug: template.slug,
+      version: template.version,
       name: (templateData.name as string) || template.slug,
       description: (templateData.description as string) || '',
     };

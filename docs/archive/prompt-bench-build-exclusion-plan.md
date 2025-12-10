@@ -19,7 +19,7 @@ Separating into workspaces or separate packages would add synchronization overhe
 **Rationale**: Create `tsconfig.build.json` that extends root config but excludes prompt-bench. This allows:
 - Next.js builds to ignore prompt-bench TypeScript errors
 - CLI commands (`bun bench`) to use root config via tsx runtime
-- Jest tests to continue testing both src/ and prompt-bench/
+- Bun test to continue testing both src/ and prompt-bench/
 - Future flexibility to separate if requirements change
 
 ### Decision 3: Eliminate Reverse Dependencies (Completed)
@@ -65,7 +65,7 @@ Separating into workspaces or separate packages would add synchronization overhe
   - Verification: Check Supabase prompt_templates table updated
   - Acceptance: CLI executes successfully, no module resolution errors
 
-- [ ] Verify Jest test suite runs
+- [ ] Verify Bun test suite runs
   - Command: `bun test prompt-bench`
   - Expected: All prompt-bench tests execute
   - Verification: Check test output shows prompt-bench test files found
@@ -115,7 +115,7 @@ Separating into workspaces or separate packages would add synchronization overhe
 - [x] Dead code removed (src/lib/prompts/index.ts deleted)
 - [ ] Next.js build succeeds without prompt-bench TypeScript errors
 - [ ] CLI commands (`bun bench *`) execute successfully
-- [ ] Jest tests run for both src/ and prompt-bench/
+- [ ] Bun test runs for both src/ and prompt-bench/
 - [ ] No breaking changes to existing functionality
 - [ ] Documentation updated in CLAUDE.md
 - [ ] Vercel deployment succeeds
@@ -145,14 +145,14 @@ Separating into workspaces or separate packages would add synchronization overhe
 
 ### No Changes Required
 - `/home/kevin/coding/product-pix/tsconfig.json` (root config unchanged)
-- `/home/kevin/coding/product-pix/jest.config.ts` (continues using root tsconfig)
+- Jest configuration removed (migrated to Bun test)
 - `/home/kevin/coding/product-pix/package.json` (scripts unchanged)
 - `/home/kevin/coding/product-pix/prompt-bench/cli.ts` (tsx runs without type-checking)
 
 ## Dependencies
 
 ### External Dependencies
-- None (uses existing Next.js, TypeScript, Jest, bun)
+- None (uses existing Next.js, TypeScript, bun)
 
 ### Internal Dependencies
 - Requires Next.js ≥13.0 (supports typescript.tsconfigPath config)
@@ -201,7 +201,7 @@ vercel build  # or push to branch
 ```
 
 ### Automated Testing
-- Jest tests continue to run via `bun test` (uses root tsconfig)
+- Bun test continues to run via `bun test` (uses root tsconfig)
 - No new test files needed (configuration change only)
 - CI/CD should verify `bun run build` succeeds
 

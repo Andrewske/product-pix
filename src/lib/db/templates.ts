@@ -75,6 +75,26 @@ export const getTemplateBySlug = async (slug: string): Promise<PromptTemplate | 
 };
 
 /**
+ * Resolve template ID to slug (for backward compatibility)
+ */
+export const resolveTemplateIdToSlug = async (templateId: string): Promise<string> => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('prompt_templates')
+    .select('slug')
+    .eq('id', templateId)
+    .single();
+
+  if (error) {
+    logger.error('Error resolving template ID to slug', { error, templateId });
+    return 'ecommerce-base'; // Fallback
+  }
+
+  return data.slug;
+};
+
+/**
  * Fetch all active templates
  */
 export const getAllActiveTemplates = async (): Promise<PromptTemplate[]> => {

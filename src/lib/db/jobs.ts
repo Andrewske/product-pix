@@ -10,7 +10,7 @@ export const createGenerationJob = async (
   prompt: string,
   parameters: Json = {},
   credits = 1,
-  templateId?: string
+  templateSlug?: string
 ): Promise<CreateJobResult> => {
   const supabase = createAdminClient();
 
@@ -20,7 +20,7 @@ export const createGenerationJob = async (
     p_prompt: prompt,
     p_parameters: parameters,
     p_credits: credits,
-    p_template_id: templateId || null,
+    p_template_slug: templateSlug || 'ecommerce-base',
   });
 
   if (error) {

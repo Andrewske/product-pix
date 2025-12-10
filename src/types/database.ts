@@ -7,6 +7,36 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       batch_items: {
@@ -74,6 +104,13 @@ export type Database = {
             columns: ["generated_image_id"]
             isOneToOne: false
             referencedRelation: "generated_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
             referencedColumns: ["id"]
           },
           {
@@ -208,6 +245,7 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
+          title: string | null
           user_id: string
           width: number | null
         }
@@ -221,6 +259,7 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
+          title?: string | null
           user_id: string
           width?: number | null
         }
@@ -234,6 +273,7 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
+          title?: string | null
           user_id?: string
           width?: number | null
         }
@@ -257,7 +297,6 @@ export type Database = {
       generation_costs: {
         Row: {
           created_at: string | null
-          fallback_used: boolean | null
           generated_image_id: string | null
           id: string
           input_cost_usd: number
@@ -271,7 +310,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          fallback_used?: boolean | null
           generated_image_id?: string | null
           id?: string
           input_cost_usd: number
@@ -285,7 +323,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          fallback_used?: boolean | null
           generated_image_id?: string | null
           id?: string
           input_cost_usd?: number
@@ -370,6 +407,7 @@ export type Database = {
           started_at: string | null
           status: Database["public"]["Enums"]["job_status"]
           template_id: string | null
+          template_slug: string
           upload_id: string | null
           user_id: string
         }
@@ -386,6 +424,7 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           template_id?: string | null
+          template_slug: string
           upload_id?: string | null
           user_id: string
         }
@@ -402,10 +441,18 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           template_id?: string | null
+          template_slug?: string
           upload_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "jobs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "jobs_upload_id_fkey"
             columns: ["upload_id"]
@@ -577,6 +624,103 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_purchases: {
+        Row: {
+          amount_cents: number
+          created_at: string | null
+          credits_granted: number
+          id: string
+          metadata: Json | null
+          purchase_type: string
+          stripe_customer_id: string
+          stripe_payment_intent_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string | null
+          credits_granted: number
+          id?: string
+          metadata?: Json | null
+          purchase_type: string
+          stripe_customer_id: string
+          stripe_payment_intent_id: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string | null
+          credits_granted?: number
+          id?: string
+          metadata?: Json | null
+          purchase_type?: string
+          stripe_customer_id?: string
+          stripe_payment_intent_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          tier: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          tier: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          price_id?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          tier?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -820,20 +964,51 @@ export type Database = {
         }
         Returns: string
       }
-      create_generation_job: {
-        Args: {
-          p_credits?: number
-          p_parameters?: Json
-          p_prompt: string
-          p_upload_id: string
-          p_user_id: string
-        }
-        Returns: {
-          job_id: string
-          message: string
-          success: boolean
-        }[]
-      }
+      create_generation_job:
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt: string
+              p_template_id?: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt: string
+              p_template_slug?: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
       get_batch_stats: {
         Args: { p_batch_label: string }
         Returns: {
@@ -1033,6 +1208,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       batch_item_status: ["pending", "processing", "completed", "failed"],
@@ -1057,9 +1235,11 @@ export const Constants = {
         "refund",
         "bonus",
         "expiration",
+        "pack_purchase",
+        "subscription_renewal",
+        "subscription_upgrade",
       ],
       user_tier: ["free", "pro", "business"],
     },
   },
 } as const
-
