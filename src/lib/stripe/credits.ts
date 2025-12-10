@@ -46,8 +46,9 @@ export async function grantCreditsForPayment(params: GrantCreditsParams): Promis
     params.userId,
     params.credits,
     params.purchaseType,
-    `pi_${params.paymentIntentId}`,
-    `${params.credits} credits from ${params.purchaseType}`
+    `${params.credits} credits from ${params.purchaseType}`,
+    undefined, // referenceId not used for payments
+    `pi_${params.paymentIntentId}`
   );
 
   return { granted: true };
