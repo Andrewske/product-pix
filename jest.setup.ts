@@ -1,5 +1,12 @@
 import '@testing-library/jest-dom';
 
+// Mock browser APIs for testing
+global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  disconnect: jest.fn(),
+  unobserve: jest.fn(),
+}));
+
 // Setup test environment variables
 process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-key';
 process.env.GEMINI_MODEL = 'gemini-3-pro-image-preview';

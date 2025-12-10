@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const protectedRoutes = ['/dashboard', '/generate', '/settings', '/api/generate', '/api/upload'];
 const authRoutes = ['/login', '/signup'];
 
-export async function proxy(request: NextRequest): Promise<NextResponse> {
+export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   let supabaseResponse = NextResponse.next({
