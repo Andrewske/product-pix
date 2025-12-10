@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Zap, ImageIcon, Download, Sparkles, ArrowUpRight } from "lucide-react"
 import { Metadata } from "next"
+import Image from "next/image"
 
 export const metadata: Metadata = {
   title: "ProductPix - Professional Product Photos in Seconds",
@@ -80,26 +81,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Hero Image Showcase */}
-          <div className="mt-24 relative max-w-4xl mx-auto">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/50 matte-card">
-              <div className="aspect-[16/9] bg-card/50 flex items-center justify-center relative group">
-                {/* Simulated Studio Environment */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none" />
-                
-                <div className="text-center z-10 transform transition-transform duration-700 group-hover:scale-105">
-                  <div className="w-64 h-72 bg-gradient-to-br from-card to-muted rounded-xl mx-auto mb-6 flex items-center justify-center shadow-2xl shadow-black/20 border border-white/5 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                    <ImageIcon className="w-24 h-24 text-muted-foreground/30" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground tracking-wide uppercase text-xs">Studio Lighting • Soft Box</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Decorative "Studio Marks" */}
-            <div className="absolute -bottom-12 -right-12 text-9xl font-bold text-foreground/5 select-none pointer-events-none overflow-hidden">
-              STUDIO
             </div>
           </div>
         </div>
