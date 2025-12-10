@@ -3,6 +3,7 @@ import {
   HeroSection,
   ExamplesSection,
   HowItWorksSection,
+  TrustStripSection,
   PricingSection,
   FinalCTASection,
   Footer
@@ -37,6 +38,7 @@ export default async function LandingPage() {
       <HeroSection example={landingConfig.examples[0]} />
       <ExamplesSection examples={landingConfig.examples} />
       <HowItWorksSection />
+      <TrustStripSection />
       <PricingSection pricing={pricing} />
       <FinalCTASection />
       <Footer />
