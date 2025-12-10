@@ -6,7 +6,13 @@ ProductPix: AI product photo generator (Next.js 16, Supabase, Cloudflare R2, Gem
 
 ```bash
 # Development
-bun dev/build/lint/test
+bun dev                    # Start dev server
+bun build                  # Production build
+bun lint                   # Run ESLint
+bun test                   # Run all tests
+bun test:watch             # Run tests in watch mode
+bun test:coverage          # Run tests with coverage report
+bun test -- <file>         # Run specific test file
 
 # Prompt Bench CLI
 bun bench test --template <slug> --batch <file>    # Full pipeline
@@ -23,6 +29,8 @@ npx supabase db push | gen types ts | migration new
 ```
 
 ## Architecture
+
+**Note**: Tailwind v4 uses CSS-first configuration via `@import "tailwindcss"` in globals.css. No tailwind.config.js needed.
 
 ```
 src/lib/
@@ -81,6 +89,19 @@ prompt-bench/   # Isolated CLI testing framework
 **Future**: Migration to separate repo/package possible if coupling decreases
 
 ## Conventions
+
+### UI/UX Patterns
+
+- **Color Palette**: "Dark + Warm" aesthetic
+  - Deep Black (backgrounds)
+  - Electric Coral (accent/CTA)
+  - Cream (text)
+  - Mint (success states)
+- **Typography**: Inter, Satoshi, or General Sans
+- **Shapes**: Sharp corners or subtle border radius
+- **Layout**: Generous whitespace, product photos as heroes
+
+### Code Conventions
 
 - **Package manager**: `bun` only (not npm/yarn/pnpm)
 - **Path aliases**: `@/*` → `./src/*`, `@bench/*` → `./prompt-bench/*`
@@ -196,3 +217,34 @@ bun test --coverage
 ### Known Issues
 
 - Template data schema uses `z.any()` to avoid circular imports
+
+## R2 Configuration
+
+### CORS Setup (Quick Reference)
+
+R2 bucket requires CORS configuration for browser uploads:
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://productpix.app"],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["Content-Type", "Content-Length", "x-amz-*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+**Apply via CLI:**
+```bash
+npx wrangler r2 bucket cors put productpix-images --rules ./r2-cors.json
+npx wrangler r2 bucket cors list productpix-images  # Verify
+```
+
+**Common issues:**
+- OPTIONS succeeds but PUT fails → Check bucket permissions (not CORS)
+- Must include `x-amz-*` in AllowedHeaders for presigned URLs
+- Never use `"*"` for AllowedOrigins in production
+
+**Full documentation**: See `docs/r2-cors-setup.md` for detailed setup guide

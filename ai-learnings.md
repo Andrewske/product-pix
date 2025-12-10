@@ -20,7 +20,7 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 ## Cloudflare R2
 
 - **CORS must be configured** before presigned URL uploads work — uploads fail silently without proper CORS
-- **Preflight requests**: If OPTIONS succeeds but PUT fails, check bucket permissions not CORS
+- **OPTIONS vs PUT failure distinction**: If preflight (OPTIONS) succeeds but actual upload (PUT) fails, this indicates bucket permissions issue NOT CORS configuration. CORS only controls cross-origin requests, not authentication/authorization
 - **AllowedHeaders must include**: `Content-Type`, `Content-Length`, `x-amz-*`
 - **ExposeHeaders**: Include `ETag` for upload confirmation
 
@@ -76,6 +76,7 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 
 ## Build System Patterns
 
+- **Tailwind v4 color variable mapping**: CSS custom properties must be explicitly mapped to theme utilities in `globals.css` `@theme` block. Without this mapping, classes like `bg-primary` won't resolve to color values, resulting in unstyled "black and white" appearance. Example: `@theme { --color-primary: var(--electric-coral); }`
 - **Dual TypeScript configs for monorepo exclusion**: When keeping tightly-coupled dev tooling in monorepo but excluding from production builds, use separate `tsconfig.build.json` that overrides `include` array to exclude dev directories. Next.js respects `typescript.tsconfigPath` config option
 - **TypeScript include vs exclude precedence**: `include` arrays take precedence over `exclude` — to exclude a directory, override the entire `include` array rather than just adding to `exclude`
 - **Build-time vs runtime separation**: CLI tools can use root tsconfig (with dev dependencies) while production builds use stripped-down config, enabling different compilation rules for same codebase
