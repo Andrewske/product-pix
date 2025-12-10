@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import type { CreditTransaction } from '@/types/database.helpers';
 
 export interface SubscriptionData {
   status: string;
@@ -47,4 +48,19 @@ export async function fetchUserPurchases(): Promise<PurchaseData[]> {
 
   if (error || !data) return [];
   return data as PurchaseData[];
+}
+
+export async function fetchCreditHistory(): Promise<CreditTransaction[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('credit_transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+  return data;
 }

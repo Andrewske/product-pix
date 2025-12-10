@@ -48,3 +48,5 @@ next-env.d.ts
 # iteration sessions (keep .gitkeep, ignore session files)
 prompt-bench/sessions/*.json
 !prompt-bench/sessions/.gitkeep
+
+notes.md

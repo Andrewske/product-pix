@@ -119,3 +119,14 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Utility function separation**: When adding 'use server' to existing files, extract non-async utility functions to separate `utils.ts` files to maintain clean separation of concerns
 - **Barrel export updates**: Update index.ts files to re-export new server action functions for clean imports
 - **Component migration order**: Update components to use server actions before deleting API routes to maintain working checkout flows during transition
+
+## Settings Page Implementation Patterns
+
+- **URL-synchronized tabs**: Use `useSearchParams()` + `useRouter()` for deep-linking without full page reloads. Default tab in component, `router.push('/settings?tab=${value}', { scroll: false })` for navigation
+- **OAuth provider detection**: Check `user.app_metadata?.provider` or `user.identities?.[0]?.provider` to differentiate Google OAuth vs email/password users for password management UI
+- **Server actions for user data**: Use server Supabase client (`createClient()`) with RLS for fetching user's own transactions. Returns empty array if unauthenticated (automatic RLS filtering)
+- **Credit transaction formatting**: Color-coded badges (green for positive, muted for negative), formatted dates with `toLocaleString()`, balance tracking per transaction
+- **Password reset flow**: OAuth users get inline "Set Password" form, email users get "Send Reset Email" button. Separate `/auth/reset-password` page for email link handling
+- **Suspense for useSearchParams**: Wrap client components using `useSearchParams` in `<Suspense>` boundary in server components to prevent hydration mismatches
+- **Radix UI shadcn integration**: Follow button.tsx pattern with `forwardRef`, `cn()` utility, compound component exports. Import from `@radix-ui/react-*` packages
+- **Auth-protected pages**: Use `requireAuth()` utility in server components for automatic redirect to `/login` if unauthenticated

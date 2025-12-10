@@ -2,21 +2,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useUserProfile, signOut } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
+import { useUserProfile } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UserMenu } from './user-menu';
 
 export function Header() {
   const { user, profile, loading } = useUserProfile();
-  const router = useRouter();
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/login');
-    router.refresh();
-  };
 
   return (
     <header className="border-b bg-background">
@@ -43,15 +36,13 @@ export function Header() {
                   <Button variant="ghost">Batches</Button>
                 </Link>
 
-                {/* Credits badge */}
-                <Badge variant="secondary">
-                  {profile?.credit_balance ?? 0} credits
-                </Badge>
+                 {/* Credits badge */}
+                 <Badge variant="secondary">
+                   {profile?.credit_balance ?? 0} credits
+                 </Badge>
 
-                {/* User menu */}
-                <Button variant="ghost" onClick={handleSignOut}>
-                  Sign out
-                </Button>
+                 {/* User menu */}
+                 <UserMenu />
               </>
             ) : (
               <>
