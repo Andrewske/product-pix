@@ -6,7 +6,6 @@ import { useUserProfile, signOut } from '@/lib/auth';
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -41,7 +40,6 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src="" alt={profile.display_name || profile.email} />
             <AvatarFallback>{userInitial}</AvatarFallback>
           </Avatar>
         </button>
