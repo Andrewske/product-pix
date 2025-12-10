@@ -8,6 +8,7 @@ import { createGeneratedImage } from '@/lib/db/generated-images';
 import { calculateCost } from '@/lib/pricing';
 import { createGenerationCost } from '@/lib/db/cost-queries';
 import { logger } from '@/lib/logging';
+import { env } from '@/lib/env';
 
 export interface GenerateImageParams {
   jobId: string;
@@ -26,13 +27,105 @@ export interface GenerateImageResult {
   error?: string;
 }
 
+interface ProductAnalysisResult {
+  analysis?: ProductAnalysis;
+  imageTitle?: string;
+}
+
+/**
+ * Run product analysis for image-to-image generation
+ */
+const runProductAnalysis = async (
+  jobId: string,
+  sourceImage: Buffer,
+  sourceMimeType: string,
+  sourceFilename?: string
+): Promise<ProductAnalysisResult> => {
+  const result = await analyzeProductImage(sourceImage, sourceMimeType);
+  if (result.ok) {
+    const analysis = result.data.analysis;
+    await updateJobParameters(jobId, { analysis });
+    const imageTitle = generateImageTitle(analysis);
+
+    // Record analysis cost
+    try {
+      const costData = calculateCost(env.ANALYSIS_MODEL, {
+        input: result.data.usage.promptTokens,
+        output: result.data.usage.completionTokens,
+      });
+
+      if (costData.fallbackUsed) {
+        logger.warn('Using fallback pricing for analysis');
+      }
+
+      await createGenerationCost({
+        jobId,
+        generatedImageId: undefined, // No image yet
+        modelId: env.ANALYSIS_MODEL,
+        provider: costData.provider,
+        inputTokens: result.data.usage.promptTokens,
+        outputTokens: result.data.usage.completionTokens,
+        inputCostUsd: costData.inputCost,
+        outputCostUsd: costData.outputCost,
+        totalCostUsd: costData.total,
+        fallbackUsed: costData.fallbackUsed,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.warn('Failed to calculate cost for analysis', { error: message });
+    }
+
+    return { analysis, imageTitle };
+  } else {
+    // Fallback: use original filename as title
+    const imageTitle = sourceFilename ? getTitleFromFilename(sourceFilename) : 'untitled';
+    return { imageTitle };
+  }
+};
+
+/**
+ * Record generation cost for image generation
+ */
+const recordGenerationCost = async (
+  jobId: string,
+  generatedImageId: string | undefined,
+  usage: { promptTokens: number; completionTokens: number }
+): Promise<void> => {
+  try {
+    const costData = calculateCost(env.GEMINI_MODEL, {
+      input: usage.promptTokens,
+      output: usage.completionTokens,
+    });
+
+    if (costData.fallbackUsed) {
+      logger.warn('Using fallback pricing for image generation');
+    }
+
+    await createGenerationCost({
+      jobId,
+      generatedImageId,
+      modelId: env.GEMINI_MODEL,
+      provider: costData.provider,
+      inputTokens: usage.promptTokens,
+      outputTokens: usage.completionTokens,
+      inputCostUsd: costData.inputCost,
+      outputCostUsd: costData.outputCost,
+      totalCostUsd: costData.total,
+      fallbackUsed: costData.fallbackUsed,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.warn('Failed to calculate cost for image generation', { error: message });
+  }
+};
+
 /**
  * Generate an image using the configured AI provider
  */
 export const generateImage = async (
   params: GenerateImageParams
 ): Promise<GenerateImageResult> => {
-  const { jobId, userId, prompt, sourceImage, sourceMimeType, sourceFilename, config } = params;
+  const { jobId, userId, sourceImage, sourceMimeType, sourceFilename, config } = params;
 
   const provider = getImageProvider();
 
@@ -48,50 +141,16 @@ export const generateImage = async (
     };
   }
 
-  const templateId = job.template_id ?? 'ecommerce-base';
-  let analysis: ProductAnalysis | undefined = undefined;
-  let imageTitle: string | undefined;
+   const templateId = job.template_id ?? 'ecommerce-base';
+   let analysis: ProductAnalysis | undefined = undefined;
+   let imageTitle: string | undefined;
 
-  // Analysis step for image-to-image
-  if (sourceImage && sourceMimeType) {
-    const result = await analyzeProductImage(sourceImage, sourceMimeType);
-    if (result.ok) {
-      analysis = result.data.analysis;
-      await updateJobParameters(jobId, { analysis });
-      imageTitle = generateImageTitle(analysis);
-
-      // Record analysis cost
-      try {
-        const costData = calculateCost('gemini-2.0-flash', {
-          input: result.data.usage.promptTokens,
-          output: result.data.usage.completionTokens,
-        });
-
-        if (costData.fallbackUsed) {
-          logger.warn('Using fallback pricing for analysis');
-        }
-
-        await createGenerationCost({
-          jobId,
-          generatedImageId: undefined, // No image yet
-          modelId: 'gemini-2.0-flash',
-          provider: costData.provider,
-          inputTokens: result.data.usage.promptTokens,
-          outputTokens: result.data.usage.completionTokens,
-          inputCostUsd: costData.inputCost,
-          outputCostUsd: costData.outputCost,
-          totalCostUsd: costData.total,
-          fallbackUsed: costData.fallbackUsed,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        logger.warn('Failed to calculate cost for analysis', { error: message });
-      }
-    } else {
-      // Fallback: use original filename as title
-      imageTitle = sourceFilename ? getTitleFromFilename(sourceFilename) : 'untitled';
-    }
-  }
+   // Analysis step for image-to-image
+   if (sourceImage && sourceMimeType) {
+     const analysisResult = await runProductAnalysis(jobId, sourceImage, sourceMimeType, sourceFilename);
+     analysis = analysisResult.analysis;
+     imageTitle = analysisResult.imageTitle;
+   }
 
   // Build prompt from template (works with or without analysis)
   const promptResult = await buildPromptFromTemplate(templateId, analysis);
@@ -163,37 +222,12 @@ export const generateImage = async (
       title: imageTitle,
     });
 
-    // Calculate and store generation cost
-    if (result.usage) {
-      try {
-        const costData = calculateCost('gemini-3-pro-image-preview', {
-          input: result.usage.promptTokens,
-          output: result.usage.completionTokens,
-        });
-
-        if (costData.fallbackUsed) {
-          logger.warn('Using fallback pricing for image generation');
-        }
-
-        await createGenerationCost({
-          jobId,
-          generatedImageId: generatedImage?.id,
-          modelId: 'gemini-3-pro-image-preview',
-          provider: costData.provider,
-          inputTokens: result.usage.promptTokens,
-          outputTokens: result.usage.completionTokens,
-          inputCostUsd: costData.inputCost,
-          outputCostUsd: costData.outputCost,
-          totalCostUsd: costData.total,
-          fallbackUsed: costData.fallbackUsed,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        logger.warn('Failed to calculate cost for image generation', { error: message });
-      }
-    } else {
-      logger.warn('No usage data available for cost calculation');
-    }
+     // Calculate and store generation cost
+     if (result.usage) {
+       await recordGenerationCost(jobId, generatedImage?.id, result.usage);
+     } else {
+       logger.warn('No usage data available for cost calculation');
+     }
 
     // Mark job as completed
     await updateJobStatus(jobId, 'completed');

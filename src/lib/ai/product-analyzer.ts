@@ -5,26 +5,8 @@ import { z } from 'zod';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logging';
 import { normalizeUsage } from './usage-types';
+import { ok, err, type Result } from '@/lib/result';
 import type { ProductAnalysis } from './types';
-
-// =============================================================================
-// Result Type (Railway-Oriented Programming)
-// =============================================================================
-
-interface Ok<T> {
-  ok: true;
-  data: T;
-}
-
-interface Err {
-  ok: false;
-  error: { code: string; message: string };
-}
-
-type Result<T> = Ok<T> | Err;
-
-const ok = <T>(data: T): Ok<T> => ({ ok: true, data });
-const err = (error: { code: string; message: string }): Err => ({ ok: false, error });
 
 // =============================================================================
 // Product Analyzer

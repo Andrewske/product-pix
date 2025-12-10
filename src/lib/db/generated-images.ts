@@ -1,6 +1,7 @@
 // src/lib/db/generated-images.ts
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logging';
 import type { GeneratedImage } from '@/types';
 
 export interface CreateGeneratedImageParams {
@@ -53,11 +54,11 @@ export const createGeneratedImage = async (
     }
 
     // Other error, don't retry
-    console.error('Error creating generated image record:', error);
+    logger.error('Error creating generated image record', { error });
     return null;
   }
 
-  console.error('Failed to create generated image after max retries due to title conflicts');
+  logger.error('Failed to create generated image after max retries due to title conflicts');
   return null;
 };
 

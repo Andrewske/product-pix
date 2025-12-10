@@ -143,3 +143,36 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Template ID infrastructure**: Jobs store `template_id` for future user template selection. Currently defaults to `ecommerce-base` but ready for user customization
 - **Filename fallback titles**: When analysis fails, titles derived from source filename (removing extension). Provides consistent naming even without vision analysis
 - **DB constraint + application retry**: Unique constraints at database level prevent duplicates, application-level retry with suffixes ensures user experience continuity
+
+## Code Review Cleanup Patterns (2025-12-09)
+
+### Result Type Pattern
+- **Railway-oriented programming**: Consistent `Result<T>` type with `ok()`/`err()` constructors eliminates exception handling complexity
+- **Type safety**: Eliminates `any` usage in error handling, forces explicit error types with `{ code: string; message: string }`
+- **Import consolidation**: Single shared module (`src/lib/result.ts`) prevents duplication across AI modules
+- **Pattern**: `const result = someOperation(); if (!result.ok) return err({ code: 'OP_FAILED', message: '...' });`
+
+### Job Parameters Merge Pattern  
+- **Fetch-then-merge**: Supabase JSONB lacks native merge, so fetch existing → spread merge → update pattern required
+- **Type casting**: Cast merged object to `Json` type for Supabase compatibility: `merged as Json`
+- **Error handling**: Centralized logger with structured context: `logger.error('message', { error, jobId })`
+
+### Environment Configuration Pattern
+- **Model flexibility**: Replace hardcoded model IDs with env vars (`ANALYSIS_MODEL`, `GEMINI_MODEL`) for runtime configuration
+- **Fallback defaults**: Env module provides sensible defaults, allowing deployment-specific model selection
+- **No constants files**: Direct env usage eliminates synchronization issues between code and config
+
+### Helper Function Extraction Pattern
+- **Single responsibility**: Extract helpers ≤20 lines, ≤3 nesting levels within same file (not separate modules)
+- **DRY principle**: Shared compilation logic in `compileWithAnalysis()` eliminates duplication between template functions
+- **Pure functions**: Helpers take explicit parameters, return computed values without side effects
+
+### Logging Standardization Pattern
+- **Centralized logging**: Replace `console.error()` with `logger.error()` from `@/lib/logging` for structured output
+- **Context objects**: Pass relevant data as second parameter: `logger.error('message', { error, jobId, userId })`
+- **No scattered logs**: All logging goes through centralized module for consistent formatting and monitoring
+
+### Function Refactoring Pattern
+- **Main function length**: Keep under 80 lines by extracting helpers, but maintain cohesion within same file
+- **Helper naming**: Descriptive names like `runProductAnalysis()`, `recordGenerationCost()` clarify purpose
+- **Error propagation**: Maintain original error handling patterns while improving code organization

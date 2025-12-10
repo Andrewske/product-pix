@@ -1,6 +1,7 @@
 // src/lib/db/jobs.ts
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logging';
 import type { Job, JobStatus, CreateJobResult, Json } from '@/types';
 
 export const createGenerationJob = async (
@@ -23,7 +24,7 @@ export const createGenerationJob = async (
   });
 
   if (error) {
-    console.error('Error creating job:', error);
+    logger.error('Error creating job', { error, userId, uploadId, prompt });
     return { success: false, job_id: null, message: error.message };
   }
 
@@ -45,7 +46,7 @@ export const getJob = async (jobId: string): Promise<Job | null> => {
     .single();
 
   if (error) {
-    console.error('Error fetching job:', error);
+    logger.error('Error fetching job', { error, jobId });
     return null;
   }
 
@@ -73,7 +74,7 @@ export const getUserJobs = async (
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching jobs:', error);
+    logger.error('Error fetching jobs', { error, userId, status, limit });
     return [];
   }
 
@@ -105,7 +106,7 @@ export const updateJobStatus = async (
     .eq('id', jobId);
 
   if (error) {
-    console.error('Error updating job status:', error);
+    logger.error('Error updating job status', { error, jobId, status, errorMessage });
     return false;
   }
 
@@ -118,16 +119,22 @@ export const updateJobParameters = async (
 ): Promise<boolean> => {
   const supabase = createAdminClient();
 
+  // Fetch existing parameters to merge
+  const { data: current } = await supabase
+    .from('jobs')
+    .select('parameters')
+    .eq('id', jobId)
+    .single();
+
+  const merged = { ...(current?.parameters as Record<string, unknown> ?? {}), ...params };
+
   const { error } = await supabase
     .from('jobs')
-    .update({
-      parameters: params as Json,
-      updated_at: new Date().toISOString(),
-    })
+    .update({ parameters: merged as Json })
     .eq('id', jobId);
 
   if (error) {
-    console.error('Error updating job parameters:', error);
+    logger.error('Error updating job parameters', { error, jobId });
     return false;
   }
 

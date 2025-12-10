@@ -1,5 +1,6 @@
 // src/lib/db/templates.ts
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logging';
 
 export interface PromptTemplate {
   id: string;
@@ -25,7 +26,7 @@ export const getTemplateById = async (templateId: string): Promise<PromptTemplat
     .single();
 
   if (error) {
-    console.error('Error fetching template:', error);
+    logger.error('Error fetching template', { error });
     return null;
   }
 
@@ -57,7 +58,7 @@ export const getTemplateBySlug = async (slug: string): Promise<PromptTemplate | 
     .single();
 
   if (error) {
-    console.error('Error fetching template by slug:', error);
+    logger.error('Error fetching template by slug', { error });
     return null;
   }
 
