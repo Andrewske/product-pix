@@ -42,11 +42,13 @@ export default function Home() {
         {/* Studio Lighting Effects */}
         <div className="absolute inset-0 studio-spotlight pointer-events-none" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[600px] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-20 left-10 w-96 h-96 ambient-wash ambient-wash-green opacity-20" />
+        <div className="absolute bottom-20 right-10 w-80 h-80 ambient-wash ambient-wash-green opacity-15" />
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="text-center space-y-8">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card/50 backdrop-blur-sm text-sm font-medium text-muted-foreground shadow-sm">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-accent/20 bg-accent/5 backdrop-blur-sm text-sm font-medium text-accent shadow-sm">
                 <Sparkles className="w-4 h-4 text-accent" />
                 <span>AI-Powered Studio Photography</span>
               </div>
@@ -67,14 +69,14 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
               <Button
                 size="lg"
-                className="bg-foreground text-background hover:bg-foreground/90 h-14 px-8 text-lg shadow-xl hover:shadow-2xl transition-all button-studio"
+                className="bg-foreground text-background hover:bg-accent border border-accent/20 hover:border-accent/40 h-14 px-8 text-lg shadow-xl hover:shadow-2xl transition-all button-studio"
               >
                 Start Creating Free <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="h-14 px-8 text-lg border-border hover:bg-muted/50 transition-all"
+                className="h-14 px-8 text-lg border-accent/30 text-accent hover:bg-accent/5 hover:border-accent/50 transition-all"
               >
                 View Gallery
               </Button>
@@ -266,7 +268,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
-              className="bg-foreground text-background hover:bg-foreground/90 h-14 px-10 text-lg shadow-xl button-studio"
+              className="bg-foreground text-background hover:bg-accent border border-accent/20 hover:border-accent/40 h-14 px-10 text-lg shadow-xl button-studio"
             >
               Get Started Free
             </Button>
