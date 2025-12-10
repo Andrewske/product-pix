@@ -59,9 +59,7 @@ export function loadPricingConfig(): PricingConfig {
     }
   }
 
-  // Compute dynamic fallback pricing
-  const allPrices: Array<{ input: number; output: number; modelId: string }> = [];
-
+  // Validate all pricing data
   for (const provider of requiredProviders) {
     const providerPricing = pricing[provider];
     if (!providerPricing) continue;
@@ -70,35 +68,16 @@ export function loadPricingConfig(): PricingConfig {
       if (typeof modelPricing.input !== 'number' || typeof modelPricing.output !== 'number') {
         throw new Error(`Invalid pricing for ${provider}.${modelId}: input and output must be numbers`);
       }
-      allPrices.push({
-        input: modelPricing.input,
-        output: modelPricing.output,
-        modelId: `${provider}.${modelId}`,
-      });
     }
   }
-
-  if (allPrices.length === 0) {
-    throw new Error('No pricing data found in config. At least one model must be configured per provider.');
-  }
-
-  const maxInput = Math.max(...allPrices.map(p => p.input));
-  const maxOutput = Math.max(...allPrices.map(p => p.output));
-  const fallbackSource = allPrices.find(p => p.input === maxInput && p.output === maxOutput)?.modelId || 'unknown';
 
   const config: PricingConfig = {
     anthropic: pricing.anthropic || {},
     openai: pricing.openai || {},
     google: pricing.google || {},
-    fallback: {
-      input: maxInput * 1.5,
-      output: maxOutput * 1.5,
-    },
-    fallbackSource,
   };
 
-  // Log computed fallback values for transparency
-  console.log(`💰 Pricing config loaded. Fallback pricing: input=$${config.fallback.input.toFixed(3)}/1M, output=$${config.fallback.output.toFixed(3)}/1M (from ${fallbackSource})`);
+  console.log(`💰 Pricing config loaded with ${Object.keys(config.anthropic).length + Object.keys(config.openai).length + Object.keys(config.google).length} models`);
 
   pricingConfigCache = config;
   return config;

@@ -38,9 +38,9 @@ export function PricingSection({ pricing, className = '' }: PricingSectionProps)
           {Object.values(pricing.packs).map((pack, index) => {
             const isPopular = index === 1;
             return (
-              <Card
+              <div
                 key={pack.slug}
-                className={`relative p-8 flex flex-col ${
+                className={`relative p-8 flex flex-col rounded-xl border bg-card text-card-foreground shadow ${
                   isPopular
                     ? 'border-primary shadow-2xl shadow-primary/10 scale-105 z-10'
                     : 'border-border bg-card/50'
@@ -121,20 +121,20 @@ export function PricingSection({ pricing, className = '' }: PricingSectionProps)
                   </li>
                 </ul>
 
-                <Link href="/signup" className="w-full">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    variant={isPopular ? 'default' : 'outline'}
-                    aria-describedby={`plan-${pack.slug}-cta-description`}
-                  >
-                    Get Started
-                  </Button>
-                  <span id={`plan-${pack.slug}-cta-description`} className="sr-only">
-                    Purchase {pack.slug.replace('pack_', '')} credits for ${(pack.priceCents / 100).toFixed(2)}
-                  </span>
-                </Link>
-              </Card>
+                 <Link href="/signup" className="w-full">
+                   <Button
+                     className="w-full"
+                     size="lg"
+                     variant={isPopular ? 'default' : 'outline'}
+                     aria-describedby={`plan-${pack.slug}-cta-description`}
+                   >
+                     Get Started
+                   </Button>
+                   <span id={`plan-${pack.slug}-cta-description`} className="sr-only">
+                     Purchase {pack.slug.replace('pack_', '')} credits for ${(pack.priceCents / 100).toFixed(2)}
+                   </span>
+                 </Link>
+               </div>
             );
           })}
         </div>

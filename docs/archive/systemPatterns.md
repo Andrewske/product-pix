@@ -9,7 +9,7 @@
 ## Coding Standards (from AGENTS.md)
 - **FP First**: Pure functions, immutability.
 - **Naming**: kebab-case (files), camelCase (functions), PascalCase (types).
-- **Testing**: Jest with ts-jest.
+- **Testing**: Bun test.
 - **Validation**: Zod.
 - **Error Handling**: Result type pattern.
 

@@ -20,11 +20,10 @@ export function FinalCTASection({ className = '' }: FinalCTASectionProps) {
           Join thousands of sellers creating professional product photos in seconds.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center" role="group" aria-label="Final call-to-action">
-          <Link href="/signup">
+          <Link href="/signup" aria-describedby="final-cta-button-description">
             <Button
               size="lg"
               className="text-lg px-10 py-6 h-auto w-full sm:w-auto"
-              aria-describedby="final-cta-button-description"
             >
               Get Started for Free
             </Button>

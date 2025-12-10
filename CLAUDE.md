@@ -113,9 +113,8 @@ prompt-bench/   # Isolated CLI testing framework
 - **Functions**: ≤20 lines, ≤3 nesting levels
 - **Pricing config**: `prompt-bench.toml` at project root (committed)
 - **Pricing updates**: User manually updates TOML when provider rates change
-- **Fallback pricing**: Computed as MAX(all prices) * 1.5
-- **Model matching**: Exact → prefix → fallback
-- **Unknown models**: Use fallback, never guess provider
+- **Model matching**: Exact → prefix → error
+- **Unknown models**: Throw error, never guess provider
 
 ## Gotchas
 

@@ -257,7 +257,6 @@ export type Database = {
       generation_costs: {
         Row: {
           created_at: string | null
-          fallback_used: boolean | null
           generated_image_id: string | null
           id: string
           input_cost_usd: number
@@ -271,21 +270,19 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          fallback_used?: boolean | null
           generated_image_id?: string | null
           id?: string
           input_cost_usd: number
           input_tokens: number
+          output_tokens: number
           job_id?: string | null
           model_id: string
           output_cost_usd: number
-          output_tokens: number
           provider: string
           total_cost_usd: number
         }
         Update: {
           created_at?: string | null
-          fallback_used?: boolean | null
           generated_image_id?: string | null
           id?: string
           input_cost_usd?: number

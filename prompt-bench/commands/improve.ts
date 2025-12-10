@@ -196,14 +196,17 @@ const createNewSessionForCommand = async (
 
   // Note: Batch validation is done during baseline testing, not here
 
+  const loadedConfig = loadConfig();
+  const improveConfig = loadedConfig?.defaults?.improve;
+
   const config: ImprovementConfig = {
     template: options.template,
     batchFile: options.batch,
     maxIterations: options['max-iterations'] || 5,
     targetScore: options['target-score'] || 9.0,
     autoApprove: options['auto-approve'] || false,
-    versionTemplates: true, // TODO: load from config
-    aiModel: 'claude-sonnet-4-20250514', // TODO: load from config
+    versionTemplates: improveConfig?.version_templates ?? true,
+    aiModel: improveConfig?.ai_model || loadedConfig?.defaults?.improvement_model || 'claude-sonnet-4-20250514',
   };
 
   const result = await createSession(options.template, config);
@@ -496,7 +499,7 @@ const testBaseline = async (
     skipEval: false,
     skipReport: true,
     dryRun: false,
-    evalModel: 'claude-sonnet-4-20250514',
+    evalModel: session.config.aiModel,
   });
 
   if (!pipelineResult.ok) {
@@ -644,7 +647,7 @@ const testImproved = async (
     skipEval: false,
     skipReport: true, // Skip report for now (can be enabled later)
     dryRun: false,
-    evalModel: 'claude-sonnet-4-20250514', // TODO: add to config
+    evalModel: session.config.aiModel,
   });
 
   if (!pipelineResult.ok) {
@@ -887,12 +890,19 @@ const calculateDimensionAverages = (evaluations: ProductScore[]): EvaluationBrea
 /**
  * Validate that a batch has minimum required evaluations
  */
+interface BatchValidationDeps {
+  createClient?: typeof createAdminClient;
+  fetchEvaluations?: typeof fetchBatchEvaluations;
+}
+
 export const validateBatchSize = async (
   batchLabel: string,
-  force: boolean = false
+  force: boolean = false,
+  deps: BatchValidationDeps = {}
 ): Promise<Result<void>> => {
-  const supabase = createAdminClient();
-  const evaluations = await fetchBatchEvaluations(supabase, batchLabel);
+  const { createClient = createAdminClient, fetchEvaluations = fetchBatchEvaluations } = deps;
+  const supabase = createClient();
+  const evaluations = await fetchEvaluations(supabase, batchLabel);
 
   const count = evaluations.length;
 
@@ -900,14 +910,14 @@ export const validateBatchSize = async (
     if (force) {
       console.warn(`⚠️  Warning: Batch '${batchLabel}' has only ${count} evaluations (minimum 5 required). Proceeding with --force.`);
       return ok(undefined);
-    } else {
-      return err(
-        createError(
-          'VALIDATION_ERROR',
-          `Batch '${batchLabel}' has only ${count} completed evaluations. Minimum 5 required. Use --force to override.`
-        )
-      );
     }
+
+    return err(
+      createError(
+        'VALIDATION_ERROR',
+        `Batch '${batchLabel}' has only ${count} completed evaluations. Minimum 5 required. Use --force to override.`
+      )
+    );
   }
 
   return ok(undefined);

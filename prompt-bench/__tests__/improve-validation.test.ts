@@ -1,15 +1,19 @@
-import { validateBatchSize } from '../commands/improve';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
-// Mock the entire shared module to avoid complex mocking
-jest.mock('../commands/shared', () => ({
-  fetchBatchEvaluations: jest.fn(),
-}));
-
-const mockFetchBatchEvaluations = require('../commands/shared').fetchBatchEvaluations;
+const { validateBatchSize } = await import('../commands/improve');
 
 describe('validateBatchSize', () => {
+  let mockCreateClient: ReturnType<typeof mock>;
+  let mockFetchBatchEvaluations: ReturnType<typeof mock>;
+
+  const createDeps = () => ({
+    createClient: mockCreateClient,
+    fetchEvaluations: mockFetchBatchEvaluations,
+  });
+
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockCreateClient = mock(() => ({}));
+    mockFetchBatchEvaluations = mock(async () => []);
   });
 
   it('should return success for batch with 5 or more evaluations', async () => {
@@ -20,12 +24,14 @@ describe('validateBatchSize', () => {
       { testId: '4', score: 7.1, details: {} },
       { testId: '5', score: 6.9, details: {} },
     ];
-    
+
     mockFetchBatchEvaluations.mockResolvedValue(mockData);
-    
-    const result = await validateBatchSize('test-batch', false);
-    
+
+    const result = await validateBatchSize('test-batch', false, createDeps());
+
     expect(result.ok).toBe(true);
+    expect(mockCreateClient).toHaveBeenCalledTimes(1);
+    expect(mockFetchBatchEvaluations).toHaveBeenCalledWith(expect.anything(), 'test-batch');
   });
 
   it('should return error for batch with fewer than 5 evaluations', async () => {
@@ -37,7 +43,7 @@ describe('validateBatchSize', () => {
 
     mockFetchBatchEvaluations.mockResolvedValue(mockData);
 
-    const result = await validateBatchSize('test-batch', false);
+    const result = await validateBatchSize('test-batch', false, createDeps());
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -46,21 +52,18 @@ describe('validateBatchSize', () => {
   });
 
   it('should allow small batches when force is true', async () => {
-    const mockData = [
-      { testId: '1', score: 7.5, details: {} },
-    ];
-    
+    const mockData = [{ testId: '1', score: 7.5, details: {} }];
     mockFetchBatchEvaluations.mockResolvedValue(mockData);
-    
-    const result = await validateBatchSize('test-batch', true);
-    
+
+    const result = await validateBatchSize('test-batch', true, createDeps());
+
     expect(result.ok).toBe(true);
   });
 
   it('should handle empty batch results', async () => {
     mockFetchBatchEvaluations.mockResolvedValue([]);
 
-    const result = await validateBatchSize('test-batch', false);
+    const result = await validateBatchSize('test-batch', false, createDeps());
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

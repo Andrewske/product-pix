@@ -20,7 +20,7 @@
 - **Coverage**: 70% minimum for branches/functions/lines/statements
 
 ## Testing
-- **Framework**: Jest with ts-jest, ESM support
+- **Framework**: Bun test, ESM support
 - **Location**: `src/**/__tests__/**/*.test.ts`
 - **Path mapping**: `@/*` resolves to `./src/*`
 - **Coverage**: Only `src/lib/prompts/` (excludes index.ts and test files)

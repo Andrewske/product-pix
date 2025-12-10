@@ -1,20 +1,39 @@
-// Mock dependencies before importing the module
-jest.mock('@/lib/auth/server', () => ({
-  requireAuth: jest.fn(),
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import type { User } from '@supabase/supabase-js';
+
+// Create mock functions
+const mockRequireAuth = mock(async () => null as User | null);
+const mockGetOrCreateStripeCustomer = mock(async (_userId: string, _email: string) => '');
+const mockGetPricing = mock(async () => ({
+  packs: {},
+  subscriptions: {},
+  economy: {
+    creditsPerResolution: { '1k': 1, '2k': 2, '4k': 4 },
+    freeCreditsOnSignup: 10,
+  },
 }));
-jest.mock('@/lib/stripe/client', () => ({
+const mockStripeSessionsCreate = mock(async () => ({ id: '', url: '' }));
+
+// Mock modules before importing
+mock.module('@/lib/auth/server', () => ({
+  requireAuth: mockRequireAuth,
+}));
+
+mock.module('@/lib/stripe/client', () => ({
   stripe: {
     checkout: {
       sessions: {
-        create: jest.fn(),
+        create: mockStripeSessionsCreate,
       },
     },
   },
 }));
-jest.mock('@/lib/stripe/customer', () => ({
-  getOrCreateStripeCustomer: jest.fn(),
+
+mock.module('@/lib/stripe/customer', () => ({
+  getOrCreateStripeCustomer: mockGetOrCreateStripeCustomer,
 }));
-jest.mock('@/lib/stripe/products', () => ({
+
+mock.module('@/lib/stripe/products', () => ({
   CREDIT_PACKS: {
     pack_50: { credits: 50, priceId: 'price_pack_50' },
     pack_200: { credits: 200, priceId: 'price_pack_200' },
@@ -25,22 +44,13 @@ jest.mock('@/lib/stripe/products', () => ({
     business: { credits: 600, priceId: 'price_business_monthly' },
   },
 }));
-jest.mock('@/lib/pricing/actions', () => ({
-  getPricing: jest.fn(),
+
+mock.module('@/lib/pricing/actions', () => ({
+  getPricing: mockGetPricing,
 }));
 
-import { User } from '@supabase/supabase-js';
-import { requireAuth } from '@/lib/auth/server';
-import { stripe } from '@/lib/stripe/client';
-import { getOrCreateStripeCustomer } from '@/lib/stripe/customer';
-import { CREDIT_PACKS, SUBSCRIPTION_TIERS } from '@/lib/stripe/products';
-import { getPricing } from '@/lib/pricing/actions';
-import { createPackCheckout, createSubscriptionCheckout, getPricingForModal } from '../checkout-actions';
-
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
-const mockStripe = stripe as jest.Mocked<any>;
-const mockGetOrCreateStripeCustomer = getOrCreateStripeCustomer as jest.MockedFunction<typeof getOrCreateStripeCustomer>;
-const mockGetPricing = getPricing as jest.MockedFunction<typeof getPricing>;
+// Import after mocking
+const { createPackCheckout, createSubscriptionCheckout, getPricingForModal } = await import('../checkout-actions');
 
 describe('Stripe Checkout Actions', () => {
   const mockUser: User = {
@@ -56,7 +66,11 @@ describe('Stripe Checkout Actions', () => {
   const mockSessionUrl = 'https://checkout.stripe.com/test-session';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    // Reset all mocks
+    mockRequireAuth.mockReset();
+    mockGetOrCreateStripeCustomer.mockReset();
+    mockGetPricing.mockReset();
+    mockStripeSessionsCreate.mockReset();
 
     // Setup default mocks
     mockRequireAuth.mockResolvedValue(mockUser);
@@ -70,21 +84,10 @@ describe('Stripe Checkout Actions', () => {
       },
     });
 
-    // Mock the products
-    (CREDIT_PACKS as any).pack_50 = {
-      credits: 50,
-      priceId: 'price_pack_50',
-    };
-
-    (SUBSCRIPTION_TIERS as any).pro = {
-      credits: 200,
-      priceId: 'price_pro_monthly',
-    };
-
-    mockStripe.checkout.sessions.create.mockResolvedValue({
+    mockStripeSessionsCreate.mockResolvedValue({
       id: 'cs_test123',
       url: mockSessionUrl,
-    } as any);
+    });
   });
 
   describe('getPricingForModal', () => {
@@ -120,7 +123,7 @@ describe('Stripe Checkout Actions', () => {
 
       expect(mockRequireAuth).toHaveBeenCalledTimes(1);
       expect(mockGetOrCreateStripeCustomer).toHaveBeenCalledWith(mockUser.id, mockUser.email);
-      expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith({
+      expect(mockStripeSessionsCreate).toHaveBeenCalledWith({
         customer: mockCustomerId,
         mode: 'payment',
         line_items: [{ price: 'price_pack_50', quantity: 1 }],
@@ -134,7 +137,7 @@ describe('Stripe Checkout Actions', () => {
     });
 
     it('should throw error when user has no email', async () => {
-      mockRequireAuth.mockResolvedValue({ ...mockUser, email: undefined as any });
+      mockRequireAuth.mockResolvedValue({ ...mockUser, email: undefined as unknown as string });
 
       await expect(createPackCheckout('pack_50')).rejects.toThrow(
         'Failed to create credit pack checkout: Email is required to create a checkout session'
@@ -142,13 +145,13 @@ describe('Stripe Checkout Actions', () => {
     });
 
     it('should throw error for invalid pack ID', async () => {
-      await expect(createPackCheckout('invalid_pack' as any)).rejects.toThrow(
+      await expect(createPackCheckout('invalid_pack' as 'pack_50')).rejects.toThrow(
         'Failed to create credit pack checkout: Invalid credit pack ID: invalid_pack'
       );
     });
 
     it('should throw error when Stripe session creation fails', async () => {
-      mockStripe.checkout.sessions.create.mockRejectedValue(new Error('Stripe API error'));
+      mockStripeSessionsCreate.mockRejectedValue(new Error('Stripe API error'));
 
       await expect(createPackCheckout('pack_50')).rejects.toThrow(
         'Failed to create credit pack checkout: Stripe API error'
@@ -156,7 +159,7 @@ describe('Stripe Checkout Actions', () => {
     });
 
     it('should throw error when session URL is missing', async () => {
-      mockStripe.checkout.sessions.create.mockResolvedValue({ id: 'cs_test123' } as any);
+      mockStripeSessionsCreate.mockResolvedValue({ id: 'cs_test123', url: null });
 
       await expect(createPackCheckout('pack_50')).rejects.toThrow(
         'Failed to create credit pack checkout: Failed to create checkout session URL'
@@ -186,7 +189,7 @@ describe('Stripe Checkout Actions', () => {
 
       expect(mockRequireAuth).toHaveBeenCalledTimes(1);
       expect(mockGetOrCreateStripeCustomer).toHaveBeenCalledWith(mockUser.id, mockUser.email);
-      expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith({
+      expect(mockStripeSessionsCreate).toHaveBeenCalledWith({
         customer: mockCustomerId,
         mode: 'subscription',
         line_items: [{ price: 'price_pro_monthly', quantity: 1 }],
@@ -200,7 +203,7 @@ describe('Stripe Checkout Actions', () => {
     });
 
     it('should throw error when user has no email', async () => {
-      mockRequireAuth.mockResolvedValue({ ...mockUser, email: undefined as any });
+      mockRequireAuth.mockResolvedValue({ ...mockUser, email: undefined as unknown as string });
 
       await expect(createSubscriptionCheckout('pro')).rejects.toThrow(
         'Failed to create subscription checkout: Email is required to create a checkout session'
@@ -208,13 +211,13 @@ describe('Stripe Checkout Actions', () => {
     });
 
     it('should throw error for invalid subscription tier', async () => {
-      await expect(createSubscriptionCheckout('invalid_tier' as any)).rejects.toThrow(
+      await expect(createSubscriptionCheckout('invalid_tier' as 'pro')).rejects.toThrow(
         'Failed to create subscription checkout: Invalid subscription tier: invalid_tier'
       );
     });
 
     it('should throw error when Stripe session creation fails', async () => {
-      mockStripe.checkout.sessions.create.mockRejectedValue(new Error('Stripe API error'));
+      mockStripeSessionsCreate.mockRejectedValue(new Error('Stripe API error'));
 
       await expect(createSubscriptionCheckout('pro')).rejects.toThrow(
         'Failed to create subscription checkout: Stripe API error'
@@ -222,7 +225,7 @@ describe('Stripe Checkout Actions', () => {
     });
 
     it('should throw error when session URL is missing', async () => {
-      mockStripe.checkout.sessions.create.mockResolvedValue({ id: 'cs_test123' } as any);
+      mockStripeSessionsCreate.mockResolvedValue({ id: 'cs_test123', url: null });
 
       await expect(createSubscriptionCheckout('pro')).rejects.toThrow(
         'Failed to create subscription checkout: Failed to create checkout session URL'

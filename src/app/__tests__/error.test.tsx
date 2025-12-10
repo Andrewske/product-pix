@@ -1,11 +1,9 @@
 import React from 'react';
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, it, expect, mock } from 'bun:test';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import Error from '../error';
 
 // Mock the UI components
-jest.mock('@/components/ui/button', () => ({
+mock.module('@/components/ui/button', () => ({
   Button: ({ children, onClick, className }: { children: React.ReactNode; onClick: () => void; className?: string }) => (
     <button onClick={onClick} className={className}>
       {children}
@@ -13,7 +11,7 @@ jest.mock('@/components/ui/button', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/card', () => ({
+mock.module('@/components/ui/card', () => ({
   Card: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>,
   CardHeader: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>,
   CardTitle: ({ children, className }: { children: React.ReactNode; className?: string }) => <h1 className={className}>{children}</h1>,
@@ -21,13 +19,16 @@ jest.mock('@/components/ui/card', () => ({
   CardContent: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>,
 }));
 
+// Dynamic import after mocking
+const { default: Error } = await import('../error');
+
 describe('Error Boundary', () => {
   it('renders error message and reset button', () => {
     const mockError: Error & { digest?: string } = {
       name: 'Error',
       message: 'Test pricing error',
     };
-    const mockReset = jest.fn();
+    const mockReset = mock(() => {});
 
     render(<Error error={mockError} reset={mockReset} />);
 
@@ -42,7 +43,7 @@ describe('Error Boundary', () => {
       name: 'Error',
       message: 'Network error',
     };
-    const mockReset = jest.fn();
+    const mockReset = mock(() => {});
 
     render(<Error error={mockError} reset={mockReset} />);
 
@@ -58,7 +59,7 @@ describe('Error Boundary', () => {
       message: 'Database connection failed',
       digest: 'error-digest-123',
     };
-    const mockReset = jest.fn();
+    const mockReset = mock(() => {});
 
     render(<Error error={mockError} reset={mockReset} />);
 

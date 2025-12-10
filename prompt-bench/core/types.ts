@@ -206,7 +206,7 @@ export type RunCommandOptions = z.infer<typeof RunCommandOptionsSchema>;
  */
 export const EvaluateCommandOptionsSchema = z.object({
   label: z.string().min(1),
-  model: z.string().default('claude-sonnet-4-20250514'),
+  model: z.string().default('claude-sonnet-4-20250514'), // TODO: load from config
 });
 
 export type EvaluateCommandOptions = z.infer<typeof EvaluateCommandOptionsSchema>;

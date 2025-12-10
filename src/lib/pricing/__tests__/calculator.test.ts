@@ -1,19 +1,22 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { calculateCost } from '../calculator';
-import { getProviderForModel, getPricingForModel } from '../models';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
 // Mock the model functions
-jest.mock('../models', () => ({
-  getProviderForModel: jest.fn(),
-  getPricingForModel: jest.fn(),
+mock.module('../models', () => ({
+  getProviderForModel: mock(),
+  getPricingForModel: mock(),
 }));
 
-const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<typeof getProviderForModel>;
-const mockGetPricingForModel = getPricingForModel as jest.MockedFunction<typeof getPricingForModel>;
+// Dynamic import after mocking
+const { calculateCost } = await import('../calculator');
+const { getProviderForModel, getPricingForModel } = await import('../models');
+
+const mockGetProviderForModel = getProviderForModel as ReturnType<typeof mock>;
+const mockGetPricingForModel = getPricingForModel as ReturnType<typeof mock>;
 
 describe('Cost Calculator', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetProviderForModel.mockReset();
+    mockGetPricingForModel.mockReset();
   });
 
   it('should calculate costs correctly for known models', () => {
@@ -27,7 +30,6 @@ describe('Cost Calculator', () => {
     expect(result.total).toBe(10.5);
     expect(result.modelId).toBe('claude-sonnet-4');
     expect(result.provider).toBe('anthropic');
-    expect(result.fallbackUsed).toBe(false);
   });
 
   it('should handle zero token usage', () => {
@@ -38,7 +40,6 @@ describe('Cost Calculator', () => {
     expect(result.inputCost).toBe(0);
     expect(result.outputCost).toBe(0);
     expect(result.total).toBe(0);
-    expect(result.fallbackUsed).toBe(false);
   });
 
   it('should throw error for negative input tokens', () => {
@@ -75,17 +76,14 @@ describe('Cost Calculator', () => {
     expect(result.total).toBe(3.75);
   });
 
-  it('should mark fallback usage for unknown models', () => {
-    mockGetProviderForModel.mockReturnValue('unknown');
-    mockGetPricingForModel.mockReturnValue({ input: 22.5, output: 112.5 });
+  it('should throw error for unknown models', () => {
+    mockGetProviderForModel.mockImplementation(() => {
+      throw new Error('Model \'unknown-model-xyz\' is not configured in pricing');
+    });
 
-    const result = calculateCost('unknown-model-xyz', { input: 1_000_000, output: 500_000 });
-
-    expect(result.provider).toBe('unknown');
-    expect(result.fallbackUsed).toBe(true);
-    expect(result.inputCost).toBe(22.5);
-    expect(result.outputCost).toBe(56.25);
-    expect(result.total).toBe(78.75);
+    expect(() => calculateCost('unknown-model-xyz', { input: 1_000_000, output: 500_000 })).toThrow(
+      'Model \'unknown-model-xyz\' is not configured in pricing'
+    );
   });
 
   it('should handle mixed zero and non-zero tokens', () => {

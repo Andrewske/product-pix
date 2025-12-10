@@ -1,0 +1,4 @@
+[test]
+preload = ["./bun-test-setup.ts"]
+timeout = 10000
+max-concurrency = 1

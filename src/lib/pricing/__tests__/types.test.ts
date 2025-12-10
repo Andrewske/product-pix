@@ -6,8 +6,8 @@ describe('Pricing Types', () => {
     const provider: Provider = 'anthropic';
     expect(provider).toBe('anthropic');
 
-    const providers: Provider[] = ['anthropic', 'openai', 'google', 'unknown'];
-    expect(providers).toHaveLength(4);
+    const providers: Provider[] = ['anthropic', 'openai', 'google'];
+    expect(providers).toHaveLength(3);
   });
 
   it('should export ModelPricing interface', () => {
@@ -30,12 +30,8 @@ describe('Pricing Types', () => {
       google: {
         'gemini-3-pro-image-preview': { input: 0.075, output: 0.3 },
       },
-      fallback: { input: 22.5, output: 112.5 },
-      fallbackSource: 'claude-opus-4-5',
     };
     expect(config.anthropic['claude-sonnet-4'].input).toBe(3.0);
-    expect(config.fallback.input).toBe(22.5);
-    expect(config.fallbackSource).toBe('claude-opus-4-5');
   });
 
   it('should export TokenUsage interface', () => {
@@ -54,10 +50,8 @@ describe('Pricing Types', () => {
       total: 10.50,
       modelId: 'claude-sonnet-4-20250514',
       provider: 'anthropic',
-      fallbackUsed: false,
     };
     expect(result.total).toBe(10.50);
     expect(result.provider).toBe('anthropic');
-    expect(result.fallbackUsed).toBe(false);
   });
 });

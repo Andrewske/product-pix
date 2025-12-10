@@ -101,7 +101,7 @@ describe('FinalCTASection', () => {
     it('applies responsive button sizing', () => {
       render(<FinalCTASection />);
 
-      const button = screen.getByRole('link', { name: /get started for free/i });
+      const button = screen.getByRole('button', { name: /get started for free/i });
       expect(button).toHaveClass('w-full', 'sm:w-auto');
     });
 
