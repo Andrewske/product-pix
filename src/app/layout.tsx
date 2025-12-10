@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from 'next/font/google';
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 import { ThemeProvider } from "@/components/theme-provider";
+import { LayoutWrapper } from "@/components/layout-wrapper";
 
-const inter = Inter({ subsets: ['latin'] });
+const geist = Geist({ subsets: ["latin"] });
+const geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'ProductPix - AI Product Photo Generator',
@@ -19,18 +19,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning style={{ scrollBehavior: 'smooth' }}>
-      <body className={inter.className}>
+      <body className={`${geist.className} ${geistMono.className} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem={false}
           disableTransitionOnChange
         >
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-          </div>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
         </ThemeProvider>
       </body>
     </html>
