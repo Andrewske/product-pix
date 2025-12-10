@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
-import type { PricingConfig } from '../config';
+import type { PricingConfig } from '../types';
+
+const mockLoadPricingConfig = mock(() => mockConfig);
 
 // Mock config loader
 mock.module('../config', () => ({
   loadPricingConfig: mockLoadPricingConfig,
 }));
-
-const mockLoadPricingConfig = mock(() => mockConfig);
 
 const mockConfig: PricingConfig = {
   anthropic: {
