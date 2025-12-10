@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Zap, ImageIcon, Download, Sparkles, ArrowUpRight } from "lucide-react"
 import { Metadata } from "next"
@@ -92,7 +93,6 @@ export default function Home() {
                />
              </div>
            </div>
-
           </div>
         </div>
       </section>
@@ -120,7 +120,7 @@ export default function Home() {
                       After <ArrowUpRight className="w-3 h-3" />
                     </div>
                   </div>
-                  
+
                   <div className="text-center">
                     <div className="w-32 h-32 bg-muted/20 rounded-lg flex items-center justify-center mb-2">
                        <ImageIcon className="w-12 h-12 text-muted-foreground/20" />
@@ -146,10 +146,10 @@ export default function Home() {
                 Photo Studio
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Forget booking photographers, renting studios, or learning complex software. 
+                Forget booking photographers, renting studios, or learning complex software.
                 ProductPix gives you a full production team in your browser.
               </p>
-              
+
               <div className="space-y-6 pt-4">
                 {[
                   { title: "Upload", desc: "Drag & drop your raw product shot." },
@@ -168,7 +168,7 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            
+
             <div className="relative">
               <div className="aspect-square rounded-2xl bg-gradient-to-br from-card to-background border border-border/50 shadow-2xl flex items-center justify-center p-12 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.05),transparent)]" />
@@ -178,7 +178,7 @@ export default function Home() {
                    <div className="bg-muted/10 rounded-lg" />
                    <div className="bg-muted/10 rounded-lg" />
                 </div>
-                
+
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="bg-background/50 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl text-center">
                     <Sparkles className="w-12 h-12 text-foreground mx-auto mb-4" />
@@ -194,7 +194,7 @@ export default function Home() {
       {/* Pricing - Minimalist Cards */}
       <section id="pricing" className="w-full py-32 relative">
         <div className="absolute inset-0 bg-muted/5 skew-y-3 transform origin-bottom-right pointer-events-none" />
-        
+
         <div className="max-w-6xl mx-auto px-4 relative">
           <div className="text-center mb-24">
             <h2 className="text-4xl font-bold mb-6">Simple Pricing</h2>
@@ -210,8 +210,8 @@ export default function Home() {
               <div
                 key={plan.credits}
                 className={`rounded-2xl p-8 transition-all duration-300 ${
-                  plan.featured 
-                    ? "bg-foreground text-background shadow-2xl scale-105 z-10" 
+                  plan.featured
+                    ? "bg-foreground text-background shadow-2xl scale-105 z-10"
                     : "bg-card border border-border/50 text-foreground hover:border-foreground/20"
                 }`}
               >
@@ -226,7 +226,7 @@ export default function Home() {
                     {plan.credits} Credits • {plan.costPerPhoto}/photo
                   </p>
                 </div>
-                
+
                 <ul className="space-y-4 mb-8 text-sm">
                   <li className="flex items-center gap-2">
                     <Zap className="w-4 h-4" /> Commercial License
@@ -241,8 +241,8 @@ export default function Home() {
 
                 <Button
                   className={`w-full h-12 ${
-                    plan.featured 
-                      ? "bg-background text-foreground hover:bg-background/90" 
+                    plan.featured
+                      ? "bg-background text-foreground hover:bg-background/90"
                       : "bg-foreground text-background hover:bg-foreground/90"
                   }`}
                   variant={plan.featured ? "secondary" : "default"}
