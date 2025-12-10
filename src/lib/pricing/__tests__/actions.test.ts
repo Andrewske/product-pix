@@ -180,5 +180,14 @@ describe('Pricing Actions', () => {
       await expect(getPricing()).rejects.toThrow('Pricing data fetch failed: Unknown error');
       expect(mockFetchStripePrices).toHaveBeenCalledTimes(1);
     });
+
+    it('should throw error that can be caught by error boundary', async () => {
+      const networkError = new Error('Network connection failed');
+      mockFetchStripePrices.mockRejectedValue(networkError);
+
+      // This test verifies that getPricing throws an error that would be caught
+      // by the app-level error boundary when called from a page component
+      await expect(getPricing()).rejects.toThrow('Pricing data fetch failed: Network connection failed');
+    });
   });
 });

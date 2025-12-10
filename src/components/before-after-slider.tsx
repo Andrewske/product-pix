@@ -27,21 +27,40 @@ export function BeforeAfterSlider({ beforeImage, afterImage, product, category }
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 0) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const percentage = (x / rect.width) * 100;
     setSliderPosition(Math.min(Math.max(percentage, 0), 100));
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setSliderPosition(prev => Math.max(prev - 5, 0));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setSliderPosition(prev => Math.min(prev + 5, 100));
+    }
+  };
+
   return (
     <div className="relative w-full max-w-md mx-auto">
       <div
-        className="relative aspect-square overflow-hidden rounded-lg shadow-lg cursor-ew-resize select-none"
+        className="relative aspect-square overflow-hidden rounded-lg shadow-lg cursor-ew-resize select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        tabIndex={0}
+        role="slider"
+        aria-label={`Compare ${product} before and after images`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={sliderPosition}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onMouseMove={handleMouseMove}
         onTouchMove={handleTouchMove}
+        onKeyDown={handleKeyDown}
       >
         {/* After image (full width) */}
         <Image
@@ -50,6 +69,7 @@ export function BeforeAfterSlider({ beforeImage, afterImage, product, category }
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 50vw"
+          priority
         />
 
         {/* Before image (clipped) */}
@@ -63,6 +83,7 @@ export function BeforeAfterSlider({ beforeImage, afterImage, product, category }
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
+            priority
           />
         </div>
 
