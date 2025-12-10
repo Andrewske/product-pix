@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AccountTab } from './account-tab';
 import { CreditsTab } from './credits-tab';
+import { BillingTab } from './billing-tab';
 
 export function SettingsTabs() {
   const searchParams = useSearchParams();
@@ -53,12 +54,7 @@ export function SettingsTabs() {
 
       <div className="py-6">
         {currentTab === 'account' && <AccountTab />}
-        {currentTab === 'billing' && (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Billing Settings</h3>
-            <p className="text-gray-500">Billing settings will be implemented here.</p>
-          </div>
-        )}
+        {currentTab === 'billing' && <BillingTab />}
         {currentTab === 'credits' && <CreditsTab />}
       </div>
     </div>
