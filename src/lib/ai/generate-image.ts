@@ -13,7 +13,6 @@ import { env } from '@/lib/env';
 export interface GenerateImageParams {
   jobId: string;
   userId: string;
-  prompt: string;
   sourceImage?: Buffer;
   sourceMimeType?: string;
   sourceFilename?: string;

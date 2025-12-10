@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/components/forms/upload-form';
-import { PromptInput } from '@/components/forms/prompt-input';
+import { TemplateSelector } from '@/components/forms/template-selector';
 import { GenerationResult } from '@/components/generation-result';
 import { GenerationLoading } from '@/components/generation-loading';
 import { InsufficientCreditsModal } from '@/components/generation/insufficient-credits-modal';
@@ -20,7 +20,7 @@ export default function GeneratePage() {
 
   const [uploadId, setUploadId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState('Professional product photo on clean white background with soft shadows');
+  const [templateId, setTemplateId] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{ imageUrl: string; jobId: string } | null>(null);
@@ -35,8 +35,8 @@ export default function GeneratePage() {
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError('Please enter a prompt');
+    if (!templateId) {
+      setError('Please select a template');
       return;
     }
 
@@ -55,7 +55,7 @@ export default function GeneratePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uploadId: uploadId || undefined,
-          prompt,
+          templateId,
           aspectRatio,
           resolution: '1k',
         }),
@@ -132,10 +132,10 @@ export default function GeneratePage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-medium mb-4">2. Describe the Output</h2>
-            <PromptInput
-              value={prompt}
-              onChange={setPrompt}
+            <h2 className="text-lg font-medium mb-4">2. Select Style</h2>
+            <TemplateSelector
+              value={templateId}
+              onChange={setTemplateId}
               disabled={generating}
             />
           </div>

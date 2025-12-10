@@ -34,9 +34,10 @@ export interface BatchItem {
   sequence_number: number;
   status: BatchItemStatus;
   product_name: string | null;
-  prompt: string;
+  prompt: string | null;
   source_image_url: string | null;
   parameters: Json;
+  template_id: string | null;
   generated_image_id: string | null;
   error_message: string | null;
   started_at: string | null;

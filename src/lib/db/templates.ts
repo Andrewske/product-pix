@@ -73,3 +73,32 @@ export const getTemplateBySlug = async (slug: string): Promise<PromptTemplate | 
     createdBy: data.created_by || undefined,
   };
 };
+
+/**
+ * Fetch all active templates
+ */
+export const getAllActiveTemplates = async (): Promise<PromptTemplate[]> => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('prompt_templates')
+    .select('*')
+    .eq('status', 'active')
+    .order('slug');
+
+  if (error) {
+    logger.error('Error fetching active templates', { error });
+    return [];
+  }
+
+  return data.map((template) => ({
+    id: template.id,
+    slug: template.slug,
+    version: template.version,
+    status: template.status,
+    templateData: template.template_data as Record<string, unknown>,
+    variablesSchema: template.variables_schema as Record<string, unknown>,
+    createdAt: template.created_at,
+    createdBy: template.created_by || undefined,
+  }));
+};

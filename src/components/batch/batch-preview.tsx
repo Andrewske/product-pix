@@ -91,7 +91,7 @@ export function BatchPreview({
                           </div>
                         )}
                         <div className="text-muted-foreground truncate">
-                          {item.prompt}
+                          Template: {item.template_slug}
                         </div>
                       </div>
                       <div className="ml-2 flex gap-1">

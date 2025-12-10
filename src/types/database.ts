@@ -7,36 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       batch_items: {
@@ -49,11 +19,12 @@ export type Database = {
           id: string
           parameters: Json | null
           product_name: string | null
-          prompt: string
+          prompt: string | null
           sequence_number: number
           source_image_url: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["batch_item_status"]
+          template_id: string | null
           user_id: string
         }
         Insert: {
@@ -65,11 +36,12 @@ export type Database = {
           id?: string
           parameters?: Json | null
           product_name?: string | null
-          prompt: string
+          prompt?: string | null
           sequence_number: number
           source_image_url?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["batch_item_status"]
+          template_id?: string | null
           user_id: string
         }
         Update: {
@@ -81,11 +53,12 @@ export type Database = {
           id?: string
           parameters?: Json | null
           product_name?: string | null
-          prompt?: string
+          prompt?: string | null
           sequence_number?: number
           source_image_url?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["batch_item_status"]
+          template_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -235,7 +208,6 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
-          title: string | null
           user_id: string
           width: number | null
         }
@@ -249,7 +221,6 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
-          title?: string | null
           user_id: string
           width?: number | null
         }
@@ -263,7 +234,6 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
-          title?: string | null
           user_id?: string
           width?: number | null
         }
@@ -437,13 +407,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "jobs_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "prompt_templates"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "jobs_upload_id_fkey"
             columns: ["upload_id"]
             isOneToOne: false
@@ -614,103 +577,6 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "prompt_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      stripe_purchases: {
-        Row: {
-          amount_cents: number
-          created_at: string | null
-          credits_granted: number
-          id: string
-          metadata: Json | null
-          purchase_type: string
-          stripe_customer_id: string
-          stripe_payment_intent_id: string
-          user_id: string
-        }
-        Insert: {
-          amount_cents: number
-          created_at?: string | null
-          credits_granted: number
-          id?: string
-          metadata?: Json | null
-          purchase_type: string
-          stripe_customer_id: string
-          stripe_payment_intent_id: string
-          user_id: string
-        }
-        Update: {
-          amount_cents?: number
-          created_at?: string | null
-          credits_granted?: number
-          id?: string
-          metadata?: Json | null
-          purchase_type?: string
-          stripe_customer_id?: string
-          stripe_payment_intent_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stripe_purchases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      stripe_subscriptions: {
-        Row: {
-          cancel_at_period_end: boolean | null
-          created_at: string | null
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          price_id: string
-          status: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
-          tier: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          cancel_at_period_end?: boolean | null
-          created_at?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          price_id: string
-          status: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
-          tier: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          cancel_at_period_end?: boolean | null
-          created_at?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          price_id?: string
-          status?: string
-          stripe_customer_id?: string
-          stripe_subscription_id?: string
-          tier?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stripe_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1167,9 +1033,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       batch_item_status: ["pending", "processing", "completed", "failed"],
@@ -1194,11 +1057,9 @@ export const Constants = {
         "refund",
         "bonus",
         "expiration",
-        "pack_purchase",
-        "subscription_renewal",
-        "subscription_upgrade",
       ],
       user_tier: ["free", "pro", "business"],
     },
   },
 } as const
+

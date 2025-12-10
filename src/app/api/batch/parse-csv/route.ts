@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const batchItemSchema = z.object({
   product_name: z.string().optional(),
-  prompt: z.string().min(1),
+  template_slug: z.string().min(1),
   source_image_url: z.string().url().optional(),
   aspect_ratio: z.enum(['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9']).default('1:1'),
   resolution: z.enum(['1k', '2k', '4k']).default('1k'),

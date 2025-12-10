@@ -1,0 +1,6 @@
+product_name,template_slug,source_image_url,aspect_ratio,resolution
+"Blue Sneakers",ecommerce-base,,1:1,1k
+"Leather Wallet",ecommerce-base,https://example.com/wallet.jpg,4:3,2k
+"Coffee Mug",lifestyle-product,,16:9,1k
+"Wireless Headphones",ecommerce-base,https://example.com/headphones.jpg,1:1,2k
+"Watch",ecommerce-base,,3:4,1k
