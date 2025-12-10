@@ -1,4 +1,5 @@
 // src/lib/ai/__tests__/title-generator.test.ts
+import { describe, it, expect } from 'bun:test';
 import { generateImageTitle, getTitleFromFilename } from '../title-generator';
 import type { ProductAnalysis } from '../types';
 

@@ -1,46 +1,41 @@
 // src/lib/ai/__tests__/product-analyzer.test.ts
-import { analyzeProductImage } from '../product-analyzer';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import type { ProductAnalysis } from '../types';
 
-// Mock the AI SDK
-jest.mock('ai', () => ({
-  generateObject: jest.fn(),
+// Create mock functions
+const mockGenerateObject = mock(() => {});
+const mockGoogle = mock(() => 'mocked-google-model');
+const mockLoggerError = mock(() => {});
+const mockNormalizeUsage = mock(() => {});
+
+// Mock modules
+mock.module('ai', () => ({
+  generateObject: mockGenerateObject,
 }));
 
-// Mock the Google AI SDK
-jest.mock('@ai-sdk/google', () => ({
-  google: jest.fn(),
+mock.module('@ai-sdk/google', () => ({
+  google: mockGoogle,
 }));
 
-// Mock environment
-jest.mock('@/lib/env', () => ({
+mock.module('@/lib/env', () => ({
   env: {
     ANALYSIS_MODEL: 'gemini-2.0-flash',
   },
 }));
 
-// Mock logger
-jest.mock('@/lib/logging', () => ({
+mock.module('@/lib/logging', () => ({
   logger: {
-    error: jest.fn(),
+    error: mockLoggerError,
   },
 }));
 
-// Mock usage normalization
-jest.mock('../usage-types', () => ({
-  normalizeUsage: jest.fn(),
+mock.module('../usage-types', () => ({
+  normalizeUsage: mockNormalizeUsage,
 }));
 
-import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
-import { env } from '@/lib/env';
-import { logger } from '@/lib/logging';
-import { normalizeUsage } from '../usage-types';
-
-const mockGenerateObject = generateObject as jest.MockedFunction<typeof generateObject>;
-const mockGoogle = google as jest.MockedFunction<typeof google>;
-const mockLoggerError = logger.error as jest.MockedFunction<typeof logger.error>;
-const mockNormalizeUsage = normalizeUsage as jest.MockedFunction<typeof normalizeUsage>;
+// Dynamic import after mocking
+const { analyzeProductImage } = await import('../product-analyzer');
+const { env } = await import('@/lib/env');
 
 describe('analyzeProductImage', () => {
   const mockImageBuffer = Buffer.from('fake-image-data');
@@ -61,7 +56,11 @@ describe('analyzeProductImage', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGenerateObject.mockReset();
+    mockGoogle.mockReset();
+    mockLoggerError.mockReset();
+    mockNormalizeUsage.mockReset();
+
     mockGoogle.mockReturnValue('mocked-google-model' as any);
     mockNormalizeUsage.mockReturnValue(mockNormalizedUsage);
   });

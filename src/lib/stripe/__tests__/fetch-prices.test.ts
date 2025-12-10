@@ -1,30 +1,34 @@
+import { describe, it, expect, beforeAll, mock } from 'bun:test';
+
+// Create mock functions
+const mockStripeRetrieve = mock(() => {});
+
 // Mock the stripe client
-jest.mock('../client', () => ({
+mock.module('../client', () => ({
   stripe: {
     prices: {
-      retrieve: jest.fn(),
+      retrieve: mockStripeRetrieve,
     },
   },
 }));
 
 // Mock unstable_cache
-jest.mock('next/cache', () => ({
-  unstable_cache: jest.fn((fn) => fn),
+mock.module('next/cache', () => ({
+  unstable_cache: mock((fn: any) => fn),
 }));
 
 // Mock the incremental cache for Next.js
 (globalThis as any).__incrementalCache = {
-  get: jest.fn(),
-  set: jest.fn(),
-  revalidateTag: jest.fn(),
+  get: mock(() => {}),
+  set: mock(() => {}),
+  revalidateTag: mock(() => {}),
 };
 
 describe('fetchStripePrices', () => {
   let fetchStripePrices: any;
   let fetchStripePricesCore: any;
-  let mockStripeRetrieve: jest.MockedFunction<any>;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Set up all required env vars
     process.env.STRIPE_PRICE_PACK_50 = 'price_pack_50_test';
     process.env.STRIPE_PRICE_PACK_200 = 'price_pack_200_test';
@@ -33,10 +37,9 @@ describe('fetchStripePrices', () => {
     process.env.STRIPE_PRICE_BUSINESS_MONTHLY = 'price_business_monthly_test';
 
     // Import after env vars are set
-    const { fetchStripePrices: fetchPrices, fetchStripePricesCore: fetchPricesCore } = require('../fetch-prices');
-    fetchStripePrices = fetchPrices;
-    fetchStripePricesCore = fetchPricesCore;
-    mockStripeRetrieve = require('../client').stripe.prices.retrieve;
+    const module = await import('../fetch-prices');
+    fetchStripePrices = module.fetchStripePrices;
+    fetchStripePricesCore = module.fetchStripePricesCore;
   });
 
   it('should fetch and return all Stripe prices correctly', async () => {
@@ -48,6 +51,7 @@ describe('fetchStripePrices', () => {
       price_business_monthly_test: { unit_amount: 5000, currency: 'usd', recurring: { interval: 'month', interval_count: 1 } },
     };
 
+    mockStripeRetrieve.mockReset();
     mockStripeRetrieve.mockImplementation((priceId: string) => {
       const price = mockPrices[priceId as keyof typeof mockPrices];
       if (!price) {
@@ -101,6 +105,7 @@ describe('fetchStripePrices', () => {
   it('should handle Stripe API errors gracefully', async () => {
     // Mock Stripe API error
     const stripeError = new Error('Stripe API connection failed');
+    mockStripeRetrieve.mockReset();
     mockStripeRetrieve.mockRejectedValue(stripeError);
 
     await expect(fetchStripePricesCore()).rejects.toThrow('Stripe API error: Stripe API connection failed');
@@ -108,6 +113,7 @@ describe('fetchStripePrices', () => {
 
   it('should handle non-Error exceptions', async () => {
     // Mock non-Error exception
+    mockStripeRetrieve.mockReset();
     mockStripeRetrieve.mockRejectedValue('String error');
 
     await expect(fetchStripePricesCore()).rejects.toThrow('Stripe API error: Unknown error');
@@ -115,6 +121,7 @@ describe('fetchStripePrices', () => {
 
   it('should handle prices with null unit_amount', async () => {
     // Mock price with null unit_amount (only properties used in code)
+    mockStripeRetrieve.mockReset();
     mockStripeRetrieve.mockResolvedValue({
       unit_amount: null,
       currency: 'usd',

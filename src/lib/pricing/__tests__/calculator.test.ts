@@ -1,19 +1,22 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { calculateCost } from '../calculator';
-import { getProviderForModel, getPricingForModel } from '../models';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
 // Mock the model functions
-jest.mock('../models', () => ({
-  getProviderForModel: jest.fn(),
-  getPricingForModel: jest.fn(),
+mock.module('../models', () => ({
+  getProviderForModel: mock(),
+  getPricingForModel: mock(),
 }));
 
-const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<typeof getProviderForModel>;
-const mockGetPricingForModel = getPricingForModel as jest.MockedFunction<typeof getPricingForModel>;
+// Dynamic import after mocking
+const { calculateCost } = await import('../calculator');
+const { getProviderForModel, getPricingForModel } = await import('../models');
+
+const mockGetProviderForModel = getProviderForModel as ReturnType<typeof mock>;
+const mockGetPricingForModel = getPricingForModel as ReturnType<typeof mock>;
 
 describe('Cost Calculator', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetProviderForModel.mockReset();
+    mockGetPricingForModel.mockReset();
   });
 
   it('should calculate costs correctly for known models', () => {

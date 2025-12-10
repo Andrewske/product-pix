@@ -1,15 +1,24 @@
-import { validateBatchSize } from '../commands/improve';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
 // Mock the entire shared module to avoid complex mocking
-jest.mock('../commands/shared', () => ({
-  fetchBatchEvaluations: jest.fn(),
+mock.module('../commands/shared', () => ({
+  fetchBatchEvaluations: mock(),
 }));
 
-const mockFetchBatchEvaluations = require('../commands/shared').fetchBatchEvaluations;
-
 describe('validateBatchSize', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  let validateBatchSize: typeof import('../commands/improve').validateBatchSize;
+  let mockFetchBatchEvaluations: ReturnType<typeof mock>;
+
+  beforeEach(async () => {
+    // Import after mocking
+    const shared = await import('../commands/shared');
+    mockFetchBatchEvaluations = shared.fetchBatchEvaluations as ReturnType<typeof mock>;
+
+    const improve = await import('../commands/improve');
+    validateBatchSize = improve.validateBatchSize;
+
+    // Reset mocks
+    mockFetchBatchEvaluations.mockReset();
   });
 
   it('should return success for batch with 5 or more evaluations', async () => {
@@ -20,11 +29,11 @@ describe('validateBatchSize', () => {
       { testId: '4', score: 7.1, details: {} },
       { testId: '5', score: 6.9, details: {} },
     ];
-    
+
     mockFetchBatchEvaluations.mockResolvedValue(mockData);
-    
+
     const result = await validateBatchSize('test-batch', false);
-    
+
     expect(result.ok).toBe(true);
   });
 
@@ -49,11 +58,11 @@ describe('validateBatchSize', () => {
     const mockData = [
       { testId: '1', score: 7.5, details: {} },
     ];
-    
+
     mockFetchBatchEvaluations.mockResolvedValue(mockData);
-    
+
     const result = await validateBatchSize('test-batch', true);
-    
+
     expect(result.ok).toBe(true);
   });
 

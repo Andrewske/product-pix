@@ -1,5 +1,7 @@
+import { describe, it, expect, mock } from 'bun:test';
+
 // Mock the env module before importing products
-jest.mock('@/lib/env', () => ({
+mock.module('@/lib/env', () => ({
   env: {
     STRIPE_PRICE_PACK_50: 'price_test_pack_50',
     STRIPE_PRICE_PACK_200: 'price_test_pack_200',
@@ -9,7 +11,8 @@ jest.mock('@/lib/env', () => ({
   },
 }));
 
-import { CREDIT_PACKS, SUBSCRIPTION_TIERS } from '../products';
+// Dynamic import after mocking
+const { CREDIT_PACKS, SUBSCRIPTION_TIERS } = await import('../products');
 
 describe('Stripe Products Configuration', () => {
   describe('CREDIT_PACKS', () => {

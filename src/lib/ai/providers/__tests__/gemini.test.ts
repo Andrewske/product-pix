@@ -1,13 +1,16 @@
 // src/lib/ai/providers/__tests__/gemini.test.ts
-import { createGeminiProvider } from '../gemini';
+import { describe, it, expect, mock } from 'bun:test';
 import type { ImageConfig } from '../../types';
 
 // Mock the env module
-jest.mock('@/lib/env', () => ({
+mock.module('@/lib/env', () => ({
   env: {
     GEMINI_MODEL: 'gemini-3-pro-image-preview',
   },
 }));
+
+// Import after mocking
+const { createGeminiProvider } = await import('../gemini');
 
 describe('createGeminiProvider', () => {
   const provider = createGeminiProvider();

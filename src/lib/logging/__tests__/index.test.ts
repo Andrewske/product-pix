@@ -1,13 +1,15 @@
+import { describe, it, expect, beforeEach, afterEach, spyOn } from 'bun:test';
+import type { SpyInstance } from 'bun:test';
 import { createLogger } from '../index';
 
 describe('createLogger', () => {
-  let stdoutSpy: jest.SpyInstance;
-  let stderrSpy: jest.SpyInstance;
+  let stdoutSpy: SpyInstance<typeof process.stdout.write>;
+  let stderrSpy: SpyInstance<typeof process.stderr.write>;
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
-    stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    stdoutSpy = spyOn(process.stdout, 'write').mockImplementation(() => true);
+    stderrSpy = spyOn(process.stderr, 'write').mockImplementation(() => true);
     originalEnv = { ...process.env };
   });
 
@@ -105,7 +107,7 @@ describe('createLogger', () => {
       logger.info('test message');
 
       expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      const output = JSON.parse(stdoutSpy.mock.calls[0][0].trim());
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
 
       expect(output).toHaveProperty('timestamp');
       expect(output.level).toBe('info');
@@ -120,7 +122,7 @@ describe('createLogger', () => {
       logger.info('user logged in', context);
 
       expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      const output = JSON.parse(stdoutSpy.mock.calls[0][0].trim());
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
 
       expect(output.context).toEqual(context);
     });
@@ -133,7 +135,7 @@ describe('createLogger', () => {
       expect(stderrSpy).toHaveBeenCalledTimes(1);
       expect(stdoutSpy).toHaveBeenCalledTimes(0);
 
-      const output = JSON.parse(stderrSpy.mock.calls[0][0].trim());
+      const output = JSON.parse((stderrSpy.mock.calls[0][0] as string).trim());
       expect(output.level).toBe('error');
       expect(output.message).toBe('error message');
     });
@@ -159,7 +161,7 @@ describe('createLogger', () => {
       logger.info('test');
       const after = new Date();
 
-      const output = JSON.parse(stdoutSpy.mock.calls[0][0].trim());
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
       const timestamp = new Date(output.timestamp);
 
       expect(timestamp.getTime()).toBeGreaterThanOrEqual(before.getTime());
@@ -175,7 +177,7 @@ describe('createLogger', () => {
 
       logger.info('message', {});
 
-      const output = JSON.parse(stdoutSpy.mock.calls[0][0].trim());
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
       expect(output.context).toEqual({});
     });
 
@@ -191,7 +193,7 @@ describe('createLogger', () => {
 
       logger.info('complex log', context);
 
-      const output = JSON.parse(stdoutSpy.mock.calls[0][0].trim());
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
       expect(output.context).toEqual(context);
     });
   });
