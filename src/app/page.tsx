@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BeforeAfterSlider } from '@/components/before-after-slider';
 import { getPricing } from '@/lib/pricing/actions';
+import { landingConfig } from '@/lib/landing';
 
 export const metadata: Metadata = {
   title: 'ProductPix - Professional Product Photos in Seconds',
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/daa47d94-189d-4110-b29b-2ad91b220ddd.png',
+        url: landingConfig.openGraphImage,
         width: 1200,
         height: 630,
         alt: 'ProductPix - Before and After Product Photo Enhancement',
@@ -25,15 +26,7 @@ export const metadata: Metadata = {
   },
 };
 
-// Example data from the plan
-const examples = [
-  {
-    beforeImage: "https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/ffb69068ef4b0e9511d6198bc12b0068fe65a5365c6339f22c3ec2cc1ce1222e.jpg",
-    afterImage: "https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/daa47d94-189d-4110-b29b-2ad91b220ddd.png",
-    product: "Peanut Butter Jar",
-    category: "Food/Consumer"
-  }
-];
+
 
 export default async function LandingPage() {
   const pricing = await getPricing();
@@ -50,20 +43,17 @@ export default async function LandingPage() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Upload your product photo, get studio-quality results instantly. No design skills needed.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/signup">
-                <Button size="lg" className="text-lg px-8 py-3">
-                  Get 5 Free Photos
-                </Button>
-              </Link>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
-                See Examples
-              </Button>
-            </div>
+             <div className="flex justify-center">
+               <Link href="/signup">
+                 <Button size="lg" className="text-lg px-8 py-3">
+                   Get 5 Free Photos
+                 </Button>
+               </Link>
+             </div>
           </div>
 
           <div className="flex justify-center">
-            <BeforeAfterSlider {...examples[0]} />
+            <BeforeAfterSlider {...landingConfig.examples[0]} />
           </div>
         </div>
       </section>
@@ -106,8 +96,8 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+       {/* Pricing Section */}
+       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
@@ -168,9 +158,9 @@ export default async function LandingPage() {
               <span className="text-xl font-bold">ProductPix</span>
             </div>
             <nav className="flex flex-wrap justify-center md:justify-end gap-6 mb-4 md:mb-0">
-              <Link href="/pricing" className="text-muted-foreground hover:text-foreground text-sm">
-                Pricing
-              </Link>
+               <a href="#pricing" className="text-muted-foreground hover:text-foreground text-sm">
+                 Pricing
+               </a>
               <Link href="/login" className="text-muted-foreground hover:text-foreground text-sm">
                 Login
               </Link>
