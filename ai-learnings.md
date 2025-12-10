@@ -176,3 +176,13 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Main function length**: Keep under 80 lines by extracting helpers, but maintain cohesion within same file
 - **Helper naming**: Descriptive names like `runProductAnalysis()`, `recordGenerationCost()` clarify purpose
 - **Error propagation**: Maintain original error handling patterns while improving code organization
+## Landing Page Code Review Fixes Implementation
+
+- **Error Boundary Strategy**: Use Next.js 16 `error.tsx` file convention at app root level for handling server component errors. Provides idiomatic Next.js pattern for unhandled error recovery with reset functionality
+- **Landing Page Config Location**: Create `src/lib/landing/config.ts` following const + Zod validation pattern (matches `src/lib/pricing/pricing.config.ts`). Enables type-safe configuration with build-time validation and easy URL updates
+- **Image Loading Strategy**: Add `priority` prop to hero images for LCP optimization. Zero-cost improvement for Largest Contentful Paint that loads images early without requiring blur placeholders
+- **Footer Navigation Pattern**: Use anchor scroll (`href="#pricing"`) for pricing link when section exists on same page. Avoids creating unnecessary stub pages while maintaining smooth user experience
+- **Keyboard Accessibility Implementation**: Add keyboard handlers directly to interactive components with ARIA attributes. WCAG 2.1 Level A compliance requires keyboard access for all interactive elements with screen reader announcements
+- **Touch Event Validation**: Defensive programming with guard clauses before accessing `touches[0]`. Prevents crashes during rapid touch interactions by checking array length before access
+- **Package Manager Consistency**: Use single package manager (bun) and remove conflicting lockfiles. Prevents deployment failures from package manager conflicts and maintains clean dependency resolution
+- **Loading State Management**: Use Next.js `loading.tsx` for skeleton UI during SSR. Provides enhanced UX with structured loading states that match final page layout
