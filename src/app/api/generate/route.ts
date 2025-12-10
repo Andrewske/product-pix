@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 const requestSchema = z.object({
   uploadId: z.string().uuid().optional(),
-  templateId: z.string().uuid(),
+  templateSlug: z.string().min(1),
   aspectRatio: z.enum(['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9']).default('1:1'),
   resolution: z.enum(['1k', '2k', '4k']).default('1k'),
 });
@@ -49,7 +49,7 @@ export const POST = withAuth(async (request) => {
       );
     }
 
-    const { uploadId, templateId, aspectRatio, resolution } = parsed.data;
+    const { uploadId, templateSlug, aspectRatio, resolution } = parsed.data;
 
     // Calculate credits based on resolution
     const creditCost = getCreditsForResolution(resolution);
@@ -98,7 +98,7 @@ export const POST = withAuth(async (request) => {
       '', // Empty prompt - using template instead
       { aspectRatio, resolution },
       creditCost,
-      templateId
+      templateSlug
     );
 
     // Check for insufficient credits

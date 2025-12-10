@@ -1,0 +1,11 @@
+{
+  "label": "v4-minimal-test",
+  "tests": [
+    {
+      "key": "v4-minimal-test-1",
+      "variables": {
+        "product": "red coffee mug"
+      }
+    }
+  ]
+}

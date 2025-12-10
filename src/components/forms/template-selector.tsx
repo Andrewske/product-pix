@@ -6,15 +6,15 @@ import { Card } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 
 interface Template {
-  id: string;
   slug: string;
+  version: number;
   name: string;
   description: string;
 }
 
 interface TemplateSelectorProps {
   value: string;
-  onChange: (templateId: string) => void;
+  onChange: (templateSlug: string) => void;
   disabled?: boolean;
 }
 
@@ -35,7 +35,7 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
 
         // Set default template if none selected
         if (!value && data.templates.length > 0) {
-          onChange(data.templates[0].id);
+          onChange(data.templates[0].slug);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load templates');
@@ -79,13 +79,13 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
       <div className="grid grid-cols-1 gap-2">
         {templates.map((template) => (
           <Card
-            key={template.id}
+            key={template.slug}
             className={`p-4 cursor-pointer transition-all hover:border-primary ${
-              value === template.id
+              value === template.slug
                 ? 'border-primary bg-primary/5'
                 : 'border-border'
             }`}
-            onClick={() => !disabled && onChange(template.id)}
+            onClick={() => !disabled && onChange(template.slug)}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -94,7 +94,7 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
                   {template.description}
                 </p>
               </div>
-              {value === template.id && (
+              {value === template.slug && (
                 <Check className="h-4 w-4 text-primary flex-shrink-0 ml-2" />
               )}
             </div>
