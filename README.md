@@ -1,6 +1,12 @@
 # ProductPix
 
-AI-powered product photo generator for e-commerce sellers. Transform ordinary product images into professional studio-quality photos for Poshmark, eBay, Etsy, and Amazon.
+AI-powered product photo generator for e-commerce sellers. Solves the expensive, time-consuming problem of professional product photography by transforming ordinary product images into studio-quality photos for Poshmark, eBay, Etsy, and Amazon.
+
+## Problem & Solution
+
+**Problem**: E-commerce businesses need high-quality product photos, but professional photography is expensive and time-consuming.
+
+**Solution**: AI tool that generates professional settings, backgrounds, and lighting for product images—fast, affordable, and simple.
 
 ## Features
 
