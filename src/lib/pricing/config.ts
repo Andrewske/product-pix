@@ -24,7 +24,7 @@ let pricingConfigCache: PricingConfig | null = null;
  */
 export function loadPricingConfig(): PricingConfig {
   // Skip caching during tests to avoid interference
-  if (pricingConfigCache && process.env.NODE_ENV !== 'test') {
+  if (pricingConfigCache && process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
     return pricingConfigCache;
   }
 

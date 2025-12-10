@@ -98,3 +98,13 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Barrel exports**: Export utilities from index.ts files for clean imports. Use `export * from './module'` pattern for re-exports
 - **Type safety in refactoring**: Maintain explicit return types and avoid any/unknown/! during code consolidation
 - **Incremental migration**: Phase code changes to avoid breaking existing functionality. Test each phase before proceeding
+
+## Hybrid Pricing Architecture
+
+- **Stripe as price source of truth**: Eliminates sync bugs by fetching live prices from Stripe API instead of hardcoded values
+- **Config as credit economy source of truth**: TypeScript config file for credits per resolution, free signup credits, pack/subscription definitions
+- **Server action pattern**: Single `getPricing()` action merges Stripe prices with credit config, returns complete pricing data
+- **Next.js unstable_cache**: 1-hour TTL for Stripe API calls, proper cache tags for invalidation
+- **Module initialization timing**: Define constants inside functions when using unstable_cache to avoid circular dependencies
+- **Server component data distribution**: Fetch pricing once in server component, pass as props to avoid duplicate client fetches
+- **Type-safe pricing data**: Zod-validated config with literal types, explicit interfaces for server action responses

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X, CreditCard } from 'lucide-react';
-import { CREDIT_PACKS } from '@/lib/stripe/products';
+import { getPricingForModal, createPackCheckout } from '@/lib/stripe/checkout-actions';
+import type { PricingPack } from '@/lib/pricing/actions';
 
 interface InsufficientCreditsModalProps {
   currentBalance: number;
@@ -20,27 +21,27 @@ export function InsufficientCreditsModal({
   onClose,
 }: InsufficientCreditsModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [packs, setPacks] = useState<Record<string, PricingPack> | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const deficit = requiredCredits - currentBalance;
 
+  useEffect(() => {
+    getPricingForModal()
+      .then(setPacks)
+      .catch((err) => setError(err.message));
+  }, []);
+
   // Find the smallest pack that covers the deficit
-  const recommendedPack = Object.entries(CREDIT_PACKS)
-    .sort(([, a], [, b]) => a.credits - b.credits)
-    .find(([, pack]) => pack.credits >= deficit);
+  const recommendedPack = packs
+    ? Object.entries(packs)
+        .sort(([, a], [, b]) => a.credits - b.credits)
+        .find(([, pack]) => pack.credits >= deficit)
+    : null;
 
   const handlePurchase = async (packId: string) => {
     setLoading(packId);
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'pack', packId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-
-      const { url } = await response.json();
+      const { url } = await createPackCheckout(packId);
       window.location.href = url;
     } catch (error) {
       console.error('Checkout error:', error);
@@ -78,26 +79,35 @@ export function InsufficientCreditsModal({
               <p className="text-sm font-medium mb-2">Recommended purchase:</p>
               <Card className="border-2 border-primary">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">
-                      {recommendedPack[1].credits} Credits
-                    </span>
-                    <Badge variant="secondary">Best fit</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold">
-                      ${(recommendedPack[1].priceCents / 100).toFixed(2)}
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={() => handlePurchase(recommendedPack[0])}
-                      disabled={loading === recommendedPack[0]}
-                    >
-                      {loading === recommendedPack[0] ? '...' : 'Buy'}
-                    </Button>
-                  </div>
-                </CardContent>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">
+                        {recommendedPack[1].credits} Credits
+                      </span>
+                      <Badge variant="secondary">Best fit</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Button
+                        size="sm"
+                        onClick={() => handlePurchase(recommendedPack[0])}
+                        disabled={loading === recommendedPack[0] || !packs}
+                      >
+                        {loading === recommendedPack[0] ? '...' : 'Buy'}
+                      </Button>
+                    </div>
+                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {error && (
+            <div className="text-center p-4 bg-destructive/10 rounded border border-destructive/20">
+              <p className="text-sm text-destructive">Failed to load pricing: {error}</p>
+            </div>
+          )}
+
+          {!packs && !error && (
+            <div className="text-center p-4 bg-muted rounded">
+              <p className="text-sm text-muted-foreground">Loading pricing...</p>
             </div>
           )}
 

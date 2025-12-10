@@ -1,8 +1,9 @@
-import { requireAuth } from '@/lib/auth/server';
-import { getUserStripeCustomerId } from '@/lib/stripe/customer';
-import { syncStripeDataToKV } from '@/lib/stripe/sync';
-import { CreditPacks } from '@/components/pricing/credit-packs';
-import { SubscriptionTiers } from '@/components/pricing/subscription-tiers';
+ import { requireAuth } from '@/lib/auth/server';
+ import { getUserStripeCustomerId } from '@/lib/stripe/customer';
+ import { syncStripeDataToKV } from '@/lib/stripe/sync';
+ import { getPricing, type PricingData } from '@/lib/pricing/actions';
+ import { CreditPacks } from '@/components/pricing/credit-packs';
+ import { SubscriptionTiers } from '@/components/pricing/subscription-tiers';
 
 export default async function PricingPage() {
   // Sync Stripe data on page load to ensure fresh subscription status
@@ -18,6 +19,15 @@ export default async function PricingPage() {
     }
   }
 
+  // Fetch pricing data once for the entire page
+  let pricingData: PricingData | null = null;
+  try {
+    pricingData = await getPricing();
+  } catch (error) {
+    console.error('[Pricing Page] Failed to fetch pricing data:', error);
+    // Continue rendering - components will handle null pricing data gracefully
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
@@ -29,8 +39,8 @@ export default async function PricingPage() {
       </div>
 
       <div className="grid gap-12">
-        <CreditPacks />
-        <SubscriptionTiers />
+        <CreditPacks pricingData={pricingData} />
+        <SubscriptionTiers pricingData={pricingData} />
       </div>
 
       <div className="mt-12 text-center text-sm text-muted-foreground">
