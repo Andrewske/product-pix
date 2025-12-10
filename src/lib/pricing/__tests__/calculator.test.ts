@@ -30,7 +30,6 @@ describe('Cost Calculator', () => {
     expect(result.total).toBe(10.5);
     expect(result.modelId).toBe('claude-sonnet-4');
     expect(result.provider).toBe('anthropic');
-    expect(result.fallbackUsed).toBe(false);
   });
 
   it('should handle zero token usage', () => {
@@ -41,7 +40,6 @@ describe('Cost Calculator', () => {
     expect(result.inputCost).toBe(0);
     expect(result.outputCost).toBe(0);
     expect(result.total).toBe(0);
-    expect(result.fallbackUsed).toBe(false);
   });
 
   it('should throw error for negative input tokens', () => {
@@ -78,17 +76,14 @@ describe('Cost Calculator', () => {
     expect(result.total).toBe(3.75);
   });
 
-  it('should mark fallback usage for unknown models', () => {
-    mockGetProviderForModel.mockReturnValue('unknown');
-    mockGetPricingForModel.mockReturnValue({ input: 22.5, output: 112.5 });
+  it('should throw error for unknown models', () => {
+    mockGetProviderForModel.mockImplementation(() => {
+      throw new Error('Model \'unknown-model-xyz\' is not configured in pricing');
+    });
 
-    const result = calculateCost('unknown-model-xyz', { input: 1_000_000, output: 500_000 });
-
-    expect(result.provider).toBe('unknown');
-    expect(result.fallbackUsed).toBe(true);
-    expect(result.inputCost).toBe(22.5);
-    expect(result.outputCost).toBe(56.25);
-    expect(result.total).toBe(78.75);
+    expect(() => calculateCost('unknown-model-xyz', { input: 1_000_000, output: 500_000 })).toThrow(
+      'Model \'unknown-model-xyz\' is not configured in pricing'
+    );
   });
 
   it('should handle mixed zero and non-zero tokens', () => {

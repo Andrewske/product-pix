@@ -9,7 +9,6 @@ interface ValidationFixture {
     outputCost?: number;
     total?: number;
     provider: string;
-    fallbackUsed: boolean;
   };
   expectedError?: string;
   source: string;
@@ -24,7 +23,7 @@ const fixtures: ValidationFixture[] = [
       outputCost: 7.50,
       total: 10.50,
       provider: 'anthropic',
-      fallbackUsed: false,
+
     },
     source: 'https://anthropic.com/pricing (verified 2025-12-08)',
   },
@@ -36,7 +35,7 @@ const fixtures: ValidationFixture[] = [
       outputCost: 7.50,
       total: 10.50,
       provider: 'anthropic',
-      fallbackUsed: false,
+
     },
     source: 'Prefix match to claude-sonnet-4-20250514',
   },
@@ -48,7 +47,7 @@ const fixtures: ValidationFixture[] = [
       outputCost: 37.50,
       total: 52.50,
       provider: 'anthropic',
-      fallbackUsed: false,
+
     },
     source: 'https://anthropic.com/pricing (verified 2025-12-08)',
   },
@@ -60,7 +59,7 @@ const fixtures: ValidationFixture[] = [
       outputCost: 5.00,
       total: 7.50,
       provider: 'openai',
-      fallbackUsed: false,
+
     },
     source: 'https://openai.com/pricing (verified 2025-12-08)',
   },
@@ -72,7 +71,7 @@ const fixtures: ValidationFixture[] = [
       outputCost: 0.30,
       total: 0.45,
       provider: 'openai',
-      fallbackUsed: false,
+
     },
     source: 'https://openai.com/pricing (verified 2025-12-08)',
   },
@@ -84,27 +83,21 @@ const fixtures: ValidationFixture[] = [
       outputCost: 0.15,
       total: 0.225,
       provider: 'google',
-      fallbackUsed: false,
+
     },
     source: 'https://ai.google.dev/pricing (verified 2025-12-08)',
   },
   {
     modelId: 'unknown-model-xyz',
     usage: { input: 1000000, output: 500000 },
-    expectedCost: {
-      provider: 'unknown',
-      fallbackUsed: true,
-    },
-    source: 'Fallback pricing (computed as MAX * 1.5)',
+    expectedError: 'Model \'unknown-model-xyz\' is not configured in pricing',
+    source: 'Unknown model should throw error',
   },
   {
     modelId: 'gpt-claude-hybrid',
     usage: { input: 1000000, output: 500000 },
-    expectedCost: {
-      provider: 'unknown',
-      fallbackUsed: true,
-    },
-    source: 'Cross-provider confusion, uses fallback',
+    expectedError: 'Model \'gpt-claude-hybrid\' is not configured in pricing',
+    source: 'Cross-provider confusion should throw error',
   },
   {
     modelId: 'claude-sonnet-4-20250514',
@@ -114,7 +107,7 @@ const fixtures: ValidationFixture[] = [
       outputCost: 0,
       total: 0,
       provider: 'anthropic',
-      fallbackUsed: false,
+
     },
     source: 'Zero usage edge case',
   },
@@ -146,16 +139,15 @@ describe('Pricing Validation Fixtures', () => {
         const cost = calculateCost(fixture.modelId, fixture.usage);
 
         // Check exact values for known models
-        if (!fixture.expectedCost.fallbackUsed && fixture.expectedCost.inputCost !== undefined &&
+        if (fixture.expectedCost.inputCost !== undefined &&
             fixture.expectedCost.outputCost !== undefined && fixture.expectedCost.total !== undefined) {
           expect(cost.inputCost).toBeCloseTo(fixture.expectedCost.inputCost, 2);
           expect(cost.outputCost).toBeCloseTo(fixture.expectedCost.outputCost, 2);
           expect(cost.total).toBeCloseTo(fixture.expectedCost.total, 2);
         }
 
-        // Always check provider and fallback status
+        // Always check provider
         expect(cost.provider).toBe(fixture.expectedCost.provider);
-        expect(cost.fallbackUsed).toBe(fixture.expectedCost.fallbackUsed);
         expect(cost.modelId).toBe(fixture.modelId);
       }
     }
@@ -173,22 +165,11 @@ describe('Pricing Validation Fixtures', () => {
     }
   });
 
-  it('should validate fallback pricing for unknown models', () => {
-    const fallbackFixtures = fixtures.filter(f => f.expectedCost?.fallbackUsed);
 
-    for (const fixture of fallbackFixtures) {
-      const cost = calculateCost(fixture.modelId, fixture.usage);
-
-      expect(cost.provider).toBe('unknown');
-      expect(cost.fallbackUsed).toBe(true);
-      // Fallback pricing should be higher than any known model pricing
-      expect(cost.total).toBeGreaterThan(0);
-    }
-  });
 
   it('should validate exact pricing matches for known models', () => {
     const knownModelFixtures = fixtures.filter(f =>
-      f.expectedCost && !f.expectedCost.fallbackUsed && !f.expectedError
+      f.expectedCost && !f.expectedError
     );
 
     for (const fixture of knownModelFixtures) {
@@ -201,7 +182,6 @@ describe('Pricing Validation Fixtures', () => {
           expect(cost.total).toBeCloseTo(fixture.expectedCost.total, 2);
         }
         expect(cost.provider).not.toBe('unknown');
-        expect(cost.fallbackUsed).toBe(false);
       }
     }
   });
@@ -209,7 +189,7 @@ describe('Pricing Validation Fixtures', () => {
   it('should handle prefix matching correctly', () => {
     const prefixFixtures = fixtures.filter(f =>
       f.modelId.includes('-') && f.modelId.split('-').length > 2 &&
-      f.expectedCost && !f.expectedCost.fallbackUsed
+      f.expectedCost
     );
 
     for (const fixture of prefixFixtures) {
@@ -218,7 +198,6 @@ describe('Pricing Validation Fixtures', () => {
       if (fixture.expectedCost) {
         // Should get same pricing as the base model
         expect(cost.provider).toBe(fixture.expectedCost.provider);
-        expect(cost.fallbackUsed).toBe(false);
       }
     }
   });

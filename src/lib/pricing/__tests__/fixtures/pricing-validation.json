@@ -6,8 +6,7 @@
       "inputCost": 3.00,
       "outputCost": 7.50,
       "total": 10.50,
-      "provider": "anthropic",
-      "fallbackUsed": false
+      "provider": "anthropic"
     },
     "source": "https://anthropic.com/pricing (verified 2025-12-08)"
   },
@@ -18,8 +17,7 @@
       "inputCost": 3.00,
       "outputCost": 7.50,
       "total": 10.50,
-      "provider": "anthropic",
-      "fallbackUsed": false
+      "provider": "anthropic"
     },
     "source": "Prefix match to claude-sonnet-4-20250514"
   },
@@ -30,8 +28,7 @@
       "inputCost": 15.00,
       "outputCost": 37.50,
       "total": 52.50,
-      "provider": "anthropic",
-      "fallbackUsed": false
+      "provider": "anthropic"
     },
     "source": "https://anthropic.com/pricing (verified 2025-12-08)"
   },
@@ -74,20 +71,14 @@
   {
     "modelId": "unknown-model-xyz",
     "usage": { "input": 1000000, "output": 500000 },
-    "expectedCost": {
-      "provider": "unknown",
-      "fallbackUsed": true
-    },
-    "source": "Fallback pricing (computed as MAX * 1.5)"
+    "expectedError": "Model 'unknown-model-xyz' is not configured in pricing",
+    "source": "Unknown model should throw error"
   },
   {
     "modelId": "gpt-claude-hybrid",
     "usage": { "input": 1000000, "output": 500000 },
-    "expectedCost": {
-      "provider": "unknown",
-      "fallbackUsed": true
-    },
-    "source": "Cross-provider confusion, uses fallback"
+    "expectedError": "Model 'gpt-claude-hybrid' is not configured in pricing",
+    "source": "Cross-provider confusion should throw error"
   },
   {
     "modelId": "claude-sonnet-4-20250514",
@@ -96,8 +87,7 @@
       "inputCost": 0,
       "outputCost": 0,
       "total": 0,
-      "provider": "anthropic",
-      "fallbackUsed": false
+      "provider": "anthropic"
     },
     "source": "Zero usage edge case"
   },

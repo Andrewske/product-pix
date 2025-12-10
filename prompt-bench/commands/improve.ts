@@ -196,14 +196,17 @@ const createNewSessionForCommand = async (
 
   // Note: Batch validation is done during baseline testing, not here
 
+  const loadedConfig = loadConfig();
+  const improveConfig = loadedConfig?.defaults?.improve;
+
   const config: ImprovementConfig = {
     template: options.template,
     batchFile: options.batch,
     maxIterations: options['max-iterations'] || 5,
     targetScore: options['target-score'] || 9.0,
     autoApprove: options['auto-approve'] || false,
-    versionTemplates: true, // TODO: load from config
-    aiModel: 'claude-sonnet-4-20250514', // TODO: load from config
+    versionTemplates: improveConfig?.version_templates ?? true,
+    aiModel: improveConfig?.ai_model || loadedConfig?.defaults?.improvement_model || 'claude-sonnet-4-20250514',
   };
 
   const result = await createSession(options.template, config);
@@ -496,7 +499,7 @@ const testBaseline = async (
     skipEval: false,
     skipReport: true,
     dryRun: false,
-    evalModel: 'claude-sonnet-4-20250514',
+    evalModel: session.config.aiModel,
   });
 
   if (!pipelineResult.ok) {
@@ -644,7 +647,7 @@ const testImproved = async (
     skipEval: false,
     skipReport: true, // Skip report for now (can be enabled later)
     dryRun: false,
-    evalModel: 'claude-sonnet-4-20250514', // TODO: add to config
+    evalModel: session.config.aiModel,
   });
 
   if (!pipelineResult.ok) {
