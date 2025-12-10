@@ -1,15 +1,14 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { getProviderForModel, getPricingForModel } from '../models';
-import { loadPricingConfig } from '../config';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import type { PricingConfig } from '../config';
 
 // Mock config loader
-jest.mock('../config', () => ({
-  loadPricingConfig: jest.fn(),
+mock.module('../config', () => ({
+  loadPricingConfig: mockLoadPricingConfig,
 }));
 
-const mockLoadPricingConfig = loadPricingConfig as jest.MockedFunction<typeof loadPricingConfig>;
+const mockLoadPricingConfig = mock(() => mockConfig);
 
-const mockConfig = {
+const mockConfig: PricingConfig = {
   anthropic: {
     'claude-sonnet-4': { input: 3.0, output: 15.0 },
     'claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
@@ -26,9 +25,12 @@ const mockConfig = {
   fallbackSource: 'anthropic.claude-opus-4-5',
 };
 
+// Dynamic import after mocking
+const { getProviderForModel, getPricingForModel } = await import('../models');
+
 describe('Model to Provider Mapping', () => {
   beforeEach(() => {
-    mockLoadPricingConfig.mockClear();
+    mockLoadPricingConfig.mockReset();
     mockLoadPricingConfig.mockReturnValue(mockConfig);
   });
 
@@ -92,7 +94,7 @@ describe('Model to Provider Mapping', () => {
     });
 
     it('should use provided config instead of loading', () => {
-      const customConfig = {
+      const customConfig: PricingConfig = {
         ...mockConfig,
         anthropic: {
           'custom-model': { input: 1.0, output: 2.0 },

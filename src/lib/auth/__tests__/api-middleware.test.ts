@@ -1,25 +1,24 @@
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
 import { withAuth, AuthenticatedRequest, AuthenticatedHandler } from '@/lib/auth/api-middleware';
 
 // Mock the supabase server client
-jest.mock('@/lib/supabase/server', () => ({
-  createClient: jest.fn(),
+const mockCreateClient = mock(async () => null);
+mock.module('@/lib/supabase/server', () => ({
+  createClient: mockCreateClient,
 }));
-
-import { createClient } from '@/lib/supabase/server';
-
-const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 
 describe('withAuth', () => {
   let mockSupabaseClient: {
     auth: {
-      getUser: jest.MockedFunction<() => Promise<{ data: { user: User | null }; error: { message: string } | null }>>;
+      getUser: ReturnType<typeof mock<() => Promise<{ data: { user: User | null }; error: { message: string } | null }>>>;
     };
   };
   let mockUser: User;
   let mockRequest: NextRequest;
   let mockParams: { id: string };
+  let mockGetUser: ReturnType<typeof mock<() => Promise<{ data: { user: User | null }; error: { message: string } | null }>>>;
 
   beforeEach(() => {
     mockUser = {
@@ -27,37 +26,39 @@ describe('withAuth', () => {
       email: 'test@example.com',
     } as User;
 
+    mockGetUser = mock(() => Promise.resolve({ data: { user: null }, error: null }));
+
     mockSupabaseClient = {
       auth: {
-        getUser: jest.fn(),
+        getUser: mockGetUser,
       },
     };
 
-    mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as ReturnType<typeof createClient>);
+    mockCreateClient.mockReset();
+    mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
 
     mockRequest = new NextRequest('http://localhost/api/test');
     mockParams = { id: 'test-id' };
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    mockCreateClient.mockReset();
+    mockGetUser.mockReset();
   });
 
   it('should call handler with authenticated user when user is authenticated', async () => {
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockUser },
       error: null,
     });
 
-    const mockHandler: AuthenticatedHandler = jest.fn().mockResolvedValue(
-      NextResponse.json({ success: true })
-    );
+    const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
-    const wrappedHandler = withAuth(mockHandler);
+    const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
     const response = await wrappedHandler(mockRequest, { params: mockParams });
 
     expect(mockCreateClient).toHaveBeenCalledTimes(1);
-    expect(mockSupabaseClient.auth.getUser).toHaveBeenCalledTimes(1);
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
     expect(mockHandler).toHaveBeenCalledWith(
       expect.objectContaining({
         user: mockUser,
@@ -69,14 +70,14 @@ describe('withAuth', () => {
   });
 
   it('should return 401 when getUser returns error', async () => {
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
-      error: new Error('Invalid token'),
+      error: new Error('Invalid token') as any,
     });
 
-    const mockHandler: AuthenticatedHandler = jest.fn();
+    const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
-    const wrappedHandler = withAuth(mockHandler);
+    const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
     const response = await wrappedHandler(mockRequest, { params: mockParams });
 
     expect(mockHandler).not.toHaveBeenCalled();
@@ -86,14 +87,14 @@ describe('withAuth', () => {
   });
 
   it('should return 401 when user is null', async () => {
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: null,
     });
 
-    const mockHandler: AuthenticatedHandler = jest.fn();
+    const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
-    const wrappedHandler = withAuth(mockHandler);
+    const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
     const response = await wrappedHandler(mockRequest, { params: mockParams });
 
     expect(mockHandler).not.toHaveBeenCalled();
@@ -105,9 +106,9 @@ describe('withAuth', () => {
   it('should return 401 when createClient throws', async () => {
     mockCreateClient.mockRejectedValue(new Error('Connection failed'));
 
-    const mockHandler: AuthenticatedHandler = jest.fn();
+    const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
-    const wrappedHandler = withAuth(mockHandler);
+    const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
     const response = await wrappedHandler(mockRequest, { params: mockParams });
 
     expect(mockHandler).not.toHaveBeenCalled();
@@ -117,11 +118,11 @@ describe('withAuth', () => {
   });
 
   it('should return 401 when getUser throws', async () => {
-    mockSupabaseClient.auth.getUser.mockRejectedValue(new Error('Database error'));
+    mockGetUser.mockRejectedValue(new Error('Database error'));
 
-    const mockHandler: AuthenticatedHandler = jest.fn();
+    const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
-    const wrappedHandler = withAuth(mockHandler);
+    const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
     const response = await wrappedHandler(mockRequest, { params: mockParams });
 
     expect(mockHandler).not.toHaveBeenCalled();
@@ -131,7 +132,7 @@ describe('withAuth', () => {
   });
 
   it('should support custom params type', async () => {
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockUser },
       error: null,
     });
@@ -139,11 +140,9 @@ describe('withAuth', () => {
     type CustomParams = { batchId: string; action: string };
     const customParams: CustomParams = { batchId: 'batch-123', action: 'cancel' };
 
-    const mockHandler: AuthenticatedHandler<CustomParams> = jest.fn().mockResolvedValue(
-      NextResponse.json({ success: true })
-    );
+    const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
-    const wrappedHandler = withAuth<CustomParams>(mockHandler);
+    const wrappedHandler = withAuth<CustomParams>(mockHandler as unknown as AuthenticatedHandler<CustomParams>);
     const response = await wrappedHandler(mockRequest, { params: customParams });
 
     expect(mockHandler).toHaveBeenCalledWith(
@@ -154,22 +153,20 @@ describe('withAuth', () => {
   });
 
   it('should preserve request properties on authenticated request', async () => {
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockUser },
       error: null,
     });
 
-    const mockHandler: AuthenticatedHandler = jest.fn().mockImplementation(
-      (request: AuthenticatedRequest) => {
-        // Verify the request has both original properties and user
-        expect(request.url).toBe(mockRequest.url);
-        expect(request.method).toBe(mockRequest.method);
-        expect(request.user).toBe(mockUser);
-        return NextResponse.json({ userId: request.user.id });
-      }
-    );
+    const mockHandler = mock((request: AuthenticatedRequest) => {
+      // Verify the request has both original properties and user
+      expect(request.url).toBe(mockRequest.url);
+      expect(request.method).toBe(mockRequest.method);
+      expect(request.user).toBe(mockUser);
+      return NextResponse.json({ userId: request.user.id });
+    });
 
-    const wrappedHandler = withAuth(mockHandler);
+    const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
     const response = await wrappedHandler(mockRequest, { params: mockParams });
 
     expect(response.status).toBe(200);

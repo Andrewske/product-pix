@@ -1,30 +1,39 @@
-import { fetchBatchEvaluations } from '../commands/shared';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
 // Mock the supabase client
-jest.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: jest.fn(),
+mock.module('@/lib/supabase/admin', () => ({
+  createAdminClient: mock(),
 }));
 
 let mockResult: { data: any; error: any } = { data: null, error: null };
 
 const mockSupabase: any = {
-  from: jest.fn(() => ({
-    select: jest.fn(() => ({
-      eq: jest.fn(() => ({
-        eq: jest.fn(() => Promise.resolve(mockResult)),
+  from: mock(() => ({
+    select: mock(() => ({
+      eq: mock(() => ({
+        eq: mock(() => Promise.resolve(mockResult)),
       })),
     })),
   })),
 };
 
-const mockCreateAdminClient = createAdminClient as jest.MockedFunction<typeof createAdminClient>;
-
 describe('shared utilities', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockCreateAdminClient.mockReturnValue(mockSupabase);
+  let createAdminClient: any;
+  let fetchBatchEvaluations: any;
+
+  beforeEach(async () => {
+    // Reset mocks
     mockResult = { data: null, error: null };
+
+    // Dynamically import after mocking
+    const adminModule = await import('@/lib/supabase/admin');
+    createAdminClient = adminModule.createAdminClient;
+
+    const sharedModule = await import('../commands/shared');
+    fetchBatchEvaluations = sharedModule.fetchBatchEvaluations;
+
+    // Setup mock implementation
+    createAdminClient.mockReturnValue(mockSupabase);
   });
 
   describe('fetchBatchEvaluations', () => {

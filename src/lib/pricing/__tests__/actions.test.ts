@@ -1,19 +1,21 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { getPricing } from '../actions';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { mergePacks, mergeSubscriptions, type PricingData } from '../utils';
 import { creditEconomy } from '../pricing.config';
-import { fetchStripePrices, type StripePriceData } from '@/lib/stripe/fetch-prices';
+import type { StripePriceData } from '@/lib/stripe/fetch-prices';
 
 // Mock the Stripe fetch function
-jest.mock('@/lib/stripe/fetch-prices', () => ({
-  fetchStripePrices: jest.fn(),
+const mockFetchStripePrices = mock();
+
+mock.module('@/lib/stripe/fetch-prices', () => ({
+  fetchStripePrices: mockFetchStripePrices,
 }));
 
-const mockFetchStripePrices = fetchStripePrices as jest.MockedFunction<typeof fetchStripePrices>;
+// Dynamic import after mocking
+const { getPricing } = await import('../actions');
 
 describe('Pricing Actions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockFetchStripePrices.mockReset();
   });
 
   describe('mergePacks', () => {

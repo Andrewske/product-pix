@@ -1,24 +1,30 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { readFileSync } from 'fs';
-import { loadPricingConfig, clearPricingCache } from '../config';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
 // Mock fs module
-jest.mock('fs', () => ({
-  readFileSync: jest.fn(),
+const mockReadFileSync = mock(() => '');
+mock.module('fs', () => ({
+  readFileSync: mockReadFileSync,
 }));
 
 // Mock @iarna/toml
-jest.mock('@iarna/toml', () => ({
-  parse: jest.fn(),
+const mockParse = mock(() => ({}));
+mock.module('@iarna/toml', () => ({
+  parse: mockParse,
 }));
 
-const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
-const mockParse = require('@iarna/toml').parse as jest.MockedFunction<any>;
-
 describe('Pricing Config Loader', () => {
-  beforeEach(() => {
+  let loadPricingConfig: typeof import('../config').loadPricingConfig;
+  let clearPricingCache: typeof import('../config').clearPricingCache;
+
+  beforeEach(async () => {
+    mockReadFileSync.mockReset();
+    mockParse.mockReset();
+
+    // Dynamic import after mocking
+    const configModule = await import('../config');
+    loadPricingConfig = configModule.loadPricingConfig;
+    clearPricingCache = configModule.clearPricingCache;
     clearPricingCache();
-    jest.clearAllMocks();
   });
 
   it('should load valid TOML config correctly', () => {
