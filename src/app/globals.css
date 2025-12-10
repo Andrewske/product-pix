@@ -138,93 +138,93 @@
   }
 
   .dark {
-    /* Dark Mode (Primary/Default) - Using semantic color palette */
-    --background: var(--bg-primary);
-    --foreground: var(--text-primary);
+    /* Dark Mode - Dark backgrounds with light text */
+    --background: 0 0% 6%;        /* Very dark gray */
+    --foreground: 0 0% 98%;       /* Almost white */
 
-    --card: var(--bg-secondary);
-    --card-foreground: var(--text-primary);
+    --card: 0 0% 10%;             /* Dark gray cards */
+    --card-foreground: 0 0% 98%;  /* Light text on cards */
 
-    --popover: var(--bg-secondary);
-    --popover-foreground: var(--text-primary);
+    --popover: 0 0% 10%;          /* Dark gray popovers */
+    --popover-foreground: 0 0% 98%; /* Light text */
 
-    --primary: var(--accent-primary);
-    --primary-foreground: 0 0% 4%;
+    --primary: 142 76% 42%;       /* Keep green primary */
+    --primary-foreground: 0 0% 4%; /* Dark text on green */
 
-    --secondary: var(--bg-tertiary);
-    --secondary-foreground: var(--text-primary);
+    --secondary: 0 0% 15%;         /* Slightly lighter dark */
+    --secondary-foreground: 0 0% 98%; /* Light text */
 
-    --muted: var(--bg-tertiary);
-    --muted-foreground: var(--text-secondary);
+    --muted: 0 0% 20%;            /* Muted dark */
+    --muted-foreground: 0 0% 70%; /* Muted light text */
 
-    --accent: var(--bg-accent);
-    --accent-foreground: var(--text-primary);
+    --accent: 142 76% 42%;        /* Green accent */
+    --accent-foreground: 0 0% 98%; /* Light text on accent */
 
-    --destructive: var(--accent-error);
-    --destructive-foreground: var(--text-primary);
+    --destructive: 0 84% 60%;      /* Red for destructive */
+    --destructive-foreground: 0 0% 98%; /* Light text */
 
-    --border: var(--bg-accent);
-    --input: var(--bg-accent);
-    --ring: var(--accent-primary);
+    --border: 0 0% 20%;           /* Dark borders */
+    --input: 0 0% 15%;            /* Dark inputs */
+    --ring: 142 76% 42%;          /* Green ring */
 
-    --success: var(--accent-success);
-    --success-foreground: 0 0% 4%;
+    --success: 176 57% 55%;       /* Mint green */
+    --success-foreground: 0 0% 4%; /* Dark text */
 
-    --info: 200.4 97.8% 39.4%;
-    --info-foreground: 210 40% 98%;
+    --info: 200 97% 39%;          /* Blue */
+    --info-foreground: 0 0% 98%;  /* Light text */
   }
 
   @theme inline {
     --font-sans: "Geist", "Geist Fallback";
     --font-mono: "Geist Mono", "Geist Mono Fallback";
 
-    /* Light mode colors */
-    --color-background: hsl(var(--bg-primary));
-    --color-foreground: hsl(var(--text-primary));
-    --color-card: hsl(var(--bg-secondary));
-    --color-card-foreground: hsl(var(--text-primary));
-    --color-popover: hsl(var(--bg-secondary));
-    --color-popover-foreground: hsl(var(--text-primary));
-    --color-primary: hsl(var(--accent-primary));
-    --color-primary-foreground: hsl(0 0% 4%);
-    --color-secondary: hsl(var(--bg-tertiary));
-    --color-secondary-foreground: hsl(var(--text-primary));
-    --color-muted: hsl(var(--bg-tertiary));
-    --color-muted-foreground: hsl(var(--text-secondary));
-    --color-accent: hsl(var(--accent-primary));
-    --color-accent-foreground: hsl(var(--text-primary));
-    --color-destructive: hsl(var(--accent-error));
-    --color-destructive-foreground: hsl(var(--text-primary));
-    --color-border: hsl(var(--bg-accent));
-    --color-input: hsl(var(--bg-accent));
-    --color-ring: hsl(var(--accent-primary));
+    /* Colors that change based on :root and .dark */
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
+    --color-card: hsl(var(--card));
+    --color-card-foreground: hsl(var(--card-foreground));
+    --color-popover: hsl(var(--popover));
+    --color-popover-foreground: hsl(var(--popover-foreground));
+    --color-primary: hsl(var(--primary));
+    --color-primary-foreground: hsl(var(--primary-foreground));
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-foreground: hsl(var(--secondary-foreground));
+    --color-muted: hsl(var(--muted));
+    --color-muted-foreground: hsl(var(--muted-foreground));
+    --color-accent: hsl(var(--accent));
+    --color-accent-foreground: hsl(var(--accent-foreground));
+    --color-destructive: hsl(var(--destructive));
+    --color-destructive-foreground: hsl(var(--destructive-foreground));
+    --color-border: hsl(var(--border));
+    --color-input: hsl(var(--input));
+    --color-ring: hsl(var(--ring));
 
     /* Additional colors */
-    --color-success: hsl(var(--accent-success));
-    --color-success-foreground: hsl(0 0% 4%);
-    --color-info: hsl(199.89 89.12% 48.43%);
-    --color-info-foreground: hsl(210 40% 98%);
+    --color-success: hsl(var(--success));
+    --color-success-foreground: hsl(var(--success-foreground));
+    --color-info: hsl(var(--info));
+    --color-info-foreground: hsl(var(--info-foreground));
 
     /* Teal accent */
     --color-teal: hsl(176 57% 55%);
     --color-teal-foreground: hsl(0 0% 4%);
 
     /* Chart colors */
-    --color-chart-1: hsl(var(--accent-primary));
-    --color-chart-2: hsl(var(--accent-secondary));
+    --color-chart-1: hsl(142 76% 42%);
+    --color-chart-2: hsl(142 70% 48%);
     --color-chart-3: hsl(176 57% 55%);
     --color-chart-4: hsl(45 100% 60%);
     --color-chart-5: hsl(0 84% 60%);
 
     /* Sidebar colors */
-    --color-sidebar: hsl(var(--bg-secondary));
-    --color-sidebar-foreground: hsl(var(--text-primary));
-    --color-sidebar-primary: hsl(var(--accent-primary));
-    --color-sidebar-primary-foreground: hsl(0 0% 4%);
-    --color-sidebar-accent: hsl(var(--bg-tertiary));
-    --color-sidebar-accent-foreground: hsl(var(--text-primary));
-    --color-sidebar-border: hsl(var(--bg-accent));
-    --color-sidebar-ring: hsl(var(--accent-primary));
+    --color-sidebar: hsl(var(--card));
+    --color-sidebar-foreground: hsl(var(--card-foreground));
+    --color-sidebar-primary: hsl(var(--primary));
+    --color-sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --color-sidebar-accent: hsl(var(--muted));
+    --color-sidebar-accent-foreground: hsl(var(--foreground));
+    --color-sidebar-border: hsl(var(--border));
+    --color-sidebar-ring: hsl(var(--ring));
 
     /* Border radius */
     --radius: 0.25rem;
