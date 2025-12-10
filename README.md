@@ -25,7 +25,7 @@ AI-powered product photo generator for e-commerce sellers. Solves the expensive,
 - **AI**: Vercel AI SDK + Google Gemini
 - **Evaluation**: Anthropic Claude (prompt testing)
 - **Styling**: Tailwind CSS v4
-- **Testing**: Jest with ts-jest
+- **Testing**: Bun test
 
 ## Getting Started
 
