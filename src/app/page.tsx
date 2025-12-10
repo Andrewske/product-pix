@@ -79,9 +79,20 @@ export default function Home() {
                 View Gallery
               </Button>
             </div>
-          </div>
 
-            </div>
+           {/* Hero Image Showcase */}
+           <div className="mt-16 flex justify-center">
+             <div className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden border border-border/50 shadow-2xl">
+               <Image
+                 src="/hero-image.jpg"
+                 alt="Professional product photography showcase"
+                 fill
+                 className="object-cover"
+                 priority
+               />
+             </div>
+           </div>
+
           </div>
         </div>
       </section>
