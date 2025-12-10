@@ -47,7 +47,7 @@ describe('HeroSection', () => {
       // The slider should be present within the hero section
       const sliderContainer = document.querySelector('[role="img"]');
       expect(sliderContainer).toBeInTheDocument();
-      expect(sliderContainer).toHaveAttribute('aria-label', expect.stringContaining('Test Product'));
+      expect(sliderContainer!.getAttribute('aria-label')).toContain('Test Product');
     });
   });
 
@@ -55,13 +55,15 @@ describe('HeroSection', () => {
     it('renders primary CTA button with correct text and link', () => {
       render(<HeroSection example={mockExample} />);
 
-      const primaryButton = screen.getByRole('link', { name: /get 5 free photos/i });
+      const primaryButton = screen.getByText('Get 5 Free Photos');
       expect(primaryButton).toBeInTheDocument();
-      expect(primaryButton).toHaveAttribute('href', '/signup');
 
-      // The aria-describedby is on the button inside the link
-      const button = screen.getByRole('button', { name: /get 5 free photos/i });
-      expect(button).toHaveAttribute('aria-describedby', 'signup-description');
+      // Check that it's a button inside a link
+      expect(primaryButton.tagName).toBe('BUTTON');
+      const link = primaryButton.closest('a');
+      expect(link).toHaveAttribute('href', '/signup');
+
+      expect(primaryButton).toHaveAttribute('aria-describedby', 'signup-description');
     });
 
     it('renders secondary CTA button', () => {

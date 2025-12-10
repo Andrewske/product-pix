@@ -1,41 +1,29 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, mock } from 'bun:test';
 
-// Mock the supabase client
+const mockCreateAdminClient = mock();
+
 mock.module('@/lib/supabase/admin', () => ({
-  createAdminClient: mock(),
+  createAdminClient: mockCreateAdminClient,
 }));
 
-let mockResult: { data: any; error: any } = { data: null, error: null };
+const { fetchBatchEvaluations } = await import('../commands/shared');
 
-const mockSupabase: any = {
-  from: mock(() => ({
-    select: mock(() => ({
-      eq: mock(() => ({
-        eq: mock(() => Promise.resolve(mockResult)),
-      })),
-    })),
-  })),
-};
+interface MockQueryResult {
+  data: unknown;
+  error: unknown;
+}
+
+const createMockSupabase = (result: MockQueryResult): any => ({
+  from: () => ({
+    select: () => ({
+      eq: () => ({
+        eq: () => Promise.resolve(result),
+      }),
+    }),
+  }),
+});
 
 describe('shared utilities', () => {
-  let createAdminClient: any;
-  let fetchBatchEvaluations: any;
-
-  beforeEach(async () => {
-    // Reset mocks
-    mockResult = { data: null, error: null };
-
-    // Dynamically import after mocking
-    const adminModule = await import('@/lib/supabase/admin');
-    createAdminClient = adminModule.createAdminClient;
-
-    const sharedModule = await import('../commands/shared');
-    fetchBatchEvaluations = sharedModule.fetchBatchEvaluations;
-
-    // Setup mock implementation
-    createAdminClient.mockReturnValue(mockSupabase);
-  });
-
   describe('fetchBatchEvaluations', () => {
     it('fetches evaluation details for a batch', async () => {
       const mockData = [
@@ -77,9 +65,9 @@ describe('shared utilities', () => {
         },
       ];
 
-      mockResult = { data: mockData, error: null };
+      const supabase = createMockSupabase({ data: mockData, error: null });
 
-      const result = await fetchBatchEvaluations(mockSupabase, 'test-batch');
+      const result = await fetchBatchEvaluations(supabase, 'test-batch');
 
       expect(result).toEqual([
         {
@@ -134,9 +122,9 @@ describe('shared utilities', () => {
         },
       ];
 
-      mockResult = { data: mockData, error: null };
+      const supabase = createMockSupabase({ data: mockData, error: null });
 
-      const result = await fetchBatchEvaluations(mockSupabase, 'test-batch');
+      const result = await fetchBatchEvaluations(supabase, 'test-batch');
 
       expect(result).toEqual([]);
     });
@@ -151,7 +139,6 @@ describe('shared utilities', () => {
               details: {
                 composition: 7,
                 lighting: 6,
-                // Missing other sub-scores
                 reasoning: 'Partial evaluation',
               },
             },
@@ -159,9 +146,9 @@ describe('shared utilities', () => {
         },
       ];
 
-      mockResult = { data: mockData, error: null };
+      const supabase = createMockSupabase({ data: mockData, error: null });
 
-      const result = await fetchBatchEvaluations(mockSupabase, 'test-batch');
+      const result = await fetchBatchEvaluations(supabase, 'test-batch');
 
       expect(result).toEqual([
         {
@@ -178,17 +165,17 @@ describe('shared utilities', () => {
 
     it('throws error on database error', async () => {
       const mockError = { message: 'Database connection failed' };
-      mockResult = { data: null, error: mockError };
+      const supabase = createMockSupabase({ data: null, error: mockError });
 
-      await expect(fetchBatchEvaluations(mockSupabase, 'test-batch')).rejects.toThrow(
+      await expect(fetchBatchEvaluations(supabase, 'test-batch')).rejects.toThrow(
         'Failed to fetch evaluations for test-batch: Database connection failed'
       );
     });
 
     it('returns empty array when no data', async () => {
-      mockResult = { data: null, error: null };
+      const supabase = createMockSupabase({ data: null, error: null });
 
-      const result = await fetchBatchEvaluations(mockSupabase, 'test-batch');
+      const result = await fetchBatchEvaluations(supabase, 'test-batch');
 
       expect(result).toEqual([]);
     });
@@ -210,9 +197,9 @@ describe('shared utilities', () => {
         },
       ];
 
-      mockResult = { data: mockData, error: null };
+      const supabase = createMockSupabase({ data: mockData, error: null });
 
-      const result = await fetchBatchEvaluations(mockSupabase, 'test-batch');
+      const result = await fetchBatchEvaluations(supabase, 'test-batch');
 
       expect(result).toEqual([
         {

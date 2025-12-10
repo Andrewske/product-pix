@@ -1,5 +1,6 @@
 // src/lib/ai/__tests__/product-analyzer.test.ts
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
+import type { SpyInstance } from 'bun:test';
 import type { ProductAnalysis } from '../types';
 
 // Create mock functions
@@ -14,19 +15,38 @@ mock.module('ai', () => ({
 }));
 
 mock.module('@ai-sdk/google', () => ({
-  google: mockGoogle,
+  google: (modelName: string) => {
+    mockGoogle(modelName);
+    return 'mocked-google-model' as const;
+  },
 }));
+
+const mockEnvValues = {
+  GOOGLE_GENERATIVE_AI_API_KEY: 'test-google-key',
+  GEMINI_MODEL: 'gemini-3-pro-image-preview',
+  ANALYSIS_MODEL: 'gemini-2.0-flash',
+  ANTHROPIC_API_KEY: 'test-anthropic-key',
+  NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-anon-key',
+  SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+  R2_ACCOUNT_ID: 'r2-account',
+  R2_ACCESS_KEY_ID: 'r2-access-key',
+  R2_SECRET_ACCESS_KEY: 'r2-secret',
+  R2_BUCKET_NAME: 'product-pix-bucket',
+  R2_PUBLIC_URL: 'https://r2.example.com',
+  NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+  CRON_SECRET: 'cron-secret',
+  STRIPE_SECRET_KEY: 'sk_test_123',
+  STRIPE_WEBHOOK_SECRET: 'whsec_test_123',
+  STRIPE_PRICE_PACK_50: 'price_pack_50',
+  STRIPE_PRICE_PACK_200: 'price_pack_200',
+  STRIPE_PRICE_PACK_500: 'price_pack_500',
+  STRIPE_PRICE_PRO_MONTHLY: 'price_pro_monthly',
+  STRIPE_PRICE_BUSINESS_MONTHLY: 'price_business_monthly',
+};
 
 mock.module('@/lib/env', () => ({
-  env: {
-    ANALYSIS_MODEL: 'gemini-2.0-flash',
-  },
-}));
-
-mock.module('@/lib/logging', () => ({
-  logger: {
-    error: mockLoggerError,
-  },
+  env: { ...mockEnvValues },
 }));
 
 mock.module('../usage-types', () => ({
@@ -36,6 +56,8 @@ mock.module('../usage-types', () => ({
 // Dynamic import after mocking
 const { analyzeProductImage } = await import('../product-analyzer');
 const { env } = await import('@/lib/env');
+const loggingModule = await import('@/lib/logging');
+let loggerErrorSpy: SpyInstance<typeof loggingModule.logger.error>;
 
 describe('analyzeProductImage', () => {
   const mockImageBuffer = Buffer.from('fake-image-data');
@@ -63,6 +85,11 @@ describe('analyzeProductImage', () => {
 
     mockGoogle.mockReturnValue('mocked-google-model' as any);
     mockNormalizeUsage.mockReturnValue(mockNormalizedUsage);
+    loggerErrorSpy = spyOn(loggingModule.logger, 'error').mockImplementation(mockLoggerError as any);
+  });
+
+  afterEach(() => {
+    loggerErrorSpy.mockRestore();
   });
 
   it('should successfully analyze product image and return correct structure', async () => {

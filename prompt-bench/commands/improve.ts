@@ -887,12 +887,19 @@ const calculateDimensionAverages = (evaluations: ProductScore[]): EvaluationBrea
 /**
  * Validate that a batch has minimum required evaluations
  */
+interface BatchValidationDeps {
+  createClient?: typeof createAdminClient;
+  fetchEvaluations?: typeof fetchBatchEvaluations;
+}
+
 export const validateBatchSize = async (
   batchLabel: string,
-  force: boolean = false
+  force: boolean = false,
+  deps: BatchValidationDeps = {}
 ): Promise<Result<void>> => {
-  const supabase = createAdminClient();
-  const evaluations = await fetchBatchEvaluations(supabase, batchLabel);
+  const { createClient = createAdminClient, fetchEvaluations = fetchBatchEvaluations } = deps;
+  const supabase = createClient();
+  const evaluations = await fetchEvaluations(supabase, batchLabel);
 
   const count = evaluations.length;
 
@@ -900,14 +907,14 @@ export const validateBatchSize = async (
     if (force) {
       console.warn(`⚠️  Warning: Batch '${batchLabel}' has only ${count} evaluations (minimum 5 required). Proceeding with --force.`);
       return ok(undefined);
-    } else {
-      return err(
-        createError(
-          'VALIDATION_ERROR',
-          `Batch '${batchLabel}' has only ${count} completed evaluations. Minimum 5 required. Use --force to override.`
-        )
-      );
     }
+
+    return err(
+      createError(
+        'VALIDATION_ERROR',
+        `Batch '${batchLabel}' has only ${count} completed evaluations. Minimum 5 required. Use --force to override.`
+      )
+    );
   }
 
   return ok(undefined);

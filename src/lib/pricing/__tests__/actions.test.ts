@@ -3,6 +3,11 @@ import { mergePacks, mergeSubscriptions, type PricingData } from '../utils';
 import { creditEconomy } from '../pricing.config';
 import type { StripePriceData } from '@/lib/stripe/fetch-prices';
 
+// Mock Next.js unstable_cache to avoid runtime dependency
+mock.module('next/cache', () => ({
+  unstable_cache: <TArgs extends unknown[], TResult>(fn: (...args: TArgs) => Promise<TResult>) => fn,
+}));
+
 // Mock the Stripe fetch function
 const mockFetchStripePrices = mock();
 
