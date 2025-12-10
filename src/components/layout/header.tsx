@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserMenu } from './user-menu';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function Header() {
   const { user, profile, loading } = useUserProfile();
@@ -22,6 +23,7 @@ export function Header() {
 
           {/* Navigation */}
           <nav className="flex items-center gap-4">
+            <ThemeToggle />
             {loading ? (
               <Skeleton className="h-8 w-24" />
             ) : user ? (

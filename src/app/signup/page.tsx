@@ -1,47 +1,45 @@
 import Link from 'next/link';
 import { SignupForm, GoogleButton } from '@/components/auth';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SignupPage(): React.ReactElement {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-center text-gray-900">
-            ProductPix
-          </h1>
-          <h2 className="mt-6 text-center text-xl text-gray-600">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-bold tracking-tight">ProductPix</CardTitle>
+          <CardDescription className="text-lg">
             Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-500">
-            Start generating professional product photos today
-          </p>
-        </div>
-
-        <div className="space-y-4">
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <GoogleButton mode="signup" />
 
           <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+             <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-muted" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">Or continue with email</span>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with email
+              </span>
             </div>
           </div>
 
           <SignupForm />
-        </div>
-
-        <p className="text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link
-            href="/login"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
-            Sign in
-          </Link>
-        </p>
-      </div>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link
+              href="/login"
+              className="font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
