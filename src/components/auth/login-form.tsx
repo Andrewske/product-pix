@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface LoginFormProps {
   redirectTo?: string;
@@ -38,13 +41,11 @@ export function LoginForm({ redirectTo }: LoginFormProps): React.ReactElement {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-foreground">
-            Email address
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="email">Email address</Label>
+          <Input
             id="email"
             name="email"
             type="email"
@@ -52,15 +53,14 @@ export function LoginForm({ redirectTo }: LoginFormProps): React.ReactElement {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-ring"
+            placeholder="name@example.com"
+            className="bg-background"
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-foreground">
-            Password
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
             id="password"
             name="password"
             type="password"
@@ -68,22 +68,22 @@ export function LoginForm({ redirectTo }: LoginFormProps): React.ReactElement {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-ring"
+            className="bg-background"
           />
         </div>
       </div>
 
       {error && (
-        <div className="text-destructive text-sm">{error}</div>
+        <div className="text-destructive text-sm font-medium">{error}</div>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={loading}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full"
       >
         {loading ? 'Signing in...' : 'Sign in'}
-      </button>
+      </Button>
     </form>
   );
 }

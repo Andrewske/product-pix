@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,17 +12,17 @@ import type { CreditTransaction, TransactionType } from '@/types';
 const getTransactionTypeColor = (type: TransactionType): string => {
   switch (type) {
     case 'purchase':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-success/10 text-success border-success/20';
     case 'generation':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-primary/10 text-primary border-primary/20';
     case 'refund':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
     case 'bonus':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
+      return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
     case 'expiration':
-      return 'bg-red-100 text-red-800 border-red-200';
+      return 'bg-destructive/10 text-destructive border-destructive/20';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-muted text-muted-foreground border-border';
   }
 };
 
@@ -68,8 +69,8 @@ export function CreditsTab(): React.ReactElement {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-4 border rounded">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between p-4 border rounded-lg bg-card">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-16" />
@@ -110,9 +111,9 @@ export function CreditsTab(): React.ReactElement {
           <p className="text-sm text-muted-foreground mb-4">
             Your credit purchases, generations, and other transactions will appear here.
           </p>
-          <a href="/pricing" className="text-sm text-blue-600 hover:underline">
+          <Link href="/pricing" className="text-sm text-primary hover:underline">
             Buy credits →
-          </a>
+          </Link>
         </CardContent>
       </Card>
     );
@@ -127,7 +128,7 @@ export function CreditsTab(): React.ReactElement {
       <CardContent>
         <div className="space-y-4">
           {transactions.map((transaction) => (
-            <div key={transaction.id} className="flex items-center justify-between p-4 border rounded">
+            <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/5 transition-colors">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Badge
