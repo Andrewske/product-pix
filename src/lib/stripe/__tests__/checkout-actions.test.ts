@@ -1,5 +1,7 @@
 // Mock dependencies before importing the module
-jest.mock('@/lib/auth/server');
+jest.mock('@/lib/auth/server', () => ({
+  requireAuth: jest.fn(),
+}));
 jest.mock('@/lib/stripe/client', () => ({
   stripe: {
     checkout: {
@@ -9,13 +11,22 @@ jest.mock('@/lib/stripe/client', () => ({
     },
   },
 }));
-jest.mock('@/lib/stripe/customer');
-jest.mock('@/lib/stripe/products');
-jest.mock('@/lib/pricing/actions');
-jest.mock('@/lib/env', () => ({
-  env: {
-    NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+jest.mock('@/lib/stripe/customer', () => ({
+  getOrCreateStripeCustomer: jest.fn(),
+}));
+jest.mock('@/lib/stripe/products', () => ({
+  CREDIT_PACKS: {
+    pack_50: { credits: 50, priceId: 'price_pack_50' },
+    pack_200: { credits: 200, priceId: 'price_pack_200' },
+    pack_500: { credits: 500, priceId: 'price_pack_500' },
   },
+  SUBSCRIPTION_TIERS: {
+    pro: { credits: 200, priceId: 'price_pro_monthly' },
+    business: { credits: 600, priceId: 'price_business_monthly' },
+  },
+}));
+jest.mock('@/lib/pricing/actions', () => ({
+  getPricing: jest.fn(),
 }));
 
 import { User } from '@supabase/supabase-js';
@@ -116,7 +127,7 @@ describe('Stripe Checkout Actions', () => {
         payment_intent_data: {
           metadata: { userId: mockUser.id, packId: 'pack_50', credits: '50' },
         },
-        success_url: 'http://localhost:3000/success',
+        success_url: 'http://localhost:3000/settings/billing',
         cancel_url: 'http://localhost:3000/pricing',
       });
       expect(result).toEqual({ url: mockSessionUrl });
@@ -182,7 +193,7 @@ describe('Stripe Checkout Actions', () => {
         subscription_data: {
           metadata: { userId: mockUser.id, tier: 'pro', credits: '200' },
         },
-        success_url: 'http://localhost:3000/success',
+        success_url: 'http://localhost:3000/settings/billing',
         cancel_url: 'http://localhost:3000/pricing',
       });
       expect(result).toEqual({ url: mockSessionUrl });
