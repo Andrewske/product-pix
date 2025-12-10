@@ -2,15 +2,11 @@
 
 ## Current Focus
 - Redesigning the application UI to match new "Dark + Warm" aesthetic.
-- Implementing shadcn-ui updates and Tailwind v4 configuration for the new theme.
+- Fixed critical Tailwind v4 configuration issue where color variables were not mapped to theme utilities, causing the app to appear "black and white".
 
 ## Recent Decisions
-- Adopting a specific color palette: Deep Black (#0a0a0a), Electric Coral (#FF6B35), Cream (#FAF9F6), Mint (#4ECDC4).
-- Using "Sharp corners or subtle radius" for components.
+- **Theme Configuration**: Explicitly mapped all shadcn color variables (background, foreground, primary, etc.) in `globals.css` `@theme` block. This ensures classes like `bg-primary` correctly resolve to the Electric Coral color.
 
 ## Active Tasks
-- Initialize Memory Bank (Completed)
-- Configure Tailwind v4 variables.
-- Update global CSS.
-- Update shadcn-ui components.
-
+- Verify UI visually (User Action).
+- Ensure all components are picking up the new colors.

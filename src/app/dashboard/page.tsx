@@ -20,68 +20,70 @@ export default async function DashboardPage() {
   const images = await getUserGeneratedImages(user.id);
   const recentBatches = await getUserBatches(user.id, { limit: 3 });
 
+  const statusStyles = {
+    pending: 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-yellow-500/20',
+    processing: 'bg-primary/10 text-primary hover:bg-primary/20 border-primary/20',
+    completed: 'bg-success/10 text-success hover:bg-success/20 border-success/20',
+    failed: 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20',
+    cancelled: 'bg-muted text-muted-foreground hover:bg-muted/80',
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Your Images</h1>
-        <div className="flex gap-2">
-          <Link href="/batch/new">
-            <Button variant="outline">Create Batch</Button>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+        <h1 className="text-3xl font-bold tracking-tight">Your Images</h1>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Link href="/batch/new" className="flex-1 sm:flex-none">
+            <Button variant="outline" className="w-full">Create Batch</Button>
           </Link>
-          <Link href="/generate">
-            <Button>Generate New</Button>
+          <Link href="/generate" className="flex-1 sm:flex-none">
+            <Button className="w-full">Generate New</Button>
           </Link>
         </div>
       </div>
 
       {/* Recent Batches Section */}
       {recentBatches.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Recent Batches</h2>
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold">Recent Batches</h2>
             <Link href="/batch">
-              <Button variant="ghost" size="sm">View All</Button>
+              <Button variant="ghost" size="sm" className="text-muted-foreground">View All</Button>
             </Link>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             {recentBatches.map((batch) => {
               const progress =
                 batch.total_items > 0
                   ? ((batch.completed_items + batch.failed_items) / batch.total_items) * 100
                   : 0;
 
-              const statusColors = {
-                pending: 'bg-yellow-500',
-                processing: 'bg-blue-500',
-                completed: 'bg-green-500',
-                failed: 'bg-red-500',
-                cancelled: 'bg-gray-500',
-              };
-
               return (
                 <Link key={batch.id} href={`/batch/${batch.id}`}>
-                  <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-medium truncate flex-1">{batch.name}</h3>
+                  <Card className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border-border/50 bg-card hover:border-primary/50">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="font-semibold truncate flex-1 pr-4">{batch.name}</h3>
                       <Badge
-                        className={`${statusColors[batch.status]} text-white text-xs`}
+                        variant="outline"
+                        className={`${statusStyles[batch.status as keyof typeof statusStyles]} border`}
                       >
                         {batch.status}
                       </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground mb-2">
-                      {batch.total_items} items • {batch.credits_charged} credits
+                    <div className="text-sm text-muted-foreground mb-4">
+                      <span className="font-medium text-foreground">{batch.total_items}</span> items • <span className="font-medium text-foreground">{batch.credits_charged}</span> credits
                     </div>
                     {batch.status === 'processing' && (
-                      <div className="space-y-1">
-                        <div className="w-full bg-muted rounded-full h-1.5">
+                      <div className="space-y-2">
+                        <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
                           <div
-                            className="bg-primary h-1.5 rounded-full transition-all"
+                            className="bg-primary h-1.5 rounded-full transition-all duration-500 ease-out"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {batch.completed_items} / {batch.total_items}
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Processing...</span>
+                          <span>{batch.completed_items} / {batch.total_items}</span>
                         </div>
                       </div>
                     )}
