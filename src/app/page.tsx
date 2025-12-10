@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Zap, ImageIcon, Download, Sparkles, ArrowUpRight } from "lucide-react"
 import { Metadata } from "next"

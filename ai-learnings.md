@@ -153,7 +153,7 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Import consolidation**: Single shared module (`src/lib/result.ts`) prevents duplication across AI modules
 - **Pattern**: `const result = someOperation(); if (!result.ok) return err({ code: 'OP_FAILED', message: '...' });`
 
-### Job Parameters Merge Pattern  
+### Job Parameters Merge Pattern
 - **Fetch-then-merge**: Supabase JSONB lacks native merge, so fetch existing → spread merge → update pattern required
 - **Type casting**: Cast merged object to `Json` type for Supabase compatibility: `merged as Json`
 - **Error handling**: Centralized logger with structured context: `logger.error('message', { error, jobId })`
@@ -177,6 +177,7 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Main function length**: Keep under 80 lines by extracting helpers, but maintain cohesion within same file
 - **Helper naming**: Descriptive names like `runProductAnalysis()`, `recordGenerationCost()` clarify purpose
 - **Error propagation**: Maintain original error handling patterns while improving code organization
+
 ## Landing Page Code Review Fixes Implementation
 
 - **Error Boundary Strategy**: Use Next.js 16 `error.tsx` file convention at app root level for handling server component errors. Provides idiomatic Next.js pattern for unhandled error recovery with reset functionality
