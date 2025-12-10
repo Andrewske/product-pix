@@ -53,10 +53,6 @@ const runProductAnalysis = async (
         output: result.data.usage.completionTokens,
       });
 
-      if (costData.fallbackUsed) {
-        logger.warn('Using fallback pricing for analysis');
-      }
-
       await createGenerationCost({
         jobId,
         generatedImageId: undefined, // No image yet
@@ -67,7 +63,6 @@ const runProductAnalysis = async (
         inputCostUsd: costData.inputCost,
         outputCostUsd: costData.outputCost,
         totalCostUsd: costData.total,
-        fallbackUsed: costData.fallbackUsed,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -96,10 +91,6 @@ const recordGenerationCost = async (
       output: usage.completionTokens,
     });
 
-    if (costData.fallbackUsed) {
-      logger.warn('Using fallback pricing for image generation');
-    }
-
     await createGenerationCost({
       jobId,
       generatedImageId,
@@ -110,7 +101,6 @@ const recordGenerationCost = async (
       inputCostUsd: costData.inputCost,
       outputCostUsd: costData.outputCost,
       totalCostUsd: costData.total,
-      fallbackUsed: costData.fallbackUsed,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

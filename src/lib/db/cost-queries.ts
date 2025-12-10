@@ -16,7 +16,6 @@ export interface CreateGenerationCostParams {
   inputCostUsd: number;
   outputCostUsd: number;
   totalCostUsd: number;
-  fallbackUsed?: boolean;
 }
 
 export const createGenerationCost = async (
@@ -36,7 +35,6 @@ export const createGenerationCost = async (
       input_cost_usd: params.inputCostUsd,
       output_cost_usd: params.outputCostUsd,
       total_cost_usd: params.totalCostUsd,
-      fallback_used: params.fallbackUsed ?? false,
     });
 
   if (error) {
@@ -111,18 +109,3 @@ export const getTotalCostByModel = async (modelId: string): Promise<number> => {
   return data.reduce((sum: number, record: GenerationCostRecord) => sum + Number(record.total_cost_usd), 0);
 };
 
-export const getFallbackUsageCount = async (): Promise<number> => {
-  const supabase = createAdminClient();
-
-  const { count, error } = await supabase
-    .from('generation_costs')
-    .select('*', { count: 'exact', head: true })
-    .eq('fallback_used', true);
-
-  if (error) {
-    console.error('Error fetching fallback usage count:', error);
-    return 0;
-  }
-
-  return count || 0;
-};

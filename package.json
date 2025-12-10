@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run validate-models && next build",
     "start": "next start",
     "lint": "eslint",
+    "validate-models": "tsx scripts/validate-models.ts",
     "bench": "tsx prompt-bench/cli.ts",
     "test": "bun test",
     "test:watch": "bun test --watch",

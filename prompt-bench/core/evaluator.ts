@@ -233,9 +233,6 @@ export const evaluateImage = async (
       }
 
       const costData = costResult.data;
-      if (costData.fallbackUsed) {
-        console.warn(`⚠️  Using fallback pricing for model: ${model}`);
-      }
 
       return ok({
         overall,

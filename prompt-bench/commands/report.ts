@@ -47,11 +47,6 @@ interface ReportData {
     evaluation: number;
     total: number;
   };
-  fallbackUsage?: {
-    count: number;
-    models: string[];
-    source: string;
-  };
   insights?: InsightResult;
   improvementAnalysis?: StructuredAnalysis;
 }
@@ -275,32 +270,12 @@ const renderHeader = (data: ReportData, comparison?: ComparisonData | null): str
     ? `Comparison Report: ${escapeHtml(comparison.baseline.label)} vs ${escapeHtml(data.label)}`
     : `Batch Report: ${escapeHtml(data.label)}`;
 
-  const fallbackBanner = data.fallbackUsage ? `
-    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <p class="text-sm text-yellow-700">
-            <strong>Fallback Pricing Used:</strong> ${data.fallbackUsage.count} test${data.fallbackUsage.count !== 1 ? 's' : ''} used fallback pricing for unknown models.
-            ${data.fallbackUsage.models.length > 0 ? `Models: ${data.fallbackUsage.models.join(', ')}` : ''}
-            <br><em>${data.fallbackUsage.source}</em>
-          </p>
-        </div>
-      </div>
-    </div>
-  ` : '';
-
   return `
   <header class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">${title}</h1>
     <p class="text-sm text-gray-500">Generated: ${data.generatedAt}</p>
-    ${fallbackBanner}
   </header>
- `;
+  `;
 };
 
 const renderSummaryStats = (data: ReportData): string => `
@@ -979,28 +954,6 @@ export const runReport = async (
 
   const totalEvalCost = (evalCosts || []).reduce((sum, e) => sum + (e.cost_usd || 0), 0);
 
-  // Fallback usage tracking
-  let fallbackUsage: { count: number; models: string[]; source: string } | undefined = undefined;
-  try {
-    const { data: fallbackCosts } = await (supabase as any)
-      .from('generation_costs')
-      .select('model_id')
-      .eq('fallback_used', true)
-      .in('job_id', tests.map((t) => t.id).filter(Boolean));
-
-    if (fallbackCosts && fallbackCosts.length > 0) {
-      const modelIds = fallbackCosts.map((c: { model_id: string }) => c.model_id);
-      const uniqueModels: string[] = [...new Set<string>(modelIds)];
-      fallbackUsage = {
-        count: fallbackCosts.length,
-        models: uniqueModels,
-        source: 'Computed as MAX(all prices) * 1.5 for safety',
-      };
-    }
-  } catch (error) {
-    console.warn('⚠️ Could not fetch fallback usage data:', error);
-  }
-
   // Build report data
   const reportData: ReportData = {
     label: options.label,
@@ -1013,7 +966,6 @@ export const runReport = async (
       evaluation: totalEvalCost,
       total: totalGenerationCost + totalEvalCost,
     },
-    fallbackUsage,
     insights: insights ?? undefined,
     improvementAnalysis: improvementAnalysis ?? undefined,
   };

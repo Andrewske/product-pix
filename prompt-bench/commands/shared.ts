@@ -12,6 +12,7 @@ interface PromptBenchConfig {
     batch_file?: string;
     label_prefix?: string;
     evaluation_model?: string;
+    improvement_model?: string;
     baseline_label?: string;
     report?: {
       insights?: boolean;

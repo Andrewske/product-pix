@@ -23,14 +23,11 @@ export function calculateCost(modelId: string, usage: TokenUsage): CostResult {
       total: 0,
       modelId,
       provider: getProviderForModel(modelId),
-      fallbackUsed: false,
     };
   }
 
   const provider = getProviderForModel(modelId);
   const pricing = getPricingForModel(modelId);
-  const fallbackUsed = provider === 'unknown' ||
-    !getPricingForModel(modelId, undefined); // Check if exact match exists
 
   // Calculate costs (pricing is per 1M tokens, so divide by 1,000,000)
   const inputCost = (usage.input / 1_000_000) * pricing.input;
@@ -43,6 +40,5 @@ export function calculateCost(modelId: string, usage: TokenUsage): CostResult {
     total,
     modelId,
     provider,
-    fallbackUsed,
   };
 }
