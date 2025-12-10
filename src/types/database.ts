@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -230,6 +235,7 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
+          title: string | null
           user_id: string
           width: number | null
         }
@@ -243,6 +249,7 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
+          title?: string | null
           user_id: string
           width?: number | null
         }
@@ -256,6 +263,7 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
+          title?: string | null
           user_id?: string
           width?: number | null
         }
@@ -391,6 +399,7 @@ export type Database = {
           retry_count: number
           started_at: string | null
           status: Database["public"]["Enums"]["job_status"]
+          template_id: string | null
           upload_id: string | null
           user_id: string
         }
@@ -406,6 +415,7 @@ export type Database = {
           retry_count?: number
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          template_id?: string | null
           upload_id?: string | null
           user_id: string
         }
@@ -421,10 +431,18 @@ export type Database = {
           retry_count?: number
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          template_id?: string | null
           upload_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "jobs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "jobs_upload_id_fkey"
             columns: ["upload_id"]
@@ -1184,4 +1202,3 @@ export const Constants = {
     },
   },
 } as const
-

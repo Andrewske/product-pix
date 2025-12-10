@@ -1,7 +1,8 @@
 // src/lib/ai/generate-image.ts
-import { getImageProvider, type ImageConfig, type GenerationResponse } from './index';
+import { getImageProvider, type ImageConfig, type GenerationResponse, type ProductAnalysis } from './index';
+import { analyzeProductImage, buildPromptFromTemplate, generateImageTitle, getTitleFromFilename } from './index';
 import { uploadBase64Image } from '@/lib/r2';
-import { updateJobStatus, getJob } from '@/lib/db/jobs';
+import { updateJobStatus, getJob, updateJobParameters } from '@/lib/db/jobs';
 import { refundCredits } from '@/lib/db/credits';
 import { createGeneratedImage } from '@/lib/db/generated-images';
 import { calculateCost } from '@/lib/pricing';
@@ -14,6 +15,7 @@ export interface GenerateImageParams {
   prompt: string;
   sourceImage?: Buffer;
   sourceMimeType?: string;
+  sourceFilename?: string;
   config: ImageConfig;
 }
 
@@ -30,12 +32,76 @@ export interface GenerateImageResult {
 export const generateImage = async (
   params: GenerateImageParams
 ): Promise<GenerateImageResult> => {
-  const { jobId, userId, prompt, sourceImage, sourceMimeType, config } = params;
+  const { jobId, userId, prompt, sourceImage, sourceMimeType, sourceFilename, config } = params;
 
   const provider = getImageProvider();
 
   // Mark job as processing
   await updateJobStatus(jobId, 'processing');
+
+  // Get job to access template_id
+  const job = await getJob(jobId);
+  if (!job) {
+    return {
+      success: false,
+      error: 'Job not found',
+    };
+  }
+
+  const templateId = job.template_id ?? 'ecommerce-base';
+  let analysis: ProductAnalysis | undefined = undefined;
+  let imageTitle: string | undefined;
+
+  // Analysis step for image-to-image
+  if (sourceImage && sourceMimeType) {
+    const result = await analyzeProductImage(sourceImage, sourceMimeType);
+    if (result.ok) {
+      analysis = result.data.analysis;
+      await updateJobParameters(jobId, { analysis });
+      imageTitle = generateImageTitle(analysis);
+
+      // Record analysis cost
+      try {
+        const costData = calculateCost('gemini-2.0-flash', {
+          input: result.data.usage.promptTokens,
+          output: result.data.usage.completionTokens,
+        });
+
+        if (costData.fallbackUsed) {
+          logger.warn('Using fallback pricing for analysis');
+        }
+
+        await createGenerationCost({
+          jobId,
+          generatedImageId: undefined, // No image yet
+          modelId: 'gemini-2.0-flash',
+          provider: costData.provider,
+          inputTokens: result.data.usage.promptTokens,
+          outputTokens: result.data.usage.completionTokens,
+          inputCostUsd: costData.inputCost,
+          outputCostUsd: costData.outputCost,
+          totalCostUsd: costData.total,
+          fallbackUsed: costData.fallbackUsed,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        logger.warn('Failed to calculate cost for analysis', { error: message });
+      }
+    } else {
+      // Fallback: use original filename as title
+      imageTitle = sourceFilename ? getTitleFromFilename(sourceFilename) : 'untitled';
+    }
+  }
+
+  // Build prompt from template (works with or without analysis)
+  const promptResult = await buildPromptFromTemplate(templateId, analysis);
+  if (!promptResult.ok) {
+    return {
+      success: false,
+      error: `Template error: ${promptResult.error.message}`,
+    };
+  }
+  const compiledPrompt = promptResult.data;
 
   try {
     let result: GenerationResponse;
@@ -45,12 +111,12 @@ export const generateImage = async (
       result = await provider.generateFromImage(
         sourceImage,
         sourceMimeType,
-        prompt,
+        compiledPrompt,
         config
       );
     } else {
       // Text-to-image generation
-      result = await provider.generateFromText(prompt, config);
+      result = await provider.generateFromText(compiledPrompt, config);
     }
 
     if (!result.success) {
@@ -94,6 +160,7 @@ export const generateImage = async (
       width: result.width,
       height: result.height,
       fileSize: Buffer.from(result.imageData, 'base64').length,
+      title: imageTitle,
     });
 
     // Calculate and store generation cost

@@ -57,6 +57,7 @@ export const POST = withAuth(async (request) => {
     // If uploadId provided, fetch the upload
     let sourceImage: Buffer | undefined;
     let sourceMimeType: string | undefined;
+    let sourceFilename: string | undefined;
 
     if (uploadId) {
       const upload = await getUpload(uploadId);
@@ -87,6 +88,7 @@ export const POST = withAuth(async (request) => {
 
       sourceImage = Buffer.from(await response.arrayBuffer());
       sourceMimeType = upload.mime_type;
+      sourceFilename = upload.filename;
     }
 
     // Create job with credit consumption
@@ -95,7 +97,8 @@ export const POST = withAuth(async (request) => {
       uploadId ?? null,
       prompt,
       { aspectRatio, resolution },
-      creditCost
+      creditCost,
+      'ecommerce-base' // Default template for now
     );
 
     // Check for insufficient credits
@@ -131,6 +134,7 @@ export const POST = withAuth(async (request) => {
       prompt,
       sourceImage,
       sourceMimeType,
+      sourceFilename,
       config: { aspectRatio, resolution },
     });
 

@@ -11,6 +11,7 @@ export interface CreateGeneratedImageParams {
   width: number;
   height: number;
   fileSize?: number;
+  title?: string;
 }
 
 export const createGeneratedImage = async (
@@ -18,26 +19,46 @@ export const createGeneratedImage = async (
 ): Promise<GeneratedImage | null> => {
   const supabase = createAdminClient();
 
-  const { data, error } = await supabase
-    .from('generated_images')
-    .insert({
-      job_id: params.jobId,
-      user_id: params.userId,
-      file_key: params.fileKey,
-      public_url: params.publicUrl,
-      width: params.width,
-      height: params.height,
-      file_size: params.fileSize ?? null,
-    })
-    .select()
-    .single();
+  let title = params.title;
+  let attempt = 0;
+  const maxRetries = 10;
 
-  if (error) {
+  while (attempt < maxRetries) {
+    const { data, error } = await supabase
+      .from('generated_images')
+      .insert({
+        job_id: params.jobId,
+        user_id: params.userId,
+        file_key: params.fileKey,
+        public_url: params.publicUrl,
+        width: params.width,
+        height: params.height,
+        file_size: params.fileSize ?? null,
+        title: title || null,
+      })
+      .select()
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    // Check if it's a unique constraint violation on title
+    if (error.code === '23505' && error.message.includes('idx_generated_images_user_title') && title) {
+      // Try with incremented suffix
+      attempt++;
+      const baseTitle = title.replace(/-\d+$/, ''); // Remove existing suffix
+      title = `${baseTitle}-${attempt}`;
+      continue;
+    }
+
+    // Other error, don't retry
     console.error('Error creating generated image record:', error);
     return null;
   }
 
-  return data;
+  console.error('Failed to create generated image after max retries due to title conflicts');
+  return null;
 };
 
 export const getUserGeneratedImages = async (

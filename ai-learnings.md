@@ -130,3 +130,16 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Suspense for useSearchParams**: Wrap client components using `useSearchParams` in `<Suspense>` boundary in server components to prevent hydration mismatches
 - **Radix UI shadcn integration**: Follow button.tsx pattern with `forwardRef`, `cn()` utility, compound component exports. Import from `@radix-ui/react-*` packages
 - **Auth-protected pages**: Use `requireAuth()` utility in server components for automatic redirect to `/login` if unauthenticated
+
+## Product Analysis Pre-Generation Implementation
+
+- **Vision-first prompt generation**: User prompts removed entirely. System automatically analyzes product images using Gemini Flash vision model, extracts structured product data (product, color, material, shape, features), then compiles optimal prompts from database templates
+- **Template-driven prompts**: Prompts fetched from `prompt_templates` table by ID, compiled with analysis data as variables. Falls back to empty fields when analysis fails, letting Gemini infer from image alone
+- **Structured analysis output**: Zod schema enforces consistent ProductAnalysis interface with required fields. Gemini `generateObject` provides reliable structured extraction from images
+- **Cost tracking duality**: Image-to-image jobs now record two separate costs - vision analysis cost and generation cost. Both tracked with `createGenerationCost()` for accurate pricing
+- **Title uniqueness with retry**: Database constraint enforces unique `(user_id, title)` pairs. Automatic retry logic appends `-2`, `-3`, etc. up to 10 attempts when conflicts occur
+- **Graceful analysis degradation**: When vision analysis fails, system falls back to filename-based titles and template compilation with empty product fields. Gemini still generates from source image alone
+- **Job parameters storage**: Analysis results stored in `jobs.parameters` JSONB field for debugging and future analysis. Merges new data without overwriting existing parameters
+- **Template ID infrastructure**: Jobs store `template_id` for future user template selection. Currently defaults to `ecommerce-base` but ready for user customization
+- **Filename fallback titles**: When analysis fails, titles derived from source filename (removing extension). Provides consistent naming even without vision analysis
+- **DB constraint + application retry**: Unique constraints at database level prevent duplicates, application-level retry with suffixes ensures user experience continuity

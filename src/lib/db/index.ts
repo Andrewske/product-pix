@@ -5,3 +5,4 @@ export * from './jobs';
 export * from './uploads';
 export * from './batch';
 export * from './billing';
+export * from './templates';

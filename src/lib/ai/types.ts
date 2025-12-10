@@ -1,4 +1,16 @@
 // src/lib/ai/types.ts
+
+/**
+ * Analysis result from vision model for product images
+ */
+export interface ProductAnalysis {
+  product: string;
+  color: string;
+  material: string;
+  shape: string;
+  features: string[];
+}
+
 export interface ImageConfig {
   aspectRatio: '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
   resolution: '1k' | '2k' | '4k';

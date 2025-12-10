@@ -2,7 +2,10 @@
 import { createGeminiProvider } from './providers/gemini';
 import type { ImageProvider } from './types';
 
-export type { ImageProvider, ImageConfig, GenerationResponse, GenerationResult, GenerationError } from './types';
+export type { ImageProvider, ImageConfig, GenerationResponse, GenerationResult, GenerationError, ProductAnalysis } from './types';
+export { analyzeProductImage } from './product-analyzer';
+export { buildPromptFromTemplate, buildPromptFromTemplateSlug } from './prompt-builder';
+export { generateImageTitle, getTitleFromFilename } from './title-generator';
 
 let cachedProvider: ImageProvider | null = null;
 

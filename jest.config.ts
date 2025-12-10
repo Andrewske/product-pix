@@ -15,6 +15,10 @@ const config: Config = {
     }],
   },
   collectCoverageFrom: [
+    'src/lib/ai/**/*.ts',
+    '!src/lib/ai/**/*.test.ts',
+    '!src/lib/ai/index.ts',
+
     'src/lib/prompts/**/*.ts',
     '!src/lib/prompts/**/*.test.ts',
     '!src/lib/prompts/index.ts',

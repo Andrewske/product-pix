@@ -4,6 +4,7 @@ const envSchema = z.object({
   // Google AI
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
   GEMINI_MODEL: z.string().optional().default('gemini-3-pro-image-preview'),
+  ANALYSIS_MODEL: z.string().optional().default('gemini-2.0-flash'),
 
   // Anthropic (for evaluation)
   ANTHROPIC_API_KEY: z.string().min(1).optional(), // Required only for evaluation

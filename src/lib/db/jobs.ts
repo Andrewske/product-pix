@@ -8,7 +8,8 @@ export const createGenerationJob = async (
   uploadId: string | null,
   prompt: string,
   parameters: Json = {},
-  credits = 1
+  credits = 1,
+  templateId?: string
 ): Promise<CreateJobResult> => {
   const supabase = createAdminClient();
 
@@ -18,6 +19,7 @@ export const createGenerationJob = async (
     p_prompt: prompt,
     p_parameters: parameters,
     p_credits: credits,
+    p_template_id: templateId || null,
   });
 
   if (error) {
@@ -104,6 +106,28 @@ export const updateJobStatus = async (
 
   if (error) {
     console.error('Error updating job status:', error);
+    return false;
+  }
+
+  return true;
+};
+
+export const updateJobParameters = async (
+  jobId: string,
+  params: Record<string, unknown>
+): Promise<boolean> => {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from('jobs')
+    .update({
+      parameters: params as Json,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', jobId);
+
+  if (error) {
+    console.error('Error updating job parameters:', error);
     return false;
   }
 
