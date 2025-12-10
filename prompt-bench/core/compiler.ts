@@ -120,6 +120,43 @@ export const assemblePrompt = (templateData: TemplateData): string => {
 };
 
 // =============================================================================
+// Variable Usage Analysis
+// =============================================================================
+
+/**
+ * Extract all variables actually used in a template
+ *
+ * @param templateData - The template components
+ * @returns Set of variable names used in placeholders like {variable_name}
+ */
+export const getUsedVariables = (templateData: TemplateData): Set<string> => {
+  const usedVars = new Set<string>();
+  const placeholderRegex = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
+
+  // Check all template components
+  const components = [
+    templateData.subject,
+    templateData.background,
+    templateData.lighting,
+    templateData.camera,
+    templateData.style,
+    templateData.quality,
+    templateData.negative,
+  ];
+
+  for (const component of components) {
+    if (!component) continue;
+
+    let match;
+    while ((match = placeholderRegex.exec(component)) !== null) {
+      usedVars.add(match[1]);
+    }
+  }
+
+  return usedVars;
+};
+
+// =============================================================================
 // Main Compiler
 // =============================================================================
 
@@ -140,7 +177,7 @@ export const compileTemplate = (
 ): Result<CompiledPrompt> => {
   // Step 1: Validate required variables
   if (!options.skipValidation) {
-    const requiredError = validateRequiredVariables(variablesSchema, providedVariables);
+    const requiredError = validateRequiredVariables(templateData, variablesSchema, providedVariables);
     if (requiredError) {
       return err(requiredError);
     }

@@ -1,9 +1,10 @@
 // src/lib/ai/generate-image.ts
 import { getImageProvider, type ImageConfig, type GenerationResponse, type ProductAnalysis } from './index';
-import { analyzeProductImage, buildPromptFromTemplate, generateImageTitle, getTitleFromFilename } from './index';
+import { analyzeProductImage, buildPromptFromTemplate, buildPromptFromTemplateSlug, generateImageTitle, getTitleFromFilename } from './index';
 import { uploadBase64Image } from '@/lib/r2';
 import { updateJobStatus, getJob, updateJobParameters } from '@/lib/db/jobs';
 import { refundCredits } from '@/lib/db/credits';
+import { resolveTemplateIdToSlug } from '@/lib/db/templates';
 import { createGeneratedImage } from '@/lib/db/generated-images';
 import { calculateCost } from '@/lib/pricing';
 import { createGenerationCost } from '@/lib/db/cost-queries';
@@ -130,19 +131,22 @@ export const generateImage = async (
     };
   }
 
-   const templateId = job.template_id ?? 'ecommerce-base';
-   let analysis: ProductAnalysis | undefined = undefined;
-   let imageTitle: string | undefined;
+   // Resolve template slug with fallback for legacy jobs
+   const templateSlug = job.template_slug ??
+     (job.template_id ? await resolveTemplateIdToSlug(job.template_id) : 'ecommerce-base');
 
-   // Analysis step for image-to-image
-   if (sourceImage && sourceMimeType) {
-     const analysisResult = await runProductAnalysis(jobId, sourceImage, sourceMimeType, sourceFilename);
-     analysis = analysisResult.analysis;
-     imageTitle = analysisResult.imageTitle;
-   }
+    let analysis: ProductAnalysis | undefined = undefined;
+    let imageTitle: string | undefined;
 
-  // Build prompt from template (works with or without analysis)
-  const promptResult = await buildPromptFromTemplate(templateId, analysis);
+    // Analysis step for image-to-image
+    if (sourceImage && sourceMimeType) {
+      const analysisResult = await runProductAnalysis(jobId, sourceImage, sourceMimeType, sourceFilename);
+      analysis = analysisResult.analysis;
+      imageTitle = analysisResult.imageTitle;
+    }
+
+   // Build prompt from template (works with or without analysis)
+   const promptResult = await buildPromptFromTemplateSlug(templateSlug, analysis);
   if (!promptResult.ok) {
     return {
       success: false,

@@ -277,7 +277,7 @@ describe('errors module', () => {
         name: { required: true },
         color: { required: true },
       };
-      const error = validateRequiredVariables(schema, { name: 'test', color: 'red' });
+      const error = validateRequiredVariables({ subject: 'test' }, schema, { name: 'test', color: 'red' });
 
       expect(error).toBeNull();
     });
@@ -287,17 +287,20 @@ describe('errors module', () => {
         name: { required: true },
         optional: { required: false },
       };
-      const error = validateRequiredVariables(schema, { name: 'test' });
+      const error = validateRequiredVariables({ subject: 'A {name} that is {color}' }, schema, { name: 'test' });
 
       expect(error).toBeNull();
     });
 
     it('returns error for missing required variable', () => {
+      const templateData = {
+        subject: 'A {name} that is {color}',
+      };
       const schema = {
         name: { required: true },
         color: { required: true },
       };
-      const error = validateRequiredVariables(schema, { name: 'test' });
+      const error = validateRequiredVariables(templateData, schema, { name: 'test' });
 
       expect(error).not.toBeNull();
       expect(error?.code).toBe('VALIDATION_ERROR');
@@ -310,7 +313,7 @@ describe('errors module', () => {
         color: { required: true },
         size: { required: true },
       };
-      const error = validateRequiredVariables(schema, {});
+      const error = validateRequiredVariables({ subject: 'A {name} {color} {size}' }, schema, {});
 
       expect(error).not.toBeNull();
       expect(error?.message).toContain('name');
@@ -319,7 +322,7 @@ describe('errors module', () => {
     });
 
     it('returns null for empty schema', () => {
-      const error = validateRequiredVariables({}, { anyVar: 'value' });
+      const error = validateRequiredVariables({ subject: 'test' }, {}, { anyVar: 'value' });
 
       expect(error).toBeNull();
     });
@@ -329,7 +332,7 @@ describe('errors module', () => {
         opt1: { required: false },
         opt2: { required: false },
       };
-      const error = validateRequiredVariables(schema, {});
+      const error = validateRequiredVariables({ subject: 'test' }, schema, {});
 
       expect(error).toBeNull();
     });
