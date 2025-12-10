@@ -43,7 +43,7 @@ export async function createPackCheckout(packId: CreditPackId): Promise<{ url: s
       payment_intent_data: {
         metadata: { userId: user.id, packId, credits: pack.credits.toString() },
       },
-      success_url: `${baseUrl}/success`,
+      success_url: `${baseUrl}/settings/billing`,
       cancel_url: `${baseUrl}/pricing`,
     });
 
@@ -89,7 +89,7 @@ export async function createSubscriptionCheckout(tier: SubscriptionTier): Promis
       subscription_data: {
         metadata: { userId: user.id, tier, credits: subscriptionTier.credits.toString() },
       },
-      success_url: `${baseUrl}/success`,
+      success_url: `${baseUrl}/settings/billing`,
       cancel_url: `${baseUrl}/pricing`,
     });
 
