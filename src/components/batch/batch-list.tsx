@@ -1,16 +1,17 @@
 // src/components/batch/batch-list.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/card';
+import { StudioCard } from '@/components/ui/studio-card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { BatchJob } from '@/lib/db/batch';
 
 interface BatchListProps {
   initialBatches?: BatchJob[];
-  statusFilter?: 'all' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  statusFilter?: 'all' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'pending';
 }
 
 export function BatchList({
@@ -19,16 +20,10 @@ export function BatchList({
 }: BatchListProps) {
   const router = useRouter();
   const [batches, setBatches] = useState<BatchJob[]>(initialBatches);
-  const [filter, setFilter] = useState<'all' | 'processing' | 'completed' | 'failed' | 'cancelled'>(statusFilter);
+  const [filter, setFilter] = useState<'all' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'pending'>(statusFilter);
   const [loading, setLoading] = useState(!initialBatches.length);
 
-  useEffect(() => {
-    if (!initialBatches.length) {
-      fetchBatches();
-    }
-  }, [filter]);
-
-  const fetchBatches = async () => {
+  const fetchBatches = useCallback(async () => {
     setLoading(true);
     try {
       const url = new URL('/api/batch', window.location.origin);
@@ -46,14 +41,20 @@ export function BatchList({
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    if (!initialBatches.length) {
+      fetchBatches();
+    }
+  }, [fetchBatches, initialBatches.length]);
 
   const statusColors = {
-    pending: 'bg-yellow-500',
-    processing: 'bg-blue-500',
-    completed: 'bg-green-500',
-    failed: 'bg-red-500',
-    cancelled: 'bg-gray-500',
+    pending: 'bg-orange-500', // Electric Coral
+    processing: 'bg-orange-500', // Electric Coral
+    completed: 'bg-emerald-400', // Mint
+    failed: 'bg-gray-900', // Deep Black
+    cancelled: 'bg-gray-800', // Deep Black
   };
 
   const statusLabels = {
@@ -72,7 +73,7 @@ export function BatchList({
     <div className="space-y-4">
       {/* Filter tabs */}
       <div className="flex gap-4 border-b">
-        {(['all', 'processing', 'completed', 'failed'] as const).map((status) => (
+        {(['all', 'pending', 'processing', 'completed', 'failed', 'cancelled'] as const).map((status) => (
           <Button
             key={status}
             variant="ghost"
@@ -96,49 +97,53 @@ export function BatchList({
       {/* Batch cards */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+          <LoadingSpinner size="lg" />
         </div>
-      ) : filteredBatches.length === 0 ? (
-        <Card className="p-12 text-center">
-          <p className="text-muted-foreground">
-            No batches found. Create your first batch to get started.
-          </p>
-        </Card>
-      ) : (
+        ) : filteredBatches.length === 0 ? (
+          <StudioCard className="p-12 text-center">
+            <h3 className="text-xl font-semibold mb-2">No batches found</h3>
+            <p className="text-muted-foreground mb-6">
+              Create your first batch to get started with AI-powered product photography.
+            </p>
+            <Button onClick={() => router.push('/generate')}>
+              Create Batch
+            </Button>
+          </StudioCard>
+       ) : (
         <div className="grid gap-4">
-          {filteredBatches.map((batch) => {
-            const progress =
-              batch.total_items > 0
-                ? ((batch.completed_items + batch.failed_items) / batch.total_items) * 100
-                : 0;
+            {filteredBatches.map((batch) => {
+             const progress =
+               batch.total_items > 0
+                 ? Math.max(0, Math.min(((batch.completed_items + batch.failed_items) / batch.total_items) * 100, 100))
+                 : 0;
+
 
             return (
-              <Card
+              <StudioCard
                 key={batch.id}
-                className="p-6 hover:shadow-md transition-shadow cursor-pointer"
+                hover
+                className="p-6 cursor-pointer"
                 onClick={() => router.push(`/batch/${batch.id}`)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{batch.name}</h3>
-                      <Badge
-                        className={`${statusColors[batch.status]} text-white`}
-                      >
-                        {statusLabels[batch.status]}
-                      </Badge>
-                    </div>
+                     <div className="flex items-center gap-2">
+                       <h3 className="font-semibold">{batch.name}</h3>
+                        <Badge className={`${statusColors[batch.status]} text-white`}>
+                          {statusLabels[batch.status]}
+                        </Badge>
+                     </div>
                     <div className="text-sm text-muted-foreground">
                       {batch.total_items} items • {batch.credits_charged} credits
                     </div>
-                    {batch.status === 'processing' && (
-                      <div className="space-y-1">
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div
-                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
+                     {batch.status === 'processing' && (
+                       <div className="space-y-1">
+                         <div className="w-full bg-muted rounded-full h-1.5">
+                           <div
+                             className="bg-accent h-1.5 rounded-full transition-all duration-300"
+                             style={{ width: `${progress}%` }}
+                           />
+                         </div>
                         <div className="text-xs text-muted-foreground">
                           {batch.completed_items} completed, {batch.failed_items} failed
                         </div>
@@ -158,12 +163,12 @@ export function BatchList({
                   >
                     View
                   </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                 </div>
+               </StudioCard>
+             );
+            })}
+          </div>
+        )}
     </div>
   );
 }

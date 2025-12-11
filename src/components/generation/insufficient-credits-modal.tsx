@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { X, CreditCard } from 'lucide-react';
 import { getPricingForModal, createPackCheckout } from '@/lib/stripe/checkout-actions';
 import type { PricingPack } from '@/lib/pricing/utils';
@@ -134,6 +135,7 @@ export function InsufficientCreditsModal({
 
           {!packs && !error && (
             <div className="text-center p-4 bg-muted rounded">
+              <LoadingSpinner size="sm" className="mb-2" />
               <p className="text-sm text-muted-foreground">Loading pricing...</p>
             </div>
           )}

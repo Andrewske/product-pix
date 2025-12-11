@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getUserBatches } from '@/lib/db/batch';
 import { BatchList } from '@/components/batch/batch-list';
+import { PageContainer } from '@/components/layout/page-container';
+import { SectionHeader } from '@/components/ui/section-header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -17,21 +19,19 @@ export default async function BatchListPage() {
   const batches = await getUserBatches(user.id, { limit: 50 });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Batch Processing</h1>
-          <p className="text-muted-foreground mt-2">
-            Upload CSV files to generate multiple product photos at once
-          </p>
-        </div>
+    <PageContainer>
+      <SectionHeader
+        title="Batch Processing"
+        description="Upload CSV files to generate multiple product photos at once"
+      />
+      <div className="flex justify-end mb-8">
         <Link href="/batch/new">
           <Button>Create Batch</Button>
         </Link>
       </div>
 
       <BatchList initialBatches={batches} />
-    </div>
+    </PageContainer>
   );
 }
 

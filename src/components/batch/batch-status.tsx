@@ -34,23 +34,24 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
       )
       .subscribe();
 
-    // Also fetch initial state if not provided
-    if (!initialBatch) {
-      fetchBatch();
-    }
-
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [batchId]);
+  }, [batchId, supabase]);
 
-  const fetchBatch = async () => {
-    const response = await fetch(`/api/batch/${batchId}`);
-    if (response.ok) {
-      const data = await response.json();
-      setBatch(data.batch);
+  useEffect(() => {
+    // Fetch initial state if not provided
+    if (!initialBatch) {
+      const fetchBatch = async () => {
+        const response = await fetch(`/api/batch/${batchId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBatch(data.batch);
+        }
+      };
+      fetchBatch();
     }
-  };
+  }, [batchId, initialBatch]);
 
   if (!batch) {
     return (
@@ -67,12 +68,12 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
       ? ((batch.completed_items + batch.failed_items) / batch.total_items) * 100
       : 0;
 
-  const statusColors = {
-    pending: 'bg-yellow-500',
-    processing: 'bg-blue-500',
-    completed: 'bg-green-500',
-    failed: 'bg-red-500',
-    cancelled: 'bg-gray-500',
+  const statusVariants = {
+    pending: 'secondary' as const,
+    processing: 'default' as const,
+    completed: 'default' as const,
+    failed: 'destructive' as const,
+    cancelled: 'outline' as const,
   };
 
   const statusLabels = {
@@ -88,9 +89,7 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">{batch.name}</h3>
-          <Badge
-            className={`${statusColors[batch.status]} text-white`}
-          >
+          <Badge variant={statusVariants[batch.status]}>
             {statusLabels[batch.status]}
           </Badge>
         </div>

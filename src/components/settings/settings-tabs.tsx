@@ -18,7 +18,7 @@ export function SettingsTabs() {
 
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
-      <TabsList className="bg-muted p-1 rounded-lg">
+      <TabsList className="bg-muted/50 p-1 rounded-lg border border-border/50">
         <TabsTrigger value="account">Account</TabsTrigger>
         <TabsTrigger value="billing">Billing</TabsTrigger>
         <TabsTrigger value="credits">Credits</TabsTrigger>

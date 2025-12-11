@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { SettingsTabs } from '@/components/settings';
+import { PageContainer } from '@/components/layout/page-container';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -12,13 +14,15 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
-        <Suspense fallback={<div>Loading...</div>}>
-          <SettingsTabs />
-        </Suspense>
-      </div>
-    </div>
+    <PageContainer narrow>
+      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      }>
+        <SettingsTabs />
+      </Suspense>
+    </PageContainer>
   );
 }

@@ -18,7 +18,7 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
   return (
     <StudioCard
       hover
-      className="relative group"
+      className="relative group shadow-2xl"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >

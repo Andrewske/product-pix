@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StudioCard } from '@/components/ui/studio-card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserProfile } from '@/lib/auth/hooks';
@@ -62,12 +62,12 @@ export function CreditsTab(): React.ReactElement {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Credit History</CardTitle>
-          <CardDescription>Your credit transactions and balance changes</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <StudioCard className="p-6">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold">Credit History</h3>
+            <p className="text-sm text-muted-foreground">Your credit transactions and balance changes</p>
+          </div>
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center justify-between p-4 border rounded-lg bg-card">
@@ -82,50 +82,54 @@ export function CreditsTab(): React.ReactElement {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </StudioCard>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Credit History</CardTitle>
-          <CardDescription className="text-destructive">
-            Error loading credit history: {error}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <StudioCard className="p-6">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold">Credit History</h3>
+            <p className="text-sm text-destructive">
+              Error loading credit history: {error}
+            </p>
+          </div>
+        </div>
+      </StudioCard>
     );
   }
 
   if (transactions.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Credit History</CardTitle>
-          <CardDescription>No credit transactions yet</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Your credit purchases, generations, and other transactions will appear here.
-          </p>
-          <Link href="/pricing" className="text-sm text-primary hover:underline">
-            Buy credits →
-          </Link>
-        </CardContent>
-      </Card>
+      <StudioCard className="p-6">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold">Credit History</h3>
+            <p className="text-sm text-muted-foreground">No credit transactions yet</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Your credit purchases, generations, and other transactions will appear here.
+            </p>
+            <Link href="/pricing" className="text-sm text-primary hover:underline">
+              Buy credits →
+            </Link>
+          </div>
+        </div>
+      </StudioCard>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Credit History</CardTitle>
-        <CardDescription>Your credit transactions and balance changes</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <StudioCard className="p-6">
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">Credit History</h3>
+          <p className="text-sm text-muted-foreground">Your credit transactions and balance changes</p>
+        </div>
         <div className="space-y-4">
           {transactions.map((transaction) => (
             <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/5 transition-colors">
@@ -164,7 +168,7 @@ export function CreditsTab(): React.ReactElement {
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </StudioCard>
   );
 }

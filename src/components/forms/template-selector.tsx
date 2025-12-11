@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Check } from 'lucide-react';
 
 interface Template {
@@ -49,8 +50,9 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
 
   if (loading) {
     return (
-      <div className="text-sm text-muted-foreground">
-        Loading templates...
+      <div className="flex items-center justify-center py-8">
+        <LoadingSpinner size="md" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading templates...</span>
       </div>
     );
   }

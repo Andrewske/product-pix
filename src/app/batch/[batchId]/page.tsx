@@ -5,7 +5,8 @@ import { getBatchJob, getBatchItems } from '@/lib/db/batch';
 import { BatchStatus } from '@/components/batch/batch-status';
 import { BatchItemGrid } from '@/components/batch/batch-item-grid';
 import { BatchActions } from '@/components/batch/batch-actions';
-import { Button } from '@/components/ui/button';
+import { SectionHeader } from '@/components/ui/section-header';
+import { PageContainer } from '@/components/layout/page-container';
 import Link from 'next/link';
 
 interface BatchDetailPageProps {
@@ -56,13 +57,14 @@ export default async function BatchDetailPage({ params }: BatchDetailPageProps) 
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PageContainer>
       <div className="mb-8">
         <Link href="/batch" className="text-muted-foreground hover:text-foreground text-sm">
           ← Back to Batches
         </Link>
-        <h1 className="text-3xl font-bold mt-4">{batch.name}</h1>
       </div>
+
+      <SectionHeader title={batch.name} />
 
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4">
@@ -74,7 +76,7 @@ export default async function BatchDetailPage({ params }: BatchDetailPageProps) 
 
         <BatchItemGrid items={itemsWithImages} />
       </div>
-    </div>
+    </PageContainer>
   );
 }
 
