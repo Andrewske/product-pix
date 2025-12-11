@@ -1,7 +1,7 @@
 // src/components/batch/batch-item-grid.tsx
 'use client';
 
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ImageCard } from '@/components/image-card';
 import type { BatchItem } from '@/lib/db/batch';
@@ -35,8 +35,9 @@ export function BatchItemGrid({ items }: BatchItemGridProps) {
       <h3 className="text-lg font-semibold">Batch Items ({items.length})</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {items.map((item) => (
-          <StudioCard
+          <Card
             key={item.id}
+            variant="studio"
             className="overflow-hidden"
             hover
           >
@@ -120,7 +121,7 @@ export function BatchItemGrid({ items }: BatchItemGridProps) {
                 </p>
               </div>
             )}
-          </StudioCard>
+          </Card>
         ))}
       </div>
     </div>

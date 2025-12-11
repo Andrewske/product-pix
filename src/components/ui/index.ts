@@ -1,5 +1,4 @@
 // Studio design system components
-export { StudioCard } from "./studio-card"
-export { StudioButton } from "./studio-button"
 export { SectionHeader } from "./section-header"
-export { LoadingSpinner } from "./loading-spinner"
+export { Spinner, spinnerVariants } from "./spinner"
+export { StepIndicator } from "./step-indicator"

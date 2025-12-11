@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useUserProfile } from '@/lib/auth/hooks';
 import { updatePassword, resetPassword } from '@/lib/auth/utils';
-import { StudioButton } from '@/components/ui/studio-button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 
 export function AccountTab(): React.ReactElement {
   const { user, profile, loading } = useUserProfile();
@@ -126,7 +126,7 @@ export function AccountTab(): React.ReactElement {
   return (
     <div className="space-y-6">
       {/* Email Display */}
-      <StudioCard className="p-6">
+      <Card variant="studio" className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Email Address</h3>
@@ -140,7 +140,7 @@ export function AccountTab(): React.ReactElement {
             />
           </div>
         </div>
-       </StudioCard>
+       </Card>
 
        {/* Section divider */}
        <div className="relative py-6">
@@ -150,7 +150,7 @@ export function AccountTab(): React.ReactElement {
        </div>
 
        {/* Password Management */}
-      <StudioCard className="p-6">
+      <Card variant="studio" className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">{isOAuthUser ? 'Set Password' : 'Change Password'}</h3>
@@ -201,21 +201,22 @@ export function AccountTab(): React.ReactElement {
                 />
               </div>
 
-               <StudioButton type="submit" disabled={isSetting}>
-                 {isSetting ? 'Setting Password...' : 'Set Password'}
-               </StudioButton>
+                <Button variant="studio" size="xl" type="submit" disabled={isSetting}>
+                  {isSetting ? 'Setting Password...' : 'Set Password'}
+                </Button>
             </form>
           ) : (
             /* Change Password Form for Email Users */
             <div className="space-y-6">
-               <StudioButton
-                 studioVariant="secondary"
-                 onClick={handleResetPassword}
-                 disabled={isUpdating}
-                 className="w-full sm:w-auto"
-               >
-                 {isUpdating ? 'Sending...' : 'Send Password Reset Email'}
-               </StudioButton>
+                <Button
+                  variant="outline"
+                  size="xl"
+                  onClick={handleResetPassword}
+                  disabled={isUpdating}
+                  className="w-full sm:w-auto"
+                >
+                  {isUpdating ? 'Sending...' : 'Send Password Reset Email'}
+                </Button>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -253,14 +254,14 @@ export function AccountTab(): React.ReactElement {
                   />
                 </div>
 
-                 <StudioButton type="submit" disabled={isUpdating}>
-                   {isUpdating ? 'Updating...' : 'Update Password'}
-                 </StudioButton>
+                  <Button variant="studio" size="xl" type="submit" disabled={isUpdating}>
+                    {isUpdating ? 'Updating...' : 'Update Password'}
+                  </Button>
               </form>
             </div>
           )}
         </div>
-      </StudioCard>
+      </Card>
     </div>
   );
 }

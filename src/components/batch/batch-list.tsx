@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { StudioCard } from '@/components/ui/studio-card';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Card } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { BatchJob } from '@/lib/db/batch';
@@ -97,10 +97,10 @@ export function BatchList({
       {/* Batch cards */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <LoadingSpinner size="lg" />
+          <Spinner size="lg" centered />
         </div>
         ) : filteredBatches.length === 0 ? (
-          <StudioCard className="p-12 text-center">
+          <Card variant="studio" className="p-12 text-center">
             <h3 className="text-xl font-semibold mb-2">No batches found</h3>
             <p className="text-muted-foreground mb-6">
               Create your first batch to get started with AI-powered product photography.
@@ -108,7 +108,7 @@ export function BatchList({
             <Button onClick={() => router.push('/generate')}>
               Create Batch
             </Button>
-          </StudioCard>
+          </Card>
        ) : (
         <div className="grid gap-4">
             {filteredBatches.map((batch) => {
@@ -119,8 +119,9 @@ export function BatchList({
 
 
             return (
-              <StudioCard
+              <Card
                 key={batch.id}
+                variant="studio"
                 hover
                 className="p-6 cursor-pointer"
                 onClick={() => router.push(`/batch/${batch.id}`)}
@@ -163,8 +164,8 @@ export function BatchList({
                   >
                     View
                   </Button>
-                 </div>
-               </StudioCard>
+                  </div>
+                </Card>
              );
             })}
           </div>

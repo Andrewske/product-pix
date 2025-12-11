@@ -1,4 +1,6 @@
 // src/components/layout/footer.tsx
+import Link from 'next/link';
+
 export function Footer() {
   return (
     <>
@@ -10,15 +12,15 @@ export function Footer() {
             &copy; {new Date().getFullYear()} ProductPix. All rights reserved.
           </p>
           <div className="flex space-x-6">
-            <a href="#" className="text-muted-foreground hover:text-foreground text-sm">
+            <Link href="/terms" className="text-muted-foreground hover:text-foreground text-sm">
               Terms
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-foreground text-sm">
+            </Link>
+            <Link href="/privacy" className="text-muted-foreground hover:text-foreground text-sm">
               Privacy
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-foreground text-sm">
+            </Link>
+            <Link href="/contact" className="text-muted-foreground hover:text-foreground text-sm">
               Contact
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Spinner } from '@/components/ui/spinner';
 
 export interface ParsedBatchItem {
   product_name?: string;
@@ -158,7 +158,7 @@ export function CSVUploadForm({ onParsed, onError }: CSVUploadFormProps) {
         </p>
         {uploading && (
           <div className="flex items-center justify-center space-x-3 mt-6">
-            <LoadingSpinner size="md" />
+            <Spinner size="md" />
             <span className="text-muted-foreground font-medium">Parsing CSV...</span>
           </div>
         )}

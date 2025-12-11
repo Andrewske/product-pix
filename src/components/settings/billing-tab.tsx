@@ -5,7 +5,7 @@ import { SubscriptionStatus } from '@/components/billing/subscription-status';
 import { PurchaseHistory } from '@/components/billing/purchase-history';
 import { CreditPacks } from '@/components/pricing/credit-packs';
 import { getPricing } from '@/lib/pricing/actions';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreditBalanceDisplay } from './credit-balance-display';
 import type { PricingData } from '@/lib/pricing/utils';
@@ -55,7 +55,7 @@ export function BillingTab(): React.ReactElement {
        </div>
 
        {/* New credit packs section */}
-       <StudioCard className="p-6">
+       <Card variant="studio" className="p-6">
          <div className="space-y-6">
            <div className="flex items-center justify-between">
              <div>
@@ -91,8 +91,8 @@ export function BillingTab(): React.ReactElement {
                Pricing temporarily unavailable. Please try again later.
              </p>
            )}
-         </div>
-       </StudioCard>
+          </div>
+       </Card>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, Sparkles } from 'lucide-react';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 
 export function SuccessDisplay() {
@@ -36,7 +36,7 @@ export function SuccessDisplay() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        <StudioCard className="p-8 text-center">
+        <Card variant="studio" className="p-8 text-center">
           <div aria-live="polite" aria-atomic="true">
             {status === 'success' && (
               <div className="flex flex-col items-center space-y-6">
@@ -61,12 +61,12 @@ export function SuccessDisplay() {
 
             {status === 'redirecting' && (
               <div className="flex flex-col items-center space-y-6">
-                <Spinner className="size-6" />
+                <Spinner size="md" />
                 <p className="text-muted-foreground text-sm">Redirecting...</p>
               </div>
             )}
           </div>
-        </StudioCard>
+        </Card>
       </div>
     </div>
   );

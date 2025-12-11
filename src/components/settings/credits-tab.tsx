@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserProfile } from '@/lib/auth/hooks';
@@ -62,7 +62,7 @@ export function CreditsTab(): React.ReactElement {
 
   if (loading) {
     return (
-      <StudioCard className="p-6">
+      <Card variant="studio" className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Credit History</h3>
@@ -83,28 +83,28 @@ export function CreditsTab(): React.ReactElement {
             ))}
           </div>
         </div>
-      </StudioCard>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <StudioCard className="p-6">
+      <Card variant="studio" className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Credit History</h3>
-            <p className="text-sm text-destructive">
-              Error loading credit history: {error}
-            </p>
-          </div>
-        </div>
-      </StudioCard>
+             <p className="text-sm text-destructive">
+               Error loading credit history: {error}
+             </p>
+           </div>
+         </div>
+       </Card>
     );
   }
 
   if (transactions.length === 0) {
     return (
-      <StudioCard className="p-6">
+      <Card variant="studio" className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Credit History</h3>
@@ -114,17 +114,17 @@ export function CreditsTab(): React.ReactElement {
             <p className="text-sm text-muted-foreground mb-4">
               Your credit purchases, generations, and other transactions will appear here.
             </p>
-            <Link href="/pricing" className="text-sm text-primary hover:underline">
-              Buy credits →
-            </Link>
-          </div>
-        </div>
-      </StudioCard>
+             <Link href="/pricing" className="text-sm text-primary hover:underline">
+               Buy credits →
+             </Link>
+           </div>
+         </div>
+       </Card>
     );
   }
 
   return (
-    <StudioCard className="p-6">
+    <Card variant="studio" className="p-6">
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold">Credit History</h3>
@@ -168,7 +168,7 @@ export function CreditsTab(): React.ReactElement {
             </div>
           ))}
         </div>
-      </div>
-    </StudioCard>
+        </div>
+      </Card>
   );
 }

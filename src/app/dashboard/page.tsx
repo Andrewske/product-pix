@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageContainer } from '@/components/layout/page-container';
 import { SectionHeader } from '@/components/ui/section-header';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
 
               return (
                 <Link key={batch.id} href={`/batch/${batch.id}`}>
-                  <StudioCard hover className="p-6 cursor-pointer">
+                  <Card variant="studio" hover className="p-6 cursor-pointer">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="font-semibold truncate flex-1 pr-4">{batch.name}</h3>
                       <Badge
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
                         </div>
                       </div>
                     )}
-                  </StudioCard>
+                  </Card>
                 </Link>
               );
             })}

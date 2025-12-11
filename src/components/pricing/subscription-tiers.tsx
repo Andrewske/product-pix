@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { type PricingData } from '@/lib/pricing/utils';
 import { createSubscriptionCheckout } from '@/lib/stripe/checkout-actions';
-import { StudioButton } from '@/components/ui/studio-button';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -54,11 +54,12 @@ export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
       />
       <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
         {Object.entries(pricingData.subscriptions).map(([tierId, tier]) => (
-           <StudioCard
-             key={tierId}
-             className={`relative p-6 ${tierId === 'business' ? 'bg-foreground text-background scale-105' : ''}`}
-             hover={tierId !== 'business'}
-           >
+           <Card
+              key={tierId}
+              variant="studio"
+              className={`relative p-6 ${tierId === 'business' ? 'bg-foreground text-background scale-105' : ''}`}
+              hover={tierId !== 'business'}
+            >
              <CardHeader className="pb-4">
                <CardTitle className="flex items-center justify-between text-lg">
                  <span className="font-bold text-2xl">{tierId === 'pro' ? 'Pro Plan' : 'Business Plan'}</span>
@@ -92,16 +93,17 @@ export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
                </ul>
              </CardContent>
              <CardFooter className="pt-4">
-               <StudioButton
-                 className="w-full"
-                 studioVariant={tierId === 'business' ? 'secondary' : 'primary'}
-                  onClick={() => handleSubscribe(tierId as 'pro' | 'business')}
-                 disabled={loading === tierId}
-               >
-                 {loading === tierId ? 'Creating...' : `Subscribe to ${tierId === 'pro' ? 'Pro' : 'Business'}`}
-               </StudioButton>
-             </CardFooter>
-           </StudioCard>
+                <Button
+                  className="w-full"
+                  variant={tierId === 'business' ? 'outline' : 'studio'}
+                  size="xl"
+                   onClick={() => handleSubscribe(tierId as 'pro' | 'business')}
+                  disabled={loading === tierId}
+                >
+                  {loading === tierId ? 'Creating...' : `Subscribe to ${tierId === 'pro' ? 'Pro' : 'Business'}`}
+                </Button>
+              </CardFooter>
+            </Card>
         ))}
       </div>
     </div>

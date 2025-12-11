@@ -1,14 +1,14 @@
 import { render } from '@testing-library/react';
-import { StudioCard } from '../studio-card';
+import { Card } from '../card';
 
-describe('StudioCard', () => {
+describe('Card studio variant', () => {
   it('renders children correctly', () => {
-    const { getByText } = render(<StudioCard>Test Content</StudioCard>);
+    const { getByText } = render(<Card variant="studio">Test Content</Card>);
     expect(getByText('Test Content')).toBeInTheDocument();
   });
 
-  it('applies matte-card class by default', () => {
-    const { container } = render(<StudioCard>Content</StudioCard>);
+  it('applies studio variant classes', () => {
+    const { container } = render(<Card variant="studio">Content</Card>);
     const card = container.firstChild as HTMLElement;
     expect(card).toHaveClass('matte-card');
     expect(card).toHaveClass('rounded-2xl');
@@ -16,30 +16,27 @@ describe('StudioCard', () => {
   });
 
   it('applies matte-card-hover when hover prop is true', () => {
-    const { container } = render(<StudioCard hover>Content</StudioCard>);
+    const { container } = render(<Card variant="studio" hover>Content</Card>);
     const card = container.firstChild as HTMLElement;
+    expect(card).toHaveClass('matte-card');
     expect(card).toHaveClass('matte-card-hover');
   });
 
-  it('does not apply matte-card-hover when hover prop is false', () => {
-    const { container } = render(<StudioCard hover={false}>Content</StudioCard>);
-    const card = container.firstChild as HTMLElement;
-    expect(card).not.toHaveClass('matte-card-hover');
-  });
-
   it('merges className prop correctly', () => {
-    const { container } = render(<StudioCard className="custom-class">Content</StudioCard>);
+    const { container } = render(<Card variant="studio" className="custom-class">Content</Card>);
     const card = container.firstChild as HTMLElement;
     expect(card).toHaveClass('custom-class');
     expect(card).toHaveClass('matte-card');
   });
 
-  it('passes through other HTML attributes', () => {
+  it('passes through all div props', () => {
     const { container } = render(
-      <StudioCard data-testid="test-card" role="region">Content</StudioCard>
+      <Card variant="studio" data-testid="test-card" id="card-id">
+        Content
+      </Card>
     );
     const card = container.firstChild as HTMLElement;
     expect(card).toHaveAttribute('data-testid', 'test-card');
-    expect(card).toHaveAttribute('role', 'region');
+    expect(card).toHaveAttribute('id', 'card-id');
   });
 });

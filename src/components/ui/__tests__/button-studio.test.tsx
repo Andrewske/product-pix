@@ -1,14 +1,14 @@
 import { render } from '@testing-library/react';
-import { StudioButton } from '../studio-button';
+import { Button } from '../button';
 
-describe('StudioButton', () => {
+describe('Button studio variant', () => {
   it('renders children correctly', () => {
-    const { getByText } = render(<StudioButton>Click Me</StudioButton>);
+    const { getByText } = render(<Button variant="studio">Click Me</Button>);
     expect(getByText('Click Me')).toBeInTheDocument();
   });
 
-  it('applies primary variant styles by default', () => {
-    const { container } = render(<StudioButton>Primary</StudioButton>);
+  it('applies studio variant styles', () => {
+    const { container } = render(<Button variant="studio">Studio</Button>);
     const button = container.querySelector('button') as HTMLElement;
     expect(button).toHaveClass('bg-foreground');
     expect(button).toHaveClass('text-background');
@@ -16,22 +16,18 @@ describe('StudioButton', () => {
     expect(button).toHaveClass('shadow-xl');
   });
 
-  it('applies secondary variant styles when specified', () => {
-    const { container } = render(<StudioButton studioVariant="secondary">Secondary</StudioButton>);
+  it('applies studio variant with default size', () => {
+    const { container } = render(<Button variant="studio">Button</Button>);
     const button = container.querySelector('button') as HTMLElement;
-    expect(button).toHaveClass('border-border');
-    expect(button).not.toHaveClass('button-studio');
-  });
-
-  it('uses lg size by default', () => {
-    const { container } = render(<StudioButton>Button</StudioButton>);
-    const button = container.querySelector('button') as HTMLElement;
-    expect(button).toHaveClass('h-14');
-    expect(button).toHaveClass('px-8');
+    expect(button).toHaveClass('bg-foreground');
+    expect(button).toHaveClass('text-background');
+    expect(button).toHaveClass('button-studio');
+    expect(button).toHaveClass('shadow-xl');
+    expect(button).toHaveClass('h-9'); // default size
   });
 
   it('merges className prop correctly', () => {
-    const { container } = render(<StudioButton className="custom-class">Button</StudioButton>);
+    const { container } = render(<Button variant="studio" className="custom-class">Button</Button>);
     const button = container.querySelector('button') as HTMLElement;
     expect(button).toHaveClass('custom-class');
     expect(button).toHaveClass('bg-foreground');
@@ -40,9 +36,9 @@ describe('StudioButton', () => {
   it('passes through all Button props', () => {
     const onClick = jest.fn();
     const { container } = render(
-      <StudioButton onClick={onClick} disabled data-testid="test-button">
+      <Button variant="studio" onClick={onClick} disabled data-testid="test-button">
         Button
-      </StudioButton>
+      </Button>
     );
     const button = container.querySelector('button') as HTMLElement;
     expect(button).toHaveAttribute('data-testid', 'test-button');

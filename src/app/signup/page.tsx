@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { SignupForm, GoogleButton } from '@/components/auth';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SignupPage(): React.ReactElement {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <StudioCard className="w-full max-w-md p-8">
+      <Card variant="studio" className="w-full max-w-md p-8">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold tracking-tight">ProductPix</CardTitle>
           <CardDescription className="text-lg">
@@ -40,7 +40,7 @@ export default function SignupPage(): React.ReactElement {
             </Link>
           </p>
         </CardFooter>
-      </StudioCard>
+      </Card>
     </div>
   );
 }

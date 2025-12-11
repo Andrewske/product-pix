@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { StudioButton } from '@/components/ui/studio-button';
+import { Button } from '@/components/ui/button';
 import type { BatchJob } from '@/lib/db/batch';
 
 interface BatchActionsProps {
@@ -47,13 +47,14 @@ export function BatchActions({ batch, onCancel }: BatchActionsProps) {
   return (
     <div className="flex gap-2">
       {canCancel && (
-        <StudioButton
-          studioVariant="secondary"
+        <Button
+          variant="outline"
+          size="xl"
           onClick={handleCancel}
           disabled={cancelling}
         >
           {cancelling ? 'Cancelling...' : 'Cancel Batch'}
-        </StudioButton>
+        </Button>
       )}
       {/* Future: Download all button */}
     </div>

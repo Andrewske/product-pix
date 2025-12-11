@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { StudioCard } from '@/components/ui/studio-card';
-import { StudioButton } from '@/components/ui/studio-button';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { ParsedBatchItem, ParseError } from './csv-upload-form';
 
@@ -38,7 +38,7 @@ export function BatchPreview({
     <div className="space-y-6">
       {/* Errors */}
       {errors.length > 0 && (
-        <StudioCard className="p-6 border-destructive/20 bg-destructive/5">
+        <Card variant="studio" className="p-6 border-destructive/20 bg-destructive/5">
           <h4 className="font-semibold text-destructive mb-3">
             Validation Errors ({errors.length})
           </h4>
@@ -54,7 +54,7 @@ export function BatchPreview({
               </li>
             )}
           </ul>
-        </StudioCard>
+        </Card>
       )}
 
       {/* Items Preview Grid */}
@@ -67,7 +67,7 @@ export function BatchPreview({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {previewItems.map((item, idx) => (
-              <StudioCard key={idx} className="p-4 hover" hover>
+              <Card key={idx} variant="studio" className="p-4 hover" hover>
                 <div className="space-y-3">
                   {item.product_name && (
                     <div className="font-medium text-sm truncate">
@@ -89,41 +89,43 @@ export function BatchPreview({
                     {creditsPerItem[item.resolution || '1k']} credit{creditsPerItem[item.resolution || '1k'] !== 1 ? 's' : ''}
                   </div>
                 </div>
-              </StudioCard>
+              </Card>
             ))}
           </div>
 
           {hasMore && (
-            <StudioButton
-              studioVariant="secondary"
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setExpanded(!expanded)}
               className="w-full"
             >
               {expanded ? 'Show Less' : `Show All ${items.length} Items`}
-            </StudioButton>
+            </Button>
           )}
         </div>
       )}
 
       {/* Action Buttons */}
       <div className="flex gap-3 pt-6 border-t">
-        <StudioButton
-          studioVariant="secondary"
+        <Button
+          variant="outline"
+          size="xl"
           onClick={onCancel}
           disabled={loading}
           className="flex-1"
         >
           Cancel
-        </StudioButton>
-        <StudioButton
-          studioVariant="primary"
+        </Button>
+        <Button
+          variant="studio"
+          size="xl"
           onClick={onConfirm}
           disabled={loading || items.length === 0 || errors.length > 0}
           className="flex-1"
         >
           {loading ? 'Creating Batch...' : `Start Batch (${totalCredits} credits)`}
-        </StudioButton>
+        </Button>
       </div>
     </div>
   );

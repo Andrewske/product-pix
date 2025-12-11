@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CSVUploadForm, BatchPreview } from '@/components/batch';
 import type { ParsedBatchItem, ParseError } from '@/components/batch';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { PageContainer } from '@/components/layout/page-container';
 import { useCredits } from '@/lib/auth';
@@ -23,6 +23,13 @@ export default function NewBatchPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
+  // Calculate credit cost for summary
+  const creditsPerItem = { '1k': 1, '2k': 2, '4k': 3 } as const;
+  const totalCredits = items.reduce(
+    (sum, item) => sum + creditsPerItem[item.resolution || '1k'],
+    0
+  );
+
   const handleParsed = (parsedItems: ParsedBatchItem[], parsedErrors: ParseError[]) => {
     setItems(parsedItems);
     setErrors(parsedErrors);
@@ -36,12 +43,7 @@ export default function NewBatchPage() {
       return;
     }
 
-    // Calculate credits
-    const creditsPerItem = { '1k': 1, '2k': 2, '4k': 3 } as const;
-    const totalCredits = items.reduce(
-      (sum, item) => sum + creditsPerItem[item.resolution || '1k'],
-      0
-    );
+
 
     if (credits < totalCredits) {
       setCreateError(`Insufficient credits. Need ${totalCredits}, have ${credits}`);
@@ -84,12 +86,7 @@ export default function NewBatchPage() {
     setCreateError(null);
   };
 
-  // Calculate credit cost for summary
-  const creditsPerItem = { '1k': 1, '2k': 2, '4k': 3 } as const;
-  const totalCredits = items.reduce(
-    (sum, item) => sum + creditsPerItem[item.resolution || '1k'],
-    0
-  );
+
 
   return (
     <PageContainer spotlight>
@@ -110,7 +107,7 @@ export default function NewBatchPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {step === 'upload' && (
-            <StudioCard className="p-6">
+            <Card variant="studio" className="p-6">
               <h2 className="text-xl font-semibold mb-4">Upload CSV File</h2>
               <CSVUploadForm onParsed={handleParsed} onError={setCreateError} />
                <div className="mt-8 space-y-4">
@@ -147,12 +144,12 @@ export default function NewBatchPage() {
                      <span>Download CSV Template</span>
                    </a>
                  </div>
-               </div>
-            </StudioCard>
+                </div>
+             </Card>
           )}
 
           {step === 'preview' && (
-            <StudioCard className="p-6">
+            <Card variant="studio" className="p-6">
               <h2 className="text-xl font-semibold mb-4">Review & Configure</h2>
               <div className="space-y-6">
                 <div>
@@ -175,7 +172,7 @@ export default function NewBatchPage() {
                   loading={creating}
                 />
               </div>
-            </StudioCard>
+            </Card>
           )}
         </div>
 
@@ -184,7 +181,7 @@ export default function NewBatchPage() {
           <div className="sticky top-8 space-y-6">
             {/* Cost Breakdown Card */}
             {items.length > 0 && (
-              <StudioCard className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <Card variant="studio" className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
                 <h3 className="text-lg font-semibold mb-4">Cost Breakdown</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -205,11 +202,11 @@ export default function NewBatchPage() {
                     Credits will be deducted upon batch creation
                   </div>
                 </div>
-              </StudioCard>
+              </Card>
             )}
 
             {/* Summary Card */}
-            <StudioCard className="p-6">
+            <Card variant="studio" className="p-6">
               <h3 className="text-lg font-semibold mb-4">Batch Summary</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
@@ -231,7 +228,7 @@ export default function NewBatchPage() {
                   <span className="font-medium">{credits}</span>
                 </div>
               </div>
-            </StudioCard>
+            </Card>
           </div>
         </div>
       </div>

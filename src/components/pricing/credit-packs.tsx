@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { type PricingData } from '@/lib/pricing';
 import { createPackCheckout } from '@/lib/stripe/checkout-actions';
-import { StudioButton } from '@/components/ui/studio-button';
+import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SectionHeader } from '@/components/ui/section-header';
-import { StudioCard } from '@/components/ui/studio-card';
+import { Card } from '@/components/ui/card';
 
 interface CreditPacksProps {
   pricingData: PricingData | null;
@@ -63,7 +63,7 @@ export function CreditPacks({ pricingData }: CreditPacksProps) {
       />
       <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {Object.entries(pricingData.packs).map(([packId, pack]) => (
-           <StudioCard key={packId} className={`relative p-6 ${packId === 'pack_200' ? 'bg-foreground text-background' : ''}`} hover>
+           <Card key={packId} variant="studio" className={`relative p-6 ${packId === 'pack_200' ? 'bg-foreground text-background' : ''}`} hover>
              <CardHeader className="p-0 mb-4">
                <CardTitle className="flex items-center justify-between text-lg">
                  <span className="font-bold text-2xl">{pack.credits} Credits</span>
@@ -79,16 +79,17 @@ export function CreditPacks({ pricingData }: CreditPacksProps) {
               </div>
             </CardContent>
              <CardFooter className="p-0">
-               <StudioButton
-                 className="w-full"
-                 studioVariant={packId === 'pack_200' ? 'secondary' : 'primary'}
-                 onClick={() => handlePurchase(packId)}
-                 disabled={checkoutLoading === packId}
-               >
-                 {checkoutLoading === packId ? 'Creating...' : `Buy for ${formatPrice(pack.priceCents, pack.currency)}`}
-               </StudioButton>
-             </CardFooter>
-          </StudioCard>
+                <Button
+                  className="w-full"
+                  variant={packId === 'pack_200' ? 'outline' : 'studio'}
+                  size="xl"
+                  onClick={() => handlePurchase(packId)}
+                  disabled={checkoutLoading === packId}
+                >
+                  {checkoutLoading === packId ? 'Creating...' : `Buy for ${formatPrice(pack.priceCents, pack.currency)}`}
+                </Button>
+              </CardFooter>
+           </Card>
         ))}
       </div>
     </div>

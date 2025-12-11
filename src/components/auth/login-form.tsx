@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { StudioButton } from '@/components/ui/studio-button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -77,13 +77,15 @@ export function LoginForm({ redirectTo }: LoginFormProps): React.ReactElement {
         <div className="text-destructive text-sm font-medium">{error}</div>
       )}
 
-      <StudioButton
+      <Button
+        variant="studio"
+        size="xl"
         type="submit"
         disabled={loading}
         className="w-full"
       >
         {loading ? 'Signing in...' : 'Sign in'}
-      </StudioButton>
+      </Button>
     </form>
   );
 }
