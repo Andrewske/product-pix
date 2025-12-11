@@ -1,5 +1,6 @@
 // src/components/generation-loading.tsx
 import { Spinner } from './ui/spinner';
+import { StudioCard } from './ui/studio-card';
 
 const GENERATION_MESSAGES = [
   'Analyzing your product...',
@@ -17,9 +18,14 @@ export function GenerationLoading({ stage = 0 }: GenerationLoadingProps) {
   const message = GENERATION_MESSAGES[stage % GENERATION_MESSAGES.length];
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 space-y-4">
-      <Spinner className="size-8" />
-      <p className="text-muted-foreground">{message}</p>
-    </div>
+    <StudioCard className="p-8">
+      <div className="flex flex-col items-center justify-center space-y-6">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-accent/20 animate-pulse" />
+          <Spinner className="size-8 relative z-10" />
+        </div>
+        <p className="text-muted-foreground text-center">{message}</p>
+      </div>
+    </StudioCard>
   );
 }

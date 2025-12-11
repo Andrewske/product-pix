@@ -10,10 +10,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps): Promi
   const { redirect, error } = await searchParams;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative">
+      <div className="absolute inset-0 studio-spotlight pointer-events-none" />
+      <Card className="w-full max-w-md bg-card/50 backdrop-blur-xl border border-white/10 shadow-xl relative z-10">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold tracking-tight">ProductPix</CardTitle>
+          <CardTitle className="text-xl font-bold">ProductPix</CardTitle>
           <CardDescription className="text-lg">
             Sign in to your account
           </CardDescription>

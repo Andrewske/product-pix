@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { type PricingData } from '@/lib/pricing/utils';
 import { createSubscriptionCheckout } from '@/lib/stripe/checkout-actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { StudioButton } from '@/components/ui/studio-button';
+import { StudioCard } from '@/components/ui/studio-card';
+import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SectionHeader } from '@/components/ui/section-header';
 import { Check } from 'lucide-react';
 
 interface SubscriptionTiersProps {
@@ -45,53 +47,61 @@ export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-6 text-center">Monthly Subscriptions</h2>
+      <SectionHeader
+        title="Monthly Subscriptions"
+        badge="Save with annual billing"
+        description="Perfect for regular users who need consistent access"
+      />
       <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
         {Object.entries(pricingData.subscriptions).map(([tierId, tier]) => (
-          <Card key={tierId} className="relative">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {tierId === 'pro' ? 'Pro Plan' : 'Business Plan'}
-                {tierId === 'business' && <Badge variant="secondary">Best Value</Badge>}
-              </CardTitle>
-               <CardDescription>
-                 {formatPrice(tier.priceCents, tier.currency)} per month
+           <StudioCard
+             key={tierId}
+             className={`relative p-6 ${tierId === 'business' ? 'bg-foreground text-background scale-105' : ''}`}
+             hover={tierId !== 'business'}
+           >
+             <CardHeader className="pb-4">
+               <CardTitle className="flex items-center justify-between text-lg">
+                 <span className="font-bold text-2xl">{tierId === 'pro' ? 'Pro Plan' : 'Business Plan'}</span>
+                 {tierId === 'business' && <Badge variant="secondary">Best Value</Badge>}
+               </CardTitle>
+               <CardDescription className={`text-base ${tierId === 'business' ? 'text-background/80' : ''}`}>
+                 <span className="font-bold text-xl">{formatPrice(tier.priceCents, tier.currency)}</span> per month
                </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground mb-4">
-                {tier.creditsPerMonth} credits per month
-              </div>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 text-green-500 mr-2" />
-                  {tier.creditsPerMonth} credits monthly
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 text-green-500 mr-2" />
-                  Credits never expire
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 text-green-500 mr-2" />
-                  Cancel anytime
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 text-green-500 mr-2" />
-                  Priority support
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                variant={tierId === 'business' ? 'default' : 'outline'}
-                 onClick={() => handleSubscribe(tierId as 'pro' | 'business')}
-                disabled={loading === tierId}
-              >
-                {loading === tierId ? 'Creating...' : `Subscribe to ${tierId === 'pro' ? 'Pro' : 'Business'}`}
-              </Button>
-            </CardFooter>
-          </Card>
+             <CardContent>
+               <div className={`text-sm mb-4 ${tierId === 'business' ? 'text-background/70' : 'text-muted-foreground'}`}>
+                 {tier.creditsPerMonth} credits per month
+               </div>
+               <ul className={`space-y-2 text-sm ${tierId === 'business' ? 'text-background/80' : ''}`}>
+                 <li className="flex items-center">
+                   <Check className={`h-4 w-4 mr-2 ${tierId === 'business' ? 'text-background' : 'text-green-500'}`} />
+                   {tier.creditsPerMonth} credits monthly
+                 </li>
+                 <li className="flex items-center">
+                   <Check className={`h-4 w-4 mr-2 ${tierId === 'business' ? 'text-background' : 'text-green-500'}`} />
+                   Credits never expire
+                 </li>
+                 <li className="flex items-center">
+                   <Check className={`h-4 w-4 mr-2 ${tierId === 'business' ? 'text-background' : 'text-green-500'}`} />
+                   Cancel anytime
+                 </li>
+                 <li className="flex items-center">
+                   <Check className={`h-4 w-4 mr-2 ${tierId === 'business' ? 'text-background' : 'text-green-500'}`} />
+                   Priority support
+                 </li>
+               </ul>
+             </CardContent>
+             <CardFooter className="pt-4">
+               <StudioButton
+                 className="w-full"
+                 studioVariant={tierId === 'business' ? 'secondary' : 'primary'}
+                  onClick={() => handleSubscribe(tierId as 'pro' | 'business')}
+                 disabled={loading === tierId}
+               >
+                 {loading === tierId ? 'Creating...' : `Subscribe to ${tierId === 'pro' ? 'Pro' : 'Business'}`}
+               </StudioButton>
+             </CardFooter>
+           </StudioCard>
         ))}
       </div>
     </div>

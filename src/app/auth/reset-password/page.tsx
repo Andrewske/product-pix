@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { updatePassword } from '@/lib/auth/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ResetPasswordPage(): React.ReactElement {
   const [password, setPassword] = useState('');
@@ -56,99 +58,94 @@ export default function ResetPasswordPage(): React.ReactElement {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-secondary/30 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold text-center text-foreground">
-              ProductPix
-            </h1>
-            <h2 className="mt-6 text-center text-xl text-muted-foreground">
+      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-3xl font-bold tracking-tight">ProductPix</CardTitle>
+            <CardDescription className="text-lg">
               Password updated successfully
-            </h2>
-          </div>
-
-          <div className="bg-success/10 border border-success text-success px-4 py-3 rounded">
-            <h3 className="font-medium">Password updated</h3>
-            <p className="text-sm mt-1">
-              Your password has been successfully updated. You will be redirected to your dashboard shortly.
-            </p>
-          </div>
-        </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-success/10 border border-success text-success px-4 py-3 rounded">
+              <h3 className="font-medium">Password updated</h3>
+              <p className="text-sm mt-1">
+                Your password has been successfully updated. You will be redirected to your dashboard shortly.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-center text-foreground">
-            ProductPix
-          </h1>
-          <h2 className="mt-6 text-center text-xl text-muted-foreground">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-bold tracking-tight">ProductPix</CardTitle>
+          <CardDescription className="text-lg">
             Reset your password
-          </h2>
-        </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">New password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  className="bg-background"
+                />
+              </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                New password
-              </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                className="mt-1"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm new password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="bg-background"
+                />
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
-                Confirm new password
-              </label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-          </div>
+            {error && (
+              <div className="text-destructive text-sm font-medium">{error}</div>
+            )}
 
-          {error && (
-            <div className="text-destructive text-sm">{error}</div>
-          )}
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? 'Updating password...' : 'Update password'}
-          </Button>
-        </form>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Remember your password?{' '}
-          <Link
-            href="/login"
-            className="font-medium text-primary hover:text-primary/80"
-          >
-            Sign in
-          </Link>
-        </p>
-      </div>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? 'Updating password...' : 'Update password'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <p className="text-center text-sm text-muted-foreground">
+            Remember your password?{' '}
+            <Link
+              href="/login"
+              className="font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

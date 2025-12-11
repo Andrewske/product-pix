@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { type PricingData } from '@/lib/pricing';
 import { createPackCheckout } from '@/lib/stripe/checkout-actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { StudioButton } from '@/components/ui/studio-button';
+import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SectionHeader } from '@/components/ui/section-header';
+import { StudioCard } from '@/components/ui/studio-card';
 
 interface CreditPacksProps {
   pricingData: PricingData | null;
@@ -54,34 +56,39 @@ export function CreditPacks({ pricingData }: CreditPacksProps) {
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-6 text-center">Credit Packs</h2>
+      <SectionHeader
+        title="Credit Packs"
+        badge="Pay as you go"
+        description="Perfect for occasional use or testing our service"
+      />
       <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {Object.entries(pricingData.packs).map(([packId, pack]) => (
-          <Card key={packId} className="relative">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {pack.credits} Credits
-                {packId === 'pack_200' && <Badge variant="secondary">Most Popular</Badge>}
-              </CardTitle>
-              <CardDescription>
-                {formatPrice(pack.priceCents, pack.currency)} • {calculatePerCreditCost(pack.priceCents, pack.credits)} per credit
+           <StudioCard key={packId} className={`relative p-6 ${packId === 'pack_200' ? 'bg-foreground text-background' : ''}`} hover>
+             <CardHeader className="p-0 mb-4">
+               <CardTitle className="flex items-center justify-between text-lg">
+                 <span className="font-bold text-2xl">{pack.credits} Credits</span>
+                 {packId === 'pack_200' && <Badge className="bg-accent text-accent-foreground">Most Popular</Badge>}
+               </CardTitle>
+              <CardDescription className="text-base">
+                <span className="font-bold text-xl">{formatPrice(pack.priceCents, pack.currency)}</span> • {calculatePerCreditCost(pack.priceCents, pack.credits)} per credit
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 mb-6">
               <div className="text-sm text-muted-foreground">
                 Perfect for occasional use
               </div>
             </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                onClick={() => handlePurchase(packId)}
-                disabled={checkoutLoading === packId}
-              >
-                {checkoutLoading === packId ? 'Creating...' : `Buy for ${formatPrice(pack.priceCents, pack.currency)}`}
-              </Button>
-            </CardFooter>
-          </Card>
+             <CardFooter className="p-0">
+               <StudioButton
+                 className="w-full"
+                 studioVariant={packId === 'pack_200' ? 'secondary' : 'primary'}
+                 onClick={() => handlePurchase(packId)}
+                 disabled={checkoutLoading === packId}
+               >
+                 {checkoutLoading === packId ? 'Creating...' : `Buy for ${formatPrice(pack.priceCents, pack.currency)}`}
+               </StudioButton>
+             </CardFooter>
+          </StudioCard>
         ))}
       </div>
     </div>

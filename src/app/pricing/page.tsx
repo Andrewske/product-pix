@@ -1,10 +1,12 @@
-import { requireAuth } from '@/lib/auth/server';
-import { getUserStripeCustomerId } from '@/lib/stripe/customer';
-import { syncStripeDataToKV } from '@/lib/stripe/sync';
-import { getPricing } from '@/lib/pricing/actions';
-import { type PricingData } from '@/lib/pricing/utils';
-import { CreditPacks } from '@/components/pricing/credit-packs';
-import { SubscriptionTiers } from '@/components/pricing/subscription-tiers';
+ import { requireAuth } from '@/lib/auth/server';
+ import { getUserStripeCustomerId } from '@/lib/stripe/customer';
+ import { syncStripeDataToKV } from '@/lib/stripe/sync';
+ import { getPricing } from '@/lib/pricing/actions';
+ import { type PricingData } from '@/lib/pricing/utils';
+ import { CreditPacks } from '@/components/pricing/credit-packs';
+ import { SubscriptionTiers } from '@/components/pricing/subscription-tiers';
+ import { PageContainer } from '@/components/layout/page-container';
+ import { SectionHeader } from '@/components/ui/section-header';
 
 export default async function PricingPage() {
   // Sync Stripe data on page load to ensure fresh subscription status
@@ -30,24 +32,26 @@ export default async function PricingPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Get high-quality AI product photos with flexible credit packs or monthly subscriptions.
-          Credits never expire and can be used anytime.
-        </p>
-      </div>
+    <PageContainer spotlight>
+      <SectionHeader
+        title="Choose Your Plan"
+        description="Get high-quality AI product photos with flexible credit packs or monthly subscriptions. Credits never expire and can be used anytime."
+      />
 
-      <div className="grid gap-12">
+      <div className="space-y-16">
         <CreditPacks pricingData={pricingData} />
+        <div className="flex items-center justify-center py-8">
+          <div className="h-px bg-border flex-1 max-w-xs" />
+          <span className="px-4 text-sm text-muted-foreground font-medium">or</span>
+          <div className="h-px bg-border flex-1 max-w-xs" />
+        </div>
         <SubscriptionTiers pricingData={pricingData} />
       </div>
 
-      <div className="mt-12 text-center text-sm text-muted-foreground">
+      <div className="mt-16 text-center text-sm text-muted-foreground">
         <p>All prices in USD. Credits never expire. Cancel anytime.</p>
         <p className="mt-2">Questions? Contact support@productpix.ai</p>
       </div>
-    </div>
+    </PageContainer>
   );
 }

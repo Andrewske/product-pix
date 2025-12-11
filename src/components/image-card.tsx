@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { StudioCard } from '@/components/ui/studio-card';
 import type { GeneratedImage } from '@/types';
 
 interface ImageCardProps {
@@ -15,8 +16,9 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
   const [showActions, setShowActions] = useState(false);
 
   return (
-    <div
-      className="relative group rounded-lg overflow-hidden bg-secondary"
+    <StudioCard
+      hover
+      className="relative group"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -73,6 +75,6 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
           </svg>
         </div>
       )}
-    </div>
+    </StudioCard>
   );
 }

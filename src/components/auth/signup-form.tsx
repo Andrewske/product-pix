@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
+import { StudioButton } from '@/components/ui/studio-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -113,13 +113,13 @@ export function SignupForm(): React.ReactElement {
         <div className="text-destructive text-sm font-medium">{error}</div>
       )}
 
-      <Button
+      <StudioButton
         type="submit"
         disabled={loading}
         className="w-full"
       >
         {loading ? 'Creating account...' : 'Create account'}
-      </Button>
+      </StudioButton>
     </form>
   );
 }

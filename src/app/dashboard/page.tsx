@@ -5,8 +5,10 @@ import { getUserBatches } from '@/lib/db/batch';
 import { ImageGallery } from '@/components/image-gallery';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageContainer } from '@/components/layout/page-container';
+import { SectionHeader } from '@/components/ui/section-header';
+import { StudioCard } from '@/components/ui/studio-card';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
@@ -29,9 +31,12 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
-        <h1 className="text-3xl font-bold tracking-tight">Your Images</h1>
+    <PageContainer spotlight>
+      <SectionHeader
+        title="Your Images"
+        className="text-left mb-12"
+      />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12">
         <div className="flex gap-3 w-full sm:w-auto">
           <Link href="/batch/new" className="flex-1 sm:flex-none">
             <Button variant="outline" className="w-full">Create Batch</Button>
@@ -44,7 +49,7 @@ export default async function DashboardPage() {
 
       {/* Recent Batches Section */}
       {recentBatches.length > 0 && (
-        <div className="mb-12">
+        <div className="py-32">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Recent Batches</h2>
             <Link href="/batch">
@@ -60,7 +65,7 @@ export default async function DashboardPage() {
 
               return (
                 <Link key={batch.id} href={`/batch/${batch.id}`}>
-                  <Card className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border-border/50 bg-card hover:border-primary/50">
+                  <StudioCard hover className="p-6 cursor-pointer">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="font-semibold truncate flex-1 pr-4">{batch.name}</h3>
                       <Badge
@@ -87,7 +92,7 @@ export default async function DashboardPage() {
                         </div>
                       </div>
                     )}
-                  </Card>
+                  </StudioCard>
                 </Link>
               );
             })}
@@ -96,16 +101,18 @@ export default async function DashboardPage() {
       )}
 
       {/* Images Section */}
-      {images.length === 0 ? (
-        <EmptyState
-          title="No images yet"
-          description="Generate your first professional product photo"
-          actionLabel="Generate Image"
-          actionHref="/generate"
-        />
-      ) : (
-        <ImageGallery images={images} />
-      )}
-    </div>
+      <div className="py-32">
+        {images.length === 0 ? (
+          <EmptyState
+            title="No images yet"
+            description="Generate your first professional product photo"
+            actionLabel="Generate Image"
+            actionHref="/generate"
+          />
+        ) : (
+          <ImageGallery images={images} />
+        )}
+      </div>
+    </PageContainer>
   );
 }

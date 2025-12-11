@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { StudioCard } from '@/components/ui/studio-card';
 
 interface GenerationResultProps {
   imageUrl: string;
@@ -18,7 +19,7 @@ export function GenerationResult({
   const [isZoomed, setIsZoomed] = useState(false);
 
   return (
-    <div className="space-y-4">
+    <StudioCard className="p-6 space-y-4">
       <div className="relative">
         <img
           src={imageUrl}
@@ -46,6 +47,6 @@ export function GenerationResult({
           Regenerate
         </Button>
       </div>
-    </div>
+    </StudioCard>
   );
 }
