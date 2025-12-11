@@ -23,11 +23,11 @@ export default async function DashboardPage() {
   const recentBatches = await getUserBatches(user.id, { limit: 3 });
 
   const statusStyles = {
-    pending: 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-yellow-500/20',
-    processing: 'bg-primary/10 text-primary hover:bg-primary/20 border-primary/20',
-    completed: 'bg-success/10 text-success hover:bg-success/20 border-success/20',
-    failed: 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20',
-    cancelled: 'bg-muted text-muted-foreground hover:bg-muted/80',
+    pending: 'bg-info/10 text-info hover:bg-info/20 border-info/30',
+    processing: 'bg-accent/10 text-accent hover:bg-accent/20 border-accent/30',
+    completed: 'bg-success/10 text-success hover:bg-success/20 border-success/30',
+    failed: 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/30',
+    cancelled: 'bg-muted text-muted-foreground hover:bg-muted/80 border-muted',
   };
 
   return (
@@ -53,7 +53,7 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Recent Batches</h2>
             <Link href="/batch">
-              <Button variant="ghost" size="sm" className="text-muted-foreground">View All</Button>
+              <Button variant="ghost" size="sm" className="text-info hover:text-info/80">View All</Button>
             </Link>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -80,9 +80,9 @@ export default async function DashboardPage() {
                     </div>
                     {batch.status === 'processing' && (
                       <div className="space-y-2">
-                        <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                        <div className="w-full bg-accent/20 rounded-full h-1.5 overflow-hidden">
                           <div
-                            className="bg-primary h-1.5 rounded-full transition-all duration-500 ease-out"
+                            className="bg-accent h-1.5 rounded-full transition-all duration-500 ease-out"
                             style={{ width: `${progress}%` }}
                           />
                         </div>

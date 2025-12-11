@@ -52,7 +52,7 @@ export function PurchaseHistory() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Your credit purchases and subscription renewals will appear here.
+            Your credit purchases will appear here.
           </p>
           <a href="/pricing" className="text-sm text-blue-600 hover:underline">
             Buy credits →
@@ -66,7 +66,7 @@ export function PurchaseHistory() {
     <Card>
       <CardHeader>
         <CardTitle>Purchase History</CardTitle>
-        <CardDescription>Your credit purchases and subscription activity</CardDescription>
+        <CardDescription>Your credit purchases</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

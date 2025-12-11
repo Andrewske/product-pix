@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { SubscriptionStatus } from '@/components/billing/subscription-status';
 import { PurchaseHistory } from '@/components/billing/purchase-history';
 import { CreditPacks } from '@/components/pricing/credit-packs';
 import { getPricing } from '@/lib/pricing/actions';
@@ -35,26 +34,7 @@ export function BillingTab(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-       {/* Existing components */}
-       <SubscriptionStatus />
-
-       {/* Section divider */}
-       <div className="relative py-6">
-         <div className="absolute inset-0 flex items-center">
-           <span className="w-full border-t border-border/40" />
-         </div>
-       </div>
-
-       <PurchaseHistory />
-
-       {/* Section divider */}
-       <div className="relative py-6">
-         <div className="absolute inset-0 flex items-center">
-           <span className="w-full border-t border-border/40" />
-         </div>
-       </div>
-
-       {/* New credit packs section */}
+       {/* Credit packs section - moved to top */}
        <Card variant="studio" className="p-6">
          <div className="space-y-6">
            <div className="flex items-center justify-between">
@@ -83,9 +63,7 @@ export function BillingTab(): React.ReactElement {
                {error}
              </p>
            ) : pricingData ? (
-             <div className="grid md:grid-cols-3 gap-4">
-               <CreditPacks pricingData={pricingData} />
-             </div>
+             <CreditPacks pricingData={pricingData} />
            ) : (
              <p className="text-center text-muted-foreground py-4">
                Pricing temporarily unavailable. Please try again later.
@@ -93,6 +71,15 @@ export function BillingTab(): React.ReactElement {
            )}
           </div>
        </Card>
+
+       {/* Section divider */}
+       <div className="relative py-6">
+         <div className="absolute inset-0 flex items-center">
+           <span className="w-full border-t border-border/40" />
+         </div>
+       </div>
+
+       <PurchaseHistory />
     </div>
   );
 }

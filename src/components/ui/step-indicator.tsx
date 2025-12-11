@@ -27,8 +27,8 @@ export function StepIndicator({ currentStep, className }: StepIndicatorProps) {
             <div
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors",
-                isCompleted && "bg-primary border-primary text-primary-foreground",
-                isCurrent && "border-primary text-primary",
+                isCompleted && "bg-accent border-accent text-accent-foreground",
+                isCurrent && "border-teal text-teal",
                 isUpcoming && "border-muted-foreground/30 text-muted-foreground/50"
               )}
             >
@@ -41,8 +41,8 @@ export function StepIndicator({ currentStep, className }: StepIndicatorProps) {
             <span
               className={cn(
                 "text-sm font-medium transition-colors",
-                isCompleted && "text-foreground",
-                isCurrent && "text-primary",
+                isCompleted && "text-accent",
+                isCurrent && "text-teal",
                 isUpcoming && "text-muted-foreground"
               )}
             >

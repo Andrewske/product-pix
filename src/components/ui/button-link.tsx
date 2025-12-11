@@ -19,7 +19,7 @@ const ButtonLink = React.forwardRef<HTMLAnchorElement, ButtonLinkProps>(
       outline: "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
       secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
       ghost: "hover:bg-accent hover:text-accent-foreground",
-      link: "text-primary underline-offset-4 hover:underline",
+      link: "text-accent underline-offset-4 hover:underline hover:text-accent/80",
     }
 
     const sizeClasses = {

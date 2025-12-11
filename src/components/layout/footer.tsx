@@ -12,13 +12,13 @@ export function Footer() {
             &copy; {new Date().getFullYear()} ProductPix. All rights reserved.
           </p>
           <div className="flex space-x-6">
-            <Link href="/terms" className="text-muted-foreground hover:text-foreground text-sm">
+            <Link href="/terms" className="text-muted-foreground hover:text-accent text-sm transition-colors">
               Terms
             </Link>
-            <Link href="/privacy" className="text-muted-foreground hover:text-foreground text-sm">
+            <Link href="/privacy" className="text-muted-foreground hover:text-teal text-sm transition-colors">
               Privacy
             </Link>
-            <Link href="/contact" className="text-muted-foreground hover:text-foreground text-sm">
+            <Link href="/contact" className="text-muted-foreground hover:text-accent text-sm transition-colors">
               Contact
             </Link>
           </div>

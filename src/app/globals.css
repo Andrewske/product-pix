@@ -11,38 +11,42 @@
   --card-foreground: oklch(0.2 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0 0);
-  --primary: oklch(0.3 0.05 250);
+  --primary: oklch(0.4 0.12 145);
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.92 0 0);
   --secondary-foreground: oklch(0.25 0 0);
   --muted: oklch(0.9 0 0);
   --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.6 0.12 250);
-  --accent-foreground: oklch(0.98 0 0);
+  /* Accent: Green - primary accent color */
+  --accent: oklch(0.55 0.15 145);
+  --accent-foreground: oklch(0.1 0 0);
+  /* Secondary Accent: Teal */
+  --teal: oklch(0.5 0.12 190);
+  --teal-foreground: oklch(0.1 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0 0);
   --input: oklch(0.95 0 0);
-  --ring: oklch(0.45 0.1 250);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --ring: oklch(0.55 0.15 145);
+  --chart-1: oklch(0.55 0.15 145);
+  --chart-2: oklch(0.5 0.12 190);
+  --chart-3: oklch(0.45 0.1 220);
+  --chart-4: oklch(0.6 0.1 100);
+  --chart-5: oklch(0.5 0.1 40);
   --radius: 0.5rem;
   --sidebar: oklch(0.98 0 0);
   --sidebar-foreground: oklch(0.2 0 0);
-  --sidebar-primary: oklch(0.3 0.05 250);
+  --sidebar-primary: oklch(0.55 0.15 145);
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-accent: oklch(0.9 0 0);
   --sidebar-accent-foreground: oklch(0.2 0 0);
   --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.45 0.1 250);
+  --sidebar-ring: oklch(0.55 0.15 145);
   
-  /* Missing variables from previous theme */
-  --success: oklch(0.8 0.15 170);
-  --success-foreground: oklch(0.08 0.01 270);
-  --info: oklch(0.6 0.2 250);
+  /* Success and Info colors */
+  --success: oklch(0.65 0.15 150);
+  --success-foreground: oklch(0.1 0 0);
+  --info: oklch(0.5 0.12 190);
   --info-foreground: oklch(0.98 0 0);
 }
 
@@ -101,66 +105,7 @@
   
   --success: oklch(0.8 0.15 150);
   --success-foreground: oklch(0.1 0.01 265);
-  --info: oklch(0.65 0.15 240);
-  --info-foreground: oklch(0.96 0 0);
-}
-
-.dark {
-  /* Studio Minimalist Dark Theme */
-  /* Deep matte charcoal background - rich and neutral */
-  --background: oklch(0.12 0.01 265);
-  --foreground: oklch(0.96 0 0);
-  
-  /* Matte cards - slightly lighter than bg, very subtle */
-  --card: oklch(0.15 0.01 265);
-  --card-foreground: oklch(0.96 0 0);
-  
-  --popover: oklch(0.15 0.01 265);
-  --popover-foreground: oklch(0.96 0 0);
-  
-  --primary: oklch(0.96 0 0);
-  --primary-foreground: oklch(0.12 0.01 265);
-  
-  --secondary: oklch(0.2 0.01 265);
-  --secondary-foreground: oklch(0.96 0 0);
-  
-  --muted: oklch(0.25 0.01 265);
-  --muted-foreground: oklch(0.6 0.01 265);
-  
-  /* Accent: Refined Mint/Green - softer, less neon */
-  --accent: oklch(0.75 0.15 145);
-  --accent-foreground: oklch(0.1 0.01 265);
-  
-  /* Secondary Accent: Soft Teal */
-  --teal: oklch(0.7 0.12 190);
-  --teal-foreground: oklch(0.1 0.01 265);
-  
-  --destructive: oklch(0.55 0.15 25);
-  --destructive-foreground: oklch(0.94 0 0);
-  
-  /* Borders: Very subtle, barely there */
-  --border: oklch(0.2 0.01 265);
-  --input: oklch(0.2 0.01 265);
-  --ring: oklch(0.75 0.15 145);
-  
-  --chart-1: oklch(0.75 0.15 145);
-  --chart-2: oklch(0.7 0.12 190);
-  --chart-3: oklch(0.6 0.1 220);
-  --chart-4: oklch(0.8 0.1 100);
-  --chart-5: oklch(0.6 0.1 40);
-  
-  --sidebar: oklch(0.13 0.01 265);
-  --sidebar-foreground: oklch(0.96 0 0);
-  --sidebar-primary: oklch(0.75 0.15 145);
-  --sidebar-primary-foreground: oklch(0.1 0.01 265);
-  --sidebar-accent: oklch(0.18 0.01 265);
-  --sidebar-accent-foreground: oklch(0.96 0 0);
-  --sidebar-border: oklch(0.2 0.01 265);
-  --sidebar-ring: oklch(0.75 0.15 145);
-  
-  --success: oklch(0.8 0.15 150);
-  --success-foreground: oklch(0.1 0.01 265);
-  --info: oklch(0.65 0.15 240);
+  --info: oklch(0.7 0.12 190);
   --info-foreground: oklch(0.96 0 0);
 }
 
@@ -198,9 +143,9 @@
 
 .matte-card-hover:hover {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: oklch(from var(--accent) l c h / 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px oklch(from var(--accent) l c h / 0.1);
 }
 
 /* Soft Glow Text (replacing neon) */
@@ -287,6 +232,19 @@
 
 .hover-lift:hover {
   transform: translateY(-4px);
+}
+
+/* Accent color utilities */
+.text-accent {
+  color: var(--accent);
+}
+
+.bg-accent-subtle {
+  background-color: oklch(from var(--accent) l c h / 0.1);
+}
+
+.border-accent {
+  border-color: var(--accent);
 }
 
 /* Teal accents */

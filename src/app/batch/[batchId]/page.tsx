@@ -59,7 +59,7 @@ export default async function BatchDetailPage({ params }: BatchDetailPageProps) 
   return (
     <PageContainer>
       <div className="mb-8">
-        <Link href="/batch" className="text-muted-foreground hover:text-foreground text-sm">
+        <Link href="/batch" className="text-muted-foreground hover:text-accent text-sm transition-colors">
           ← Back to Batches
         </Link>
       </div>

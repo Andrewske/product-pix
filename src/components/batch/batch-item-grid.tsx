@@ -16,11 +16,11 @@ interface BatchItemGridProps {
 }
 
 export function BatchItemGrid({ items }: BatchItemGridProps) {
-  const statusColors = {
-    pending: 'bg-yellow-500',
-    processing: 'bg-blue-500',
-    completed: 'bg-green-500',
-    failed: 'bg-red-500',
+  const statusVariants = {
+    pending: 'info' as const,
+    processing: 'default' as const,
+    completed: 'success' as const,
+    failed: 'destructive' as const,
   };
 
   const statusLabels = {
@@ -77,8 +77,8 @@ export function BatchItemGrid({ items }: BatchItemGridProps) {
                 )}
                 {item.status === 'processing' && (
                   <div className="text-center space-y-2 p-4">
-                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-                    <p className="text-xs text-muted-foreground">Processing</p>
+                    <div className="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full mx-auto" />
+                    <p className="text-xs text-accent">Processing</p>
                   </div>
                 )}
                 {item.status === 'failed' && (
@@ -107,7 +107,8 @@ export function BatchItemGrid({ items }: BatchItemGridProps) {
                   </div>
                 )}
                 <Badge
-                  className={`absolute top-2 right-2 ${statusColors[item.status]} text-white`}
+                  variant={statusVariants[item.status]}
+                  className="absolute top-2 right-2"
                 >
                   {statusLabels[item.status]}
                 </Badge>

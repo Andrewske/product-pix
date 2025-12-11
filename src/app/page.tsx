@@ -21,13 +21,13 @@ export default function Home() {
             ProductPix
           </div>
           <nav className="flex items-center gap-8">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#features" className="text-sm text-muted-foreground hover:text-accent transition-colors">
               Gallery
             </a>
-            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-accent transition-colors">
               How It Works
             </a>
-            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#pricing" className="text-sm text-muted-foreground hover:text-accent transition-colors">
               Pricing
             </a>
             <Button className="bg-foreground text-background hover:bg-foreground/90 transition-all shadow-lg hover:shadow-xl">
@@ -295,17 +295,17 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-sm mb-6 uppercase tracking-wider text-foreground/80">Product</h4>
               <ul className="space-y-4 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Showcase</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Login</a></li>
+                <li><a href="#" className="hover:text-accent transition-colors">Pricing</a></li>
+                <li><a href="#" className="hover:text-accent transition-colors">Showcase</a></li>
+                <li><a href="#" className="hover:text-accent transition-colors">Login</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-sm mb-6 uppercase tracking-wider text-foreground/80">Legal</h4>
               <ul className="space-y-4 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Terms</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-teal transition-colors">Terms</a></li>
+                <li><a href="#" className="hover:text-teal transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-teal transition-colors">Contact</a></li>
               </ul>
             </div>
           </div>

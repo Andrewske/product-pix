@@ -56,8 +56,8 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
   if (!batch) {
     return (
       <Card className="p-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+          <div className="flex items-center justify-center">
+          <div className="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
         </div>
       </Card>
     );
@@ -69,9 +69,9 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
       : 0;
 
   const statusVariants = {
-    pending: 'secondary' as const,
+    pending: 'info' as const,
     processing: 'default' as const,
-    completed: 'default' as const,
+    completed: 'success' as const,
     failed: 'destructive' as const,
     cancelled: 'outline' as const,
   };
@@ -102,9 +102,9 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
                 {batch.completed_items + batch.failed_items} / {batch.total_items}
               </span>
             </div>
-            <div className="w-full bg-muted rounded-full h-2">
+            <div className="w-full bg-accent/20 rounded-full h-2">
               <div
-                className="bg-primary h-2 rounded-full transition-all duration-300"
+                className="bg-accent h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -127,7 +127,7 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
           {batch.credits_refunded > 0 && (
             <div>
               <div className="text-muted-foreground">Credits Refunded</div>
-              <div className="font-medium text-green-600">
+              <div className="font-medium text-accent">
                 {batch.credits_refunded}
               </div>
             </div>
@@ -149,7 +149,7 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
         </div>
 
         {batch.status === 'processing' && (
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded p-3 text-sm text-blue-800 dark:text-blue-200">
+          <div className="bg-info/10 border border-info/30 rounded p-3 text-sm text-info">
             Processing via Gemini Batch API. Results will be available when the batch completes.
           </div>
         )}
