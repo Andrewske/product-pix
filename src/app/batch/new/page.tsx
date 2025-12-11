@@ -38,14 +38,12 @@ export default function NewBatchPage() {
     }
   };
 
-  const handleConfirm = async () => {
-    if (items.length === 0 || errors.length > 0) {
-      return;
-    }
+   const handleConfirm = async () => {
+     if (items.length === 0 || errors.length > 0) {
+       return;
+     }
 
-
-
-    if (credits < totalCredits) {
+     if (credits < totalCredits) {
       setCreateError(`Insufficient credits. Need ${totalCredits}, have ${credits}`);
       return;
     }
@@ -78,17 +76,15 @@ export default function NewBatchPage() {
     }
   };
 
-  const handleCancel = () => {
-    setStep('upload');
-    setItems([]);
-    setErrors([]);
-    setBatchName('');
-    setCreateError(null);
-  };
+   const handleCancel = () => {
+     setStep('upload');
+     setItems([]);
+     setErrors([]);
+     setBatchName('');
+     setCreateError(null);
+   };
 
-
-
-  return (
+   return (
     <PageContainer spotlight>
       <div className="mb-8">
         <Link href="/batch" className="text-muted-foreground hover:text-foreground text-sm">
