@@ -188,3 +188,55 @@ Hard-won insights, gotchas, and patterns discovered while building ProductPix.
 - **Touch Event Validation**: Defensive programming with guard clauses before accessing `touches[0]`. Prevents crashes during rapid touch interactions by checking array length before access
 - **Package Manager Consistency**: Use single package manager (bun) and remove conflicting lockfiles. Prevents deployment failures from package manager conflicts and maintains clean dependency resolution
 - **Loading State Management**: Use Next.js `loading.tsx` for skeleton UI during SSR. Provides enhanced UX with structured loading states that match final page layout
+
+## Component Reduction & Reusability Patterns (2025-12-11)
+
+### CVA (Class Variance Authority) Pattern
+- **Variant management**: Use `cva()` for component variants instead of manual class concatenation. Provides type safety, consistent naming, and easier maintenance
+- **Color system integration**: Map design system colors (destructive, success, info, accent) to semantic variants for consistent theming
+- **Base classes first**: Define shared styles in base classes, variants only override differences: `cva('rounded border px-4 py-3', { variants: { variant: { error: 'bg-destructive/10...' } } })`
+
+### Compound Component Pattern  
+- **Layout wrapper pattern**: Parent component provides structure (AuthLayout), children provide content. Eliminates prop drilling for layout concerns
+- **Optional slots**: Use optional props for flexible composition (footer, error, spotlight). Components render conditionally based on prop presence
+- **TypeScript interfaces**: Define clear interfaces for compound components with optional slot props
+
+### Data-Driven Template Pattern
+- **Content separation**: Extract static content to structured data files, render with reusable templates. Enables content management without code changes
+- **Type-safe sections**: Define `LegalSection[]` interfaces with id, title, level, content properties for consistent structure
+- **Auto-generated navigation**: Templates can generate TOC from section data, providing consistent navigation patterns
+
+### FormField Composition Pattern
+- **Label + Input + Error wrapper**: Single component combines form elements with consistent spacing (`space-y-2`) and error styling
+- **Prop forwarding**: Forward all input props while adding form-specific features (error display, required indicators)
+- **Consistent error handling**: Centralized error display logic with destructive text color and proper ARIA attributes
+
+### Status Badge Centralization Pattern
+- **Hardcoded to reusable**: Replace inline statusStyles objects with CVA-based StatusBadge component
+- **Exact color preservation**: Map existing hardcoded colors to CVA variants to maintain visual consistency
+- **Type safety**: Enum-based status values prevent typos and ensure consistent status handling
+
+### Auth Layout Standardization Pattern
+- **Unified auth experience**: Single AuthLayout component enforces consistent title sizing (`text-3xl`), card variants (`studio`), and error display
+- **Flexible composition**: Optional error, spotlight, and footer props allow customization while maintaining structure
+- **Design system enforcement**: Centralized auth styling prevents inconsistencies between login/signup pages
+
+### Pricing Card Extraction Pattern
+- **Common pattern identification**: Extract shared pricing card structure from multiple locations (home page, credit packs)
+- **Featured variant logic**: Preserve business logic (featured styling for specific plans) while centralizing presentation
+- **Loading state management**: Consistent loading UI across all pricing interactions with disabled buttons and "Creating..." text
+
+### Legal Page Template Pattern
+- **Content-driven rendering**: Template accepts sections array, auto-generates TOC and scroll anchors
+- **Typography hierarchy**: Consistent heading levels (h1: 4xl, h2: 2xl, h3: xl) and spacing patterns
+- **Navigation integration**: Scroll anchors with `scroll-mt-8` for proper positioning, smooth scrolling behavior
+
+### Test-Driven Component Development
+- **TDD workflow**: Write failing tests first, implement minimal code to pass, refactor for clarity
+- **Comprehensive coverage**: Test all variants, props, interactions, and edge cases (9+ tests per component)
+- **Integration verification**: Test component composition and real-world usage patterns
+
+### Code Reduction Metrics Tracking
+- **Line count monitoring**: Track before/after line counts to verify reduction goals (615+ lines targeted, achieved)
+- **Component inventory**: Create 8 new reusable components to replace duplicated patterns
+- **Refactoring phases**: Break complex migrations into phases with clear dependencies and rollback plans

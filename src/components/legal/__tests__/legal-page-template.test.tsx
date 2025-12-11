@@ -1,0 +1,222 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { LegalPageTemplate, LegalSection } from '../legal-page-template';
+
+const mockSections: LegalSection[] = [
+  {
+    id: 'introduction',
+    title: 'Introduction',
+    level: 2,
+    content: <p>Welcome to our service.</p>
+  },
+  {
+    id: 'subsection',
+    title: 'Getting Started',
+    level: 3,
+    content: <p>Here's how to get started.</p>
+  },
+  {
+    id: 'another-section',
+    title: 'Terms',
+    level: 2,
+    content: <p>These are the terms.</p>
+  }
+];
+
+const mockFooterLinks = [
+  { href: '/privacy', label: 'Privacy Policy' },
+  { href: '/terms', label: 'Terms of Service' }
+];
+
+describe('LegalPageTemplate', () => {
+  it('renders the page title', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    expect(screen.getByText('Test Legal Page')).toBeInTheDocument();
+  });
+
+  it('renders last updated date when provided', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+        lastUpdated="December 11, 2025"
+      />
+    );
+
+    expect(screen.getByText('Last updated: December 11, 2025')).toBeInTheDocument();
+  });
+
+  it('auto-generates TOC from level 2 sections', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    // Should show level 2 sections in TOC links
+    const tocLinks = screen.getAllByRole('link');
+    expect(tocLinks).toHaveLength(2);
+    expect(tocLinks[0]).toHaveTextContent('Introduction');
+    expect(tocLinks[1]).toHaveTextContent('Terms');
+
+    // Should not show level 3 sections in TOC
+    expect(screen.queryByRole('link', { name: 'Getting Started' })).not.toBeInTheDocument();
+  });
+
+  it('renders sections with correct typography hierarchy', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    // Check level 2 headings (text-2xl)
+    const introHeading = screen.getByRole('heading', { name: 'Introduction', level: 2 });
+    expect(introHeading).toHaveClass('text-2xl');
+
+    // Check level 3 headings (text-xl)
+    const subsectionHeading = screen.getByRole('heading', { name: 'Getting Started', level: 3 });
+    expect(subsectionHeading).toHaveClass('text-xl');
+  });
+
+  it('renders section content', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    expect(screen.getByText('Welcome to our service.')).toBeInTheDocument();
+    expect(screen.getByText("Here's how to get started.")).toBeInTheDocument();
+    expect(screen.getByText('These are the terms.')).toBeInTheDocument();
+  });
+
+  it('applies scroll-mt-8 to all sections', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    const sections = document.querySelectorAll('section');
+    sections.forEach(section => {
+      expect(section).toHaveClass('scroll-mt-8');
+    });
+  });
+
+  it('renders sections with correct IDs', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    expect(document.getElementById('introduction')).toBeInTheDocument();
+    expect(document.getElementById('subsection')).toBeInTheDocument();
+    expect(document.getElementById('another-section')).toBeInTheDocument();
+  });
+
+  it('renders footer links when provided', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+        footerLinks={mockFooterLinks}
+      />
+    );
+
+    expect(screen.getByText(/See also:/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+  });
+
+  it('does not render footer when no links provided', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    expect(screen.queryByText('See also:')).not.toBeInTheDocument();
+  });
+
+  it('renders multiple footer links with commas', () => {
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+        footerLinks={mockFooterLinks}
+      />
+    );
+
+    const footerText = screen.getByText(/See also:/);
+    expect(footerText).toBeInTheDocument();
+    // Check that links are separated by commas
+    expect(footerText.textContent).toContain('Privacy Policy, Terms of Service');
+  });
+
+  it('scrolls smoothly to anchor when TOC link is clicked', async () => {
+    // Mock scrollIntoView
+    const mockScrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = mockScrollIntoView;
+
+    // Create a mock element with the target id
+    const mockElement = document.createElement('div');
+    mockElement.id = 'introduction';
+    document.body.appendChild(mockElement);
+
+    const user = userEvent.setup();
+    render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    const tocLink = screen.getByRole('link', { name: 'Introduction' });
+    await user.click(tocLink);
+
+    expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
+
+    // Cleanup
+    document.body.removeChild(mockElement);
+  });
+
+  it('uses PageContainer with narrow prop', () => {
+    const { container } = render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+      />
+    );
+
+    // Check that PageContainer is rendered with narrow class
+    const pageContainer = container.firstChild as HTMLElement;
+    expect(pageContainer).toHaveClass('max-w-5xl'); // narrow prop applies max-w-5xl
+  });
+
+  it('applies custom className', () => {
+    const { container } = render(
+      <LegalPageTemplate
+        title="Test Legal Page"
+        sections={mockSections}
+        className="custom-class"
+      />
+    );
+
+    const pageContainer = container.firstChild as HTMLElement;
+    expect(pageContainer).toHaveClass('custom-class');
+  });
+});

@@ -5,7 +5,7 @@ import { getUserBatches } from '@/lib/db/batch';
 import { ImageGallery } from '@/components/image-gallery';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { PageContainer } from '@/components/layout/page-container';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Card } from '@/components/ui/card';
@@ -21,14 +21,6 @@ export default async function DashboardPage() {
 
   const images = await getUserGeneratedImages(user.id);
   const recentBatches = await getUserBatches(user.id, { limit: 3 });
-
-  const statusStyles = {
-    pending: 'bg-info/10 text-info hover:bg-info/20 border-info/30',
-    processing: 'bg-accent/10 text-accent hover:bg-accent/20 border-accent/30',
-    completed: 'bg-success/10 text-success hover:bg-success/20 border-success/30',
-    failed: 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/30',
-    cancelled: 'bg-muted text-muted-foreground hover:bg-muted/80 border-muted',
-  };
 
   return (
     <PageContainer spotlight>
@@ -68,12 +60,9 @@ export default async function DashboardPage() {
                   <Card variant="studio" hover className="p-6 cursor-pointer">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="font-semibold truncate flex-1 pr-4">{batch.name}</h3>
-                      <Badge
-                        variant="outline"
-                        className={`${statusStyles[batch.status as keyof typeof statusStyles]} border`}
-                      >
+                      <StatusBadge status={batch.status}>
                         {batch.status}
-                      </Badge>
+                      </StatusBadge>
                     </div>
                     <div className="text-sm text-muted-foreground mb-4">
                       <span className="font-medium text-foreground">{batch.total_items}</span> items • <span className="font-medium text-foreground">{batch.credits_charged}</span> credits

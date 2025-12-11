@@ -92,14 +92,20 @@ prompt-bench/   # Isolated CLI testing framework
 
 ### UI/UX Patterns
 
-- **Color Palette**: "Dark + Warm" aesthetic
-  - Deep Black (backgrounds)
-  - Electric Coral (accent/CTA)
-  - Cream (text)
-  - Mint (success states)
-- **Typography**: Inter, Satoshi, or General Sans
-- **Shapes**: Sharp corners or subtle border radius
-- **Layout**: Generous whitespace, product photos as heroes
+See `docs/design-system.md` for full design principles.
+
+- **Brand**: Clean, minimal, inviting, slightly playful — NOT dev-tool or crypto
+- **Color Strategy**:
+  - Light mode default: soft gray page background, white cards
+  - Dark mode: layered charcoal (not pure black), e.g. `#05070b` bg, `#0b1018`–`#111827` cards
+  - **Green** = primary accent (CTAs, main actions, selected options, "Generate")
+  - **Teal** = secondary accent (badges, info highlights, helper text)
+  - Product photos always on clear, defined surfaces (with subtle borders in dark mode)
+- **Typography**: Space Grotesk (display), Inter (body), mono only for tiny meta (prices, timestamps)
+- **Layout**: Card-based, two-column (left: controls, right: hero content), generous whitespace
+- **Shapes**: Soft rounded corners (not bubbly)
+- **Motion**: 150-250ms transitions, restrained (no decorative animations)
+- **Heuristic**: If it looks like a terminal or analytics dashboard, it's wrong
 
 ### Code Conventions
 
@@ -115,6 +121,22 @@ prompt-bench/   # Isolated CLI testing framework
 - **Pricing updates**: User manually updates TOML when provider rates change
 - **Model matching**: Exact → prefix → error
 - **Unknown models**: Throw error, never guess provider
+
+## Legal & Policy
+
+See `docs/legal-policy-decisions.md` for full details.
+
+**Key policies:**
+- US-only, 18+ users
+- Lifetime credits (never expire)
+- Self-service refunds: credit (bad generations) and cash (100% or 90% "help cover costs")
+- User owns generated images 100%
+- Internal image use for prompt testing allowed; marketing requires permission
+- Opt-in cookies only (analytics, Facebook Pixel)
+
+**Legal pages:** `/terms`, `/privacy`
+
+**TODOs:** Cookie consent banner, self-service refund flows, account deletion, email setup (`support@productpix.ai`, `privacy@productpix.ai`)
 
 ## Gotchas
 

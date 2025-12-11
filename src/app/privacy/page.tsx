@@ -1,17 +1,19 @@
 import type { Metadata } from 'next'
+import { LegalPageTemplate } from '@/components/legal'
+import { privacySections, privacyFooterLinks, privacyLastUpdated } from '@/data/legal/privacy-content'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | ProductPix',
-  description: 'Privacy Policy for ProductPix'
+  description: 'Privacy Policy for ProductPix - how we handle your data'
 }
 
 export default function PrivacyPage(): React.ReactElement {
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center p-4">
-      <section className="max-w-md w-full text-center">
-        <h1 className="text-2xl font-bold mb-4">Privacy Policy</h1>
-        <p className="text-muted-foreground">Coming Soon</p>
-      </section>
-    </main>
-  );
+    <LegalPageTemplate
+      title="Privacy Policy"
+      sections={privacySections}
+      footerLinks={privacyFooterLinks}
+      lastUpdated={privacyLastUpdated}
+    />
+  )
 }

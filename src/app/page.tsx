@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, Zap, ImageIcon, Download, Sparkles, ArrowUpRight } from "lucide-react"
 import { Metadata } from "next"
 import Image from "next/image"
+import { PricingSection } from "../components/pricing-section"
 
 export const metadata: Metadata = {
   title: "ProductPix - Professional Product Photos in Seconds",
@@ -192,69 +193,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing - Minimalist Cards */}
-      <section id="pricing" className="w-full py-32 relative">
-        <div className="absolute inset-0 bg-muted/5 skew-y-3 transform origin-bottom-right pointer-events-none" />
-
-        <div className="max-w-6xl mx-auto px-4 relative">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl font-bold mb-6">Simple Pricing</h2>
-            <p className="text-muted-foreground">Pay per shoot. No monthly commitments.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              { credits: "50", price: "$5", costPerPhoto: "$0.10", label: "Starter" },
-              { credits: "300", price: "$15", costPerPhoto: "$0.05", featured: true, label: "Professional" },
-              { credits: "900", price: "$30", costPerPhoto: "$0.03", label: "Agency" },
-            ].map((plan) => (
-              <div
-                key={plan.credits}
-                className={`rounded-2xl p-8 transition-all duration-300 ${
-                  plan.featured
-                    ? "bg-foreground text-background shadow-2xl scale-105 z-10"
-                    : "bg-card border border-border/50 text-foreground hover:border-foreground/20"
-                }`}
-              >
-                <div className="mb-8">
-                  <h3 className={`text-sm font-medium uppercase tracking-wider mb-2 ${plan.featured ? "text-background/70" : "text-muted-foreground"}`}>
-                    {plan.label}
-                  </h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                  </div>
-                  <p className={`text-sm mt-2 ${plan.featured ? "text-background/70" : "text-muted-foreground"}`}>
-                    {plan.credits} Credits • {plan.costPerPhoto}/photo
-                  </p>
-                </div>
-
-                <ul className="space-y-4 mb-8 text-sm">
-                  <li className="flex items-center gap-2">
-                    <Zap className="w-4 h-4" /> Commercial License
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Download className="w-4 h-4" /> Full Resolution
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4" /> 30-day Storage
-                  </li>
-                </ul>
-
-                <Button
-                  className={`w-full h-12 ${
-                    plan.featured
-                      ? "bg-background text-foreground hover:bg-background/90"
-                      : "bg-foreground text-background hover:bg-foreground/90"
-                  }`}
-                  variant={plan.featured ? "secondary" : "default"}
-                >
-                  Get Credits
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* Pricing - Minimalist Cards */}
+       <PricingSection />
 
       {/* CTA - Clean & Direct */}
       <section className="w-full py-32 text-center relative overflow-hidden">
