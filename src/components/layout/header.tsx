@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { HelpCircle } from 'lucide-react';
 import { useUserProfile } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,11 @@ export function Header() {
 
           {/* Navigation */}
           <nav className="flex items-center gap-4">
+            <Link href="/help">
+              <Button variant="ghost" size="icon" aria-label="Help">
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </Link>
             <ThemeToggle />
             {loading ? (
               <Skeleton className="h-8 w-24" />

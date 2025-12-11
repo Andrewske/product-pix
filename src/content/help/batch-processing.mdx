@@ -1,0 +1,125 @@
+---
+title: Batch Processing
+description: Process multiple products efficiently with CSV uploads
+---
+
+# Batch Processing
+
+Process multiple product images at once using our batch system. Perfect for e-commerce stores with large catalogs.
+
+<Callout variant="tip" title="When to Use Batch">
+Use batch processing when you have 5+ products to generate. For fewer images, single generation is often faster.
+</Callout>
+
+## When to Use Batch vs Single
+
+| Scenario | Recommendation |
+|----------|----------------|
+| 1-4 images | Single generation |
+| 5-50 images | Batch processing |
+| 50+ images | Multiple batch jobs |
+| Testing prompts | Single generation |
+| Consistent style across products | Batch processing |
+
+## CSV Format Specification
+
+Your CSV file should include these columns:
+
+```csv
+image_url,prompt,aspect_ratio,resolution
+https://example.com/product1.jpg,White marble background with soft lighting,1:1,high
+https://example.com/product2.jpg,Outdoor garden setting natural light,4:3,standard
+```
+
+### Required Columns
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| `image_url` | URL to your product image | `https://cdn.example.com/product.jpg` |
+| `prompt` | Scene description | `Minimalist studio white background` |
+
+### Optional Columns
+
+| Column | Default | Options |
+|--------|---------|---------|
+| `aspect_ratio` | `1:1` | `1:1`, `4:3`, `16:9`, `9:16` |
+| `resolution` | `standard` | `standard`, `high`, `ultra` |
+
+<Callout variant="warning" title="Image URLs">
+Images must be publicly accessible URLs. Private or authenticated URLs will fail.
+</Callout>
+
+## Creating a Batch
+
+<Steps>
+<Step number={1} title="Prepare Your CSV">
+Create a CSV file with your product data. Use a spreadsheet app like Google Sheets or Excel, then export as CSV.
+</Step>
+
+<Step number={2} title="Upload to Batch">
+Go to [Batch Processing](/batch/new) and upload your CSV file. The system will validate your file and show any errors.
+</Step>
+
+<Step number={3} title="Review & Confirm">
+Review the parsed rows and estimated credit cost. Fix any validation errors before proceeding.
+</Step>
+
+<Step number={4} title="Start Processing">
+Click **Start Batch** to begin. You'll see real-time progress as each image is processed.
+</Step>
+</Steps>
+
+## Monitoring Progress
+
+Once started, you can monitor your batch:
+
+- **Progress bar** shows completion percentage
+- **Status** for each row (pending, processing, completed, failed)
+- **Real-time updates** as images complete
+- **Error messages** for any failed generations
+
+<Callout variant="info">
+You can navigate away from the page. Your batch continues processing in the background.
+</Callout>
+
+## Downloading Results
+
+When your batch completes:
+
+1. View all generated images in the results grid
+2. **Download individually** by clicking each image
+3. **Download all** as a ZIP file
+4. **Re-run failed** items if any generations failed
+
+## Error Handling
+
+Common batch errors and solutions:
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Invalid URL | Image URL not accessible | Ensure URL is public and direct |
+| Invalid format | Unsupported file type | Use PNG, JPG, or WebP |
+| Rate limited | Too many requests | Wait and retry failed items |
+| Insufficient credits | Not enough credits | Purchase more credits |
+
+## Best Practices
+
+### Organizing Your CSV
+- Group similar products together
+- Use consistent prompt styles for cohesive results
+- Test with 2-3 images first before large batches
+
+### Optimizing Costs
+- Use standard resolution for web-only images
+- Reserve ultra resolution for hero images and print
+- Batch similar aspect ratios together
+
+### Handling Large Catalogs
+- Split into batches of 50 images
+- Run batches during off-peak hours
+- Keep original images backed up
+
+## Next Steps
+
+- [Single Image Generation](/help/single-image-generation) - Generate individual images
+- [Credits & Pricing](/help/credits-pricing) - Plan your batch budget
