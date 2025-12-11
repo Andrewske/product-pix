@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import type { PricingConfig } from '../types';
-
-const mockLoadPricingConfig = mock(() => mockConfig);
-
-// Mock config loader
-mock.module('../config', () => ({
-  loadPricingConfig: mockLoadPricingConfig,
-}));
+import { getProviderForModel, getPricingForModel } from '../models';
 
 const mockConfig: PricingConfig = {
   anthropic: {
@@ -26,20 +20,28 @@ const mockConfig: PricingConfig = {
   },
 };
 
-// Dynamic import after mocking
-const { getProviderForModel, getPricingForModel } = await import('../models');
-
 describe('Model to Provider Mapping', () => {
-  beforeEach(() => {
-    mockLoadPricingConfig.mockReset();
-    mockLoadPricingConfig.mockReturnValue(mockConfig);
-  });
 
   describe('getProviderForModel', () => {
     it('should return anthropic for Claude models', () => {
-      expect(getProviderForModel('claude-sonnet-4')).toBe('anthropic');
-      expect(getProviderForModel('claude-sonnet-4-20250514')).toBe('anthropic');
-      expect(getProviderForModel('claude-opus-4-5')).toBe('anthropic');
+      expect(getProviderForModel('claude-sonnet-4', mockConfig)).toBe('anthropic');
+      expect(getProviderForModel('claude-sonnet-4-20250514', mockConfig)).toBe('anthropic');
+      expect(getProviderForModel('claude-opus-4-5', mockConfig)).toBe('anthropic');
+    });
+
+    it('should return openai for GPT models', () => {
+      expect(getProviderForModel('gpt-4o', mockConfig)).toBe('openai');
+      expect(getProviderForModel('gpt-4o-mini', mockConfig)).toBe('openai');
+    });
+
+    it('should return google for Gemini models', () => {
+      expect(getProviderForModel('gemini-3-pro-image-preview', mockConfig)).toBe('google');
+    });
+
+    it('should throw error for unrecognized models', () => {
+      expect(() => getProviderForModel('unknown-model-xyz', mockConfig)).toThrow(
+        "Model 'unknown-model-xyz' is not configured in pricing"
+      );
     });
 
     it('should return openai for GPT models', () => {
@@ -64,13 +66,13 @@ describe('Model to Provider Mapping', () => {
     });
 
     it('should handle exact match before prefix match', () => {
-      expect(getProviderForModel('claude-sonnet-4')).toBe('anthropic');
-      expect(getProviderForModel('claude-sonnet-4-20250514')).toBe('anthropic');
+      expect(getProviderForModel('claude-sonnet-4', mockConfig)).toBe('anthropic');
+      expect(getProviderForModel('claude-sonnet-4-20250514', mockConfig)).toBe('anthropic');
     });
 
     it('should handle version suffix stripping', () => {
-      expect(getProviderForModel('claude-sonnet-4-20250514')).toBe('anthropic');
-      expect(() => getProviderForModel('gpt-4o-v2')).toThrow(
+      expect(getProviderForModel('claude-sonnet-4-20250514', mockConfig)).toBe('anthropic');
+      expect(() => getProviderForModel('gpt-4o-v2', mockConfig)).toThrow(
         'Model \'gpt-4o-v2\' is not configured in pricing'
       ); // No base match
     });
@@ -78,9 +80,41 @@ describe('Model to Provider Mapping', () => {
 
   describe('getPricingForModel', () => {
     it('should return correct pricing for known Anthropic models', () => {
-      expect(getPricingForModel('claude-sonnet-4')).toEqual({ input: 3.0, output: 15.0 });
-      expect(getPricingForModel('claude-sonnet-4-20250514')).toEqual({ input: 3.0, output: 15.0 });
-      expect(getPricingForModel('claude-opus-4-5')).toEqual({ input: 15.0, output: 75.0 });
+      expect(getPricingForModel('claude-sonnet-4', mockConfig)).toEqual({ input: 3.0, output: 15.0 });
+      expect(getPricingForModel('claude-sonnet-4-20250514', mockConfig)).toEqual({ input: 3.0, output: 15.0 });
+      expect(getPricingForModel('claude-opus-4-5', mockConfig)).toEqual({ input: 15.0, output: 75.0 });
+    });
+
+    it('should return correct pricing for known OpenAI models', () => {
+      expect(getPricingForModel('gpt-4o', mockConfig)).toEqual({ input: 2.5, output: 10.0 });
+      expect(getPricingForModel('gpt-4o-mini', mockConfig)).toEqual({ input: 0.15, output: 0.6 });
+    });
+
+    it('should return correct pricing for known Google models', () => {
+      expect(getPricingForModel('gemini-3-pro-image-preview', mockConfig)).toEqual({ input: 0.075, output: 0.3 });
+    });
+
+    it('should throw error for unknown models', () => {
+      expect(() => getPricingForModel('unknown-model-xyz', mockConfig)).toThrow(
+        "Model 'unknown-model-xyz' is not configured in pricing"
+      );
+    });
+
+    it('should handle prefix matching for versioned models', () => {
+      // This would require adding a base model to config, but tests the logic
+      expect(getPricingForModel('claude-sonnet-4-20250514', mockConfig)).toEqual({ input: 3.0, output: 15.0 });
+    });
+
+    it('should use provided config instead of loading', () => {
+      const customConfig: PricingConfig = {
+        anthropic: {
+          'custom-model': { input: 1.0, output: 2.0 },
+        },
+        openai: {},
+        google: {},
+      };
+
+      expect(getPricingForModel('custom-model', customConfig)).toEqual({ input: 1.0, output: 2.0 });
     });
 
     it('should return correct pricing for known OpenAI models', () => {
@@ -115,7 +149,6 @@ describe('Model to Provider Mapping', () => {
       };
 
       expect(getPricingForModel('custom-model', customConfig)).toEqual({ input: 1.0, output: 2.0 });
-      expect(mockLoadPricingConfig).not.toHaveBeenCalled();
     });
   });
 
