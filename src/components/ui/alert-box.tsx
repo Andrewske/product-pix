@@ -32,7 +32,7 @@ function AlertBox({
   title,
   children,
   ...props
-}: AlertBoxProps) {
+}: AlertBoxProps): React.ReactElement {
   return (
     <div
       className={cn(alertBoxVariants({ variant }), className)}

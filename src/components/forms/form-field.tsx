@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -19,7 +17,7 @@ export function FormField({
   containerClassName,
   id,
   ...inputProps
-}: FormFieldProps) {
+}: FormFieldProps): React.ReactElement {
   const generatedId = React.useId();
   const inputId = id || generatedId;
 

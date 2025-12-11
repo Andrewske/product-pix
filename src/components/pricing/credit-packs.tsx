@@ -5,6 +5,7 @@ import type { PricingData } from '@/lib/pricing';
 import { createPackCheckout } from '@/lib/stripe/checkout-actions';
 import { SectionHeader } from '@/components/ui/section-header';
 import { PricingCard } from '@/components/pricing/pricing-card';
+import { AlertBox } from '@/components/ui/alert-box';
 
 interface CreditPacksProps {
   pricingData: PricingData | null;
@@ -12,15 +13,20 @@ interface CreditPacksProps {
 
 export function CreditPacks({ pricingData }: CreditPacksProps) {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const handlePurchase = async (packId: string) => {
     setCheckoutLoading(packId);
+    setCheckoutError(null);
+
     try {
       const { url } = await createPackCheckout(packId as 'pack_50' | 'pack_200' | 'pack_500');
       window.location.href = url;
     } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Failed to start checkout. Please try again.');
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to start checkout. Please try again.';
+      setCheckoutError(errorMessage);
     } finally {
       setCheckoutLoading(null);
     }
@@ -41,6 +47,13 @@ export function CreditPacks({ pricingData }: CreditPacksProps) {
         badge="Pay as you go"
         description="Perfect for occasional use or testing our service"
       />
+
+      {checkoutError && (
+        <AlertBox variant="error" className="mb-6 max-w-4xl mx-auto">
+          {checkoutError}
+        </AlertBox>
+      )}
+
       <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {Object.entries(pricingData.packs).map(([packId, pack]) => {
           const isFeatured = packId === 'pack_200';

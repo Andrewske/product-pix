@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +23,7 @@ export function PricingCard({
   isLoading = false,
   buttonText = 'Get Started',
   features,
-}: PricingCardProps) {
+}: PricingCardProps): React.ReactElement {
   const isFeatured = variant === 'featured';
 
   return (
@@ -33,8 +31,7 @@ export function PricingCard({
       variant="studio"
       className={cn(
         "relative p-8 flex flex-col",
-        isFeatured && "bg-foreground text-background border-2 scale-105 shadow-2xl",
-        isFeatured && "[border-color:oklch(var(--success))]",
+        isFeatured && "bg-foreground text-background border-2 border-success scale-105 shadow-2xl",
         !isFeatured && "border"
       )}
       hover

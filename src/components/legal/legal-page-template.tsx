@@ -27,7 +27,7 @@ function LegalPageTemplate({
   footerLinks = [],
   lastUpdated,
   className
-}: LegalPageTemplateProps) {
+}: LegalPageTemplateProps): React.ReactElement {
   // Generate TOC sections from level 2 headings
   const tocSections = sections
     .filter(section => section.level === 2)
@@ -61,8 +61,10 @@ function LegalPageTemplate({
             {section.content}
           </section>
         );
-      default:
-        return null;
+      default: {
+        const _exhaustiveCheck: never = section.level;
+        throw new Error(`Unsupported section level: ${_exhaustiveCheck}`);
+      }
     }
   };
 
