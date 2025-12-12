@@ -7,6 +7,7 @@ import { getPricing } from '@/lib/pricing/actions';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreditBalanceDisplay } from './credit-balance-display';
+import { CashRefundSection } from '@/components/refunds/cash-refund-section';
 import type { PricingData } from '@/lib/pricing/utils';
 
 export function BillingTab(): React.ReactElement {
@@ -70,16 +71,18 @@ export function BillingTab(): React.ReactElement {
              </p>
            )}
           </div>
-       </Card>
+        </Card>
 
-       {/* Section divider */}
-       <div className="relative py-6">
-         <div className="absolute inset-0 flex items-center">
-           <span className="w-full border-t border-border/40" />
-         </div>
-       </div>
+        <CashRefundSection />
 
-       <PurchaseHistory />
+        {/* Section divider */}
+        <div className="relative py-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border/40" />
+          </div>
+        </div>
+
+        <PurchaseHistory />
     </div>
   );
 }
