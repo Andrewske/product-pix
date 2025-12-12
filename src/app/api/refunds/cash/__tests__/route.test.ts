@@ -1,14 +1,16 @@
 import { describe, it, expect, mock } from 'bun:test';
 
-// Mock the auth function
-const mockWithAuth = mock((handler: unknown) => handler);
+// Mock the auth function with user injection
+const mockWithAuth = mock((handler: any) => {
+  return async (request: Request) => {
+    const authenticatedRequest = Object.assign(request, {
+      user: { id: 'user-123' }
+    });
+    return handler(authenticatedRequest);
+  };
+});
 mock.module('@/lib/auth/api-middleware', () => ({
   withAuth: mockWithAuth,
-}));
-
-// Mock getServerSession
-mock.module('next-auth', () => ({
-  getServerSession: mock(() => Promise.resolve({ user: { id: 'user-123' } })),
 }));
 
 // Mock database and Stripe functions
