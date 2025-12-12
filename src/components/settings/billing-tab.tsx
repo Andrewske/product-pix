@@ -34,12 +34,12 @@ export function BillingTab(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-       {/* Credit packs section - moved to top */}
-       <Card variant="studio" className="p-6">
-         <div className="space-y-6">
-           <div className="flex items-center justify-between">
-             <div>
-               <h3 className="text-lg font-semibold">Buy Credit Packs</h3>
+        {/* Credit packs section - moved to top */}
+        <Card variant="control" className="p-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold font-display">Buy Credit Packs</h3>
                <p className="text-sm text-muted-foreground">
                  Purchase one-time credit packs that never expire
                </p>

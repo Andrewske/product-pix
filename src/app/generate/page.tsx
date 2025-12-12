@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertBox } from '@/components/ui/alert-box';
 import { SectionLabel } from '@/components/ui/section-label';
+import { PageContainer } from '@/components/layout/page-container';
 import { useCredits } from '@/lib/auth';
 
 export default function GeneratePage() {
@@ -107,11 +108,11 @@ export default function GeneratePage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PageContainer narrow>
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <h1 className="text-2xl font-bold">Generate Product Photo</h1>
-        <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">
+        <h1 className="text-2xl font-bold font-display">Generate Product Photo</h1>
+        <Badge variant="teal">
           AI studio for ecommerce sellers
         </Badge>
       </div>
@@ -148,7 +149,7 @@ export default function GeneratePage() {
           )}
 
           {/* Generate Button */}
-          <Button onClick={handleGenerate} disabled={generating || credits < 1} className="w-full" size="lg">
+          <Button onClick={handleGenerate} disabled={generating || credits < 1} variant="accent" className="w-full" size="lg">
             {generating ? 'Generating...' : 'Generate (1 credit)'}
           </Button>
 
@@ -160,7 +161,7 @@ export default function GeneratePage() {
         {/* Right Column: Result */}
         <div>
           <SectionLabel>RESULT</SectionLabel>
-          <Card className="min-h-[500px] flex items-center justify-center bg-muted/30">
+          <Card variant="hero" className="min-h-[500px] flex items-center justify-center">
             {generating ? (
               <GenerationLoading />
             ) : result ? (
@@ -183,6 +184,6 @@ export default function GeneratePage() {
           onClose={() => setShowCreditsModal(false)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

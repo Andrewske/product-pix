@@ -23,11 +23,11 @@ export function AuthLayout({
         <div className="absolute inset-0 studio-spotlight pointer-events-none" />
       )}
       <Card
-        variant="studio"
+        variant="control"
         className="w-full max-w-md bg-card/50 backdrop-blur-xl border border-white/10 shadow-xl relative z-10"
       >
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold">{title}</CardTitle>
+          <CardTitle className="text-3xl font-bold font-display">{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (

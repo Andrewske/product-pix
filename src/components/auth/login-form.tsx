@@ -75,7 +75,7 @@ export function LoginForm({ redirectTo }: LoginFormProps): React.ReactElement {
       )}
 
       <Button
-        variant="studio"
+        variant="accent"
         size="xl"
         type="submit"
         disabled={loading}

@@ -125,11 +125,11 @@ export function AccountTab(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      {/* Email Display */}
-      <Card variant="studio" className="p-6">
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">Email Address</h3>
+       {/* Email Display */}
+       <Card variant="control" className="p-6">
+         <div className="space-y-4">
+           <div>
+             <h3 className="text-lg font-semibold font-display">Email Address</h3>
             <p className="text-sm text-muted-foreground">Your registered email address</p>
           </div>
           <div className="flex items-center space-x-2">
@@ -149,11 +149,11 @@ export function AccountTab(): React.ReactElement {
          </div>
        </div>
 
-       {/* Password Management */}
-      <Card variant="studio" className="p-6">
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">{isOAuthUser ? 'Set Password' : 'Change Password'}</h3>
+        {/* Password Management */}
+       <Card variant="control" className="p-6">
+         <div className="space-y-4">
+           <div>
+             <h3 className="text-lg font-semibold font-display">{isOAuthUser ? 'Set Password' : 'Change Password'}</h3>
             <p className="text-sm text-muted-foreground">
               {isOAuthUser
                 ? 'Set a password to log in with email/password instead of Google'
@@ -201,9 +201,9 @@ export function AccountTab(): React.ReactElement {
                 />
               </div>
 
-                <Button variant="studio" size="xl" type="submit" disabled={isSetting}>
-                  {isSetting ? 'Setting Password...' : 'Set Password'}
-                </Button>
+                 <Button variant="accent" size="xl" type="submit" disabled={isSetting}>
+                   {isSetting ? 'Setting Password...' : 'Set Password'}
+                 </Button>
             </form>
           ) : (
             /* Change Password Form for Email Users */
@@ -254,9 +254,9 @@ export function AccountTab(): React.ReactElement {
                   />
                 </div>
 
-                  <Button variant="studio" size="xl" type="submit" disabled={isUpdating}>
-                    {isUpdating ? 'Updating...' : 'Update Password'}
-                  </Button>
+                   <Button variant="accent" size="xl" type="submit" disabled={isUpdating}>
+                     {isUpdating ? 'Updating...' : 'Update Password'}
+                   </Button>
               </form>
             </div>
           )}

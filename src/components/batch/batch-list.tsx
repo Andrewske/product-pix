@@ -49,12 +49,12 @@ export function BatchList({
     }
   }, [fetchBatches, initialBatches.length]);
 
-  const statusColors = {
-    pending: 'bg-orange-500', // Electric Coral
-    processing: 'bg-orange-500', // Electric Coral
-    completed: 'bg-emerald-400', // Mint
-    failed: 'bg-gray-900', // Deep Black
-    cancelled: 'bg-gray-800', // Deep Black
+  const statusVariants = {
+    pending: 'secondary' as const,
+    processing: 'secondary' as const,
+    completed: 'teal' as const,
+    failed: 'destructive' as const,
+    cancelled: 'outline' as const,
   };
 
   const statusLabels = {
@@ -99,16 +99,16 @@ export function BatchList({
         <div className="flex items-center justify-center py-12">
           <Spinner size="lg" centered />
         </div>
-        ) : filteredBatches.length === 0 ? (
-          <Card variant="studio" className="p-12 text-center">
-            <h3 className="text-xl font-semibold mb-2">No batches found</h3>
-            <p className="text-muted-foreground mb-6">
-              Create your first batch to get started with AI-powered product photography.
-            </p>
-            <Button onClick={() => router.push('/generate')}>
-              Create Batch
-            </Button>
-          </Card>
+         ) : filteredBatches.length === 0 ? (
+           <Card variant="control" className="p-12 text-center">
+             <h3 className="text-xl font-semibold font-display mb-2">No batches found</h3>
+             <p className="text-muted-foreground mb-6">
+               Create your first batch to get started with AI-powered product photography.
+             </p>
+             <Button variant="accent" onClick={() => router.push('/batch/new')}>
+               Create Batch
+             </Button>
+           </Card>
        ) : (
         <div className="grid gap-4">
             {filteredBatches.map((batch) => {
@@ -119,21 +119,21 @@ export function BatchList({
 
 
             return (
-              <Card
-                key={batch.id}
-                variant="studio"
-                hover
-                className="p-6 cursor-pointer"
-                onClick={() => router.push(`/batch/${batch.id}`)}
-              >
+               <Card
+                 key={batch.id}
+                 variant="control"
+                 hover
+                 className="p-6 cursor-pointer"
+                 onClick={() => router.push(`/batch/${batch.id}`)}
+               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-2">
-                     <div className="flex items-center gap-2">
-                       <h3 className="font-semibold">{batch.name}</h3>
-                        <Badge className={`${statusColors[batch.status]} text-white`}>
-                          {statusLabels[batch.status]}
-                        </Badge>
-                     </div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{batch.name}</h3>
+                         <Badge variant={statusVariants[batch.status]}>
+                           {statusLabels[batch.status]}
+                         </Badge>
+                      </div>
                     <div className="text-sm text-muted-foreground">
                       {batch.total_items} items • {batch.credits_charged} credits
                     </div>

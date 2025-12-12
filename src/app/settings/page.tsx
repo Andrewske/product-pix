@@ -15,7 +15,7 @@ export default async function SettingsPage() {
 
   return (
     <PageContainer narrow>
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+      <h1 className="text-3xl font-bold font-display mb-8">Settings</h1>
       <Suspense fallback={
         <div className="flex items-center justify-center py-12">
           <Spinner size="lg" centered />

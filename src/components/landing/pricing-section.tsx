@@ -28,7 +28,7 @@ export function PricingSection({ pricing, className = '' }: PricingSectionProps)
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2 id="pricing-heading" className="text-3xl sm:text-5xl font-bold mb-6">Simple, Transparent Pricing</h2>
+          <h2 id="pricing-heading" className="text-3xl sm:text-5xl font-bold mb-6 font-display">Simple, Transparent Pricing</h2>
           <p id="pricing-description" className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Start free. Pay as you go. No subscriptions.
           </p>

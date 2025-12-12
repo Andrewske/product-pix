@@ -105,7 +105,7 @@ export function HowItWorksSection({ className = '' }: HowItWorksSectionProps) {
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2 id="how-it-works-heading" className="text-3xl sm:text-5xl font-bold mb-6">How It Works</h2>
+          <h2 id="how-it-works-heading" className="text-3xl sm:text-5xl font-bold mb-6 font-display">How It Works</h2>
           <p id="how-it-works-description" className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Three simple steps to professional results
           </p>

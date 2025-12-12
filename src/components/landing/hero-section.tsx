@@ -32,7 +32,7 @@ export function HeroSection({ example, className = '' }: HeroSectionProps) {
         <div className="text-center mb-20">
           <h1
             id="hero-heading"
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-tight"
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-tight font-display"
           >
             Professional Product Photos <br className="hidden sm:block" />
             <span className="text-primary">in Seconds</span>

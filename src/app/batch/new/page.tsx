@@ -102,9 +102,9 @@ export default function NewBatchPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {step === 'upload' && (
-            <Card variant="studio" className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Upload CSV File</h2>
+           {step === 'upload' && (
+             <Card variant="control" className="p-6">
+               <h2 className="text-xl font-semibold font-display mb-4">Upload CSV File</h2>
               <CSVUploadForm onParsed={handleParsed} onError={setCreateError} />
                <div className="mt-8 space-y-4">
                  <div className="bg-muted/50 rounded-xl p-4 border border-border/50">
@@ -144,9 +144,9 @@ export default function NewBatchPage() {
              </Card>
           )}
 
-          {step === 'preview' && (
-            <Card variant="studio" className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Review & Configure</h2>
+           {step === 'preview' && (
+             <Card variant="control" className="p-6">
+               <h2 className="text-xl font-semibold font-display mb-4">Review & Configure</h2>
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2">
@@ -175,10 +175,10 @@ export default function NewBatchPage() {
         {/* Sidebar */}
         <div className="lg:col-span-1">
           <div className="sticky top-8 space-y-6">
-            {/* Cost Breakdown Card */}
-            {items.length > 0 && (
-              <Card variant="studio" className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                <h3 className="text-lg font-semibold mb-4">Cost Breakdown</h3>
+             {/* Cost Breakdown Card */}
+             {items.length > 0 && (
+               <Card variant="control" className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                 <h3 className="text-lg font-semibold font-display mb-4">Cost Breakdown</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Items:</span>
@@ -189,10 +189,10 @@ export default function NewBatchPage() {
                     <span className="font-medium">1-3</span>
                   </div>
                   <div className="border-t pt-3">
-                    <div className="flex justify-between text-lg font-semibold">
-                      <span>Total Credits:</span>
-                      <span className="text-primary">{totalCredits}</span>
-                    </div>
+                     <div className="flex justify-between text-lg font-semibold">
+                       <span>Total Credits:</span>
+                       <span className="text-primary font-mono">{totalCredits}</span>
+                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground mt-2">
                     Credits will be deducted upon batch creation
@@ -201,9 +201,9 @@ export default function NewBatchPage() {
               </Card>
             )}
 
-            {/* Summary Card */}
-            <Card variant="studio" className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Batch Summary</h3>
+             {/* Summary Card */}
+             <Card variant="control" className="p-6">
+               <h3 className="text-lg font-semibold font-display mb-4">Batch Summary</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>

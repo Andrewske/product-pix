@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { PageContainer } from '@/components/layout/page-container';
 
 export function SuccessDisplay() {
   const [status, setStatus] = useState<'success' | 'redirecting'>('success');
@@ -34,9 +35,9 @@ export function SuccessDisplay() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <Card variant="studio" className="p-8 text-center">
+    <PageContainer>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card variant="control" className="p-8 text-center max-w-md w-full">
           <div aria-live="polite" aria-atomic="true">
             {status === 'success' && (
               <div className="flex flex-col items-center space-y-6">
@@ -45,7 +46,7 @@ export function SuccessDisplay() {
                   <CheckCircle className="size-12 text-accent relative z-10 animate-in fade-in duration-500" />
                 </div>
                 <div className="space-y-2">
-                  <h1 className="text-2xl font-bold">
+                  <h1 className="text-2xl font-bold font-display">
                     Payment <span className="gradient-text-studio">Successful</span>
                   </h1>
                   <p className="text-muted-foreground">
@@ -68,6 +69,6 @@ export function SuccessDisplay() {
           </div>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }

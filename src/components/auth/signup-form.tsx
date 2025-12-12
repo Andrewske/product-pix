@@ -110,7 +110,7 @@ export function SignupForm(): React.ReactElement {
       )}
 
       <Button
-        variant="studio"
+        variant="accent"
         size="xl"
         type="submit"
         disabled={loading}

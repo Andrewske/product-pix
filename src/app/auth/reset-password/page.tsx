@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageContainer } from '@/components/layout/page-container';
 
 export default function ResetPasswordPage(): React.ReactElement {
   const [password, setPassword] = useState('');
@@ -58,14 +59,15 @@ export default function ResetPasswordPage(): React.ReactElement {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold tracking-tight">ProductPix</CardTitle>
-            <CardDescription className="text-lg">
-              Password updated successfully
-            </CardDescription>
-          </CardHeader>
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card variant="control" className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+            <CardHeader className="space-y-1 text-center">
+              <CardTitle className="text-3xl font-bold tracking-tight font-display">ProductPix</CardTitle>
+              <CardDescription className="text-lg">
+                Password updated successfully
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             <div className="bg-success/10 border border-success text-success px-4 py-3 rounded">
               <h3 className="font-medium">Password updated</h3>
@@ -75,15 +77,17 @@ export default function ResetPasswordPage(): React.ReactElement {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold tracking-tight">ProductPix</CardTitle>
+    <PageContainer>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card variant="control" className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-3xl font-bold tracking-tight font-display">ProductPix</CardTitle>
           <CardDescription className="text-lg">
             Reset your password
           </CardDescription>
@@ -126,6 +130,7 @@ export default function ResetPasswordPage(): React.ReactElement {
             )}
 
             <Button
+              variant="accent"
               type="submit"
               disabled={loading}
               className="w-full"
@@ -146,6 +151,7 @@ export default function ResetPasswordPage(): React.ReactElement {
           </p>
         </CardFooter>
       </Card>
-    </div>
+      </div>
+    </PageContainer>
   );
 }

@@ -43,21 +43,21 @@ function LegalPageTemplate({
       case 1:
         return (
           <section key={section.id} id={section.id} className={baseClasses}>
-            <h1 className="text-4xl font-bold tracking-tight mb-4">{section.title}</h1>
+            <h1 className="text-4xl font-bold tracking-tight mb-4 font-display">{section.title}</h1>
             {section.content}
           </section>
         );
       case 2:
         return (
           <section key={section.id} id={section.id} className={baseClasses}>
-            <h2 className="text-2xl font-semibold mb-4">{section.title}</h2>
+            <h2 className="text-2xl font-semibold mb-4 font-display">{section.title}</h2>
             {section.content}
           </section>
         );
       case 3:
         return (
           <section key={section.id} id={section.id} className={baseClasses}>
-            <h3 className="text-xl font-medium mb-3">{section.title}</h3>
+            <h3 className="text-xl font-medium mb-3 font-display">{section.title}</h3>
             {section.content}
           </section>
         );
@@ -72,7 +72,7 @@ function LegalPageTemplate({
     <PageContainer narrow className={className}>
       <article className="max-w-3xl mx-auto">
         <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">{title}</h1>
+          <h1 className="text-4xl font-bold tracking-tight mb-4 font-display">{title}</h1>
           {lastUpdated && (
             <p className="text-muted-foreground">Last updated: {lastUpdated}</p>
           )}

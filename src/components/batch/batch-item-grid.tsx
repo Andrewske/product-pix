@@ -17,9 +17,9 @@ interface BatchItemGridProps {
 
 export function BatchItemGrid({ items }: BatchItemGridProps) {
   const statusVariants = {
-    pending: 'info' as const,
-    processing: 'default' as const,
-    completed: 'success' as const,
+    pending: 'secondary' as const,
+    processing: 'secondary' as const,
+    completed: 'teal' as const,
     failed: 'destructive' as const,
   };
 
@@ -32,15 +32,15 @@ export function BatchItemGrid({ items }: BatchItemGridProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Batch Items ({items.length})</h3>
+      <h3 className="text-lg font-semibold font-display">Batch Items ({items.length})</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {items.map((item) => (
-          <Card
-            key={item.id}
-            variant="studio"
-            className="overflow-hidden"
-            hover
-          >
+           <Card
+             key={item.id}
+             variant="hero"
+             className="overflow-hidden"
+             hover
+           >
             {item.generated_image ? (
               <ImageCard
                 image={item.generated_image}

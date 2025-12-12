@@ -37,11 +37,11 @@ export function PricingCard({
       hover
     >
       <CardHeader className="p-0 mb-6 flex-shrink-0">
-        <CardTitle className="text-2xl font-bold leading-tight mb-4">
+        <CardTitle className="text-2xl font-bold leading-tight mb-4 font-display">
           {title}
         </CardTitle>
         <div className="space-y-2">
-          <div className="text-3xl font-bold">
+          <div className="text-3xl font-bold font-mono">
             {price}
           </div>
         </div>
@@ -61,20 +61,20 @@ export function PricingCard({
            </ul>
          )}
        </CardContent>
-      <CardFooter className="p-0 mt-auto">
-        <Button
-          className={cn(
-            "w-full",
-            isFeatured && "bg-background text-foreground hover:bg-background/90"
-          )}
-          variant={isFeatured ? "default" : "studio"}
-          size="xl"
-          onClick={onClick}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Creating...' : buttonText}
-        </Button>
-      </CardFooter>
+       <CardFooter className="p-0 mt-auto">
+         <Button
+           className={cn(
+             "w-full",
+             isFeatured && "bg-background text-foreground hover:bg-background/90"
+           )}
+           variant={isFeatured ? "default" : "accent"}
+           size="xl"
+           onClick={onClick}
+           disabled={isLoading}
+         >
+           {isLoading ? 'Creating...' : buttonText}
+         </Button>
+       </CardFooter>
     </Card>
   );
 }

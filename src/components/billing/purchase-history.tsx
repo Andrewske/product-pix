@@ -19,9 +19,9 @@ export function PurchaseHistory() {
 
   if (loading) {
     return (
-      <Card>
+      <Card variant="control">
         <CardHeader>
-          <CardTitle>Purchase History</CardTitle>
+          <CardTitle className="font-display">Purchase History</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">Loading...</p>
@@ -32,9 +32,9 @@ export function PurchaseHistory() {
 
   if (error) {
     return (
-      <Card>
+      <Card variant="control">
         <CardHeader>
-          <CardTitle>Purchase History</CardTitle>
+          <CardTitle className="font-display">Purchase History</CardTitle>
           <CardDescription className="text-destructive">
             Error loading purchases: {error}
           </CardDescription>
@@ -45,9 +45,9 @@ export function PurchaseHistory() {
 
   if (purchases.length === 0) {
     return (
-      <Card>
+      <Card variant="control">
         <CardHeader>
-          <CardTitle>Purchase History</CardTitle>
+          <CardTitle className="font-display">Purchase History</CardTitle>
           <CardDescription>No purchases yet</CardDescription>
         </CardHeader>
         <CardContent>
@@ -63,9 +63,9 @@ export function PurchaseHistory() {
   }
 
   return (
-    <Card>
+    <Card variant="control">
       <CardHeader>
-        <CardTitle>Purchase History</CardTitle>
+        <CardTitle className="font-display">Purchase History</CardTitle>
         <CardDescription>Your credit purchases</CardDescription>
       </CardHeader>
       <CardContent>
@@ -81,12 +81,12 @@ export function PurchaseHistory() {
                     +{purchase.credits_granted} credits
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-mono">
                   {new Date(purchase.created_at).toLocaleDateString()}
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-medium">
+                <p className="font-medium font-mono">
                   ${(purchase.amount_cents / 100).toFixed(2)}
                 </p>
               </div>

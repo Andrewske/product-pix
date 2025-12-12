@@ -26,26 +26,26 @@ export default async function DashboardPage() {
     <PageContainer spotlight>
       <SectionHeader
         title="Your Images"
-        className="text-left mb-12"
+        className="text-left mb-8"
       />
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div className="flex gap-3 w-full sm:w-auto">
           <Link href="/batch/new" className="flex-1 sm:flex-none">
             <Button variant="outline" className="w-full">Create Batch</Button>
           </Link>
           <Link href="/generate" className="flex-1 sm:flex-none">
-            <Button className="w-full">Generate New</Button>
+            <Button variant="accent" className="w-full">Generate New</Button>
           </Link>
         </div>
       </div>
 
       {/* Recent Batches Section */}
       {recentBatches.length > 0 && (
-        <div className="py-32">
+        <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Recent Batches</h2>
+            <h2 className="text-xl font-semibold font-display">Recent Batches</h2>
             <Link href="/batch">
-              <Button variant="ghost" size="sm" className="text-info hover:text-info/80">View All</Button>
+              <Button variant="ghost" size="sm" className="text-teal hover:text-teal/80">View All</Button>
             </Link>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Images Section */}
-      <div className="py-32">
+      <div>
         {images.length === 0 ? (
           <EmptyState
             title="No images yet"

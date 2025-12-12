@@ -52,7 +52,7 @@ export function ExamplesSection({ examples, className = '' }: ExamplesSectionPro
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 id="examples-heading" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
+          <h2 id="examples-heading" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 font-display">
             See the Transformation
           </h2>
           <p id="examples-description" className="text-xl text-muted-foreground max-w-2xl mx-auto">

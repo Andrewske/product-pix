@@ -54,7 +54,7 @@ export default function Home() {
                 <span>AI-Powered Studio Photography</span>
               </div>
               
-              <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-none text-balance">
+              <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-none text-balance font-display">
                 Professional Photos
                 <br />
                 <span className="gradient-text-studio">in Seconds</span>
@@ -70,7 +70,8 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
               <Button
                 size="lg"
-                className="bg-foreground text-background hover:bg-accent border border-accent/20 hover:border-accent/40 h-14 px-8 text-lg shadow-xl hover:shadow-2xl transition-all button-studio"
+                variant="accent"
+                className="h-14 px-8 text-lg shadow-xl hover:shadow-2xl transition-all"
               >
                 Start Creating Free <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -103,7 +104,7 @@ export default function Home() {
       <section id="features" className="w-full py-32 relative bg-background">
         <div className="max-w-6xl mx-auto px-4 relative">
           <div className="text-center mb-24">
-            <h2 className="text-4xl font-bold mb-6 tracking-tight">Immaculate Results</h2>
+            <h2 className="text-4xl font-bold mb-6 tracking-tight font-display">Immaculate Results</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               From raw phone photos to commercial-grade assets instantly.
             </p>
@@ -142,7 +143,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 relative">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight font-display">
                 The Virtual
                 <br />
                 Photo Studio
@@ -199,7 +200,7 @@ export default function Home() {
       {/* CTA - Clean & Direct */}
       <section className="w-full py-32 text-center relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 relative z-10">
-          <h2 className="text-5xl md:text-6xl font-bold mb-8 tracking-tight text-balance">
+          <h2 className="text-5xl md:text-6xl font-bold mb-8 tracking-tight text-balance font-display">
             Ready to upgrade your listings?
           </h2>
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto font-light">
@@ -208,7 +209,8 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
-              className="bg-foreground text-background hover:bg-accent border border-accent/20 hover:border-accent/40 h-14 px-10 text-lg shadow-xl button-studio"
+              variant="accent"
+              className="h-14 px-10 text-lg shadow-xl"
             >
               Get Started Free
             </Button>

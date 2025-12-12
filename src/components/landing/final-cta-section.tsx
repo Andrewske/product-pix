@@ -13,7 +13,7 @@ export function FinalCTASection({ className = '' }: FinalCTASectionProps) {
       aria-describedby="final-cta-description"
     >
       <div className="max-w-4xl mx-auto text-center">
-        <h2 id="final-cta-heading" className="text-4xl sm:text-5xl font-bold mb-6">
+        <h2 id="final-cta-heading" className="text-4xl sm:text-5xl font-bold mb-6 font-display">
           Ready to upgrade your listings?
         </h2>
         <p id="final-cta-description" className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
@@ -23,6 +23,7 @@ export function FinalCTASection({ className = '' }: FinalCTASectionProps) {
           <Link href="/signup" aria-describedby="final-cta-button-description">
             <Button
               size="lg"
+              variant="accent"
               className="text-lg px-10 py-6 h-auto w-full sm:w-auto"
             >
               Get Started for Free
