@@ -49,4 +49,5 @@ next-env.d.ts
 prompt-bench/sessions/*.json
 !prompt-bench/sessions/.gitkeep
 
-notes.md.eslintcache
+notes.md
+.eslintcache

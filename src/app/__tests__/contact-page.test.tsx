@@ -1,4 +1,3 @@
-import { describe, it, expect, mock, beforeEach } from 'bun:test'
 import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -8,9 +7,9 @@ import { ContactForm } from '@/components/contact/contact-form'
 const mockFetch = mock(() => Promise.resolve({
   ok: true,
   json: () => Promise.resolve({ success: true, messageId: 'test-id' }),
-}))
+} as Response))
 
-global.fetch = mockFetch as any
+global.fetch = mockFetch as typeof fetch
 
 describe('ContactForm', () => {
   beforeEach(() => {

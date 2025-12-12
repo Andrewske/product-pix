@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
-import { middleware } from '@/middleware';
+import { middleware } from '@/proxy';
 import { logger } from '@/lib/logging';
 
 // Mock the supabase server client
-const mockCreateClient = mock(async () => null as any);
+const mockCreateClient = mock(async () => null);
 const mockRequireAdmin = mock(async () => false);
 mock.module('@/lib/supabase/server', () => ({
   createClient: mockCreateClient,
