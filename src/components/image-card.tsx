@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
+import { Undo2 } from 'lucide-react';
+import { ImageRefundModal } from '@/components/refunds/image-refund-modal';
 import type { GeneratedImage } from '@/types';
 
 interface ImageCardProps {
@@ -15,6 +17,7 @@ interface ImageCardProps {
 
 export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCardProps) {
   const [showActions, setShowActions] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
 
   return (
     <Card
@@ -62,6 +65,14 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
         </button>
 
         <button
+          onClick={() => setShowRefundModal(true)}
+          className="p-2 bg-background rounded-full hover:bg-secondary"
+          title="Request refund"
+        >
+          <Undo2 className="w-5 h-5" />
+        </button>
+
+        <button
           onClick={() => onDelete(image.id)}
           className="p-2 bg-background rounded-full hover:bg-secondary"
           title="Delete"
@@ -74,12 +85,21 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
 
       {/* Favorite indicator */}
       {image.is_favorite && (
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2" data-testid="favorite-indicator">
           <svg className="w-5 h-5 text-destructive fill-current" viewBox="0 0 24 24">
             <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </div>
       )}
+
+      <ImageRefundModal
+        imageId={image.id}
+        jobId={image.job_id}
+        creditsRefunded={1} // TODO: Get actual credits from job
+        isOpen={showRefundModal}
+        onClose={() => setShowRefundModal(false)}
+        onSuccess={() => onDelete(image.id)}
+      />
     </Card>
   );
 }
