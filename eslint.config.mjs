@@ -14,13 +14,29 @@ const eslintConfig = defineConfig([
       }],
     },
   },
-  // Override default ignores of eslint-config-next.
+  // Relax rules for test files (standard practice)
+  {
+    files: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+    },
+  },
+  // Relax rules for shadcn/ui components (library code)
+  {
+    files: ["src/components/ui/**"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+    },
+  },
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "prompt-bench/**",
+    "scripts/**",
   ]),
 ]);
 
