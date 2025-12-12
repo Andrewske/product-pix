@@ -1,17 +1,25 @@
 import React from 'react';
-import React from 'react';
 import { describe, it, expect, mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock components for testing
-const MockButton = ({ children, onClick, ...props }: any) => (
+interface MockButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+}
+
+const MockButton = ({ children, onClick, ...props }: MockButtonProps) => (
   <button onClick={onClick} {...props}>{children}</button>
 );
 
-const MockInput = (props: any) => <input {...props} />;
+const MockInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />;
 
-const MockLink = ({ children, href, ...props }: any) => (
+interface MockLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  children: React.ReactNode;
+  href: string;
+}
+
+const MockLink = ({ children, href, ...props }: MockLinkProps) => (
   <a href={href} {...props}>{children}</a>
 );
 

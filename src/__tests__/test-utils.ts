@@ -72,8 +72,10 @@ export const testCTAButton = async (
   expect(button?.getAttribute('href')).toBe(expectedHref);
 
   // Test keyboard navigation
-  button.focus();
-  expect(button).toBe(document.activeElement as HTMLElement);
+  if (button) {
+    button.focus();
+    expect(button).toBe(document.activeElement as HTMLElement);
+  }
 
   // Test click (though we can't test actual navigation in unit tests)
   await user.click(button);
