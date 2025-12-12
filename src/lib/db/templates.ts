@@ -1,14 +1,17 @@
 // src/lib/db/templates.ts
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logging';
+import type { Database } from '@/lib/supabase/database.types';
+
+type PromptTemplateRow = Database['public']['Tables']['prompt_templates']['Row'];
 
 export interface PromptTemplate {
   id: string;
   slug: string;
   version: number;
   status: string;
-  templateData: Record<string, unknown>;
-  variablesSchema: Record<string, unknown>;
+  templateData: PromptTemplateRow['template_data'];
+  variablesSchema: PromptTemplateRow['variables_schema'];
   createdAt: string;
   createdBy?: string;
 }
@@ -35,8 +38,8 @@ export const getTemplateById = async (templateId: string): Promise<PromptTemplat
     slug: data.slug,
     version: data.version,
     status: data.status,
-    templateData: data.template_data as Record<string, unknown>,
-    variablesSchema: data.variables_schema as Record<string, unknown>,
+    templateData: data.template_data,
+    variablesSchema: data.variables_schema,
     createdAt: data.created_at,
     createdBy: data.created_by || undefined,
   };
@@ -67,8 +70,8 @@ export const getTemplateBySlug = async (slug: string): Promise<PromptTemplate | 
     slug: data.slug,
     version: data.version,
     status: data.status,
-    templateData: data.template_data as Record<string, unknown>,
-    variablesSchema: data.variables_schema as Record<string, unknown>,
+    templateData: data.template_data,
+    variablesSchema: data.variables_schema,
     createdAt: data.created_at,
     createdBy: data.created_by || undefined,
   };
@@ -111,13 +114,13 @@ export const getAllActiveTemplates = async (): Promise<PromptTemplate[]> => {
     return [];
   }
 
-  return data.map((template) => ({
+  return data.map((template): PromptTemplate => ({
     id: template.id,
     slug: template.slug,
     version: template.version,
     status: template.status,
-    templateData: template.template_data as Record<string, unknown>,
-    variablesSchema: template.variables_schema as Record<string, unknown>,
+    templateData: template.template_data,
+    variablesSchema: template.variables_schema,
     createdAt: template.created_at,
     createdBy: template.created_by || undefined,
   }));
