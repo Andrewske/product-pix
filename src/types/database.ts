@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -190,6 +185,102 @@ export type Database = {
           },
         ]
       }
+      cash_refund_requests: {
+        Row: {
+          completed_at: string | null
+          credits_refunded: number
+          id: string
+          refund_amount_cents: number
+          refund_percentage: number
+          requested_at: string
+          status: Database["public"]["Enums"]["cash_refund_status"]
+          stripe_error: string | null
+          stripe_processed_at: string | null
+          stripe_purchase_id: string
+          stripe_refund_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          credits_refunded: number
+          id?: string
+          refund_amount_cents: number
+          refund_percentage: number
+          requested_at?: string
+          status?: Database["public"]["Enums"]["cash_refund_status"]
+          stripe_error?: string | null
+          stripe_processed_at?: string | null
+          stripe_purchase_id: string
+          stripe_refund_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          credits_refunded?: number
+          id?: string
+          refund_amount_cents?: number
+          refund_percentage?: number
+          requested_at?: string
+          status?: Database["public"]["Enums"]["cash_refund_status"]
+          stripe_error?: string | null
+          stripe_processed_at?: string | null
+          stripe_purchase_id?: string
+          stripe_refund_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_refund_requests_stripe_purchase_id_fkey"
+            columns: ["stripe_purchase_id"]
+            isOneToOne: true
+            referencedRelation: "stripe_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_refund_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip_address: unknown
+          message: string
+          name: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: unknown
+          message: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: unknown
+          message?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -360,10 +451,10 @@ export type Database = {
           image_id: string
           job_id: string
           processed_at: string | null
-          reason: string
+          reason: Database["public"]["Enums"]["refund_reason"]
           requested_at: string
           reviewed_by: string | null
-          status: string
+          status: Database["public"]["Enums"]["refund_status"]
           user_id: string
         }
         Insert: {
@@ -374,10 +465,10 @@ export type Database = {
           image_id: string
           job_id: string
           processed_at?: string | null
-          reason: string
+          reason: Database["public"]["Enums"]["refund_reason"]
           requested_at?: string
           reviewed_by?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["refund_status"]
           user_id: string
         }
         Update: {
@@ -388,17 +479,17 @@ export type Database = {
           image_id?: string
           job_id?: string
           processed_at?: string | null
-          reason?: string
+          reason?: Database["public"]["Enums"]["refund_reason"]
           requested_at?: string
           reviewed_by?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["refund_status"]
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "image_refund_requests_image_id_fkey"
             columns: ["image_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "generated_images"
             referencedColumns: ["id"]
           },
@@ -702,6 +793,57 @@ export type Database = {
           },
         ]
       }
+      purchase_credit_ledger: {
+        Row: {
+          created_at: string
+          credits_consumed: number
+          credits_granted: number
+          credits_refunded_cash: number
+          credits_refunded_image: number
+          id: string
+          stripe_purchase_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_consumed?: number
+          credits_granted: number
+          credits_refunded_cash?: number
+          credits_refunded_image?: number
+          id?: string
+          stripe_purchase_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_consumed?: number
+          credits_granted?: number
+          credits_refunded_cash?: number
+          credits_refunded_image?: number
+          id?: string
+          stripe_purchase_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_credit_ledger_stripe_purchase_id_fkey"
+            columns: ["stripe_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "stripe_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_credit_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_purchases: {
         Row: {
           amount_cents: number
@@ -966,6 +1108,7 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          is_admin: boolean
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -977,6 +1120,7 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
+          is_admin?: boolean
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -988,6 +1132,7 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          is_admin?: boolean
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1044,6 +1189,7 @@ export type Database = {
               p_credits?: number
               p_parameters?: Json
               p_prompt: string
+              p_template_slug?: string
               p_upload_id: string
               p_user_id: string
             }
@@ -1073,7 +1219,6 @@ export type Database = {
               p_credits?: number
               p_parameters?: Json
               p_prompt: string
-              p_template_slug?: string
               p_upload_id: string
               p_user_id: string
             }
@@ -1160,6 +1305,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "failed"
+      cash_refund_status: "pending" | "processing" | "completed" | "failed"
       job_status:
         | "pending"
         | "processing"
@@ -1172,6 +1318,12 @@ export type Database = {
         | "evaluating"
         | "completed"
         | "failed"
+      refund_reason:
+        | "poor_quality"
+        | "wrong_style"
+        | "technical_issue"
+        | "other"
+      refund_status: "pending_auto" | "pending_admin" | "approved" | "rejected"
       transaction_type:
         | "purchase"
         | "generation"
@@ -1181,6 +1333,8 @@ export type Database = {
         | "pack_purchase"
         | "subscription_renewal"
         | "subscription_upgrade"
+        | "image_refund"
+        | "cash_refund_reversal"
       user_tier: "free" | "pro" | "business"
     }
     CompositeTypes: {
@@ -1320,6 +1474,7 @@ export const Constants = {
         "cancelled",
         "failed",
       ],
+      cash_refund_status: ["pending", "processing", "completed", "failed"],
       job_status: ["pending", "processing", "completed", "failed", "cancelled"],
       prompt_test_status: [
         "pending",
@@ -1328,6 +1483,13 @@ export const Constants = {
         "completed",
         "failed",
       ],
+      refund_reason: [
+        "poor_quality",
+        "wrong_style",
+        "technical_issue",
+        "other",
+      ],
+      refund_status: ["pending_auto", "pending_admin", "approved", "rejected"],
       transaction_type: [
         "purchase",
         "generation",
@@ -1337,8 +1499,11 @@ export const Constants = {
         "pack_purchase",
         "subscription_renewal",
         "subscription_upgrade",
+        "image_refund",
+        "cash_refund_reversal",
       ],
       user_tier: ["free", "pro", "business"],
     },
   },
 } as const
+
