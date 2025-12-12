@@ -89,13 +89,13 @@ describe('HowItWorksSection', () => {
     const orderedList = screen.getByRole('list');
     const listItems = screen.getAllByRole('listitem');
 
-    expect(orderedList.tagName).toBe('OL');
-    expect(listItems).toHaveLength(3);
+    // Check that transition delays are applied with 200ms increments
+    const style0 = (listItems[0] as HTMLElement).style.transitionDelay;
+    const style1 = (listItems[1] as HTMLElement).style.transitionDelay;
+    const style2 = (listItems[2] as HTMLElement).style.transitionDelay;
 
-    // Verify each step has the required content structure
-    listItems.forEach((item, index) => {
-      const stepNumber = index + 1;
-      expect(item.textContent).toContain(stepNumber.toString());
-    });
+    expect(style0).toBe('0ms');
+    expect(style1).toBe('200ms');
+    expect(style2).toBe('400ms');
   });
 });
