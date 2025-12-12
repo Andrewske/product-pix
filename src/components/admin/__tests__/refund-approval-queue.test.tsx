@@ -179,7 +179,8 @@ describe('RefundApprovalQueue', () => {
   it('shows error toast when fetch fails', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-    // Mock logger.error to avoid test output
+    // Properly save and restore logger.error
+    const originalLoggerError = logger.error;
     const loggerSpy = mock(() => {});
     logger.error = loggerSpy;
 
@@ -189,7 +190,8 @@ describe('RefundApprovalQueue', () => {
       expect(loggerSpy).toHaveBeenCalledWith('Error fetching pending requests', { error: expect.any(Error) });
     });
 
-    logger.error = logger.error; // Restore
+    // Properly restore
+    logger.error = originalLoggerError;
   });
 
   it('shows error toast when approve fails', async () => {
@@ -219,7 +221,8 @@ describe('RefundApprovalQueue', () => {
       })
       .mockRejectedValueOnce(new Error('Approve failed'));
 
-    // Mock logger.error to avoid test output
+    // Properly save and restore logger.error
+    const originalLoggerError = logger.error;
     const loggerSpy = mock(() => {});
     logger.error = loggerSpy;
 
@@ -236,6 +239,7 @@ describe('RefundApprovalQueue', () => {
       expect(loggerSpy).toHaveBeenCalledWith('Error approving refund', { error: expect.any(Error), refundId: 'refund-1' });
     });
 
-    logger.error = logger.error; // Restore
+    // Properly restore
+    logger.error = originalLoggerError;
   });
 });
