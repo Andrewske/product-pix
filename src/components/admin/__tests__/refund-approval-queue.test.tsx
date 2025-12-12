@@ -8,9 +8,9 @@ import { logger } from '@/lib/logging';
 const mockFetch = mock(() => Promise.resolve({
   ok: true,
   json: () => Promise.resolve({ refunds: [] }),
-}));
+} as Response));
 
-global.fetch = mockFetch;
+global.fetch = mockFetch as typeof fetch;
 
 describe('RefundApprovalQueue', () => {
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe('RefundApprovalQueue', () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ refunds: [] }),
-    });
+    } as Response);
   });
 
   afterEach(() => {
@@ -73,7 +73,7 @@ describe('RefundApprovalQueue', () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ refunds: mockRequests }),
-    });
+    } as Response);
 
     render(<RefundApprovalQueue />);
 
@@ -110,11 +110,11 @@ describe('RefundApprovalQueue', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ refunds: mockRequests }),
-      })
+      } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ success: true }),
-      });
+      } as Response);
 
     render(<RefundApprovalQueue />);
 
@@ -156,11 +156,11 @@ describe('RefundApprovalQueue', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ refunds: mockRequests }),
-      })
+      } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ success: true }),
-      });
+      } as Response);
 
     render(<RefundApprovalQueue />);
 
@@ -218,7 +218,7 @@ describe('RefundApprovalQueue', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ refunds: mockRequests }),
-      })
+      } as Response)
       .mockRejectedValueOnce(new Error('Approve failed'));
 
     // Properly save and restore logger.error

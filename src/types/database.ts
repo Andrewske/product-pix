@@ -351,6 +351,80 @@ export type Database = {
           },
         ]
       }
+      image_refund_requests: {
+        Row: {
+          admin_notes: string | null
+          credits_refunded: number
+          feedback: string | null
+          id: string
+          image_id: string
+          job_id: string
+          processed_at: string | null
+          reason: string
+          requested_at: string
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          credits_refunded: number
+          feedback?: string | null
+          id?: string
+          image_id: string
+          job_id: string
+          processed_at?: string | null
+          reason: string
+          requested_at?: string
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          credits_refunded?: number
+          feedback?: string | null
+          id?: string
+          image_id?: string
+          job_id?: string
+          processed_at?: string | null
+          reason?: string
+          requested_at?: string
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_refund_requests_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "generated_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_refund_requests_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_refund_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_refund_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       iteration_costs: {
         Row: {
           cost_details: Json | null
@@ -885,42 +959,6 @@ export type Database = {
           },
         ]
       }
-      contact_messages: {
-        Row: {
-          id: string
-          name: string
-          email: string
-          message: string
-          status: 'pending' | 'read' | 'responded' | 'archived'
-          user_agent: string | null
-          ip_address: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          email: string
-          message: string
-          status?: 'pending' | 'read' | 'responded' | 'archived'
-          user_agent?: string | null
-          ip_address?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          email?: string
-          message?: string
-          status?: 'pending' | 'read' | 'responded' | 'archived'
-          user_agent?: string | null
-          ip_address?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       users: {
         Row: {
           created_at: string
@@ -928,7 +966,6 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
-          is_admin: boolean
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -940,7 +977,6 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
-          is_admin?: boolean
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -952,7 +988,6 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
-          is_admin?: boolean
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1048,6 +1083,18 @@ export type Database = {
               success: boolean
             }[]
           }
+      deduct_credits_for_cash_refund: {
+        Args: {
+          p_amount: number
+          p_cash_refund_id: string
+          p_stripe_purchase_id: string
+          p_user_id: string
+        }
+        Returns: {
+          new_balance: number
+          success: boolean
+        }[]
+      }
       get_batch_stats: {
         Args: { p_batch_label: string }
         Returns: {
@@ -1069,6 +1116,19 @@ export type Database = {
           p_amount: number
           p_description?: string
           p_job_id: string
+          p_user_id: string
+        }
+        Returns: {
+          new_balance: number
+          success: boolean
+        }[]
+      }
+      refund_credits_for_image: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_image_id: string
+          p_refund_request_id: string
           p_user_id: string
         }
         Returns: {

@@ -50,3 +50,4 @@ prompt-bench/sessions/*.json
 !prompt-bench/sessions/.gitkeep
 
 notes.md
+.eslintcache
