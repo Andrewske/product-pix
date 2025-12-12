@@ -43,6 +43,10 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
         await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
 
+      case 'charge.refunded':
+        await handleChargeRefunded(event.data.object as Stripe.Charge);
+        break;
+
       default:
         // Ignore other events
         break;
@@ -167,3 +171,31 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   // Could send notification, but payment intent status is already failed
 }
 
+/**
+ * Handle charge refunded (cash refund completion)
+ */
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const refund = charge.refunds?.data[0];
+  if (!refund) {
+    logger.warn('Charge refunded but no refund object', { chargeId: charge.id });
+    return;
+  }
+
+  // Import admin client here to avoid circular imports
+  const { createAdminClient } = await import('@/lib/supabase/admin');
+  const adminClient = createAdminClient();
+
+  const { error } = await adminClient
+    .from('cash_refund_requests')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    })
+    .eq('stripe_refund_id', refund.id);
+
+  if (error) {
+    logger.error('Failed to update cash refund status', { refundId: refund.id, error });
+  } else {
+    logger.info('Cash refund completed', { refundId: refund.id });
+  }
+}

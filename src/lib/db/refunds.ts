@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { softDeleteImage } from './generated-images';
-import type { RefundReason, RefundStatus, ImageRefundRequest } from '@/types';
+import type { RefundReason, RefundStatus, ImageRefundRequest, EligiblePurchase } from '@/types';
 
 export interface CreateImageRefundRequestParams {
   userId: string;
@@ -141,3 +141,103 @@ export const getPendingAdminRefunds = async (): Promise<ImageRefundRequest[]> =>
 
   return data;
 };
+
+export async function getEligibleCashRefunds(userId: string): Promise<EligiblePurchase[]> {
+  const supabase = await createClient();
+
+  // Get purchases within 30 days with unused credits
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data, error } = await supabase
+    .from('stripe_purchases')
+    .select(`
+      id,
+      created_at,
+      amount_cents,
+      credits_granted,
+      purchase_credit_ledger!inner(
+        credits_consumed,
+        credits_refunded_image,
+        credits_refunded_cash
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('purchase_type', 'pack')
+    .gte('created_at', thirtyDaysAgo.toISOString())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching eligible cash refunds:', error);
+    throw new Error('Failed to fetch eligible cash refunds');
+  }
+
+  // Filter out purchases that already have cash refund requests
+  const purchaseIds = data.map(p => p.id);
+  const { data: refundRequests, error: refundError } = await supabase
+    .from('cash_refund_requests')
+    .select('stripe_purchase_id')
+    .in('stripe_purchase_id', purchaseIds);
+
+  if (refundError) {
+    console.error('Error fetching refund requests:', refundError);
+    throw new Error('Failed to fetch refund requests');
+  }
+
+  const refundedPurchaseIds = new Set(refundRequests.map(r => r.stripe_purchase_id));
+
+  return data
+    .filter((purchase: any) => !refundedPurchaseIds.has(purchase.id))
+    .map((purchase: any) => {
+      const ledger = purchase.purchase_credit_ledger[0];
+      const creditsUnused = purchase.credits_granted - ledger.credits_consumed - ledger.credits_refunded_image - ledger.credits_refunded_cash;
+
+      if (creditsUnused <= 0) return null;
+
+      const refundAmount100Cents = Math.round((creditsUnused / purchase.credits_granted) * purchase.amount_cents);
+      const refundAmount90Cents = Math.round(refundAmount100Cents * 0.9);
+
+      return {
+        purchaseId: purchase.id,
+        date: purchase.created_at,
+        amountCents: purchase.amount_cents,
+        creditsGranted: purchase.credits_granted,
+        creditsUnused,
+        refundAmount100Cents,
+        refundAmount90Cents,
+      };
+    })
+    .filter(Boolean) as EligiblePurchase[];
+}
+
+export async function createCashRefundRequest(params: {
+  userId: string;
+  purchaseId: string;
+  creditsRefunded: number;
+  refundAmountCents: number;
+  refundPercentage: 90 | 100;
+  stripeRefundId: string;
+}): Promise<{ id: string }> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from('cash_refund_requests')
+    .insert({
+      user_id: params.userId,
+      stripe_purchase_id: params.purchaseId,
+      credits_refunded: params.creditsRefunded,
+      refund_amount_cents: params.refundAmountCents,
+      refund_percentage: params.refundPercentage,
+      stripe_refund_id: params.stripeRefundId,
+      status: 'processing',
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Error creating cash refund request:', error);
+    throw new Error('Failed to create cash refund request');
+  }
+
+  return data;
+}
