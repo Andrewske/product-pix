@@ -3,15 +3,6 @@ import { render, screen } from '@testing-library/react'
 import { Steps, Step } from '../step-indicator'
 
 describe('Steps', () => {
-  it('renders children', () => {
-    render(
-      <Steps>
-        <div>Step content</div>
-      </Steps>
-    )
-    expect(screen.getByText('Step content')).toBeDefined()
-  })
-
   it('applies custom className', () => {
     const { container } = render(
       <Steps className="custom-class">

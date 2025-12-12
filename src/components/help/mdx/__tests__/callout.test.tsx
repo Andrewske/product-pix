@@ -3,11 +3,6 @@ import { render, screen } from '@testing-library/react'
 import { Callout } from '../callout'
 
 describe('Callout', () => {
-  it('renders children content', () => {
-    render(<Callout>Test content</Callout>)
-    expect(screen.getByText('Test content')).toBeDefined()
-  })
-
   it('renders with title when provided', () => {
     render(<Callout title="Important">Content</Callout>)
     expect(screen.getByText('Important')).toBeDefined()

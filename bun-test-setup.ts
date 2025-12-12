@@ -1,11 +1,26 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
-import { afterEach, expect } from 'bun:test';
+import { afterEach, expect, mock } from 'bun:test';
 
 // Register happy-dom globals (replaces jsdom)
 GlobalRegistrator.register({
   url: 'http://localhost:3000',
 });
 
+
+// Mock Next.js Image component for tests
+mock.module('next/image', () => ({
+  default: (props: any) => {
+    const { src, alt, width, height, className, ...rest } = props;
+    // Return a simple img element for testing
+    return {
+      $$typeof: Symbol.for('react.element'),
+      type: 'img',
+      props: { src, alt, width, height, className, ...rest },
+      key: null,
+      ref: null,
+    };
+  },
+}));
 
 // Setup test environment variables
 process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-key';
@@ -29,6 +44,8 @@ process.env.STRIPE_PRICE_PACK_200 = 'price_test_200';
 process.env.STRIPE_PRICE_PACK_500 = 'price_test_500';
 process.env.STRIPE_PRICE_PRO_MONTHLY = 'price_test_pro';
 process.env.STRIPE_PRICE_BUSINESS_MONTHLY = 'price_test_business';
+
+
 
 // Cleanup after each test for React Testing Library
 afterEach(() => {

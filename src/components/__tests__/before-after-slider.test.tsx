@@ -5,8 +5,8 @@ import { BeforeAfterSlider } from '../before-after-slider';
 
 describe('BeforeAfterSlider', () => {
   const defaultProps = {
-    beforeImage: '/test-before.jpg',
-    afterImage: '/test-after.jpg',
+    beforeImage: 'data:image/jpeg;base64,test-before',
+    afterImage: 'data:image/jpeg;base64,test-after',
     product: 'Test Product',
     category: 'Test Category',
   };

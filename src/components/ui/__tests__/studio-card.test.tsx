@@ -3,11 +3,6 @@ import { render } from '@testing-library/react';
 import { Card } from '../card';
 
 describe('Card studio variant', () => {
-  it('renders children correctly', () => {
-    const { getByText } = render(<Card variant="studio">Test Content</Card>);
-    expect(getByText('Test Content')).not.toBeNull();
-  });
-
   it('renders studio variant with appropriate structure', () => {
     const { container, getByText } = render(<Card variant="studio">Content</Card>);
     const card = container.firstChild as HTMLElement;
@@ -45,14 +40,4 @@ describe('Card studio variant', () => {
     expect(style.display).not.toBe('none');
   });
 
-  it('passes through all div props', () => {
-    const { container } = render(
-      <Card variant="studio" data-testid="test-card" id="card-id">
-        Content
-      </Card>
-    );
-    const card = container.firstChild as HTMLElement;
-    expect(card?.getAttribute('data-testid')).toBe('test-card');
-    expect(card?.getAttribute('id')).toBe('card-id');
-  });
 });

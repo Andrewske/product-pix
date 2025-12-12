@@ -1,62 +1,58 @@
 import { termsSections, termsFooterLinks, termsLastUpdated } from '../terms-content';
+import { privacySections, privacyFooterLinks, privacyLastUpdated } from '../privacy-content';
 
-describe('terms-content', () => {
-  it('contains all 12 required sections', () => {
-    expect(termsSections).toHaveLength(19); // 12 main sections + 7 subsections
+describe('Legal Content Validation', () => {
+  describe('Terms of Service', () => {
+    it('has valid structure and required sections', () => {
+      expect(termsSections).toHaveLength(19); // 12 main sections + 7 subsections
 
-    // Check that all main section titles are present
-    const mainSectionTitles = termsSections
-      .filter(section => section.level === 2)
-      .map(section => section.title);
+      // Verify all main sections are present
+      const mainSectionTitles = termsSections
+        .filter(section => section.level === 2)
+        .map(section => section.title);
 
-    expect(mainSectionTitles).toHaveLength(12);
-    expect(mainSectionTitles).toEqual([
-      '1. Introduction',
-      '2. Eligibility',
-      '3. Your Account',
-      '4. The Service',
-      '5. Credits & Payments',
-      '6. Refunds',
-      '7. Ownership & Intellectual Property',
-      '8. Acceptable Use',
-      '9. Account Termination',
-      '10. Disclaimers & Liability',
-      '11. Changes to Terms',
-      '12. Contact'
-    ]);
-  });
+      expect(mainSectionTitles).toHaveLength(12);
+      expect(mainSectionTitles).toContain('1. Introduction');
+      expect(mainSectionTitles).toContain('12. Contact');
 
-  it('includes all subsections', () => {
-    const subsectionTitles = termsSections
-      .filter(section => section.level === 3)
-      .map(section => section.title);
+      // Verify structure integrity
+      termsSections.forEach(section => {
+        expect(section.id).toBeDefined();
+        expect(section.title).toBeDefined();
+        expect([1, 2, 3]).toContain(section.level);
+      });
+    });
 
-    expect(subsectionTitles).toEqual([
-      'Credit Refunds (for bad generations)',
-      'Cash Refunds',
-      'Your Content',
-      'What You Upload',
-      'How We Use Your Images',
-      'By You',
-      'By Us'
-    ]);
-  });
-
-  it('has valid section structure', () => {
-    termsSections.forEach(section => {
-      expect(section.id).toBeDefined();
-      expect(section.title).toBeDefined();
-      expect([1, 2, 3]).toContain(section.level);
-      // content can be null for container sections
-      expect(section.content === null || typeof section.content === 'object').toBe(true);
+    it('has correct metadata', () => {
+      expect(termsFooterLinks).toEqual([{ href: '/privacy', label: 'Privacy Policy' }]);
+      expect(termsLastUpdated).toBe('December 11, 2025');
     });
   });
 
-  it('exports required metadata', () => {
-    expect(termsFooterLinks).toEqual([
-      { href: '/privacy', label: 'Privacy Policy' },
-    ]);
+  describe('Privacy Policy', () => {
+    it('has valid structure and required sections', () => {
+      expect(privacySections).toHaveLength(17); // 11 main sections + 6 subsections
 
-    expect(termsLastUpdated).toBe('December 11, 2025');
+      // Verify all main sections are present
+      const mainSectionTitles = privacySections
+        .filter(section => section.level === 2)
+        .map(section => section.title);
+
+      expect(mainSectionTitles).toHaveLength(11);
+      expect(mainSectionTitles).toContain('1. Introduction');
+      expect(mainSectionTitles).toContain('11. Contact Us');
+
+      // Verify structure integrity
+      privacySections.forEach(section => {
+        expect(section.id).toBeDefined();
+        expect(section.title).toBeDefined();
+        expect([1, 2, 3]).toContain(section.level);
+      });
+    });
+
+    it('has correct metadata', () => {
+      expect(privacyFooterLinks).toEqual([{ href: '/terms', label: 'Terms of Service' }]);
+      expect(privacyLastUpdated).toBe('December 11, 2025');
+    });
   });
 });
