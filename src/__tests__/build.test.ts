@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';

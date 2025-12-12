@@ -15,6 +15,18 @@ const mockGetPricing = mock(async () => ({
 }));
 const mockStripeSessionsCreate = mock(async () => ({ id: '', url: '' }));
 
+// Mock Supabase client first (required by requireAuth)
+mock.module('@/lib/supabase/server', () => ({
+  createClient: mock(async () => ({
+    auth: {
+      getUser: mock(async () => ({
+        data: { user: null },
+        error: null
+      }))
+    }
+  }))
+}));
+
 // Mock modules before importing
 mock.module('@/lib/auth/server', () => ({
   requireAuth: mockRequireAuth,

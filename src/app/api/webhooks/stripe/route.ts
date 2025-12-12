@@ -14,6 +14,7 @@ const ALLOWED_EVENTS: Stripe.Event.Type[] = [
   'invoice.payment_failed',
   'payment_intent.succeeded',
   'payment_intent.payment_failed',
+  'charge.refunded',
 ];
 
 export async function POST(req: NextRequest) {

@@ -50,7 +50,7 @@ describe('CreditPacks', () => {
   };
 
   beforeEach(() => {
-    mock.clearAllMocks();
+    mockCreatePackCheckout.mockReset();
     mockLocation.href = '';
   });
 

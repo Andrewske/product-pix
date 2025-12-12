@@ -7,6 +7,7 @@ export type CreditTransaction = Database['public']['Tables']['credit_transaction
 export type Upload = Database['public']['Tables']['uploads']['Row'];
 export type Job = Database['public']['Tables']['jobs']['Row'];
 export type GeneratedImage = Database['public']['Tables']['generated_images']['Row'];
+export type ImageRefundRequest = Database['public']['Tables']['image_refund_requests']['Row'];
 
 // Insert types
 export type UserInsert = Database['public']['Tables']['users']['Insert'];
@@ -21,6 +22,8 @@ export type JobUpdate = Database['public']['Tables']['jobs']['Update'];
 export type JobStatus = Database['public']['Enums']['job_status'];
 export type TransactionType = Database['public']['Enums']['transaction_type'];
 export type UserTier = Database['public']['Enums']['user_tier'];
+export type RefundReason = Database['public']['Enums']['refund_reason'];
+export type RefundStatus = Database['public']['Enums']['refund_status'];
 
 // Function return types
 export type CreateJobResult = {
