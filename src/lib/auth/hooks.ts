@@ -60,10 +60,10 @@ export function useUserProfile(): UseUserProfileResult {
 
   useEffect(() => {
     if (!user) {
-      setProfileLoading(false);
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfileLoading(true);
     const supabase = createClient();
 

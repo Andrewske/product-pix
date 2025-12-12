@@ -20,15 +20,23 @@ export function FormField({
 }: FormFieldProps): React.ReactElement {
   const generatedId = React.useId();
   const inputId = id || generatedId;
+  const errorId = error ? `${inputId}-error` : undefined;
 
   return (
     <div className={cn('space-y-2', containerClassName)}>
       <Label htmlFor={inputId} data-required={inputProps.required}>
         {label}
       </Label>
-      <Input id={inputId} className={className} {...inputProps} />
+      <Input
+        id={inputId}
+        className={className}
+        {...(error && { 'aria-invalid': true })}
+        {...(inputProps.required && { 'aria-required': true })}
+        {...(errorId && { 'aria-describedby': errorId })}
+        {...inputProps}
+      />
       {error && (
-        <p className="text-destructive text-sm">
+        <p id={errorId} className="text-destructive text-sm" role="alert">
           {error}
         </p>
       )}

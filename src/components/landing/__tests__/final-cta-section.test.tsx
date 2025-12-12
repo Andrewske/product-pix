@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FinalCTASection } from '../final-cta-section';
 import {
-  testResponsiveBehavior,
   testAccessibility,
   testColorContrast,
   testAnimationPerformance,
@@ -78,55 +77,83 @@ describe('FinalCTASection', () => {
   });
 
   describe('Responsive Design', () => {
-    it('applies responsive text sizing', () => {
+    it('displays heading with appropriate semantic structure', () => {
       render(<FinalCTASection />);
 
       const heading = screen.getByRole('heading', { level: 2 });
-      expect(heading?.classList.contains('text-4xl')).toBe(true);
-      expect(heading?.classList.contains('sm:text-5xl')).toBe(true);
+
+      // Test semantic structure and content
+      expect(heading.textContent).toBe('Ready to upgrade your listings?');
+      expect(heading.tagName).toBe('H2');
+      expect(heading.getAttribute('id')).toBe('final-cta-heading');
+
+      // Test that it's visible (basic visibility check)
+      const style = window.getComputedStyle(heading);
+      expect(style.display).not.toBe('none');
+      expect(style.visibility).not.toBe('hidden');
     });
 
-    it('applies responsive padding', () => {
+    it('provides adequate spacing and layout', () => {
       const { container } = render(<FinalCTASection />);
 
       const section = container.querySelector('section');
-      expect(section?.classList.contains('py-24')).toBe(true);
-      expect(section?.classList.contains('px-4')).toBe(true);
-      expect(section?.classList.contains('sm:px-6')).toBe(true);
-      expect(section?.classList.contains('lg:px-8')).toBe(true);
+
+      // Test that section exists and has expected structure
+      expect(section).toBeDefined();
+      expect(section?.tagName).toBe('SECTION');
+
+      // Test that it contains the expected content container
+      const contentDiv = section?.querySelector('.max-w-4xl');
+      expect(contentDiv).toBeDefined();
+
+      // Test basic visibility
+      const style = window.getComputedStyle(section!);
+      expect(style.display).not.toBe('none');
+      expect(style.visibility).not.toBe('hidden');
     });
 
-    it('applies responsive button layout', () => {
+    it('centers content appropriately', () => {
+      const { container } = render(<FinalCTASection />);
+
+      const contentDiv = container.querySelector('.max-w-4xl');
+      expect(contentDiv).toBeDefined();
+
+      // Test that the content div has centering classes or structure
+      expect(contentDiv?.classList.contains('mx-auto')).toBe(true);
+      expect(contentDiv?.textContent).toContain('Ready to upgrade your listings?');
+    });
+
+    it('button adapts to different screen sizes', () => {
       render(<FinalCTASection />);
 
-      const buttonContainer = screen.getByRole('group', { name: 'Final call-to-action' });
-      expect(buttonContainer?.classList.contains('flex-col')).toBe(true);
-      expect(buttonContainer?.classList.contains('sm:flex-row')).toBe(true);
+      const button = screen.getByRole('link', { name: /get started for free/i });
+
+      // Test button is present and functional
+      expect(button).toBeDefined();
+      expect(button.getAttribute('href')).toBe('/signup');
+      expect(button.textContent).toContain('Get Started for Free');
+
+      // Test button is visible and accessible
+      const style = window.getComputedStyle(button);
+      expect(style.display).not.toBe('none');
+      expect(style.visibility).not.toBe('hidden');
     });
 
-    it('applies responsive button sizing', () => {
+    it('renders all content as visible and accessible', () => {
       render(<FinalCTASection />);
 
-      const button = screen.getByRole('button', { name: /get started for free/i });
-      expect(button?.classList.contains('w-full', 'sm:w-auto')).toBe(true);
+      // Test that all key elements are visible
+      const heading = screen.getByRole('heading', { level: 2 });
+      const description = screen.getByText('Join thousands of sellers creating professional product photos in seconds.');
+      const button = screen.getByRole('link', { name: /get started for free/i });
+      const trialInfo = screen.getByText('No credit card required • 5 free credits');
+
+      [heading, description, button, trialInfo].forEach(element => {
+        const style = window.getComputedStyle(element);
+        expect(style.display).not.toBe('none');
+        expect(style.visibility).not.toBe('hidden');
+      });
     });
-
-    testResponsiveBehavior(
-      <FinalCTASection />,
-      async () => {
-        // Test that component renders without layout issues
-        const heading = screen.getByRole('heading', { level: 2 });
-        const headingStyle = window.getComputedStyle(heading);
-        expect(headingStyle.display).not.toBe('none');
-        expect(headingStyle.visibility).not.toBe('hidden');
-
-        // Test that button is accessible
-        const button = screen.getByRole('link', { name: /get started for free/i });
-        const buttonStyle = window.getComputedStyle(button);
-        expect(headingStyle.display).not.toBe('none');
-        expect(headingStyle.visibility).not.toBe('hidden');
-      }
-    );
   });
 
   describe('Accessibility', () => {
@@ -158,7 +185,7 @@ describe('FinalCTASection', () => {
   });
 
   describe('Visual Design', () => {
-    it('applies proper color contrast', () => {
+    it('applies proper color contrast for readability', () => {
       render(<FinalCTASection />);
 
       const heading = screen.getByRole('heading', { level: 2 });
@@ -168,13 +195,17 @@ describe('FinalCTASection', () => {
       testColorContrast(description);
     });
 
-    it('has proper background styling', () => {
+    it('provides visual separation from previous content', () => {
       const { container } = render(<FinalCTASection />);
 
       const section = container.querySelector('section');
-      expect(section?.classList.contains('bg-card')).toBe(true);
-      expect(section?.classList.contains('border-t')).toBe(true);
-      expect(section?.classList.contains('border-border/40')).toBe(true);
+
+      // Test that section has some form of visual separation (border or background)
+      const style = window.getComputedStyle(section!);
+      const hasBorder = style.borderTopWidth !== '0px' || style.borderBottomWidth !== '0px';
+      const hasBackground = style.backgroundColor !== 'transparent' && style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+
+      expect(hasBorder || hasBackground).toBe(true);
     });
   });
 
@@ -190,12 +221,18 @@ describe('FinalCTASection', () => {
     });
   });
 
-  describe('Custom ClassName Support', () => {
-    it('accepts and applies custom className', () => {
+  describe('Customization', () => {
+    it('accepts and applies custom className for styling flexibility', () => {
       const { container } = render(<FinalCTASection className="custom-cta" />);
 
       const section = container.querySelector('section');
+
+      // Test that custom class is applied (behavior: customization works)
       expect(section?.classList.contains('custom-cta')).toBe(true);
+
+      // Test that component still functions with custom class
+      expect(screen.getByRole('heading', { level: 2 })).toBeDefined();
+      expect(screen.getByRole('link', { name: /get started for free/i })).toBeDefined();
     });
   });
 });

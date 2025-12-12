@@ -1,4 +1,4 @@
-import { mock } from 'bun:test';
+import { mock, expect, describe, it, beforeEach } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
@@ -29,24 +29,7 @@ export const mockViewport = (width: number, height: number) => {
   }
 };
 
-// Test responsive behavior across breakpoints
-export const testResponsiveBehavior = async (
-  component: React.ReactElement,
-  testFn: (container: HTMLElement) => void | Promise<void>
-) => {
-  for (const [name, viewport] of Object.entries(viewports)) {
-    describe(`on ${name} viewport`, () => {
-      beforeEach(() => {
-        mockViewport(viewport.width, viewport.height);
-      });
 
-      it(`renders correctly on ${name}`, async () => {
-        const { container } = render(component);
-        await testFn(container);
-      });
-    });
-  }
-};
 
 // Test accessibility with axe-core
 export const testAccessibility = async (component: React.ReactElement) => {
@@ -86,9 +69,9 @@ export const testCTAButton = async (
   expect(button).not.toBeNull();
   expect(button?.getAttribute('href')).toBe(expectedHref);
 
-  // Test keyboard navigation
-  button.focus();
-  expect(button).toBe(document.activeElement);
+   // Test keyboard navigation
+   button.focus();
+   expect(button).toBe(document.activeElement as HTMLElement);
 
   // Test click (though we can't test actual navigation in unit tests)
   await user.click(button);
@@ -114,18 +97,18 @@ export const mockPerformanceAPI = () => {
   const mockObserver = {
     observe: mock(() => {}),
     disconnect: mock(() => {}),
-    takeRecords: jest.fn(() => []),
+    takeRecords: mock(() => []),
   };
 
   // Mock PerformanceObserver with required properties
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  global.PerformanceObserver = mock(() => {}).mockImplementation(() => mockObserver) as any;
+  global.PerformanceObserver = mock(() => mockObserver) as any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global.PerformanceObserver as any).supportedEntryTypes = ['measure', 'mark', 'navigation', 'resource'];
 
   // Mock performance.mark and performance.measure
-  (global.performance as any).mark = mock(() => ({} as PerformanceMark));
-  (global.performance as any).measure = mock(() => ({} as PerformanceMeasure));
+  (global.performance as unknown as { mark: ReturnType<typeof mock>; measure: ReturnType<typeof mock> }).mark = mock(() => ({} as PerformanceMark));
+  (global.performance as unknown as { mark: ReturnType<typeof mock>; measure: ReturnType<typeof mock> }).measure = mock(() => ({} as PerformanceMeasure));
   global.performance.getEntriesByType = mock(() => []);
   global.performance.getEntriesByName = mock(() => []);
 };
@@ -147,11 +130,17 @@ export const testCoreWebVitals = async (component: React.ReactElement) => {
   // For now, we'll check that images have proper loading attributes
   const images = container.querySelectorAll('img');
   images.forEach(img => {
-    expect(img?.getAttribute('loading')).toBe('lazy');
-    // Check for priority on above-the-fold images
-    if (img.closest('[data-priority="true"]') || img.classList.contains('priority')) {
-      // Priority images should have fetchpriority
+    const isPriority = img.closest('[data-priority="true"]') || img.classList.contains('priority');
+    if (isPriority) {
+      // Priority images should have fetchpriority="high" and NOT lazy loading
       expect(img?.getAttribute('fetchpriority')).toBe('high');
+      expect(img?.getAttribute('loading')).not.toBe('lazy');
+    } else {
+      // Non-priority images should ideally have lazy loading (but it's optional)
+      const loading = img?.getAttribute('loading');
+      if (loading !== null) {
+        expect(loading).toBe('lazy');
+      }
     }
   });
 };

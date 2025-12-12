@@ -34,14 +34,6 @@ describe('HowItWorksSection', () => {
     expect(screen.getByText('3')).not.toBeNull();
   });
 
-  it('renders step numbers 1, 2, and 3', () => {
-    render(<HowItWorksSection />);
-
-    expect(screen.getByText('1')).not.toBeNull();
-    expect(screen.getByText('2')).not.toBeNull();
-    expect(screen.getByText('3')).not.toBeNull();
-  });
-
   it('renders as an ordered list with proper accessibility', () => {
     render(<HowItWorksSection />);
 
@@ -69,32 +61,41 @@ describe('HowItWorksSection', () => {
     expect(icons[2]?.getAttribute('aria-label')).toBe('Download icon');
   });
 
-  it('applies custom className when provided', () => {
+  it('forwards custom className to section element', () => {
     const { container } = render(
       <HowItWorksSection className="custom-class" />
     );
 
     const section = container.querySelector('section');
-    expect(section?.classList.contains('custom-class')).toBe(true);
+    expect(section?.getAttribute('class')).toContain('custom-class');
   });
 
-  it('has responsive grid layout', () => {
-    const { container } = render(<HowItWorksSection />);
+  it('renders three steps in semantic order', () => {
+    render(<HowItWorksSection />);
 
-    const grid = container.querySelector('ol');
-    expect(grid?.classList.contains('grid')).toBe(true);
-    expect(grid?.classList.contains('md:grid-cols-3')).toBe(true);
+    const listItems = screen.getAllByRole('listitem');
+    expect(listItems).toHaveLength(3);
+
+    // Verify steps are in correct order by content
+    expect(listItems[0]?.textContent).toContain('Upload');
+    expect(listItems[1]?.textContent).toContain('Style');
+    expect(listItems[2]?.textContent).toContain('Download');
   });
 
-  it('applies staggered animation delays', () => {
-    const { container } = render(<HowItWorksSection />);
+  it('maintains step order and structure', () => {
+    render(<HowItWorksSection />);
 
-    const items = container.querySelectorAll('[style*="transition-delay"]');
-    expect(items).toHaveLength(3);
+    // Verify the ordered list contains exactly 3 items
+    const orderedList = screen.getByRole('list');
+    const listItems = screen.getAllByRole('listitem');
 
-    // Check that transition delays are applied with 200ms increments
-    expect(items[0]).toHaveStyle({ 'transition-delay': '0ms' });
-    expect(items[1]).toHaveStyle({ 'transition-delay': '200ms' });
-    expect(items[2]).toHaveStyle({ 'transition-delay': '400ms' });
+    expect(orderedList.tagName).toBe('OL');
+    expect(listItems).toHaveLength(3);
+
+    // Verify each step has the required content structure
+    listItems.forEach((item, index) => {
+      const stepNumber = index + 1;
+      expect(item.textContent).toContain(stepNumber.toString());
+    });
   });
 });

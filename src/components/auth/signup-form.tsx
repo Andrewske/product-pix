@@ -71,6 +71,7 @@ export function SignupForm(): React.ReactElement {
           type="email"
           autoComplete="email"
           required
+          disabled={loading}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="bg-background"
@@ -83,6 +84,7 @@ export function SignupForm(): React.ReactElement {
           type="password"
           autoComplete="new-password"
           required
+          disabled={loading}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="At least 8 characters"
@@ -96,6 +98,7 @@ export function SignupForm(): React.ReactElement {
           type="password"
           autoComplete="new-password"
           required
+          disabled={loading}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className="bg-background"

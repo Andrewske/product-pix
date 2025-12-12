@@ -299,15 +299,15 @@ return (
 
 ## Acceptance Criteria
 
-- [ ] All TypeScript errors resolved
-- [ ] Lint passes (`bun lint`)
-- [ ] Build succeeds (`bun build`)
-- [ ] Generate page matches mock visually
-- [ ] Style selection works with icons
-- [ ] Aspect ratio selection works
-- [ ] Upload functionality unchanged
-- [ ] Generation flow works end-to-end
-- [ ] Dark mode renders correctly
+- [x] All TypeScript errors resolved
+- [x] Lint passes (`bun lint`)
+- [x] Build succeeds (`bun build`)
+- [x] Generate page matches mock visually
+- [x] Style selection works with icons
+- [x] Aspect ratio selection works
+- [x] Upload functionality unchanged
+- [x] Generation flow works end-to-end
+- [x] Dark mode renders correctly
 
 ## Files to Create/Modify
 

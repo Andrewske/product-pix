@@ -49,6 +49,7 @@ export function LoginForm({ redirectTo }: LoginFormProps): React.ReactElement {
           type="email"
           autoComplete="email"
           required
+          disabled={loading}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@example.com"
@@ -62,6 +63,7 @@ export function LoginForm({ redirectTo }: LoginFormProps): React.ReactElement {
           type="password"
           autoComplete="current-password"
           required
+          disabled={loading}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="bg-background"
