@@ -1,16 +1,13 @@
 // src/app/api/refunds/cash/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/auth/server';
 import { createStripeRefund } from '@/lib/stripe/refunds';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getEligibleCashRefunds, createCashRefundRequest } from '@/lib/db/refunds';
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request) => {
   try {
-    const session = await getServerSession();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = request.user.id;
 
     const body = await request.json();
     const { purchaseId, percentage } = body;
@@ -21,11 +18,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    const userId = session.user.id;
-
-    // Dynamic import to avoid test mocking issues
-    const { getEligibleCashRefunds, createCashRefundRequest } = await import('@/lib/db/refunds');
 
     // Check eligibility
     const eligiblePurchases = await getEligibleCashRefunds(userId);
@@ -113,4 +105,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

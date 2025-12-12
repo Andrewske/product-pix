@@ -1,17 +1,11 @@
 // src/app/api/refunds/cash/eligibility/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/auth/server';
 import { getEligibleCashRefunds } from '@/lib/db/refunds';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request) => {
   try {
-    const session = await getServerSession();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const eligiblePurchases = await getEligibleCashRefunds(session.user.id);
+    const eligiblePurchases = await getEligibleCashRefunds(request.user.id);
 
     return NextResponse.json({
       eligiblePurchases,
@@ -23,4 +17,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
