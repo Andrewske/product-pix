@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import React from 'react';
 
 const navItems = [
   {
@@ -28,7 +29,7 @@ const navItems = [
   },
 ];
 
-export function AdminNav() {
+export function AdminNav(): React.JSX.Element {
   const pathname = usePathname();
 
   return (
