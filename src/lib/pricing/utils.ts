@@ -1,5 +1,5 @@
-import { fetchStripePrices, type StripePriceData } from '@/lib/stripe/fetch-prices';
-import { creditEconomy, type CreditEconomy } from '@/lib/pricing/pricing.config';
+import { type StripePriceData } from '@/lib/stripe/fetch-prices';
+import { type CreditEconomy } from '@/lib/pricing/pricing.config';
 
 // =============================================================================
 // Types

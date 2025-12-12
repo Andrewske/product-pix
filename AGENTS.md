@@ -5,7 +5,7 @@
 - **Dev**: `bun run dev`
 - **Lint**: `bun run lint`
 - **Test all**: `bun run test`
-- **Test single**: `bun run test -- src/lib/prompts/compiler.test.ts`
+- **Test single**: `bun test src/lib/prompts/compiler.test.ts`
 - **Test watch**: `bun run test:watch`
 - **Test coverage**: `bun run test:coverage`
 

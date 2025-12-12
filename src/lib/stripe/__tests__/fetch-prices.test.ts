@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, mock } from 'bun:test';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { env } from '@/lib/env';
 
 const mockStripeRetrieve = mock(() => {});
@@ -36,9 +37,9 @@ describe('fetchStripePrices', () => {
   let fetchStripePricesCore: FetchPricesModule['fetchStripePricesCore'];
 
   beforeAll(async () => {
-    const module: FetchPricesModule = await import('../fetch-prices');
-    fetchStripePrices = module.fetchStripePrices;
-    fetchStripePricesCore = module.fetchStripePricesCore;
+    const fetchPricesModule: FetchPricesModule = await import('../fetch-prices');
+    fetchStripePrices = fetchPricesModule.fetchStripePrices;
+    fetchStripePricesCore = fetchPricesModule.fetchStripePricesCore;
   });
 
   it('should fetch and return all Stripe prices correctly', async () => {

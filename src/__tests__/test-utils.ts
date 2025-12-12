@@ -55,6 +55,7 @@ export const testAccessibility = async (component: React.ReactElement) => {
 };
 
 // Test color contrast (simplified - in real app would use a proper contrast checker)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const testColorContrast = (element: HTMLElement, _minRatio = 4.5) => {
   // In jsdom environment, getComputedStyle is available
   if (typeof window !== 'undefined') {
@@ -116,7 +117,9 @@ export const mockPerformanceAPI = () => {
   };
 
   // Mock PerformanceObserver with required properties
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   global.PerformanceObserver = jest.fn().mockImplementation(() => mockObserver) as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global.PerformanceObserver as any).supportedEntryTypes = ['measure', 'mark', 'navigation', 'resource'];
 
   // Mock performance.mark and performance.measure

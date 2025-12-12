@@ -2,7 +2,7 @@
  * Template file I/O utilities
  */
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
+import { writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, basename, extname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { Result } from '@bench/core/errors';
@@ -25,21 +25,20 @@ export const readTemplateFile = async (
   }
 
   try {
-    const content = readFileSync(absolutePath, 'utf-8');
-    
     // For now, we'll use a simple approach: require the file
     // In production, you might want to use TypeScript compiler API
     // or a more sophisticated approach
     delete require.cache[absolutePath];
-    const module = require(absolutePath);
-    
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const templateModule = require(absolutePath);
+
     // Look for exported template object
     // Templates typically export a const like ECOMMERCE_BASE
-    const exports = Object.keys(module);
+    const exports = Object.keys(templateModule);
     let template: unknown;
-    
+
     for (const exportName of exports) {
-      const exported = module[exportName];
+      const exported = templateModule[exportName];
       if (exported && typeof exported === 'object' && 'slug' in exported && 'templateData' in exported) {
         template = exported;
         break;

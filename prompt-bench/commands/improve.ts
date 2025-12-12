@@ -3,9 +3,8 @@
  */
 
 import { parseArgs } from 'node:util';
-import { resolve } from 'node:path';
 import type { Result } from '@bench/core/errors';
-import { ok, err, createError, isOk } from '@bench/core/errors';
+import { ok, err, createError } from '@bench/core/errors';
 import { loadConfig } from './shared';
 import {
   createSession,
@@ -18,8 +17,7 @@ import {
 } from './improvement-session';
 import { analyzeTemplate } from './template-analyzer';
 import { implementSuggestions } from './template-implementer';
-import { generateDiff } from '@bench/core/template-diff';
-import { readTemplateFile, writeTemplateFile, generateVersionedFilename, parseTemplateCode } from '@bench/core/template-io';
+import { writeTemplateFile, generateVersionedFilename, parseTemplateCode } from '@bench/core/template-io';
 import { runPipeline, generateBatchLabel } from '@bench/core/orchestrator';
 import { fetchTemplate, insertTemplate } from '@bench/db/templates';
 import { fetchBatchEvaluations } from './shared';
@@ -480,7 +478,8 @@ interface BaselineTestResult {
 
 const testBaseline = async (
   session: ImprovementSession,
-  options: ImproveOptions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _options: ImproveOptions
 ): Promise<Result<BaselineTestResult>> => {
   // Fetch template
   const templateResult = await fetchTemplate(session.templateSlug, 'latest');
@@ -595,7 +594,8 @@ const testImproved = async (
   session: ImprovementSession,
   code: string,
   iteration: number,
-  options: ImproveOptions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _options: ImproveOptions
 ): Promise<Result<ImprovedTestResult>> => {
   // Phase 1: Parse TypeScript code
   const parseResult = await parseTemplateCode(code);
@@ -743,7 +743,8 @@ interface AnalysisData {
 const analyzeWithAI = async (
   session: ImprovementSession,
   baseline: BaselineTestResult,
-  options: ImproveOptions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _options: ImproveOptions
 ): Promise<Result<AnalysisData>> => {
   const templateResult = await fetchTemplate(session.templateSlug, 'latest');
   if (!templateResult.ok) return templateResult;
@@ -786,7 +787,8 @@ const generateImprovements = async (
   session: ImprovementSession,
   template: unknown,
   analysis: import('@bench/core/improvement-types').StructuredAnalysis,
-  options: ImproveOptions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _options: ImproveOptions
 ): Promise<Result<ImplementationData>> => {
   const templateResult = await fetchTemplate(session.templateSlug, 'latest');
   if (!templateResult.ok) return templateResult;

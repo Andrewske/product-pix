@@ -1,4 +1,5 @@
 // src/lib/ai/__tests__/product-analyzer.test.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import type { SpyInstance } from 'bun:test';
 import type { ProductAnalysis } from '../types';

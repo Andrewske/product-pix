@@ -26,6 +26,7 @@ export const createSession = async (
 ): Promise<Result<ImprovementSession>> => {
   const supabase = createAdminClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('template_improvement_sessions')
     .insert({
@@ -60,6 +61,7 @@ export const loadSession = async (
 ): Promise<Result<ImprovementSession>> => {
   const supabase = createAdminClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('template_improvement_sessions')
     .select('*')
@@ -87,6 +89,7 @@ export const loadActiveSession = async (
 ): Promise<Result<ImprovementSession | null>> => {
   const supabase = createAdminClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('template_improvement_sessions')
     .select('*')
@@ -148,6 +151,7 @@ export const updateSession = async (
     updateData.status = updates.status;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('template_improvement_sessions')
     .update(updateData)
@@ -174,6 +178,7 @@ export const listSessions = async (
 ): Promise<Result<ImprovementSession[]>> => {
   const supabase = createAdminClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase as any)
     .from('template_improvement_sessions')
     .select('*')
@@ -213,6 +218,7 @@ export const archiveSession = async (sessionId: string): Promise<Result<void>> =
 export const deleteSession = async (sessionId: string): Promise<Result<void>> => {
   const supabase = createAdminClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('template_improvement_sessions')
     .delete()
@@ -256,6 +262,7 @@ export const saveIteration = async (
     costs: iteration.costs,
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('template_iterations')
     .insert(row)
@@ -279,6 +286,7 @@ export const loadIterations = async (
 ): Promise<Result<TemplateIteration[]>> => {
   const supabase = createAdminClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('template_iterations')
     .select('*')
@@ -302,6 +310,7 @@ export const fetchPreviousIterations = async (
 ): Promise<Result<TemplateIteration[]>> => {
   const supabase = createAdminClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('template_iterations')
     .select('*')

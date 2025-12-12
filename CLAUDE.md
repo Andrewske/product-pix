@@ -114,7 +114,7 @@ See `docs/design-system.md` for full design principles.
 - **Error handling**: Result type (`ok`/`err`) in prompt-bench, try/catch in app
 - **Barrel exports**: All lib modules via index.ts
 - **API validation**: Zod schemas
-- **Testing**: Jest for unit tests, 70-80% coverage target
+- **Testing**: Bun test for unit tests, 70-80% coverage target
 - **TypeScript**: Strict mode, no `any`, explicit return types
 - **Functions**: ≤20 lines, ≤3 nesting levels
 - **Pricing config**: `prompt-bench.toml` at project root (committed)

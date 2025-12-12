@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js';
 
 // Create mock functions
 const mockRequireAuth = mock(async () => null as User | null);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const mockGetOrCreateStripeCustomer = mock(async (_userId: string, _email: string) => '');
 const mockGetPricing = mock(async () => ({
   packs: {},

@@ -66,9 +66,11 @@ export const loadConfig = (): PromptBenchConfig | null => {
       const value = valueParts.join('=').trim().replace(/^["']|["']$/g, ''); // Remove quotes
 
       if (currentSection === 'defaults') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (config.defaults as any)[key.trim()] = value;
       } else if (currentSection === 'defaults.report') {
         config.defaults.report = config.defaults.report || {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (config.defaults.report as any)[key.trim()] = value === 'true';
       } else if (currentSection === 'defaults.improve') {
         config.defaults.improve = config.defaults.improve || {};
@@ -77,11 +79,14 @@ export const loadConfig = (): PromptBenchConfig | null => {
         if (keyName === 'max_iterations' || keyName === 'target_score') {
           const numValue = parseFloat(value);
           if (!isNaN(numValue)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (config.defaults.improve as any)[keyName] = numValue;
           }
         } else if (keyName === 'auto_approve' || keyName === 'version_templates') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (config.defaults.improve as any)[keyName] = value === 'true';
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (config.defaults.improve as any)[keyName] = value;
         }
       }

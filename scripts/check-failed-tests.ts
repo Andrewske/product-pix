@@ -2,7 +2,8 @@
  * Quick script to check failed test details
  */
 
-require('dotenv').config({ path: '.env.local' });
+import { config } from 'dotenv';
+config({ path: '.env.local' });
 
 import { createAdminClient } from '@/lib/supabase/admin';
 

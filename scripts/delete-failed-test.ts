@@ -2,7 +2,8 @@
  * Delete failed test to allow re-run
  */
 
-require('dotenv').config({ path: '.env.local' });
+import { config } from 'dotenv';
+config({ path: '.env.local' });
 
 import { createAdminClient } from '@/lib/supabase/admin';
 

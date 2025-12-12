@@ -1,16 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Template {
   slug: string;
   version: number;
   name: string;
   description: string;
+  icon: string;
 }
 
 interface TemplateSelectorProps {
@@ -33,11 +32,6 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
         }
         const data = await response.json();
         setTemplates(data.templates);
-
-        // Set default template if none selected
-        if (!value && data.templates.length > 0) {
-          onChange(data.templates[0].slug);
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load templates');
       } finally {
@@ -47,6 +41,13 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
 
     fetchTemplates();
   }, []);
+
+  // Set default template when templates load and no value is selected
+  useEffect(() => {
+    if (!loading && !error && templates.length > 0 && !value) {
+      onChange(templates[0].slug);
+    }
+  }, [loading, error, templates, value, onChange]);
 
   if (loading) {
     return (
@@ -74,35 +75,24 @@ export function TemplateSelector({ value, onChange, disabled }: TemplateSelector
   }
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium">
-        Select Template
-      </label>
-      <div className="grid grid-cols-1 gap-2">
-        {templates.map((template) => (
-          <Card
-            key={template.slug}
-            className={`p-4 cursor-pointer transition-all hover:border-primary ${
-              value === template.slug
-                ? 'border-primary bg-primary/5'
-                : 'border-border'
-            }`}
-            onClick={() => !disabled && onChange(template.slug)}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-medium text-sm">{template.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {template.description}
-                </p>
-              </div>
-              {value === template.slug && (
-                <Check className="h-4 w-4 text-primary flex-shrink-0 ml-2" />
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
+    <div className="grid grid-cols-2 gap-3">
+      {templates.map((template) => (
+        <button
+          key={template.slug}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(template.slug)}
+          className={cn(
+            'p-4 rounded-lg border text-left transition-all',
+            value === template.slug
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/50'
+          )}
+        >
+          <span className="text-2xl mb-2 block">{template.icon}</span>
+          <span className="font-medium text-sm">{template.name}</span>
+        </button>
+      ))}
     </div>
   );
 }

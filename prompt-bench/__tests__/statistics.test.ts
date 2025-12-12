@@ -12,7 +12,6 @@ import {
   MIN_SAMPLES_FOR_SIGNIFICANCE,
   MIN_SAMPLES_FOR_COMPARISON,
   SIGNIFICANCE_THRESHOLD,
-  type TTestResult,
   type ComparisonSummary,
   type BatchReport,
 } from '@bench/core/statistics';

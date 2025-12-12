@@ -1,5 +1,5 @@
 // src/app/api/batch/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
   createBatchJob,
@@ -9,7 +9,7 @@ import {
 import { createBatchJob as createGeminiBatch } from '@/lib/ai/gemini-batch';
 import { getBatchItemParameters } from '@/lib/db/types';
 import { calculateBatchCredits } from '@/lib/pricing/credits';
-import { getTemplateBySlug, getTemplateById } from '@/lib/db/templates';
+import { getTemplateBySlug } from '@/lib/db/templates';
 import { buildPromptFromTemplate } from '@/lib/ai/prompt-builder';
 import { logger } from '@/lib/logging';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-middleware';
@@ -60,7 +60,6 @@ const createBatchHandler = async (request: AuthenticatedRequest): Promise<NextRe
 
     try {
       // Resolve default template if provided
-      let defaultTemplateId: string | undefined;
       if (parameters.defaultTemplateSlug) {
         const defaultTemplate = await getTemplateBySlug(parameters.defaultTemplateSlug);
         if (!defaultTemplate) {
@@ -69,7 +68,6 @@ const createBatchHandler = async (request: AuthenticatedRequest): Promise<NextRe
             { status: 400 }
           );
         }
-        defaultTemplateId = defaultTemplate.id;
       }
 
       // Create batch in DB (atomic credit consumption)

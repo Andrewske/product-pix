@@ -1,4 +1,7 @@
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
+import { mock } from 'bun:test';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types';
 
 const mockCreateAdminClient = mock();
 
@@ -13,15 +16,28 @@ interface MockQueryResult {
   error: unknown;
 }
 
-const createMockSupabase = (result: MockQueryResult): any => ({
-  from: () => ({
-    select: () => ({
-      eq: () => ({
-        eq: () => Promise.resolve(result),
+interface MockSupabaseClient {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: unknown) => {
+        eq: (column: string, value: unknown) => Promise<MockQueryResult>;
+      };
+    };
+  };
+}
+
+const createMockSupabase = (result: MockQueryResult): SupabaseClient<Database> => {
+  const mockClient: MockSupabaseClient = {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          eq: () => Promise.resolve(result),
+        }),
       }),
     }),
-  }),
-});
+  };
+  return mockClient as unknown as SupabaseClient<Database>;
+};
 
 describe('shared utilities', () => {
   describe('fetchBatchEvaluations', () => {
@@ -167,9 +183,12 @@ describe('shared utilities', () => {
       const mockError = { message: 'Database connection failed' };
       const supabase = createMockSupabase({ data: null, error: mockError });
 
-      await expect(fetchBatchEvaluations(supabase, 'test-batch')).rejects.toThrow(
-        'Failed to fetch evaluations for test-batch: Database connection failed'
-      );
+      try {
+        await fetchBatchEvaluations(supabase, 'test-batch');
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        expect((error as Error).message).toContain('Failed to fetch evaluations for test-batch: Database connection failed');
+      }
     });
 
     it('returns empty array when no data', async () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from '@jest/globals';
 import { calculateCost } from '../calculator';
+import { clearPricingCache } from '../config';
 
 interface ValidationFixture {
   modelId: string;
@@ -122,7 +123,6 @@ const fixtures: ValidationFixture[] = [
 describe('Pricing Validation Fixtures', () => {
   beforeAll(() => {
     // Clear any cached config and ensure fresh load
-    const { clearPricingCache } = require('../config');
     clearPricingCache();
   });
 

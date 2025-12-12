@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Zap, ImageIcon, Download, Sparkles, ArrowUpRight } from "lucide-react"
+import { ArrowRight, ImageIcon, Sparkles, ArrowUpRight } from "lucide-react"
 import { Metadata } from "next"
 import Image from "next/image"
 import { PricingSection } from "../components/pricing-section"

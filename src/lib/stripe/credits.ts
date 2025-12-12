@@ -20,8 +20,9 @@ export interface GrantCreditsParams {
 export async function grantCreditsForPayment(params: GrantCreditsParams): Promise<{ granted: boolean }> {
   // Use INSERT ... ON CONFLICT DO NOTHING for atomic idempotency
   // Only grant credits if the insert succeeded (returned a row)
-  const { data, error } = await createAdminClient()
-    .from('stripe_purchases' as any)
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('stripe_purchases')
     .insert({
       user_id: params.userId,
       stripe_payment_intent_id: params.paymentIntentId,

@@ -2,6 +2,8 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import Image from 'next/image';
+import { Upload } from 'lucide-react';
 import { IMAGE_CONFIG } from '@/lib/images';
 
 interface UploadFormProps {
@@ -28,7 +30,7 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
     return null;
   };
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = useCallback(async (file: File) => {
     const validationError = validateFile(file);
     if (validationError) {
       onError(validationError);
@@ -56,7 +58,7 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
         throw new Error('Failed to get upload URL');
       }
 
-      const { uploadUrl, fileKey, publicUrl } = await presignResponse.json();
+      const { uploadUrl, fileKey } = await presignResponse.json();
 
       // Upload directly to R2
       const uploadResponse = await fetch(uploadUrl, {
@@ -95,7 +97,7 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
     } finally {
       setUploading(false);
     }
-  };
+  }, [onUploadComplete, onError]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -115,7 +117,7 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
     if (file) {
       uploadFile(file);
     }
-  }, []);
+  }, [uploadFile]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,11 +156,14 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
 
       {preview ? (
         <div className="space-y-4">
-          <img
-            src={preview}
-            alt="Preview"
-            className="max-h-64 mx-auto rounded-lg"
-          />
+          <div className="relative max-h-64 mx-auto rounded-lg overflow-hidden">
+            <Image
+              src={preview}
+              alt="Preview"
+              fill
+              className="object-contain"
+            />
+          </div>
           {uploading && (
             <div className="flex items-center justify-center space-x-2">
               <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
@@ -168,25 +173,12 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          <svg
-            className="mx-auto h-12 w-12 text-muted-foreground/60"
-            stroke="currentColor"
-            fill="none"
-            viewBox="0 0 48 48"
-            aria-hidden="true"
-          >
-            <path
-              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Upload className="mx-auto h-12 w-12 text-muted-foreground/60" />
           <div className="text-muted-foreground">
-            <span className="font-medium text-primary">Click to upload</span> or drag and drop
+            <span className="font-medium">Click to upload or drag and drop</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            PNG, JPG, WebP up to 10MB
+            Your product photo will be transformed
           </p>
         </div>
       )}

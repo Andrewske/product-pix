@@ -58,6 +58,7 @@ export const TemplateDataSchema = z.object({
   style: z.string().optional(),
   quality: z.string().optional(),
   negative: z.string().optional(),
+  icon: z.string().optional(),
 });
 
 export type TemplateData = z.infer<typeof TemplateDataSchema>;

@@ -1,6 +1,6 @@
 // src/lib/ai/generate-image.ts
 import { getImageProvider, type ImageConfig, type GenerationResponse, type ProductAnalysis } from './index';
-import { analyzeProductImage, buildPromptFromTemplate, buildPromptFromTemplateSlug, generateImageTitle, getTitleFromFilename } from './index';
+import { analyzeProductImage, buildPromptFromTemplateSlug, generateImageTitle, getTitleFromFilename } from './index';
 import { uploadBase64Image } from '@/lib/r2';
 import { updateJobStatus, getJob, updateJobParameters } from '@/lib/db/jobs';
 import { refundCredits } from '@/lib/db/credits';

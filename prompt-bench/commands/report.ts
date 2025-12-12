@@ -913,6 +913,7 @@ export const runReport = async (
     let testsWithTokens = 0;
 
     // Fetch token usage data for tests that don't have costs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: testsWithUsage } = await (supabase as any)
       .from('prompt_tests')
       .select('id, input_tokens, output_tokens')

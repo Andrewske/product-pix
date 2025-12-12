@@ -13,7 +13,7 @@ const mockSections: LegalSection[] = [
     id: 'subsection',
     title: 'Getting Started',
     level: 3,
-    content: <p>Here's how to get started.</p>
+    content: <p>Here&apos;s how to get started.</p>
   },
   {
     id: 'another-section',

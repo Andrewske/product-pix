@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
+import Image from 'next/image';
 import type { GeneratedImage } from '@/types';
 
 interface ImageCardProps {
@@ -23,11 +24,14 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      <img
-        src={image.public_url}
-        alt="Generated product"
-        className="w-full aspect-square object-cover"
-      />
+      <div className="relative w-full aspect-square">
+        <Image
+          src={image.public_url}
+          alt="Generated product"
+          fill
+          className="object-cover"
+        />
+      </div>
 
       {/* Overlay actions */}
       <div

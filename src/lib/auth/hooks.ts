@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import type { User as DbUser } from '@/types';
@@ -50,17 +50,21 @@ export function useUser(): UseUserResult {
 export function useUserProfile(): UseUserProfileResult {
   const { user, loading: authLoading } = useUser();
   const [profile, setProfile] = useState<DbUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  // Reset profile when user changes
+  const currentProfile = useMemo(() => {
+    if (!user) return null;
+    return profile;
+  }, [user, profile]);
 
   useEffect(() => {
-    if (authLoading) return;
-
     if (!user) {
-      setProfile(null);
-      setLoading(false);
+      setProfileLoading(false);
       return;
     }
 
+    setProfileLoading(true);
     const supabase = createClient();
 
     supabase
@@ -73,11 +77,11 @@ export function useUserProfile(): UseUserProfileResult {
           console.error('Error fetching profile:', error);
         }
         setProfile(data);
-        setLoading(false);
+        setProfileLoading(false);
       });
-  }, [user, authLoading]);
+  }, [user]);
 
-  return { user, profile, loading: authLoading || loading };
+  return { user, profile: currentProfile, loading: authLoading || profileLoading };
 }
 
 export function useCredits(): UseCreditsResult {

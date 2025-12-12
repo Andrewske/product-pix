@@ -78,7 +78,7 @@ async function upsertSubscription(userId: string, subscription: Stripe.Subscript
   const dbData = formatSubscriptionForDb(userId, subscription);
 
   await createAdminClient()
-    .from('stripe_subscriptions' as any)
+    .from('stripe_subscriptions')
     .upsert(dbData, {
       onConflict: 'stripe_subscription_id',
     });

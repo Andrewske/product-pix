@@ -1,10 +1,18 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types';
 
 const { validateBatchSize } = await import('../commands/improve');
 
+interface EvaluationData {
+  testId: string;
+  score: number;
+  details: Record<string, unknown>;
+}
+
 describe('validateBatchSize', () => {
-  let mockCreateClient: ReturnType<typeof mock>;
-  let mockFetchBatchEvaluations: ReturnType<typeof mock>;
+  let mockCreateClient: ReturnType<typeof mock.fn<[], SupabaseClient<Database>>>;
+  let mockFetchBatchEvaluations: ReturnType<typeof mock.fn<[SupabaseClient<Database>, string], Promise<EvaluationData[]>>>;
 
   const createDeps = () => ({
     createClient: mockCreateClient,
@@ -12,12 +20,12 @@ describe('validateBatchSize', () => {
   });
 
   beforeEach(() => {
-    mockCreateClient = mock(() => ({}));
+    mockCreateClient = mock(() => ({}) as SupabaseClient<Database>);
     mockFetchBatchEvaluations = mock(async () => []);
   });
 
   it('should return success for batch with 5 or more evaluations', async () => {
-    const mockData = [
+    const mockData: EvaluationData[] = [
       { testId: '1', score: 7.5, details: {} },
       { testId: '2', score: 6.8, details: {} },
       { testId: '3', score: 8.2, details: {} },
@@ -35,7 +43,7 @@ describe('validateBatchSize', () => {
   });
 
   it('should return error for batch with fewer than 5 evaluations', async () => {
-    const mockData = [
+    const mockData: EvaluationData[] = [
       { testId: '1', score: 7.5, details: {} },
       { testId: '2', score: 6.8, details: {} },
       { testId: '3', score: 8.2, details: {} },
@@ -52,7 +60,7 @@ describe('validateBatchSize', () => {
   });
 
   it('should allow small batches when force is true', async () => {
-    const mockData = [{ testId: '1', score: 7.5, details: {} }];
+    const mockData: EvaluationData[] = [{ testId: '1', score: 7.5, details: {} }];
     mockFetchBatchEvaluations.mockResolvedValue(mockData);
 
     const result = await validateBatchSize('test-batch', true, createDeps());

@@ -15,6 +15,7 @@ export const LIFESTYLE_PRODUCT: Omit<PromptTemplate, 'id' | 'createdBy' | 'creat
     style: 'lifestyle photography, warm tones, {mood} atmosphere',
     quality: 'high resolution, cinematic depth of field',
     negative: 'artificial, sterile, harsh shadows, overexposed',
+    icon: '🏠',
   },
   variablesSchema: {
     product: {

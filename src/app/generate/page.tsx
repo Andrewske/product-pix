@@ -2,20 +2,21 @@
 // src/app/generate/page.tsx
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Sparkles } from 'lucide-react';
 import { UploadForm } from '@/components/forms/upload-form';
 import { TemplateSelector } from '@/components/forms/template-selector';
+import { AspectRatioSelector, type AspectRatio } from '@/components/forms/aspect-ratio-selector';
 import { GenerationResult } from '@/components/generation-result';
 import { GenerationLoading } from '@/components/generation-loading';
 import { InsufficientCreditsModal } from '@/components/generation/insufficient-credits-modal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { AlertBox } from '@/components/ui/alert-box';
+import { SectionLabel } from '@/components/ui/section-label';
 import { useCredits } from '@/lib/auth';
 
-type AspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9';
-
 export default function GeneratePage() {
-  const router = useRouter();
   const { credits } = useCredits();
 
   const [uploadId, setUploadId] = useState<string | null>(null);
@@ -106,97 +107,75 @@ export default function GeneratePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold mb-8">Generate Product Photo</h1>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-8">
+        <h1 className="text-2xl font-bold">Generate Product Photo</h1>
+        <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">
+          AI studio for ecommerce sellers
+        </Badge>
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Left column: Input */}
+      <div className="grid md:grid-cols-[1fr_1.2fr] gap-8">
+        {/* Left Column: Controls */}
         <div className="space-y-6">
+          {/* Upload Section */}
           <div>
-            <h2 className="text-lg font-medium mb-4">
-              1. Upload Product Image (Optional)
-            </h2>
-            <UploadForm
-              onUploadComplete={handleUploadComplete}
-              onError={setError}
-            />
+            <SectionLabel>UPLOAD PRODUCT IMAGE</SectionLabel>
+            <UploadForm onUploadComplete={handleUploadComplete} onError={setError} />
             {previewUrl && (
-              <Button
-                onClick={handleReset}
-                variant="link"
-                className="mt-2 text-sm text-destructive hover:text-destructive/90 px-0"
-              >
+              <Button onClick={handleReset} variant="link" className="mt-2 text-sm text-destructive px-0">
                 Remove image
               </Button>
             )}
           </div>
 
+          {/* Style Section */}
           <div>
-            <h2 className="text-lg font-medium mb-4">2. Select Style</h2>
-            <TemplateSelector
-              value={templateSlug}
-              onChange={setTemplateSlug}
-              disabled={generating}
-            />
+            <SectionLabel>CHOOSE STYLE</SectionLabel>
+            <TemplateSelector value={templateSlug} onChange={setTemplateSlug} disabled={generating} />
           </div>
 
+          {/* Aspect Ratio Section */}
           <div>
-            <h2 className="text-lg font-medium mb-4">3. Aspect Ratio</h2>
-            <div className="grid grid-cols-3 gap-2">
-              {(['1:1', '4:3', '3:4', '16:9', '9:16', '3:2'] as AspectRatio[]).map((ratio) => (
-                <Button
-                  key={ratio}
-                  variant={aspectRatio === ratio ? "default" : "outline"}
-                  onClick={() => setAspectRatio(ratio)}
-                  size="sm"
-                >
-                  {ratio}
-                </Button>
-              ))}
-            </div>
+            <SectionLabel>ASPECT RATIO</SectionLabel>
+            <AspectRatioSelector value={aspectRatio} onChange={setAspectRatio} disabled={generating} />
           </div>
 
+          {/* Error Display */}
           {error && (
-            <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded">
-              {error}
-            </div>
+            <AlertBox variant="error">{error}</AlertBox>
           )}
 
-          <Button
-            onClick={handleGenerate}
-            disabled={generating || credits < 1}
-            className="w-full"
-            size="lg"
-          >
-            {generating ? 'Generating...' : `Generate (1 credit)`}
+          {/* Generate Button */}
+          <Button onClick={handleGenerate} disabled={generating || credits < 1} className="w-full" size="lg">
+            {generating ? 'Generating...' : 'Generate (1 credit)'}
           </Button>
 
           <p className="text-sm text-muted-foreground text-center">
-            You have {credits} credits remaining
+            You have <span className="font-semibold">{credits} credits</span> remaining
           </p>
         </div>
 
-        {/* Right column: Output */}
+        {/* Right Column: Result */}
         <div>
-          <h2 className="text-lg font-medium mb-4">Result</h2>
-          <Card className="p-4 min-h-[400px] flex items-center justify-center bg-muted/50">
+          <SectionLabel>RESULT</SectionLabel>
+          <Card className="min-h-[500px] flex items-center justify-center bg-muted/30">
             {generating ? (
               <GenerationLoading />
             ) : result ? (
-              <GenerationResult
-                imageUrl={result.imageUrl}
-                onDownload={handleDownload}
-                onRegenerate={handleRegenerate}
-              />
+              <GenerationResult imageUrl={result.imageUrl} onDownload={handleDownload} onRegenerate={handleRegenerate} />
             ) : (
-              <p className="text-muted-foreground">
-                Generated image will appear here
-              </p>
+              <div className="text-center text-muted-foreground">
+                <Sparkles className="w-8 h-8 mx-auto mb-3 text-primary/50" />
+                <p>Your studio-ready photo will appear here after you generate.</p>
+              </div>
             )}
           </Card>
         </div>
       </div>
 
+      {/* Credits Modal */}
       {showCreditsModal && (
         <InsufficientCreditsModal
           currentBalance={credits}

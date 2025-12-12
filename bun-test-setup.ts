@@ -6,11 +6,10 @@ GlobalRegistrator.register({
   url: 'http://localhost:3000',
 });
 
-// Custom matchers compatible with Bun's expect
-// NOTE: jest-dom matchers have deep dependencies on Jest's context (this.equals, this.stringify)
-// These are simplified implementations for common use cases
+// Custom matchers for Bun (jest-dom doesn't work with Bun's test runner)
+// These provide the same API as @testing-library/jest-dom but for Bun
 expect.extend({
-  toBeInTheDocument(element: unknown) {
+  toBeInTheDocument(element: unknown): { pass: boolean; message: () => string } {
     const pass = element !== null && element !== undefined && element instanceof Element;
     return {
       pass,
@@ -19,7 +18,7 @@ expect.extend({
         : 'expected element to be in the document',
     };
   },
-  toHaveAttribute(element: unknown, name: string, expectedValue?: string) {
+  toHaveAttribute(element: unknown, name: string, expectedValue?: string): { pass: boolean; message: () => string } {
     if (!(element instanceof Element)) {
       return { pass: false, message: () => 'expected an Element' };
     }
@@ -35,7 +34,7 @@ expect.extend({
         : `expected element to have attribute "${name}"${expectedValue !== undefined ? ` with value "${expectedValue}" but got "${actualValue}"` : ''}`,
     };
   },
-  toHaveClass(element: unknown, ...classNames: string[]) {
+  toHaveClass(element: unknown, ...classNames: string[]): { pass: boolean; message: () => string } {
     if (!(element instanceof Element)) {
       return { pass: false, message: () => 'expected an Element' };
     }
@@ -48,7 +47,7 @@ expect.extend({
         : `expected element to have classes "${classNames.join(', ')}" but missing "${missing.join(', ')}"`,
     };
   },
-  toHaveTextContent(element: unknown, text: string | RegExp) {
+  toHaveTextContent(element: unknown, text: string | RegExp): { pass: boolean; message: () => string } {
     if (!(element instanceof Element)) {
       return { pass: false, message: () => 'expected an Element' };
     }
@@ -61,7 +60,7 @@ expect.extend({
         : `expected element to have text content "${text}" but got "${content}"`,
     };
   },
-  toBeVisible(element: unknown) {
+  toBeVisible(element: unknown): { pass: boolean; message: () => string } {
     if (!(element instanceof Element)) {
       return { pass: false, message: () => 'expected an Element' };
     }
@@ -75,7 +74,7 @@ expect.extend({
         : 'expected element to be visible',
     };
   },
-  toHaveStyle(element: unknown, styles: Record<string, string>) {
+  toHaveStyle(element: unknown, styles: Record<string, string>): { pass: boolean; message: () => string } {
     if (!(element instanceof HTMLElement)) {
       return { pass: false, message: () => 'expected an HTMLElement' };
     }
@@ -95,7 +94,7 @@ expect.extend({
         : `style mismatches: ${mismatches.join(', ')}`,
     };
   },
-  toHaveFocus(element: unknown) {
+  toHaveFocus(element: unknown): { pass: boolean; message: () => string } {
     if (!(element instanceof Element)) {
       return { pass: false, message: () => 'expected an Element' };
     }
@@ -107,7 +106,7 @@ expect.extend({
         : 'expected element to have focus',
     };
   },
-  toBeDisabled(element: unknown) {
+  toBeDisabled(element: unknown): { pass: boolean; message: () => string } {
     if (!(element instanceof HTMLElement)) {
       return { pass: false, message: () => 'expected an HTMLElement' };
     }
@@ -119,7 +118,7 @@ expect.extend({
         : 'expected element to be disabled',
     };
   },
-  toBeEnabled(element: unknown) {
+  toBeEnabled(element: unknown): { pass: boolean; message: () => string } {
     if (!(element instanceof HTMLElement)) {
       return { pass: false, message: () => 'expected an HTMLElement' };
     }
@@ -131,7 +130,7 @@ expect.extend({
         : 'expected element to be enabled',
     };
   },
-  toHaveAccessibleName(element: unknown, expectedName?: string) {
+  toHaveAccessibleName(element: unknown, expectedName?: string): { pass: boolean; message: () => string } {
     if (!(element instanceof Element)) {
       return { pass: false, message: () => 'expected an Element' };
     }
@@ -150,7 +149,7 @@ expect.extend({
   },
 });
 
-// Setup test environment variables (from jest.setup.ts)
+// Setup test environment variables
 process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-key';
 process.env.GEMINI_MODEL = 'gemini-3-pro-image-preview';
 process.env.ANALYSIS_MODEL = 'gemini-2.0-flash';

@@ -37,6 +37,7 @@ export async function GET() {
       version: template.version,
       name: (templateData.name as string) || template.slug,
       description: (templateData.description as string) || '',
+      icon: (templateData.icon as string) || '📷',
     };
   });
 

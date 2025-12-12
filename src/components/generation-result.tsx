@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import Image from 'next/image';
 
 interface GenerationResultProps {
   imageUrl: string;
@@ -20,12 +21,13 @@ export function GenerationResult({
 
   return (
     <Card variant="studio" className="p-6 space-y-4">
-      <div className="relative">
-        <img
+      <div className="relative w-full h-64">
+        <Image
           src={imageUrl}
           alt="Generated product photo"
+          fill
           className={`
-            rounded-lg cursor-pointer transition-transform
+            object-cover rounded-lg cursor-pointer transition-transform
             ${isZoomed ? 'scale-150 z-50' : 'hover:scale-105'}
           `}
           onClick={() => setIsZoomed(!isZoomed)}

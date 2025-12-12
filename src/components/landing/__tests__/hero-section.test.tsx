@@ -183,7 +183,7 @@ describe('HeroSection', () => {
 
   describe('Visual Design', () => {
     it('applies proper color contrast', () => {
-      const { container } = render(<HeroSection example={mockExample} />);
+      render(<HeroSection example={mockExample} />);
 
       const heading = screen.getByRole('heading', { level: 1 });
       testColorContrast(heading);

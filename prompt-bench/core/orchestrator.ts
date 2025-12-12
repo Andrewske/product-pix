@@ -22,7 +22,6 @@ import { createGeminiProvider } from '@/lib/ai/providers/gemini';
 import { uploadBuffer, getPublicUrl } from '@/lib/r2';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { resolveSourceImage, type ResolvedSourceImage } from '@bench/core/source-image';
-import type { SourceImageOptions } from '@bench/core/source-image';
 import { calculateCost } from '@bench/core/cost';
 
 // =============================================================================
@@ -228,9 +227,11 @@ const runPhase = async (
       let resolvedSourceImage: ResolvedSourceImage | undefined;
       const sourceImagePath = testCase.sourceImage || batch.sourceImage;
       if (sourceImagePath) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const resolveResult = await resolveSourceImage(sourceImagePath as any, {
           batchFilePath: batchFilePath,
           skipUpload: false,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
         if (!isOk(resolveResult)) {
           return err(createError(
@@ -258,9 +259,11 @@ const runPhase = async (
         .eq('idempotency_key', idempotencyKey)
         .single();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (existingTest && (existingTest as any).status !== 'failed') {
         // Skip existing successful test
         skipped++;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tests.push(existingTest as any);
         continue;
       }
@@ -284,6 +287,7 @@ const runPhase = async (
           template_id: template.id,
           idempotency_key: idempotencyKey,
           status: 'generating',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           inputs: testCase.variables as any,
           final_prompt: compiled.prompt,
           batch_label: batchLabel,
@@ -291,6 +295,7 @@ const runPhase = async (
           source_image_key: resolvedSourceImage?.r2Key,
         })
         .select()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .single() as any);
 
       if (insertError || !testRecord) {
@@ -327,6 +332,7 @@ const runPhase = async (
             completed_at: new Date().toISOString(),
             duration_ms: Date.now() - generationStart,
           })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .eq('id', testRecord.id) as any);
 
         failed++;
@@ -341,7 +347,7 @@ const runPhase = async (
       // Upload image to R2
       const imageKey = `prompt-tests/${testRecord.id}.png`;
       const buffer = Buffer.from(generationResult.imageData, 'base64');
-      const uploadResult = await uploadBuffer(buffer, imageKey, 'image/png');
+      await uploadBuffer(buffer, imageKey, 'image/png');
 
       // Calculate generation cost
       let generationCost = 0;
@@ -460,6 +466,7 @@ const evaluatePhase = async (
   await (supabase
     .from('prompt_tests')
     .update({ status: 'evaluating' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .in('id', testIds) as any);
 
   // Prepare evaluation inputs
@@ -494,6 +501,7 @@ const evaluatePhase = async (
           test_id: id,
           evaluator_type: 'llm',
           score_overall: result.data.overall,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           details: result.data.details as any,
           evaluator_model: evalModel,
           cost_usd: result.data.costUsd,
@@ -507,6 +515,7 @@ const evaluatePhase = async (
         await (supabase
           .from('prompt_tests')
           .update({ status: 'completed' })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .eq('id', id) as any);
         completed++;
       }
@@ -519,6 +528,7 @@ const evaluatePhase = async (
           status: 'failed',
           error_message: `Evaluation failed: ${result.error.message}`,
         })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .eq('id', id) as any);
       failed++;
     }

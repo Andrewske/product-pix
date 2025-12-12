@@ -53,7 +53,7 @@ export function AccountTab(): React.ReactElement {
         setNewPassword('');
         setConfirmPassword('');
       }
-    } catch (_err) {
+    } catch {
       setError('Failed to update password');
     } finally {
       setIsUpdating(false);
@@ -85,7 +85,7 @@ export function AccountTab(): React.ReactElement {
         setSetPassword('');
         setConfirmSetPassword('');
       }
-    } catch (_err) {
+    } catch {
       setError('Failed to set password');
     } finally {
       setIsSetting(false);
@@ -105,7 +105,7 @@ export function AccountTab(): React.ReactElement {
       } else {
         setSuccess('Password reset email sent. Check your inbox.');
       }
-    } catch (_err) {
+    } catch {
       setError('Failed to send reset email');
     } finally {
       setIsUpdating(false);

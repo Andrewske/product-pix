@@ -33,7 +33,7 @@ export function loadPricingConfig(): PricingConfig {
   let fileContent: string;
   try {
     fileContent = readFileSync(configPath, 'utf-8');
-  } catch (error) {
+  } catch {
     throw new Error(`Pricing config file not found at: ${configPath}. Please ensure prompt-bench.toml exists in the project root.`);
   }
 

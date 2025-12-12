@@ -16,9 +16,10 @@ import type { ProductAnalysis } from './types';
  * Analyze a product image using Gemini Flash vision model
  * Extracts structured product information for prompt generation
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const analyzeProductImage = async (
   image: Buffer,
-  mimeType: string
+  _mimeType: string
 ): Promise<Result<{ analysis: ProductAnalysis; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }>> => {
   try {
     const model = env.ANALYSIS_MODEL || 'gemini-2.0-flash';

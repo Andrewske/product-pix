@@ -14,8 +14,9 @@
 // IMPORTANT: Load environment variables FIRST before any other imports
 // This ensures R2/Supabase clients get the correct credentials
 // Load .env first, then .env.local (which overrides .env)
-require('dotenv').config({ path: '.env' });
-require('dotenv').config({ path: '.env.local', override: true });
+import { config } from 'dotenv';
+config({ path: '.env' });
+config({ path: '.env.local', override: true });
 
 import { runCommand } from '@bench/commands/run';
 import { evaluateCommand } from '@bench/commands/evaluate';

@@ -69,7 +69,7 @@ describe('Footer', () => {
   });
 
   it('applies muted grey styling to text elements', () => {
-    const { container } = render(<Footer />);
+    render(<Footer />);
 
     // Check tagline has muted-foreground class
     const tagline = screen.getByText('Professional Product Photos in Seconds');

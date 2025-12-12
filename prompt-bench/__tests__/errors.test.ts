@@ -1,5 +1,7 @@
 import {
   createError,
+  validateRequiredVariables,
+  validateEnumValues,
   ok,
   err,
   isOk,
@@ -8,9 +10,6 @@ import {
   isErrorCode,
   formatError,
   validateCompiledPrompt,
-  validateRequiredVariables,
-  validateEnumValues,
-  type PromptTestError,
   type Result,
 } from '@bench/core/errors';
 

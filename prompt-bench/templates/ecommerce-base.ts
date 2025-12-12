@@ -15,6 +15,7 @@ export const ECOMMERCE_BASE: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdA
     style: 'commercial catalog photography, color-accurate',
     quality: '4K resolution, sharp focus, product centered filling 85% of frame',
     negative: 'worst quality, blurry, watermark, text, logo',
+    icon: '📦',
   },
   variablesSchema: {
     product: {
