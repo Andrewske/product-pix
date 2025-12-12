@@ -107,6 +107,10 @@
   --success-foreground: oklch(0.1 0.01 265);
   --info: oklch(0.7 0.12 190);
   --info-foreground: oklch(0.96 0 0);
+
+  /* Card hierarchy for dark mode */
+  --card-hero: oklch(0.18 0.01 265);    /* Slightly lighter for result panels */
+  --card-control: oklch(0.14 0.01 265); /* Standard for settings/forms */
 }
 
 /* Typography */

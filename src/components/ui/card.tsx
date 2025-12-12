@@ -8,6 +8,8 @@ const cardVariants = cva('', {
     variant: {
       default: 'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
       studio: 'matte-card rounded-2xl overflow-hidden',
+      hero: 'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm dark:bg-[var(--card-hero)]',
+      control: 'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm dark:bg-[var(--card-control)]',
     },
     hover: { true: '', false: '' },
   },

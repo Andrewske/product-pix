@@ -21,6 +21,8 @@ const badgeVariants = cva(
           'border-transparent bg-success text-success-foreground [a&]:hover:bg-success/90',
         info:
           'border-transparent bg-info text-info-foreground [a&]:hover:bg-info/90',
+        teal:
+          'border-transparent bg-teal text-teal-foreground [a&]:hover:bg-teal/90',
       },
     },
     defaultVariants: {
