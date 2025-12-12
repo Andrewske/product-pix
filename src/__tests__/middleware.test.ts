@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
 import { middleware } from '@/middleware';
+import { logger } from '@/lib/logging';
 
 // Mock the supabase server client
 const mockCreateClient = mock(async () => null as any);
@@ -160,6 +161,11 @@ describe('middleware', () => {
   });
 
   it('should redirect to home when createClient throws', async () => {
+    // Mock logger.error to suppress expected error output
+    const originalLoggerError = logger.error;
+    const loggerSpy = mock(() => {});
+    logger.error = loggerSpy;
+
     mockCreateClient.mockRejectedValue(new Error('Connection failed'));
 
     const request = new NextRequest('http://localhost/admin/refunds');
@@ -169,5 +175,14 @@ describe('middleware', () => {
     expect(response).toBeInstanceOf(NextResponse);
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('http://localhost/');
+
+    // Verify error was logged
+    expect(loggerSpy).toHaveBeenCalledWith('Admin middleware error', {
+      error: expect.any(Error),
+      pathname: '/admin/refunds',
+    });
+
+    // Restore logger.error
+    logger.error = originalLoggerError;
   });
 });

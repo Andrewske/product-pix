@@ -138,6 +138,8 @@ export const getPendingAdminRefunds = async (): Promise<ImageRefundRequest[]> =>
       generated_images!inner(public_url)
     `)
     .eq('status', 'pending_admin')
+    // FIFO ordering (oldest first) - ensures fair processing
+    // of refund requests in the order they were submitted
     .order('requested_at', { ascending: true });
 
   if (error) {
