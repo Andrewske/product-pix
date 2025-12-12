@@ -52,5 +52,20 @@ export async function grantCreditsForPayment(params: GrantCreditsParams): Promis
     `pi_${params.paymentIntentId}`
   );
 
+  // Populate purchase credit ledger for refund eligibility tracking
+  const { data: purchase } = await supabase
+    .from('stripe_purchases')
+    .select('id')
+    .eq('stripe_payment_intent_id', params.paymentIntentId)
+    .single();
+
+  if (purchase) {
+    await supabase.from('purchase_credit_ledger').insert({
+      stripe_purchase_id: purchase.id,
+      user_id: params.userId,
+      credits_granted: params.credits,
+    });
+  }
+
   return { granted: true };
 }
