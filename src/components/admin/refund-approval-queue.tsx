@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logging';
 import type { PendingRefundWithDetails } from '@/types';
 
 export function RefundApprovalQueue() {
@@ -29,7 +30,7 @@ export function RefundApprovalQueue() {
       const data = await response.json();
       setRequests(data.refunds || []);
     } catch (error) {
-      console.error('Error fetching pending requests:', error);
+      logger.error('Error fetching pending requests', { error });
       toast({
         title: 'Error',
         description: 'Failed to load pending refund requests',
@@ -60,7 +61,7 @@ export function RefundApprovalQueue() {
         description: 'Refund request approved successfully',
       });
     } catch (error) {
-      console.error('Error approving refund:', error);
+      logger.error('Error approving refund', { error, refundId });
       toast({
         title: 'Error',
         description: 'Failed to approve refund request',
