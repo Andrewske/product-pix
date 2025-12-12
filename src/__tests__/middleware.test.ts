@@ -4,9 +4,13 @@ import { User } from '@supabase/supabase-js';
 import { middleware } from '@/middleware';
 
 // Mock the supabase server client
-const mockCreateClient = mock(async () => null);
+const mockCreateClient = mock(async () => null as any);
+const mockRequireAdmin = mock(async () => false);
 mock.module('@/lib/supabase/server', () => ({
   createClient: mockCreateClient,
+}));
+mock.module('@/lib/auth/admin', () => ({
+  requireAdmin: mockRequireAdmin,
 }));
 
 describe('middleware', () => {
@@ -54,7 +58,7 @@ describe('middleware', () => {
   afterEach(() => {
     mockCreateClient.mockReset();
     mockGetUser.mockReset();
-    mockSingle.mockReset();
+    mockRequireAdmin.mockReset();
   });
 
   it('should allow non-admin routes to pass through', async () => {
@@ -89,10 +93,7 @@ describe('middleware', () => {
       data: { user: mockUser },
       error: null,
     });
-    mockSingle.mockResolvedValue({
-      data: { is_admin: false },
-      error: null,
-    });
+    mockRequireAdmin.mockResolvedValue(false);
 
     const request = new NextRequest('http://localhost/admin/refunds');
 
@@ -103,7 +104,7 @@ describe('middleware', () => {
     expect(response.headers.get('location')).toBe('http://localhost/');
     expect(mockCreateClient).toHaveBeenCalledTimes(1);
     expect(mockGetUser).toHaveBeenCalledTimes(1);
-    expect(mockSingle).toHaveBeenCalledTimes(1);
+    expect(mockRequireAdmin).toHaveBeenCalledTimes(1);
   });
 
   it('should allow authenticated admin users to access admin routes', async () => {
@@ -111,10 +112,7 @@ describe('middleware', () => {
       data: { user: mockUser },
       error: null,
     });
-    mockSingle.mockResolvedValue({
-      data: { is_admin: true },
-      error: null,
-    });
+    mockRequireAdmin.mockResolvedValue(true);
 
     const request = new NextRequest('http://localhost/admin/refunds');
 
@@ -124,7 +122,7 @@ describe('middleware', () => {
     expect(response.status).toBe(200);
     expect(mockCreateClient).toHaveBeenCalledTimes(1);
     expect(mockGetUser).toHaveBeenCalledTimes(1);
-    expect(mockSingle).toHaveBeenCalledTimes(1);
+    expect(mockRequireAdmin).toHaveBeenCalledTimes(1);
   });
 
   it('should redirect to login when authentication fails with error', async () => {
