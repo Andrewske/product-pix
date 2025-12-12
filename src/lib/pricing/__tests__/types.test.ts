@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'bun:test';
 import type { Provider, ModelPricing, PricingConfig, TokenUsage, CostResult } from '../types';
 
 describe('Pricing Types', () => {

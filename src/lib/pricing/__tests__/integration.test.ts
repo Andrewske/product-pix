@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeAll } from 'bun:test';
 import { calculateCost } from '../calculator';
 import { clearPricingCache } from '../config';
 

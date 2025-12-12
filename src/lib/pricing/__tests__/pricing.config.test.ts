@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'bun:test';
 import { creditEconomy, type CreditEconomy } from '../pricing.config';
 
 describe('Credit Economy Configuration', () => {
