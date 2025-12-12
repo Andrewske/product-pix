@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -35,19 +37,28 @@ export function AdminNav() {
         <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
 
         {navItems.map((item) => (
-          <Link key={item.href} href={item.href}>
+          item.active ? (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={pathname === item.href ? 'default' : 'ghost'}
+                className={cn(
+                  'w-full justify-start',
+                  pathname === item.href && 'bg-primary text-primary-foreground'
+                )}
+              >
+                {item.label}
+              </Button>
+            </Link>
+          ) : (
             <Button
-              variant={pathname === item.href ? 'default' : 'ghost'}
-              className={cn(
-                'w-full justify-start',
-                pathname === item.href && 'bg-primary text-primary-foreground',
-                !item.active && 'opacity-50 cursor-not-allowed'
-              )}
-              disabled={!item.active}
+              key={item.href}
+              variant="ghost"
+              className="w-full justify-start opacity-50 cursor-not-allowed"
+              disabled
             >
               {item.label}
             </Button>
-          </Link>
+          )
         ))}
 
         <div className="pt-4 border-t border-border mt-6">
