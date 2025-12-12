@@ -115,7 +115,10 @@ See `docs/design-system.md` for full design principles.
 - **Barrel exports**: All lib modules via index.ts
 - **API validation**: Zod schemas
 - **Testing**: Pure Bun test framework, 70-80% coverage target
-- **TypeScript**: Strict mode, no `any`, explicit return types
+- **TypeScript**: Never `any`/unguarded `unknown`/`!`, explicit return types
+  - Enforced via ESLint: `@typescript-eslint/explicit-function-return-type`
+  - Exception: React components can use JSX.Element inference
+  - Fix violations incrementally (warnings, not errors)
 - **Functions**: ≤20 lines, ≤3 nesting levels
 - **Pricing config**: `prompt-bench.toml` at project root (committed)
 - **Pricing updates**: User manually updates TOML when provider rates change

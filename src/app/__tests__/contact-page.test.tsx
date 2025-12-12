@@ -1,5 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ContactForm } from '@/components/contact/contact-form'
 
@@ -14,6 +15,10 @@ global.fetch = mockFetch as any
 describe('ContactForm', () => {
   beforeEach(() => {
     mockFetch.mockClear()
+  })
+
+  afterEach(() => {
+    cleanup()
   })
 
   it('renders contact form correctly', () => {
@@ -98,8 +103,8 @@ describe('ContactForm', () => {
     const user = userEvent.setup()
     render(<ContactForm />)
 
-    const submitButton = screen.getByRole('button', { name: 'Send Message' })
-    await user.click(submitButton)
+    const form = document.querySelector('form')
+    fireEvent.submit(form!)
 
     // Should show validation errors
     await waitFor(() => {

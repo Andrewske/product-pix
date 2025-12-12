@@ -135,34 +135,34 @@ export function ContactForm(): React.ReactElement {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            type="text"
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            onBlur={() => handleBlur('name')}
-            placeholder="Your name"
-            required
-            disabled={isSubmitting}
-            aria-invalid={!!fieldErrors.name}
-          />
+           <Input
+             id="name"
+             type="text"
+             value={formData.name}
+             onChange={(e) => handleChange('name', e.target.value)}
+             onBlur={() => handleBlur('name')}
+             placeholder="Your name"
+             required
+             disabled={isSubmitting}
+             {...(fieldErrors.name && { 'aria-invalid': true })}
+           />
           {fieldErrors.name && (
             <p className="text-sm text-destructive">{fieldErrors.name}</p>
           )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            onBlur={() => handleBlur('email')}
-            placeholder="your@email.com"
-            required
-            disabled={isSubmitting}
-            aria-invalid={!!fieldErrors.email}
-          />
+           <Input
+             id="email"
+             type="email"
+             value={formData.email}
+             onChange={(e) => handleChange('email', e.target.value)}
+             onBlur={() => handleBlur('email')}
+             placeholder="your@email.com"
+             required
+             disabled={isSubmitting}
+             {...(fieldErrors.email && { 'aria-invalid': true })}
+           />
           {fieldErrors.email && (
             <p className="text-sm text-destructive">{fieldErrors.email}</p>
           )}
@@ -171,17 +171,17 @@ export function ContactForm(): React.ReactElement {
 
       <div className="space-y-2">
         <Label htmlFor="message">Message</Label>
-        <Textarea
-          id="message"
-          value={formData.message}
-          onChange={(e) => handleChange('message', e.target.value)}
-          onBlur={() => handleBlur('message')}
-          placeholder="How can we help you?"
-          rows={5}
-          required
-          disabled={isSubmitting}
-          aria-invalid={!!fieldErrors.message}
-        />
+         <Textarea
+           id="message"
+           value={formData.message}
+           onChange={(e) => handleChange('message', e.target.value)}
+           onBlur={() => handleBlur('message')}
+           placeholder="How can we help you?"
+           rows={5}
+           required
+           disabled={isSubmitting}
+           {...(fieldErrors.message && { 'aria-invalid': true })}
+         />
         {fieldErrors.message && (
           <p className="text-sm text-destructive">{fieldErrors.message}</p>
         )}
