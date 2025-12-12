@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logging';
+import { RefundCard } from './refund-card';
 import type { PendingRefundWithDetails } from '@/types';
 
 export function RefundApprovalQueue() {
@@ -76,19 +74,7 @@ export function RefundApprovalQueue() {
     }
   };
 
-  const formatTimestamp = (timestamp: string): string => {
-    return new Date(timestamp).toLocaleString();
-  };
 
-  const getReasonLabel = (reason: string): string => {
-    const labels = {
-      poor_quality: 'Poor Quality',
-      wrong_style: 'Wrong Style',
-      technical_issue: 'Technical Issue',
-      other: 'Other',
-    };
-    return labels[reason as keyof typeof labels] || reason;
-  };
 
   if (loading) {
     return (
@@ -121,57 +107,12 @@ export function RefundApprovalQueue() {
   return (
     <div className="space-y-4">
       {requests.map((request) => (
-        <Card key={request.id} className="p-6">
-          <div className="flex gap-4">
-            {/* Image Preview */}
-            <div className="flex-shrink-0">
-              <Image
-                src={request.generated_images.public_url}
-                alt={request.generated_images.title || 'Refund request image'}
-                width={128}
-                height={128}
-                className="rounded object-cover"
-              />
-            </div>
-
-            {/* Request Details */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-sm">
-                    {request.users.display_name || request.users.email}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">{request.users.email}</p>
-                </div>
-                <Badge variant="secondary" className="ml-2">
-                  {getReasonLabel(request.reason)}
-                </Badge>
-              </div>
-
-              {request.feedback && (
-                <p className="text-sm text-muted-foreground mb-2">
-                  &ldquo;{request.feedback}&rdquo;
-                </p>
-              )}
-
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Requested {formatTimestamp(request.requested_at)}
-                </p>
-
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleApprove(request.id)}
-                    disabled={processingIds.has(request.id)}
-                  >
-                    {processingIds.has(request.id) ? 'Approving...' : 'Approve Refund'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <RefundCard
+          key={request.id}
+          request={request}
+          isProcessing={processingIds.has(request.id)}
+          onApprove={handleApprove}
+        />
       ))}
     </div>
   );
