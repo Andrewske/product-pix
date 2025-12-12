@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation';
 import { RefundApprovalQueue } from '@/components/admin/refund-approval-queue';
 import { PageContainer } from '@/components/layout/page-container';
 import { SectionHeader } from '@/components/ui/section-header';
+import React from 'react';
 
-export default async function AdminRefundsPage() {
+export default async function AdminRefundsPage(): Promise<React.JSX.Element> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

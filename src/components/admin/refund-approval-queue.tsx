@@ -19,7 +19,7 @@ export function RefundApprovalQueue() {
     fetchPendingRequests();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchPendingRequests = async () => {
+  const fetchPendingRequests = async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await fetch('/api/refunds/image');
@@ -40,7 +40,7 @@ export function RefundApprovalQueue() {
     }
   };
 
-  const handleApprove = async (refundId: string) => {
+  const handleApprove = async (refundId: string): Promise<void> => {
     setProcessingIds(prev => new Set(prev).add(refundId));
 
     try {
@@ -75,11 +75,11 @@ export function RefundApprovalQueue() {
     }
   };
 
-  const formatTimestamp = (timestamp: string) => {
+  const formatTimestamp = (timestamp: string): string => {
     return new Date(timestamp).toLocaleString();
   };
 
-  const getReasonLabel = (reason: string) => {
+  const getReasonLabel = (reason: string): string => {
     const labels = {
       poor_quality: 'Poor Quality',
       wrong_style: 'Wrong Style',
