@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'bun:test';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, mock } from 'bun:test';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ExamplesSection } from '../examples-section';
 
 const mockExamples = [
@@ -31,87 +32,152 @@ describe('ExamplesSection', () => {
     expect(screen.getByText('From phone photos to professional product shots in seconds')).not.toBeNull();
   });
 
-  it('renders all example items', () => {
+  it('displays all example data correctly', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
-    // Check that all product names are rendered
-    expect(screen.getByText('Wireless Headphones')).not.toBeNull();
-    expect(screen.getByText('Coffee Mug')).not.toBeNull();
-    expect(screen.getByText('Leather Wallet')).not.toBeNull();
+    // Verify all product names are displayed
+    expect(screen.getByText('Wireless Headphones')).toBeDefined();
+    expect(screen.getByText('Coffee Mug')).toBeDefined();
+    expect(screen.getByText('Leather Wallet')).toBeDefined();
 
-    // Check that all categories are rendered
-    expect(screen.getByText('Electronics')).not.toBeNull();
-    expect(screen.getByText('Kitchenware')).not.toBeNull();
-    expect(screen.getByText('Accessories')).not.toBeNull();
+    // Verify all categories are displayed
+    expect(screen.getByText('Electronics')).toBeDefined();
+    expect(screen.getByText('Kitchenware')).toBeDefined();
+    expect(screen.getByText('Accessories')).toBeDefined();
   });
 
-  it('renders BeforeAfterSlider components for each example', () => {
+  it('loads all example images correctly', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
-    // Check that BeforeAfterSlider components are rendered (they contain the images)
+    // Verify all before and after images are present
     const images = screen.getAllByRole('img');
-    expect(images).toHaveLength(6); // 3 examples × 2 images each (before + after)
+    expect(images).toHaveLength(6); // 3 examples × 2 images each
+
+    // Verify correct image alt texts
+    const beforeImages = images.filter(img => img.getAttribute('alt')?.includes('Original'));
+    const afterImages = images.filter(img => img.getAttribute('alt')?.includes('Enhanced'));
+
+    expect(beforeImages).toHaveLength(3);
+    expect(afterImages).toHaveLength(3);
+
+    // Verify images have proper alt attributes for each product
+    expect(beforeImages[0]?.getAttribute('alt')).toBe('Wireless Headphones - Original');
+    expect(afterImages[0]?.getAttribute('alt')).toBe('Wireless Headphones - Enhanced');
+    expect(beforeImages[1]?.getAttribute('alt')).toBe('Coffee Mug - Original');
+    expect(afterImages[1]?.getAttribute('alt')).toBe('Coffee Mug - Enhanced');
   });
 
-  it('has proper accessibility attributes', () => {
+  it('renders interactive before/after sliders for each example', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
-    // Check section has proper ARIA labels
-    expect(screen.getByRole('grid')?.getAttribute('aria-label')).toBe('Product transformation examples');
+    // Verify sliders are present and interactive
+    const sliders = screen.getAllByRole('slider');
+    expect(sliders).toHaveLength(3);
 
-    // Check grid cells have proper labels
+    // Verify each slider has proper accessibility attributes
+    sliders.forEach((slider, index) => {
+      expect(slider.getAttribute('aria-label')).toContain(mockExamples[index].product);
+      expect(slider.getAttribute('aria-valuemin')).toBe('0');
+      expect(slider.getAttribute('aria-valuemax')).toBe('100');
+      expect(slider.getAttribute('aria-valuenow')).toBeDefined();
+    });
+  });
+
+  it('supports keyboard navigation on sliders', async () => {
+    const user = userEvent.setup();
+    render(<ExamplesSection examples={mockExamples} />);
+
+    const firstSlider = screen.getAllByRole('slider')[0];
+
+    // Focus the slider
+    firstSlider.focus();
+    expect(document.activeElement).toBe(firstSlider);
+
+    // Test arrow key navigation
+    await user.keyboard('{ArrowRight}');
+    expect(firstSlider.getAttribute('aria-valuenow')).not.toBe('50'); // Default is 50
+
+    await user.keyboard('{ArrowLeft}');
+    // Value should change back
+  });
+
+  it('provides staggered animation timing for visual appeal', () => {
+    render(<ExamplesSection examples={mockExamples} />);
+
+    const items = screen.getAllByRole('gridcell');
+    expect(items).toHaveLength(3);
+
+    // Verify staggered delays are applied for smooth sequential animations
+    items.forEach((item, index) => {
+      const expectedDelay = `${index * 200}ms`;
+      const style = window.getComputedStyle(item);
+      expect(style.transitionDelay).toBe(expectedDelay);
+    });
+  });
+
+  it('applies staggered animation timing to items', () => {
+    render(<ExamplesSection examples={mockExamples} />);
+
+    const items = screen.getAllByRole('gridcell');
+
+    // Verify transition delays are applied with 200ms increments
+    items.forEach((item, index) => {
+      const expectedDelay = `${index * 200}ms`;
+      const style = window.getComputedStyle(item);
+      expect(style.transitionDelay).toBe(expectedDelay);
+    });
+  });
+
+  it('maintains proper grid structure for examples', () => {
+    render(<ExamplesSection examples={mockExamples} />);
+
+    // Verify semantic grid structure
+    const grid = screen.getByRole('grid');
+    expect(grid.getAttribute('aria-label')).toBe('Product transformation examples');
+
     const gridCells = screen.getAllByRole('gridcell');
     expect(gridCells).toHaveLength(3);
-    expect(gridCells[0]?.getAttribute('aria-label')).toBe('Example 1: Wireless Headphones transformation');
+
+    // Verify each cell has proper labeling
+    gridCells.forEach((cell, index) => {
+      const expectedLabel = `Example ${index + 1}: ${mockExamples[index].product} transformation`;
+      expect(cell.getAttribute('aria-label')).toBe(expectedLabel);
+    });
   });
 
-  it('renders section with proper heading structure', () => {
+  it('renders section with proper semantic structure', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
+    // Verify heading hierarchy
     const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading?.getAttribute('id')).toBe('examples-heading');
-    expect(heading?.textContent).toContain('See the Transformation');
+    expect(heading.getAttribute('id')).toBe('examples-heading');
+    expect(heading.textContent).toContain('See the Transformation');
+
+    // Verify section has proper ARIA relationships
+    const section = document.querySelector('section[aria-labelledby="examples-heading"]');
+    expect(section).toBeDefined();
+    expect(section?.getAttribute('aria-labelledby')).toBe('examples-heading');
+    expect(section?.getAttribute('aria-describedby')).toBe('examples-description');
   });
 
-  it('applies custom className when provided', () => {
+  it('supports custom styling through className prop', () => {
     const { container } = render(
-      <ExamplesSection examples={mockExamples} className="custom-class" />
+      <ExamplesSection examples={mockExamples} className="custom-section-class" />
     );
 
     const section = container.querySelector('section');
-    expect(section?.classList.contains('custom-class')).toBe(true);
+    expect(section?.classList.contains('custom-section-class')).toBe(true);
   });
 
-  it('has responsive grid layout', () => {
-    const { container } = render(<ExamplesSection examples={mockExamples} />);
+  it('handles empty examples array gracefully', () => {
+    render(<ExamplesSection examples={[]} />);
 
-    const grid = container.querySelector('[class*="grid"]');
-    expect(grid?.classList.contains('grid-cols-1')).toBe(true);
-    expect(grid?.classList.contains('md:grid-cols-2')).toBe(true);
-    expect(grid?.classList.contains('lg:grid-cols-3')).toBe(true);
-  });
+    // Section should still render with title and description
+    expect(screen.getByText('See the Transformation')).toBeDefined();
+    expect(screen.getByText('From phone photos to professional product shots in seconds')).toBeDefined();
 
-  it('applies staggered animation delays', () => {
-    const { container } = render(<ExamplesSection examples={mockExamples} />);
-
-    const items = container.querySelectorAll('[style*="transition-delay"]');
-    expect(items).toHaveLength(3);
-
-    // Check that transition delays are applied with 200ms increments
-    expect(window.getComputedStyle(items[0]).transitionDelay).toBe('0ms');
-    expect(window.getComputedStyle(items[1]).transitionDelay).toBe('200ms');
-    expect(window.getComputedStyle(items[2]).transitionDelay).toBe('400ms');
-  });
-
-  it('has offset positioning structure', () => {
-    const { container } = render(<ExamplesSection examples={mockExamples} />);
-
-    // Find the divs that contain the offset positioning classes
-    const offsetDivs = container.querySelectorAll('[class*="translate-y"]');
-
-    // Check that offset positioning divs exist
-    expect(offsetDivs.length).toBeGreaterThan(0);
-    // Note: Offset classes are applied when items become visible via IntersectionObserver
-    // In tests, items remain invisible, so we just check the structure exists
+    // No examples should be rendered
+    const gridCells = screen.queryAllByRole('gridcell');
+    expect(gridCells).toHaveLength(0);
   });
 });

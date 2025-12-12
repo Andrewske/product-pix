@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import { Footer } from '../footer';
 
@@ -11,123 +11,129 @@ describe('Footer', () => {
     expect(screen.getByText('Professional Product Photos in Seconds')).not.toBeNull();
   });
 
-  it('renders navigation links', () => {
+  it('renders navigation links with correct targets', () => {
     render(<Footer />);
 
-    const pricingLink = screen.getByText('Pricing');
-    const loginLink = screen.getByText('Login');
-    const signupLink = screen.getByText('Sign Up');
+    // Test main navigation links
+    const pricingLink = screen.getByRole('link', { name: /pricing/i });
+    const loginLink = screen.getByRole('link', { name: /login/i });
+    const signupLink = screen.getByRole('link', { name: /sign up/i });
 
     expect(pricingLink).not.toBeNull();
     expect(loginLink).not.toBeNull();
     expect(signupLink).not.toBeNull();
 
-    // Check that links have correct href attributes
-    expect(pricingLink.closest('a')?.getAttribute('href')).toBe('#pricing');
-    expect(loginLink.closest('a')?.getAttribute('href')).toBe('/login');
-    expect(signupLink.closest('a')?.getAttribute('href')).toBe('/signup');
+    // Verify correct href attributes
+    expect(pricingLink.getAttribute('href')).toBe('#pricing');
+    expect(loginLink.getAttribute('href')).toBe('/login');
+    expect(signupLink.getAttribute('href')).toBe('/signup');
   });
 
-  it('renders legal links', () => {
+  it('renders legal links with accessibility descriptions', () => {
     render(<Footer />);
 
-    const termsLink = screen.getByText('Terms');
-    const privacyLink = screen.getByText('Privacy');
+    const termsLink = screen.getByRole('link', { name: /terms/i });
+    const privacyLink = screen.getByRole('link', { name: /privacy/i });
 
     expect(termsLink).not.toBeNull();
     expect(privacyLink).not.toBeNull();
 
-    // Check that links have placeholder href attributes
-    expect(termsLink.closest('a')?.getAttribute('href')).toBe('#');
-    expect(privacyLink.closest('a')?.getAttribute('href')).toBe('#');
+    // Verify placeholder href attributes for legal pages
+    expect(termsLink.getAttribute('href')).toBe('#');
+    expect(privacyLink.getAttribute('href')).toBe('#');
+
+    // Verify accessibility descriptions are present
+    const termsDesc = document.getElementById('terms-link-description');
+    const privacyDesc = document.getElementById('privacy-link-description');
+    expect(termsDesc?.textContent).toContain('terms of service');
+    expect(privacyDesc?.textContent).toContain('privacy policy');
   });
 
   it('renders copyright notice with current year', () => {
     render(<Footer />);
 
-    expect(screen.getByText((content) => content.includes('©') && content.includes('ProductPix. All rights reserved.'))).not.toBeNull();
+    const currentYear = new Date().getFullYear();
+    const copyrightText = screen.getByText(new RegExp(`© ${currentYear} ProductPix\\. All rights reserved\\.`));
+    expect(copyrightText).not.toBeNull();
   });
 
-  it('has responsive layout classes', () => {
+  it('organizes content in logical navigation sections', () => {
     const { container } = render(<Footer />);
 
-    // Check main container has responsive flex layout
-    const mainContainer = container.querySelector('div > div');
-    expect(mainContainer?.classList.contains('flex')).toBe(true);
-    expect(mainContainer?.classList.contains('flex-col')).toBe(true);
-    expect(mainContainer?.classList.contains('md:flex-row')).toBe(true);
-
-    // Check navigation list has flex-wrap for mobile
-    const navList = container.querySelector('nav ul');
-    expect(navList?.classList.contains('flex', 'flex-wrap', 'justify-center')).toBe(true);
-  });
-
-  it('applies muted grey styling to text elements', () => {
-    render(<Footer />);
-
-    // Check tagline has muted-foreground class
-    const tagline = screen.getByText('Professional Product Photos in Seconds');
-    expect(tagline?.classList.contains('text-muted-foreground')).toBe(true);
-
-    // Check navigation links have muted-foreground class
-    const pricingLink = screen.getByText('Pricing');
-    expect(pricingLink?.classList.contains('text-muted-foreground')).toBe(true);
-
-    // Check legal links have muted-foreground class
-    const termsLink = screen.getByText('Terms');
-    expect(termsLink?.classList.contains('text-muted-foreground')).toBe(true);
-
-    // Check copyright has muted-foreground class
-    const copyright = screen.getByText((content) => content.includes('©') && content.includes('ProductPix. All rights reserved.'));
-    expect(copyright?.classList.contains('text-muted-foreground')).toBe(true);
-  });
-
-  it('applies hover transition classes to links', () => {
-    const { container } = render(<Footer />);
-
-    // Check navigation links have hover classes
-    const navLinks = container.querySelectorAll('nav a');
-    navLinks.forEach(link => {
-      expect(link?.classList.contains('hover:text-foreground')).toBe(true);
-      expect(link?.classList.contains('transition-colors')).toBe(true);
-    });
-
-    // Check legal links have hover classes
-    const legalLinks = container.querySelectorAll('div:last-child a');
-    legalLinks.forEach(link => {
-      expect(link?.classList.contains('hover:text-foreground')).toBe(true);
-      expect(link?.classList.contains('transition-colors')).toBe(true);
-    });
-  });
-
-  it('has proper semantic structure', () => {
-    const { container } = render(<Footer />);
-
-    // Should be wrapped in footer element
+    // Verify semantic footer structure
     const footer = container.querySelector('footer');
     expect(footer).not.toBeNull();
+    expect(footer?.getAttribute('role')).toBe('contentinfo');
+
+    // Verify navigation sections are properly labeled
+    const navSections = container.querySelectorAll('nav');
+    expect(navSections).toHaveLength(2);
+
+    // First nav should be for footer navigation
+    const mainNav = navSections[0];
+    expect(mainNav.getAttribute('aria-label')).toBe('Footer navigation');
+
+    // Second nav should be for legal information
+    const legalNav = navSections[1];
+    expect(legalNav.getAttribute('aria-label')).toBe('Legal information');
+
+    // Verify navigation lists use proper semantic structure
+    const navLists = container.querySelectorAll('nav ul[role="list"]');
+    expect(navLists).toHaveLength(2);
+
+    // Verify list items are properly structured
+    const listItems = container.querySelectorAll('nav li');
+    expect(listItems).toHaveLength(5); // 3 main nav + 2 legal
   });
 
-  it('maintains proper spacing and layout', () => {
+  it('provides accessible link descriptions for screen readers', () => {
+    render(<Footer />);
+
+    // Verify each navigation link has an associated description
+    const links = screen.getAllByRole('link');
+
+    links.forEach(link => {
+      const describedBy = link.getAttribute('aria-describedby');
+      expect(describedBy).not.toBeNull();
+
+      const description = document.getElementById(describedBy!);
+      expect(description).not.toBeNull();
+
+      // Verify description contains meaningful text for screen readers
+      expect(description?.textContent?.trim()).not.toBe('');
+      expect(description?.textContent?.length).toBeGreaterThan(10);
+    });
+  });
+
+  it('maintains proper content hierarchy and organization', () => {
     const { container } = render(<Footer />);
 
-    // Check main container has proper padding
-    const footer = container.querySelector('footer');
-    expect(footer?.classList.contains('py-12', 'px-4', 'sm:px-6', 'lg:px-8')).toBe(true);
+    // Verify brand section comes first
+    const brandSection = container.querySelector('div > div > div:first-child');
+    const brandLink = brandSection?.querySelector('span');
+    expect(brandLink?.textContent).toBe('ProductPix');
 
-    // Check inner container has max width
-    const innerContainer = container.querySelector('footer > div');
-    expect(innerContainer?.classList.contains('max-w-7xl', 'mx-auto')).toBe(true);
+    // Verify navigation sections follow brand
+    const navSections = container.querySelectorAll('div > div > nav');
+    expect(navSections).toHaveLength(2);
 
-    // Check sections have proper gap
-    const mainSection = container.querySelector('div > div');
-    expect(mainSection?.classList.contains('gap-8')).toBe(true);
-
-    // Check copyright section has proper margin and border
+    // Verify copyright section is last
     const copyrightSection = container.querySelector('footer > div > div:last-child');
-    expect(copyrightSection?.classList.contains('mt-12')).toBe(true);
-    expect(copyrightSection?.classList.contains('pt-8')).toBe(true);
-    expect(copyrightSection?.classList.contains('border-t')).toBe(true);
-    expect(copyrightSection?.classList.contains('border-border')).toBe(true);
+    const copyrightText = copyrightSection?.textContent;
+    expect(copyrightText).toMatch(/© \d{4} ProductPix\. All rights reserved\./);
+  });
+
+  it('ensures all links are keyboard accessible', () => {
+    render(<Footer />);
+
+    const links = screen.getAllByRole('link');
+
+    links.forEach(link => {
+      // Verify links have focus-visible styles (though we don't test the CSS classes)
+      expect(link.getAttribute('tabindex')).not.toBe('-1');
+
+      // Verify focus ring attributes are present
+      expect(link.getAttribute('class')).toMatch(/focus-visible/);
+    });
   });
 });

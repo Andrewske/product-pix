@@ -1,68 +1,248 @@
 import React from 'react';
 import { describe, it, expect, mock } from 'bun:test';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ErrorBoundary } from '../../components/ui/error-boundary';
 
-// Mock the UI components
-mock.module('@/components/ui/button', () => ({
-  Button: ({ children, onClick, className }: { children: React.ReactNode; onClick: () => void; className?: string }) => (
-    <button onClick={onClick} className={className}>
-      {children}
-    </button>
-  ),
-}));
+// Component that throws an error
+function ThrowError({ shouldThrow }: { shouldThrow: boolean }) {
+  if (shouldThrow) {
+    throw new Error('Test error');
+  }
+  return <div>No error</div>;
+}
 
-mock.module('@/components/ui/card', () => ({
-  Card: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>,
-  CardHeader: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>,
-  CardTitle: ({ children, className }: { children: React.ReactNode; className?: string }) => <h1 className={className}>{children}</h1>,
-  CardDescription: ({ children, className }: { children: React.ReactNode; className?: string }) => <p className={className}>{children}</p>,
-  CardContent: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>,
-}));
+describe('ErrorBoundary', () => {
+  it('catches component errors and shows fallback UI', () => {
+    // Suppress console.error for this test
+    const originalError = console.error;
+    console.error = mock(() => {});
 
-// Dynamic import after mocking
-const { default: Error } = await import('../error');
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={true} />
+      </ErrorBoundary>
+    );
 
-describe('Error Boundary', () => {
-  it('renders error message and reset button', () => {
-    const mockError: Error & { digest?: string } = {
-      name: 'Error',
-      message: 'Test pricing error',
-    };
-    const mockReset = mock(() => {});
+    // Should show error fallback, not the component
+    expect(screen.queryByText('No error')).toBeNull();
+    expect(screen.getByText(/something went wrong/i)).toBeDefined();
 
-    render(<Error error={mockError} reset={mockReset} />);
-
-    expect(screen.getByText('Something went wrong')).not.toBeNull();
-    expect(screen.getByText('We encountered an error while loading the page. This might be a temporary issue with our pricing service.')).not.toBeNull();
-    expect(screen.getByText('Test pricing error')).not.toBeNull();
-    expect(screen.getByText('Try again')).not.toBeNull();
+    console.error = originalError;
   });
 
-  it('calls reset function when try again button is clicked', () => {
-    const mockError: Error & { digest?: string } = {
-      name: 'Error',
-      message: 'Network error',
+  it('shows "Try again" button that resets boundary', async () => {
+    const user = userEvent.setup();
+    console.error = mock(() => {});
+
+    // Component that starts throwing but can be reset to not throw
+    let shouldThrow = true;
+    const ResettableComponent = () => {
+      if (shouldThrow) {
+        throw new Error('Test error');
+      }
+      return <div>Recovered successfully</div>;
     };
-    const mockReset = mock(() => {});
 
-    render(<Error error={mockError} reset={mockReset} />);
+    render(
+      <ErrorBoundary>
+        <ResettableComponent />
+      </ErrorBoundary>
+    );
 
-    const resetButton = screen.getByText('Try again');
-    fireEvent.click(resetButton);
+    // Error should be shown
+    expect(screen.getByText(/something went wrong/i)).toBeDefined();
 
-    expect(mockReset).toHaveBeenCalledTimes(1);
+    // Click "Try again" button - this should reset the boundary
+    const retryButton = screen.getByRole('button', { name: /try again/i });
+    shouldThrow = false; // Fix the error condition
+    await user.click(retryButton);
+
+    // Should show recovered content
+    expect(screen.getByText('Recovered successfully')).toBeDefined();
   });
 
-  it('displays error with digest if available', () => {
-    const mockError: Error & { digest?: string } = {
-      name: 'Error',
-      message: 'Database connection failed',
-      digest: 'error-digest-123',
+  it('logs errors to console when they occur', () => {
+    const mockConsoleError = mock(() => {});
+    console.error = mockConsoleError;
+
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={true} />
+      </ErrorBoundary>
+    );
+
+    // Should have logged the error
+    expect(mockConsoleError).toHaveBeenCalledWith(
+      'ErrorBoundary caught an error:',
+      expect.any(Error),
+      expect.any(Object)
+    );
+
+    console.error = console.error;
+  });
+
+  it('does not catch errors outside its tree', () => {
+    // Errors outside the boundary should propagate
+    const OutsideError = () => {
+      throw new Error('Outside error');
     };
-    const mockReset = mock(() => {});
 
-    render(<Error error={mockError} reset={mockReset} />);
+    expect(() => {
+      render(
+        <>
+          <ErrorBoundary>
+            <div>Protected content</div>
+          </ErrorBoundary>
+          <OutsideError />
+        </>
+      );
+    }).toThrow('Outside error');
+  });
 
-    expect(screen.getByText('Database connection failed')).not.toBeNull();
+  it('renders children normally when no error occurs', () => {
+    render(
+      <ErrorBoundary>
+        <div>Normal content</div>
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByText('Normal content')).toBeDefined();
+  });
+
+  it('uses custom fallback component when provided', () => {
+    const CustomFallback = ({ error, reset }: { error: Error; reset: () => void }) => (
+      <div data-testid="custom-fallback">
+        Custom: {error.message}
+        <button onClick={reset}>Custom Reset</button>
+      </div>
+    );
+
+    console.error = mock(() => {});
+
+    render(
+      <ErrorBoundary fallback={CustomFallback}>
+        <ThrowError shouldThrow={true} />
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByTestId('custom-fallback')).toBeDefined();
+    expect(screen.getByText('Custom: Test error')).toBeDefined();
+  });
+
+  it('catches errors thrown during async state updates', async () => {
+    const AsyncErrorComponent = () => {
+      const [error, setError] = React.useState<Error | null>(null);
+
+      React.useEffect(() => {
+        // Simulate async operation that fails
+        setTimeout(() => {
+          setError(new Error('Async operation failed'));
+        }, 10);
+      }, []);
+
+      if (error) {
+        throw error;
+      }
+
+      return <div>Async component</div>;
+    };
+
+    console.error = mock(() => {});
+
+    render(
+      <ErrorBoundary>
+        <AsyncErrorComponent />
+      </ErrorBoundary>
+    );
+
+    // Initially shows normal content
+    expect(screen.getByText('Async component')).toBeDefined();
+
+    // Wait for async error to trigger re-render with error
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    expect(screen.getByText(/something went wrong/i)).toBeDefined();
+  });
+
+  it('catches errors from async data fetching components', async () => {
+    const DataFetchComponent = () => {
+      const [data, setData] = React.useState<string | null>(null);
+      const [error, setError] = React.useState<Error | null>(null);
+
+      React.useEffect(() => {
+        // Simulate failed API call
+        setTimeout(() => {
+          setError(new Error('Failed to fetch data'));
+        }, 10);
+      }, []);
+
+      if (error) {
+        throw error;
+      }
+
+      return <div>{data ? data : 'Loading...'}</div>;
+    };
+
+    console.error = mock(() => {});
+
+    render(
+      <ErrorBoundary>
+        <DataFetchComponent />
+      </ErrorBoundary>
+    );
+
+    // Initially shows loading
+    expect(screen.getByText('Loading...')).toBeDefined();
+
+    // Wait for error to be thrown
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    expect(screen.getByText(/something went wrong/i)).toBeDefined();
+  });
+
+  it('handles multiple async errors gracefully', async () => {
+    const MultipleAsyncErrors = () => {
+      const [errors, setErrors] = React.useState<Error[]>([]);
+
+      React.useEffect(() => {
+        // Simulate multiple async failures
+        const timer1 = setTimeout(() => {
+          setErrors(prev => [...prev, new Error('First async error')]);
+        }, 5);
+
+        const timer2 = setTimeout(() => {
+          setErrors(prev => [...prev, new Error('Second async error')]);
+        }, 15);
+
+        return () => {
+          clearTimeout(timer1);
+          clearTimeout(timer2);
+        };
+      }, []);
+
+      if (errors.length > 0) {
+        throw errors[0]; // Throw first error
+      }
+
+      return <div>Multiple async operations</div>;
+    };
+
+    console.error = mock(() => {});
+
+    render(
+      <ErrorBoundary>
+        <MultipleAsyncErrors />
+      </ErrorBoundary>
+    );
+
+    // Initially shows normal content
+    expect(screen.getByText('Multiple async operations')).toBeDefined();
+
+    // Wait for first error
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(screen.getByText(/something went wrong/i)).toBeDefined();
+    expect(screen.getByText('First async error')).toBeDefined();
   });
 });

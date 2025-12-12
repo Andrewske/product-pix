@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'bun:test';
 import { getMimeType, computeHash, resolveSourcePath } from '@bench/core/source-image';
 
 describe('source-image', () => {
