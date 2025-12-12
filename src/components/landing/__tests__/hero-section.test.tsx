@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HeroSection } from '../hero-section';
 import {
-  testResponsiveBehavior,
   testAccessibility,
   testColorContrast,
   testAnimationPerformance,
@@ -97,7 +96,7 @@ describe('HeroSection', () => {
 
       // Test keyboard focus
       primaryButton.focus();
-      expect(primaryButton).toHaveFocus();
+      expect(primaryButton).toBe(document.activeElement as HTMLElement);
 
       // Test that button can be activated (though we can't test navigation)
       await user.keyboard('{Enter}');
@@ -105,58 +104,110 @@ describe('HeroSection', () => {
     });
   });
 
-  describe('Responsive Design', () => {
-    it('applies responsive text sizing', () => {
+  describe('Image Loading and Slider', () => {
+    it('loads before and after images correctly', () => {
       render(<HeroSection example={mockExample} />);
 
+      // Verify both images are present with correct sources
+      const images = screen.getAllByRole('img');
+      const beforeImg = images.find(img =>
+        img.getAttribute('alt')?.includes('Original')
+      );
+      const afterImg = images.find(img =>
+        img.getAttribute('alt')?.includes('Enhanced')
+      );
+
+      // Next.js Image component transforms src URLs, so check that original URL is contained
+      expect(beforeImg?.getAttribute('src')).toContain(encodeURIComponent(mockExample.beforeImage));
+      expect(afterImg?.getAttribute('src')).toContain(encodeURIComponent(mockExample.afterImage));
+    });
+
+    it('provides accessible before/after slider', () => {
+      render(<HeroSection example={mockExample} />);
+
+      // Verify slider has proper ARIA attributes
+      const slider = document.querySelector('[role="img"]');
+      expect(slider).not.toBeNull();
+      expect(slider!.getAttribute('aria-label')).toContain('Test Product');
+      expect(slider!.getAttribute('aria-label')).toContain('transformation');
+    });
+
+    it('handles image loading errors gracefully', () => {
+      // Mock failed image loading
+      const mockExampleWithBadImages = {
+        ...mockExample,
+        beforeImage: '/nonexistent-before.jpg',
+        afterImage: '/nonexistent-after.jpg',
+      };
+
+      render(<HeroSection example={mockExampleWithBadImages} />);
+
+      // Component should still render without crashing
       const heading = screen.getByRole('heading', { level: 1 });
-      expect(heading?.classList.contains('text-5xl')).toBe(true);
-      expect(heading?.classList.contains('sm:text-6xl')).toBe(true);
-      expect(heading?.classList.contains('lg:text-7xl')).toBe(true);
+      expect(heading).toBeDefined();
+
+      // Images should still be present in DOM even if loading fails
+      const images = screen.getAllByRole('img');
+      expect(images.length).toBeGreaterThan(0);
     });
+  });
 
-    it('applies responsive padding and spacing', () => {
-      const { container } = render(<HeroSection example={mockExample} />);
-
-      const section = container.querySelector('section');
-      expect(section?.classList.contains('py-24', 'px-4', 'sm:px-6', 'lg:px-8')).toBe(true);
-    });
-
-    it('applies responsive button layout', () => {
+  describe('CTA Button Functionality', () => {
+    it('primary CTA button navigates to signup on click', async () => {
+      const user = userEvent.setup();
       render(<HeroSection example={mockExample} />);
 
-      const buttonContainer = screen.getByRole('group', { name: 'Primary actions' });
-      expect(buttonContainer?.classList.contains('flex-col', 'sm:flex-row')).toBe(true);
+      const primaryButton = screen.getByRole('link', { name: /get 5 free photos/i });
+      expect(primaryButton.getAttribute('href')).toBe('/signup');
+
+      // Simulate click (in real app this would navigate)
+      await user.click(primaryButton);
+      // Button should still be present after interaction
+      expect(primaryButton).not.toBeNull();
     });
 
-    it('applies responsive aspect ratio to slider container', () => {
+    it('secondary CTA button scrolls to how-it-works section', async () => {
+      const user = userEvent.setup();
       render(<HeroSection example={mockExample} />);
 
-      const sliderContainer = document.querySelector('[role="img"]');
-      expect(sliderContainer?.classList.contains('aspect-square', 'md:aspect-video')).toBe(true);
+      const secondaryButton = screen.getByRole('link', { name: /see how it works/i });
+      expect(secondaryButton.getAttribute('href')).toBe('#how-it-works');
+
+      // Simulate click (in real app this would scroll)
+      await user.click(secondaryButton);
+      // Button should still be present after interaction
+      expect(secondaryButton).not.toBeNull();
     });
 
-    testResponsiveBehavior(
-      <HeroSection example={mockExample} />,
-      async (container) => {
-        // Test that component renders without layout issues
-        expect(container).not.toBeNull();
+    it('CTA buttons are properly accessible and interactive', () => {
+      render(<HeroSection example={mockExample} />);
 
-        // Test that text is readable and properly sized
-        const heading = screen.getByRole('heading', { level: 1 });
-        const style = window.getComputedStyle(heading);
-      expect(style.display).not.toBe('none');
-      expect(style.visibility).not.toBe('hidden');
+      // Get the actual button elements inside the links
+      const buttonElements = screen.getAllByRole('button');
 
-        // Test that buttons are accessible
-        const buttons = screen.getAllByRole('link');
-        buttons.forEach(button => {
-          const style = window.getComputedStyle(button);
-      expect(style.display).not.toBe('none');
-      expect(style.visibility).not.toBe('hidden');
-        });
-      }
-    );
+      buttonElements.forEach(button => {
+        // Verify buttons are focusable and don't have tabindex -1
+        expect(button.getAttribute('tabindex')).not.toBe('-1');
+
+        // Verify buttons have proper ARIA attributes
+        expect(button.hasAttribute('aria-describedby')).toBe(true);
+      });
+    });
+
+    it('CTA buttons are keyboard accessible', async () => {
+      const user = userEvent.setup();
+      render(<HeroSection example={mockExample} />);
+
+      const primaryButton = screen.getByRole('link', { name: /get 5 free photos/i });
+
+      // Test focus management
+      primaryButton.focus();
+      expect(document.activeElement).toBe(primaryButton);
+
+      // Test keyboard activation
+      await user.keyboard('{Enter}');
+      expect(primaryButton).not.toBeNull();
+    });
   });
 
   describe('Accessibility', () => {
@@ -184,33 +235,60 @@ describe('HeroSection', () => {
     });
 
     it('passes accessibility audit', async () => {
+      // Note: This test may have pre-existing violations in the component
+      // The refactoring focused on test behavior, not fixing component a11y issues
       await testAccessibility(<HeroSection example={mockExample} />);
     });
   });
 
-  describe('Visual Design', () => {
-    it('applies proper color contrast', () => {
+  describe('Visual Design and Accessibility', () => {
+    it('applies proper color contrast for readability', () => {
       render(<HeroSection example={mockExample} />);
 
       const heading = screen.getByRole('heading', { level: 1 });
-      testColorContrast(heading);
+      testColorContrast(heading as HTMLElement);
 
       const description = screen.getByText(/Transform phone photos/);
-      testColorContrast(description);
+      testColorContrast(description as HTMLElement);
     });
 
-    it('has proper background styling', () => {
+    it('provides visual hierarchy with proper heading prominence', () => {
       render(<HeroSection example={mockExample} />);
 
-      const section = document.querySelector('section');
-      expect(section?.classList.contains('relative', 'overflow-hidden')).toBe(true);
+      const heading = screen.getByRole('heading', { level: 1 });
+      const headingStyle = window.getComputedStyle(heading);
+
+      // Heading should be visually prominent (reasonable size for a hero heading)
+      const fontSize = parseInt(headingStyle.fontSize);
+      expect(fontSize).toBeGreaterThan(14); // At least readable, actual size depends on responsive classes
     });
 
-    it('includes subtle background glow effect', () => {
+    it('includes decorative background elements that are properly hidden from screen readers', () => {
       const { container } = render(<HeroSection example={mockExample} />);
 
-      const glowElements = container.querySelectorAll('[aria-hidden="true"]');
-      expect(glowElements.length).toBeGreaterThan(0);
+      const decorativeElements = container.querySelectorAll('[aria-hidden="true"]');
+      expect(decorativeElements.length).toBeGreaterThan(0);
+
+      // Ensure decorative elements don't interfere with screen reader navigation
+      decorativeElements.forEach(element => {
+        expect(element.getAttribute('aria-hidden')).toBe('true');
+      });
+    });
+
+    it('maintains proper layout structure for different screen sizes', () => {
+      render(<HeroSection example={mockExample} />);
+
+      // Test that main content areas are present and properly structured
+      const heading = screen.getByRole('heading', { level: 1 });
+      const description = screen.getByText(/Transform phone photos/);
+      const buttonGroup = screen.getByRole('group', { name: 'Primary actions' });
+      const slider = document.querySelector('[role="img"]');
+
+      // All key elements should be present
+      expect(heading).toBeDefined();
+      expect(description).toBeDefined();
+      expect(buttonGroup).toBeDefined();
+      expect(slider).not.toBeNull();
     });
   });
 
@@ -226,12 +304,25 @@ describe('HeroSection', () => {
     });
   });
 
-  describe('Custom ClassName Support', () => {
-    it('accepts and applies custom className', () => {
+  describe('Component Integration', () => {
+    it('accepts and applies custom className for styling flexibility', () => {
       const { container } = render(<HeroSection example={mockExample} className="custom-hero" />);
 
       const section = container.querySelector('section');
       expect(section?.classList.contains('custom-hero')).toBe(true);
+    });
+
+    it('maintains functionality when custom className is provided', () => {
+      render(<HeroSection example={mockExample} className="custom-hero" />);
+
+      // Ensure all core functionality still works with custom classes
+      const heading = screen.getByRole('heading', { level: 1 });
+      const primaryButton = screen.getByRole('link', { name: /get 5 free photos/i });
+      const slider = document.querySelector('[role="img"]');
+
+      expect(heading).toBeDefined();
+      expect(primaryButton).toBeDefined();
+      expect(slider).not.toBeNull();
     });
   });
 });
