@@ -892,6 +892,7 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          is_admin: boolean
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -903,6 +904,7 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
+          is_admin?: boolean
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -914,6 +916,7 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          is_admin?: boolean
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]

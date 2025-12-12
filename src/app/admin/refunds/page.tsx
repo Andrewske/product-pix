@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth/admin';
 import { redirect } from 'next/navigation';
 import { RefundApprovalQueue } from '@/components/admin/refund-approval-queue';
 import { PageContainer } from '@/components/layout/page-container';
@@ -13,14 +14,9 @@ export default async function AdminRefundsPage(): Promise<React.JSX.Element> {
     redirect('/login');
   }
 
-  // Double-check admin status (defense in depth)
-  const { data: userProfile, error } = await supabase
-    .from('users')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
+  const isAdmin = await requireAdmin(user.id);
 
-  if (error || !userProfile?.is_admin) {
+  if (!isAdmin) {
     redirect('/');
   }
 

@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/server';
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth/admin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
   createImageRefundRequest,
@@ -163,15 +164,9 @@ export const POST = withAuth(async (request) => {
 
 export const GET = withAuth(async (request) => {
   try {
-    // Check if user is admin
-    const supabase = await createClient();
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('is_admin')
-      .eq('id', request.user.id)
-      .single();
+    const isAdmin = await requireAdmin(request.user.id);
 
-    if (userError || !userData?.is_admin) {
+    if (!isAdmin) {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
