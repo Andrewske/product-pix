@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RefundApprovalQueue } from '../refund-approval-queue';
+import { logger } from '@/lib/logging';
 
 // Mock fetch
 const mockFetch = mock(() => Promise.resolve({
@@ -176,19 +177,19 @@ describe('RefundApprovalQueue', () => {
   });
 
   it('shows error toast when fetch fails', async () => {
-    mockFetch.mockRejectedValue(new Error('Network error'));
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-    // Mock console.error to avoid test output
-    const consoleSpy = mock(() => {});
-    console.error = consoleSpy;
+    // Mock logger.error to avoid test output
+    const loggerSpy = mock(() => {});
+    logger.error = loggerSpy;
 
     render(<RefundApprovalQueue />);
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Error fetching pending requests:', expect.any(Error));
+      expect(loggerSpy).toHaveBeenCalledWith('Error fetching pending requests', { error: expect.any(Error) });
     });
 
-    console.error = console.error; // Restore
+    logger.error = logger.error; // Restore
   });
 
   it('shows error toast when approve fails', async () => {
@@ -218,9 +219,9 @@ describe('RefundApprovalQueue', () => {
       })
       .mockRejectedValueOnce(new Error('Approve failed'));
 
-    // Mock console.error to avoid test output
-    const consoleSpy = mock(() => {});
-    console.error = consoleSpy;
+    // Mock logger.error to avoid test output
+    const loggerSpy = mock(() => {});
+    logger.error = loggerSpy;
 
     render(<RefundApprovalQueue />);
 
@@ -232,9 +233,9 @@ describe('RefundApprovalQueue', () => {
     await user.click(approveButton);
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Error approving refund:', expect.any(Error));
+      expect(loggerSpy).toHaveBeenCalledWith('Error approving refund', { error: expect.any(Error), refundId: 'refund-1' });
     });
 
-    console.error = console.error; // Restore
+    logger.error = logger.error; // Restore
   });
 });

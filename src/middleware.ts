@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logging';
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
@@ -36,7 +37,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     // Allow admin access
     return NextResponse.next();
   } catch (error) {
-    console.error('Admin middleware error:', error);
+    logger.error('Admin middleware error', {
+      error,
+      pathname: request.nextUrl.pathname,
+    });
     // On error, redirect to home for safety
     return NextResponse.redirect(new URL('/', request.url));
   }
