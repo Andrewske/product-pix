@@ -56,7 +56,7 @@ describe('withAuth', () => {
     const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
     const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
-    const response = await wrappedHandler(mockRequest, { params: mockParams });
+    const response = await wrappedHandler(mockRequest, { params: Promise.resolve(mockParams) });
 
     expect(mockCreateClient).toHaveBeenCalledTimes(1);
     expect(mockGetUser).toHaveBeenCalledTimes(1);
@@ -79,7 +79,7 @@ describe('withAuth', () => {
     const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
     const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
-    const response = await wrappedHandler(mockRequest, { params: mockParams });
+    const response = await wrappedHandler(mockRequest, { params: Promise.resolve(mockParams) });
 
     expect(mockHandler).not.toHaveBeenCalled();
     expect(response.status).toBe(401);
@@ -96,7 +96,7 @@ describe('withAuth', () => {
     const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
     const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
-    const response = await wrappedHandler(mockRequest, { params: mockParams });
+    const response = await wrappedHandler(mockRequest, { params: Promise.resolve(mockParams) });
 
     expect(mockHandler).not.toHaveBeenCalled();
     expect(response.status).toBe(401);
@@ -110,7 +110,7 @@ describe('withAuth', () => {
     const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
     const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
-    const response = await wrappedHandler(mockRequest, { params: mockParams });
+    const response = await wrappedHandler(mockRequest, { params: Promise.resolve(mockParams) });
 
     expect(mockHandler).not.toHaveBeenCalled();
     expect(response.status).toBe(401);
@@ -124,7 +124,7 @@ describe('withAuth', () => {
     const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
     const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
-    const response = await wrappedHandler(mockRequest, { params: mockParams });
+    const response = await wrappedHandler(mockRequest, { params: Promise.resolve(mockParams) });
 
     expect(mockHandler).not.toHaveBeenCalled();
     expect(response.status).toBe(401);
@@ -144,7 +144,7 @@ describe('withAuth', () => {
     const mockHandler = mock(() => Promise.resolve(NextResponse.json({ success: true })));
 
     const wrappedHandler = withAuth<CustomParams>(mockHandler as unknown as AuthenticatedHandler<CustomParams>);
-    const response = await wrappedHandler(mockRequest, { params: customParams });
+    const response = await wrappedHandler(mockRequest, { params: Promise.resolve(customParams) });
 
     expect(mockHandler).toHaveBeenCalledWith(
       expect.objectContaining({ user: mockUser }),
@@ -168,7 +168,7 @@ describe('withAuth', () => {
     });
 
     const wrappedHandler = withAuth(mockHandler as unknown as AuthenticatedHandler);
-    const response = await wrappedHandler(mockRequest, { params: mockParams });
+    const response = await wrappedHandler(mockRequest, { params: Promise.resolve(mockParams) });
 
     expect(response.status).toBe(200);
     const body = await response.json();

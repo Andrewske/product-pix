@@ -1,12 +1,13 @@
 import { describe, it, expect, mock } from 'bun:test';
+import { NextRequest } from 'next/server';
 
 // Mock the auth function with user injection
 const mockWithAuth = mock((handler: any) => {
-  return async (request: Request) => {
+  return async (request: Request, context?: any) => {
     const authenticatedRequest = Object.assign(request, {
       user: { id: 'user-123' }
     });
-    return handler(authenticatedRequest);
+    return handler(authenticatedRequest, context);
   };
 });
 mock.module('@/lib/auth/api-middleware', () => ({
@@ -28,8 +29,8 @@ describe('Cash Refund Eligibility API', () => {
   });
 
   it('should call getEligibleCashRefunds with user ID', async () => {
-    const mockRequest = new Request('http://localhost/api/refunds/cash/eligibility');
-    const response = await GET(mockRequest);
+    const mockRequest = new NextRequest('http://localhost/api/refunds/cash/eligibility');
+    const response = await GET(mockRequest, { params: Promise.resolve({}) });
 
     expect(mockGetEligibleCashRefunds).toHaveBeenCalledWith('user-123');
     expect(response.status).toBe(200);

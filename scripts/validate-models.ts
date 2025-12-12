@@ -30,13 +30,11 @@ function getRequiredModels(): { critical: string[]; environmentDefaults: Record<
 /**
  * Load and parse pricing configuration from TOML file
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function loadFullConfig(): { pricing: Record<string, Record<string, any>>; defaults: Record<string, any> } {
   const configPath = resolve(process.cwd(), 'prompt-bench.toml');
 
   try {
     const fileContent = readFileSync(configPath, 'utf-8');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsed = parse(fileContent) as any;
 
     if (!parsed.pricing) {
@@ -55,7 +53,6 @@ function loadFullConfig(): { pricing: Record<string, Record<string, any>>; defau
 /**
  * Extract all configured models from pricing config
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getConfiguredModels(pricingConfig: Record<string, Record<string, any>>): Set<string> {
   const configuredModels = new Set<string>();
 

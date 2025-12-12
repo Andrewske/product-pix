@@ -10,7 +10,7 @@ const mockFetch = mock(() => Promise.resolve({
   json: () => Promise.resolve({ refunds: [] }),
 } as Response));
 
-global.fetch = mockFetch as typeof fetch;
+global.fetch = mockFetch as unknown as typeof fetch;
 
 describe('RefundApprovalQueue', () => {
   beforeEach(() => {

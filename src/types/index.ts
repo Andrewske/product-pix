@@ -30,6 +30,21 @@ export interface EligiblePurchase {
   refundAmount90Cents: number;
 }
 
+export interface ImageRefundRequest {
+  id: string;
+  user_id: string;
+  image_id: string;
+  job_id: string;
+  status: 'pending_auto' | 'pending_admin' | 'approved' | 'rejected';
+  reason: 'poor_quality' | 'wrong_style' | 'technical_issue' | 'other';
+  feedback: string | null;
+  credits_refunded: number;
+  reviewed_by?: string | null;
+  admin_notes?: string | null;
+  requested_at: string;
+  processed_at?: string | null;
+}
+
 export interface PendingRefundWithDetails extends ImageRefundRequest {
   users: {
     email: string;

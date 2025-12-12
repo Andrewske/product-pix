@@ -115,7 +115,7 @@ export const POST = withAuth(async (request) => {
       });
 
       // Update with approved status and processed timestamp
-      await adminSupabase
+      const { error: updateError } = await adminSupabase
         .from('image_refund_requests')
         .update({
           status: 'approved',

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'bun:test';
 import { calculateCost } from '../calculator';
 import { clearPricingCache } from '../config';
+import type { Provider } from '../types';
 
 interface ValidationFixture {
   modelId: string;
@@ -9,7 +10,7 @@ interface ValidationFixture {
     inputCost?: number;
     outputCost?: number;
     total?: number;
-    provider: string;
+    provider: Provider;
   };
   expectedError?: string;
   source: string;

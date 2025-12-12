@@ -1,12 +1,13 @@
 import { describe, it, expect, mock } from 'bun:test';
+import { NextRequest } from 'next/server';
 
 // Mock the auth function with user injection
 const mockWithAuth = mock((handler: any) => {
-  return async (request: Request) => {
+  return async (request: Request, context?: any) => {
     const authenticatedRequest = Object.assign(request, {
       user: { id: 'user-123' }
     });
-    return handler(authenticatedRequest);
+    return handler(authenticatedRequest, context);
   };
 });
 mock.module('@/lib/auth/api-middleware', () => ({
@@ -65,7 +66,7 @@ describe('Cash Refund Request API', () => {
   });
 
   it('should process 100% refund successfully', async () => {
-    const mockRequest = new Request('http://localhost/api/refunds/cash', {
+    const mockRequest = new NextRequest('http://localhost/api/refunds/cash', {
       method: 'POST',
       body: JSON.stringify({
         purchaseId: 'purchase-123',
@@ -73,7 +74,7 @@ describe('Cash Refund Request API', () => {
       }),
     });
 
-    const response = await POST(mockRequest);
+    const response = await POST(mockRequest, { params: Promise.resolve({}) });
     const result = await response.json();
 
     expect(response.status).toBe(200);

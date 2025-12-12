@@ -13,6 +13,7 @@ describe('RefundCard', () => {
     credits_refunded: 50,
     user_id: 'user-1',
     image_id: 'image-1',
+    job_id: 'job-1',
     status: 'pending_admin',
     users: {
       email: 'user@example.com',

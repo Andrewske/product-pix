@@ -9,7 +9,7 @@ const mockFetch = mock(() => Promise.resolve({
   json: () => Promise.resolve({ success: true, messageId: 'test-id' }),
 } as Response))
 
-global.fetch = mockFetch as typeof fetch
+global.fetch = mockFetch as unknown as typeof fetch
 
 describe('ContactForm', () => {
   beforeEach(() => {

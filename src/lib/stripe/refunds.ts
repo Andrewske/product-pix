@@ -1,4 +1,5 @@
 // src/lib/stripe/refunds.ts
+import Stripe from 'stripe';
 import { stripe } from './client';
 
 export async function createStripeRefund(params: {

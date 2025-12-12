@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, spyOn } from 'bun:test';
-import type { SpyInstance } from 'bun:test';
 import { createLogger } from '../index';
 
 describe('createLogger', () => {
-  let stdoutSpy: SpyInstance<typeof process.stdout.write>;
-  let stderrSpy: SpyInstance<typeof process.stderr.write>;
+  let stdoutSpy: ReturnType<typeof spyOn>;
+  let stderrSpy: ReturnType<typeof spyOn>;
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {

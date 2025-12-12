@@ -1,14 +1,17 @@
 // src/lib/ai/__tests__/product-analyzer.test.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
-import type { SpyInstance } from 'bun:test';
 import type { ProductAnalysis } from '../types';
 
 // Create mock functions
-const mockGenerateObject = mock(() => {});
-const mockGoogle = mock(() => 'mocked-google-model');
+const mockGenerateObject = mock(() => Promise.resolve({}));
+const mockGoogle = mock((modelName: string) => 'mocked-google-model');
 const mockLoggerError = mock(() => {});
-const mockNormalizeUsage = mock(() => {});
+const mockNormalizeUsage = mock(() => ({
+  promptTokens: 150,
+  completionTokens: 200,
+  totalTokens: 350,
+}));
 
 // Mock modules
 mock.module('ai', () => ({
@@ -58,7 +61,7 @@ mock.module('../usage-types', () => ({
 const { analyzeProductImage } = await import('../product-analyzer');
 const { env } = await import('@/lib/env');
 const loggingModule = await import('@/lib/logging');
-let loggerErrorSpy: SpyInstance<typeof loggingModule.logger.error>;
+let loggerErrorSpy: ReturnType<typeof spyOn>;
 
 describe('analyzeProductImage', () => {
   const mockImageBuffer = Buffer.from('fake-image-data');
@@ -156,9 +159,9 @@ describe('analyzeProductImage', () => {
     };
 
     mockGenerateObject.mockResolvedValue({
-      object: partialAnalysisResult,
+      object: mockAnalysisResult,
       usage: { inputTokens: 150, outputTokens: 200 },
-    } as any);
+    });
 
     const result = await analyzeProductImage(mockImageBuffer, mockMimeType);
 
@@ -263,7 +266,7 @@ describe('analyzeProductImage', () => {
 
     await analyzeProductImage(mockImageBuffer, mockMimeType);
 
-    const callArgs = mockGenerateObject.mock.calls[0][0];
+    const callArgs = (mockGenerateObject.mock.calls as any)[0][0];
 
     expect(callArgs).toHaveProperty('model');
     expect(callArgs).toHaveProperty('messages');
@@ -283,7 +286,7 @@ describe('analyzeProductImage', () => {
 
     await analyzeProductImage(mockImageBuffer, mockMimeType);
 
-    const callArgs = mockGenerateObject.mock.calls[0][0];
+    const callArgs = (mockGenerateObject.mock.calls as any)[0][0];
     const messages = (callArgs as any).messages;
 
     expect(messages).toHaveLength(1);

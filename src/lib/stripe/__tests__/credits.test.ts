@@ -65,13 +65,13 @@ describe('grantCreditsForPayment', () => {
     mockSupabase.from.mockReturnValueOnce({
       insert: () => ({
         select: () => ({
-          single: () => Promise.resolve({
-            data: null,
-            error: { code: '23505' } // POSTGRES_UNIQUE_VIOLATION
-          })
+        single: () => Promise.resolve({
+          data: null,
+          error: { code: '23505' } // POSTGRES_UNIQUE_VIOLATION
+        })
         })
       })
-    });
+    } as any);
 
     const params = {
       userId: 'user-123',
@@ -92,13 +92,13 @@ describe('grantCreditsForPayment', () => {
     mockSupabase.from.mockReturnValueOnce({
       insert: () => ({
         select: () => ({
-          single: () => Promise.resolve({
-            data: null,
-            error: { code: '99999', message: 'Unexpected error' }
-          })
+        single: () => Promise.resolve({
+          data: null,
+          error: { code: '99999', message: 'Unexpected error' }
+        })
         })
       })
-    });
+    } as any);
 
     const params = {
       userId: 'user-123',

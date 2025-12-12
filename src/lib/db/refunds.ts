@@ -134,6 +134,8 @@ export const getPendingAdminRefunds = async (): Promise<ImageRefundRequest[]> =>
       credits_refunded,
       user_id,
       image_id,
+      job_id,
+      status,
       users!inner(email, display_name),
       generated_images!inner(public_url)
     `)

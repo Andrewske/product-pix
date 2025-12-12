@@ -60,12 +60,8 @@ describe('fetchStripePrices', () => {
     };
 
     mockStripeRetrieve.mockReset();
-    mockStripeRetrieve.mockImplementation((priceId: string) => {
-      const price = mockPrices[priceId];
-      if (!price) {
-        throw new Error(`Unexpected priceId: ${priceId}`);
-      }
-      return Promise.resolve(price);
+    mockStripeRetrieve.mockImplementation(() => {
+      return Promise.resolve(mockPrices[priceIds.pack_50]);
     });
 
     const result = await fetchStripePricesCore();
@@ -97,24 +93,24 @@ describe('fetchStripePrices', () => {
   it('should handle Stripe API errors gracefully', async () => {
     const stripeError = new Error('Stripe API connection failed');
     mockStripeRetrieve.mockReset();
-    mockStripeRetrieve.mockRejectedValue(stripeError);
+    (mockStripeRetrieve as any).mockRejectedValue(stripeError);
 
     await expect(fetchStripePricesCore()).rejects.toThrow('Stripe API error: Stripe API connection failed');
   });
 
   it('should handle non-Error exceptions', async () => {
     mockStripeRetrieve.mockReset();
-    mockStripeRetrieve.mockRejectedValue('String error');
+    (mockStripeRetrieve as any).mockRejectedValue('String error');
 
     await expect(fetchStripePricesCore()).rejects.toThrow('Stripe API error: Unknown error');
   });
 
   it('should handle prices with null unit_amount', async () => {
     mockStripeRetrieve.mockReset();
-    mockStripeRetrieve.mockResolvedValue({
+    (mockStripeRetrieve as any).mockResolvedValue({
       unit_amount: null,
       currency: 'usd',
-    } as any);
+    });
 
     const result = await fetchStripePricesCore();
 

@@ -13,7 +13,7 @@ const mockGetPricing = mock(async () => ({
     freeCreditsOnSignup: 10,
   },
 }));
-const mockStripeSessionsCreate = mock(async () => ({ id: '', url: '' }));
+const mockStripeSessionsCreate = mock(async () => ({ id: '', url: '' as string | null }));
 
 // Mock Supabase client first (required by requireAuth)
 mock.module('@/lib/supabase/server', () => ({

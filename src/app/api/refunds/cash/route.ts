@@ -63,14 +63,24 @@ export const POST = withAuth(async (request) => {
       },
     });
 
+    // Create cash refund request record first to get the ID
+    const cashRefundRequest = await createCashRefundRequest({
+      userId,
+      purchaseId,
+      creditsRefunded: purchase.creditsUnused,
+      refundAmountCents,
+      refundPercentage: percentage,
+      stripeRefundId: stripeRefund.id,
+    });
+
     // Deduct credits immediately
     const { error: deductError } = await adminClient.rpc(
       'deduct_credits_for_cash_refund',
       {
         p_user_id: userId,
+        p_stripe_purchase_id: purchaseId,
         p_amount: purchase.creditsUnused,
-        p_purchase_id: purchaseId,
-        p_description: `Cash refund (${percentage}%)`,
+        p_cash_refund_id: cashRefundRequest.id,
       }
     );
 
@@ -82,16 +92,6 @@ export const POST = withAuth(async (request) => {
         { status: 500 }
       );
     }
-
-    // Create cash refund request record
-    await createCashRefundRequest({
-      userId,
-      purchaseId,
-      creditsRefunded: purchase.creditsUnused,
-      refundAmountCents,
-      refundPercentage: percentage,
-      stripeRefundId: stripeRefund.id,
-    });
 
     return NextResponse.json({
       success: true,
