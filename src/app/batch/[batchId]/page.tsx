@@ -1,5 +1,6 @@
 // src/app/batch/[batchId]/page.tsx
 import { redirect } from 'next/navigation';
+import { requireAuth } from '@/lib/auth/server';
 import { createClient } from '@/lib/supabase/server';
 import { getBatchJob, getBatchItems } from '@/lib/db/batch';
 import { BatchStatus } from '@/components/batch/batch-status';
@@ -15,12 +16,8 @@ interface BatchDetailPageProps {
 
 export default async function BatchDetailPage({ params }: BatchDetailPageProps) {
   const { batchId } = await params;
+  const user = await requireAuth();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
 
   const batch = await getBatchJob(batchId);
 

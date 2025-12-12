@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireAuth } from '@/lib/auth/server';
 import { getUserGeneratedImages } from '@/lib/db/generated-images';
 import { getUserBatches } from '@/lib/db/batch';
 import { ImageGallery } from '@/components/image-gallery';
@@ -12,12 +11,7 @@ import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  const user = await requireAuth();
 
   const images = await getUserGeneratedImages(user.id);
   const recentBatches = await getUserBatches(user.id, { limit: 3 });

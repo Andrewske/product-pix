@@ -1,6 +1,5 @@
 // src/app/batch/page.tsx
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/auth/server';
 import { getUserBatches } from '@/lib/db/batch';
 import { BatchList } from '@/components/batch/batch-list';
 import { PageContainer } from '@/components/layout/page-container';
@@ -9,12 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default async function BatchListPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  const user = await requireAuth();
 
   const batches = await getUserBatches(user.id, { limit: 50 });
 

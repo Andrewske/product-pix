@@ -1,17 +1,11 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireAuth } from '@/lib/auth/server';
 import { Suspense } from 'react';
 import { SettingsTabs } from '@/components/settings';
 import { PageContainer } from '@/components/layout/page-container';
 import { Spinner } from '@/components/ui/spinner';
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  await requireAuth();
 
   return (
     <PageContainer narrow>
