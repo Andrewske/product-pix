@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { createImageRefundRequest, getUserRefundCount, approveImageRefund, getPendingAdminRefunds } from '../refunds';
+import { createImageRefundRequest, getUserRefundCount, approveImageRefund, getPendingAdminRefunds, approveRefund } from '../refunds';
 
 describe('Refund Utility Functions', () => {
   describe('createImageRefundRequest', () => {
@@ -23,6 +23,12 @@ describe('Refund Utility Functions', () => {
   describe('getPendingAdminRefunds', () => {
     it('should be a function', () => {
       expect(typeof getPendingAdminRefunds).toBe('function');
+    });
+  });
+
+  describe('approveRefund', () => {
+    it('should be a function', () => {
+      expect(typeof approveRefund).toBe('function');
     });
   });
 });

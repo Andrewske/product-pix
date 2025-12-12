@@ -19,11 +19,11 @@ export const POST = withAuth(async (request, { params }) => {
     const supabase = await createClient();
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('tier')
+      .select('is_admin')
       .eq('id', request.user.id)
       .single();
 
-    if (userError || userData?.tier !== 'business') { // Assuming business tier = admin
+    if (userError || !userData?.is_admin) {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }

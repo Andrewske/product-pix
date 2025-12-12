@@ -29,3 +29,14 @@ export interface EligiblePurchase {
   refundAmount100Cents: number;
   refundAmount90Cents: number;
 }
+
+export interface PendingRefundWithDetails extends ImageRefundRequest {
+  users: {
+    email: string;
+    display_name?: string;
+  };
+  generated_images: {
+    public_url: string;
+    title?: string;
+  };
+}
