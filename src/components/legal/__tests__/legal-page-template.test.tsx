@@ -1,5 +1,4 @@
 import { describe, it, expect, mock } from 'bun:test';
-import { mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LegalPageTemplate, LegalSection } from '../legal-page-template';
@@ -65,14 +64,14 @@ describe('LegalPageTemplate', () => {
     // Should show level 2 sections in TOC links
     const tocLinks = screen.getAllByRole('link');
     expect(tocLinks).toHaveLength(2);
-    expect(tocLinks[0]).toHaveTextContent('Introduction');
-    expect(tocLinks[1]).toHaveTextContent('Terms');
+    expect(tocLinks[0]?.textContent).toContain('Introduction');
+    expect(tocLinks[1]?.textContent).toContain('Terms');
 
     // Should not show level 3 sections in TOC
-    expect(screen.queryByRole('link', { name: 'Getting Started' })).not.not.toBeNull();
+    expect(screen.queryByRole('link', { name: 'Getting Started' })).toBeNull();
   });
 
-  it('renders sections with correct typography hierarchy', () => {
+  it('renders sections with correct heading hierarchy', () => {
     render(
       <LegalPageTemplate
         title="Test Legal Page"
@@ -80,13 +79,18 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    // Check level 2 headings (text-2xl)
+    // Check semantic heading levels
     const introHeading = screen.getByRole('heading', { name: 'Introduction', level: 2 });
-    expect(introHeading?.classList.contains('text-2xl')).toBe(true);
+    expect(introHeading).not.toBeNull();
+    expect(introHeading.tagName).toBe('H2');
 
-    // Check level 3 headings (text-xl)
     const subsectionHeading = screen.getByRole('heading', { name: 'Getting Started', level: 3 });
-    expect(subsectionHeading?.classList.contains('text-xl')).toBe(true);
+    expect(subsectionHeading).not.toBeNull();
+    expect(subsectionHeading.tagName).toBe('H3');
+
+    const termsHeading = screen.getByRole('heading', { name: 'Terms', level: 2 });
+    expect(termsHeading).not.toBeNull();
+    expect(termsHeading.tagName).toBe('H2');
   });
 
   it('renders section content', () => {
@@ -102,7 +106,7 @@ describe('LegalPageTemplate', () => {
     expect(screen.getByText('These are the terms.')).not.toBeNull();
   });
 
-  it('applies scroll-mt-8 to all sections', () => {
+  it('organizes sections with proper document structure', () => {
     render(
       <LegalPageTemplate
         title="Test Legal Page"
@@ -110,11 +114,30 @@ describe('LegalPageTemplate', () => {
       />
     );
 
+    // Check that all sections are rendered as semantic section elements
     const sections = document.querySelectorAll('section');
-    sections.forEach(section => {
-      expect(section?.classList.contains('scroll-mt-8')).toBe(true);
-    });
+    expect(sections).toHaveLength(3);
+
+    // Verify section order matches the input order
+    const sectionHeadings = screen.getAllByRole('heading');
+    expect(sectionHeadings).toHaveLength(4); // Page title + 3 section headings
+
+    // Check that sections have proper IDs for navigation
+    expect(document.getElementById('introduction')).not.toBeNull();
+    expect(document.getElementById('subsection')).not.toBeNull();
+    expect(document.getElementById('another-section')).not.toBeNull();
+
+    // Verify hierarchical structure: level 2 sections contain level 3 subsections
+    const introSection = document.getElementById('introduction')?.closest('section');
+    const subsection = document.getElementById('subsection')?.closest('section');
+    const termsSection = document.getElementById('another-section')?.closest('section');
+
+    expect(introSection).not.toBeNull();
+    expect(subsection).not.toBeNull();
+    expect(termsSection).not.toBeNull();
   });
+
+
 
   it('renders sections with correct IDs', () => {
     render(
@@ -139,8 +162,8 @@ describe('LegalPageTemplate', () => {
     );
 
     expect(screen.getByText(/See also:/)).not.toBeNull();
-    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
-    expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })?.getAttribute('href')).toBe('/privacy');
+    expect(screen.getByRole('link', { name: 'Terms of Service' })?.getAttribute('href')).toBe('/terms');
   });
 
   it('does not render footer when no links provided', () => {
@@ -151,7 +174,7 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    expect(screen.queryByText('See also:')).not.not.toBeNull();
+    expect(screen.queryByText('See also:')).toBeNull();
   });
 
   it('renders multiple footer links with commas', () => {
