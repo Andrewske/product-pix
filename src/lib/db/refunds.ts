@@ -127,12 +127,18 @@ export const getPendingAdminRefunds = async (): Promise<ImageRefundRequest[]> =>
   const { data, error } = await supabase
     .from('image_refund_requests')
     .select(`
-      *,
+      id,
+      reason,
+      feedback,
+      requested_at,
+      credits_refunded,
+      user_id,
+      image_id,
       users!inner(email, display_name),
-      generated_images(public_url, title)
+      generated_images!inner(public_url)
     `)
     .eq('status', 'pending_admin')
-    .order('requested_at', { ascending: false });
+    .order('requested_at', { ascending: true });
 
   if (error) {
     console.error('Error fetching pending admin refunds:', error);
@@ -141,6 +147,16 @@ export const getPendingAdminRefunds = async (): Promise<ImageRefundRequest[]> =>
 
   return data;
 };
+
+export async function approveRefund(
+  refundId: string,
+  adminId: string,
+  _notes?: string
+): Promise<boolean> {
+  // Notes parameter reserved for future audit trail
+  // For now, just call the existing approve function
+  return await approveImageRefund(refundId, adminId);
+}
 
 export async function getEligibleCashRefunds(userId: string): Promise<EligiblePurchase[]> {
   const supabase = await createClient();
