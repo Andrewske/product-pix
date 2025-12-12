@@ -6,37 +6,100 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertBox } from '@/components/ui/alert-box';
+import { contactFormSchema, ContactFormData } from '@/lib/validation/contact';
+
+type FieldErrors = {
+  name?: string;
+  email?: string;
+  message?: string;
+};
 
 export function ContactForm(): React.ReactElement {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    message: '',
+  });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleBlur = (field: keyof ContactFormData) => {
+    const parsed = contactFormSchema.shape[field].safeParse(formData[field]);
+    if (!parsed.success) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [field]: parsed.error.issues[0].message,
+      }));
+    } else {
+      setFieldErrors(prev => ({
+        ...prev,
+        [field]: undefined,
+      }));
+    }
+  };
+
+  const handleChange = (field: keyof ContactFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear field error when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [field]: undefined,
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setError(null);
+
+    // Validate entire form
+    const parsed = contactFormSchema.safeParse(formData);
+    if (!parsed.success) {
+      const errors: FieldErrors = {};
+      parsed.error.issues.forEach(issue => {
+        const field = issue.path[0] as keyof ContactFormData;
+        errors[field] = issue.message;
+      });
+      setFieldErrors(errors);
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify(formData),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        if (response.status === 400 && result.details) {
+          // Handle validation errors from server
+          const errors: FieldErrors = {};
+          result.details.forEach((issue: any) => {
+            const field = issue.path[0] as keyof ContactFormData;
+            errors[field] = issue.message;
+          });
+          setFieldErrors(errors);
+        } else if (response.status === 429) {
+          setError('Too many requests. Please try again later.');
+        } else {
+          setError(result.error || 'Failed to send message');
+        }
+        return;
       }
 
       setSubmitted(true);
-      setName('');
-      setEmail('');
-      setMessage('');
+      setFormData({ name: '', email: '', message: '' });
+      setFieldErrors({});
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      setError('Failed to send message. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -53,7 +116,12 @@ export function ContactForm(): React.ReactElement {
         </div>
         <Button
           variant="outline"
-          onClick={() => setSubmitted(false)}
+          onClick={() => {
+            setSubmitted(false);
+            setFormData({ name: '', email: '', message: '' });
+            setFieldErrors({});
+            setError(null);
+          }}
           className="w-full"
         >
           Send another message
@@ -70,24 +138,34 @@ export function ContactForm(): React.ReactElement {
           <Input
             id="name"
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={formData.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            onBlur={() => handleBlur('name')}
             placeholder="Your name"
             required
             disabled={isSubmitting}
+            aria-invalid={!!fieldErrors.name}
           />
+          {fieldErrors.name && (
+            <p className="text-sm text-destructive">{fieldErrors.name}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            onBlur={() => handleBlur('email')}
             placeholder="your@email.com"
             required
             disabled={isSubmitting}
+            aria-invalid={!!fieldErrors.email}
           />
+          {fieldErrors.email && (
+            <p className="text-sm text-destructive">{fieldErrors.email}</p>
+          )}
         </div>
       </div>
 
@@ -95,13 +173,18 @@ export function ContactForm(): React.ReactElement {
         <Label htmlFor="message">Message</Label>
         <Textarea
           id="message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          value={formData.message}
+          onChange={(e) => handleChange('message', e.target.value)}
+          onBlur={() => handleBlur('message')}
           placeholder="How can we help you?"
           rows={5}
           required
           disabled={isSubmitting}
+          aria-invalid={!!fieldErrors.message}
         />
+        {fieldErrors.message && (
+          <p className="text-sm text-destructive">{fieldErrors.message}</p>
+        )}
       </div>
 
       {error && (

@@ -6,3 +6,4 @@ export * from './uploads';
 export * from './batch';
 export * from './billing';
 export * from './templates';
+export * from './contacts';
