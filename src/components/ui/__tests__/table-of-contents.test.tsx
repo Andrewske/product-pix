@@ -1,3 +1,4 @@
+import { describe, it, expect, mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TableOfContents } from '../table-of-contents';
@@ -12,25 +13,25 @@ describe('TableOfContents', () => {
   it('renders numbered list with section titles', () => {
     render(<TableOfContents sections={mockSections} />);
 
-    expect(screen.getByText('Introduction')).toBeInTheDocument();
-    expect(screen.getByText('Getting Started')).toBeInTheDocument();
-    expect(screen.getByText('Advanced Features')).toBeInTheDocument();
+    expect(screen.getByText('Introduction')).not.toBeNull();
+    expect(screen.getByText('Getting Started')).not.toBeNull();
+    expect(screen.getByText('Advanced Features')).not.toBeNull();
   });
 
   it('applies card styling', () => {
     const { container } = render(<TableOfContents sections={mockSections} />);
 
     const tocElement = container.firstChild as HTMLElement;
-    expect(tocElement).toHaveClass('bg-card');
-    expect(tocElement).toHaveClass('rounded-lg');
-    expect(tocElement).toHaveClass('border');
+    expect(tocElement?.classList.contains('bg-card')).toBe(true);
+    expect(tocElement?.classList.contains('rounded-lg')).toBe(true);
+    expect(tocElement?.classList.contains('border')).toBe(true);
   });
 
   it('renders as numbered list', () => {
     const { container } = render(<TableOfContents sections={mockSections} />);
 
     const list = container.querySelector('ol');
-    expect(list).toHaveClass('list-decimal');
+    expect(list?.classList.contains('list-decimal')).toBe(true);
   });
 
   it('renders links with correct hrefs', () => {
@@ -38,9 +39,9 @@ describe('TableOfContents', () => {
 
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(3);
-    expect(links[0]).toHaveAttribute('href', '#section-1');
-    expect(links[1]).toHaveAttribute('href', '#section-2');
-    expect(links[2]).toHaveAttribute('href', '#section-3');
+    expect(links[0]?.getAttribute('href')).toBe('#section-1');
+    expect(links[1]?.getAttribute('href')).toBe('#section-2');
+    expect(links[2]?.getAttribute('href')).toBe('#section-3');
   });
 
   it('applies hover effects to links', () => {
@@ -48,13 +49,13 @@ describe('TableOfContents', () => {
 
     const links = container.querySelectorAll('a');
     links.forEach(link => {
-      expect(link).toHaveClass('hover:underline');
+      expect(link?.classList.contains('hover:underline')).toBe(true);
     });
   });
 
   it('scrolls smoothly to anchor when link is clicked', async () => {
     // Mock scrollIntoView
-    const mockScrollIntoView = jest.fn();
+    const mockScrollIntoView = mock(() => {});
     Element.prototype.scrollIntoView = mockScrollIntoView;
 
     // Create a mock element with the target id

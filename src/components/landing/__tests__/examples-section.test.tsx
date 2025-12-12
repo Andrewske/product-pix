@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import { ExamplesSection } from '../examples-section';
 
@@ -26,22 +27,22 @@ describe('ExamplesSection', () => {
   it('renders the section title and description', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
-    expect(screen.getByText('See the Transformation')).toBeInTheDocument();
-    expect(screen.getByText('From phone photos to professional product shots in seconds')).toBeInTheDocument();
+    expect(screen.getByText('See the Transformation')).not.toBeNull();
+    expect(screen.getByText('From phone photos to professional product shots in seconds')).not.toBeNull();
   });
 
   it('renders all example items', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
     // Check that all product names are rendered
-    expect(screen.getByText('Wireless Headphones')).toBeInTheDocument();
-    expect(screen.getByText('Coffee Mug')).toBeInTheDocument();
-    expect(screen.getByText('Leather Wallet')).toBeInTheDocument();
+    expect(screen.getByText('Wireless Headphones')).not.toBeNull();
+    expect(screen.getByText('Coffee Mug')).not.toBeNull();
+    expect(screen.getByText('Leather Wallet')).not.toBeNull();
 
     // Check that all categories are rendered
-    expect(screen.getByText('Electronics')).toBeInTheDocument();
-    expect(screen.getByText('Kitchenware')).toBeInTheDocument();
-    expect(screen.getByText('Accessories')).toBeInTheDocument();
+    expect(screen.getByText('Electronics')).not.toBeNull();
+    expect(screen.getByText('Kitchenware')).not.toBeNull();
+    expect(screen.getByText('Accessories')).not.toBeNull();
   });
 
   it('renders BeforeAfterSlider components for each example', () => {
@@ -56,20 +57,20 @@ describe('ExamplesSection', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
     // Check section has proper ARIA labels
-    expect(screen.getByRole('grid')).toHaveAttribute('aria-label', 'Product transformation examples');
+    expect(screen.getByRole('grid')?.getAttribute('aria-label')).toBe('Product transformation examples');
 
     // Check grid cells have proper labels
     const gridCells = screen.getAllByRole('gridcell');
     expect(gridCells).toHaveLength(3);
-    expect(gridCells[0]).toHaveAttribute('aria-label', 'Example 1: Wireless Headphones transformation');
+    expect(gridCells[0]?.getAttribute('aria-label')).toBe('Example 1: Wireless Headphones transformation');
   });
 
   it('renders section with proper heading structure', () => {
     render(<ExamplesSection examples={mockExamples} />);
 
     const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading).toHaveAttribute('id', 'examples-heading');
-    expect(heading).toHaveTextContent('See the Transformation');
+    expect(heading?.getAttribute('id')).toBe('examples-heading');
+    expect(heading?.textContent).toContain('See the Transformation');
   });
 
   it('applies custom className when provided', () => {
@@ -78,14 +79,16 @@ describe('ExamplesSection', () => {
     );
 
     const section = container.querySelector('section');
-    expect(section).toHaveClass('custom-class');
+    expect(section?.classList.contains('custom-class')).toBe(true);
   });
 
   it('has responsive grid layout', () => {
     const { container } = render(<ExamplesSection examples={mockExamples} />);
 
     const grid = container.querySelector('[class*="grid"]');
-    expect(grid).toHaveClass('grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
+    expect(grid?.classList.contains('grid-cols-1')).toBe(true);
+    expect(grid?.classList.contains('md:grid-cols-2')).toBe(true);
+    expect(grid?.classList.contains('lg:grid-cols-3')).toBe(true);
   });
 
   it('applies staggered animation delays', () => {
@@ -95,9 +98,9 @@ describe('ExamplesSection', () => {
     expect(items).toHaveLength(3);
 
     // Check that transition delays are applied with 200ms increments
-    expect(items[0]).toHaveStyle({ 'transition-delay': '0ms' });
-    expect(items[1]).toHaveStyle({ 'transition-delay': '200ms' });
-    expect(items[2]).toHaveStyle({ 'transition-delay': '400ms' });
+    expect(window.getComputedStyle(items[0]).transitionDelay).toBe('0ms');
+    expect(window.getComputedStyle(items[1]).transitionDelay).toBe('200ms');
+    expect(window.getComputedStyle(items[2]).transitionDelay).toBe('400ms');
   });
 
   it('has offset positioning structure', () => {

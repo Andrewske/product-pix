@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import { AuthLayout } from '../auth-layout';
 
@@ -9,9 +10,11 @@ describe('AuthLayout', () => {
       </AuthLayout>
     );
 
-    expect(screen.getByText('Test content')).toBeInTheDocument();
+    expect(screen.getByText('Test content')).not.toBeNull();
     const card = document.querySelector('[data-slot="card"]');
-    expect(card).toHaveClass('matte-card', 'rounded-2xl', 'overflow-hidden');
+    expect(card?.classList.contains('matte-card')).toBe(true);
+    expect(card?.classList.contains('rounded-2xl')).toBe(true);
+    expect(card?.classList.contains('overflow-hidden')).toBe(true);
   });
 
   it('displays title with text-3xl styling', () => {
@@ -22,7 +25,7 @@ describe('AuthLayout', () => {
     );
 
     const title = screen.getByText('Test Title');
-    expect(title).toHaveClass('text-3xl');
+    expect(title?.classList.contains('text-3xl')).toBe(true);
   });
 
   it('displays error message using AlertBox when error prop provided', () => {
@@ -32,10 +35,12 @@ describe('AuthLayout', () => {
       </AuthLayout>
     );
 
-    expect(screen.getByText('Test error message')).toBeInTheDocument();
+    expect(screen.getByText('Test error message')).not.toBeNull();
     // AlertBox should be rendered with error variant
     const alertBox = screen.getByText('Test error message').closest('div');
-    expect(alertBox).toHaveClass('bg-destructive/10', 'border-destructive/20', 'text-destructive');
+    expect(alertBox?.classList.contains('bg-destructive/10')).toBe(true);
+    expect(alertBox?.classList.contains('border-destructive/20')).toBe(true);
+    expect(alertBox?.classList.contains('text-destructive')).toBe(true);
   });
 
   it('renders spotlight background when showSpotlight is true', () => {
@@ -46,7 +51,7 @@ describe('AuthLayout', () => {
     );
 
     const spotlight = document.querySelector('.studio-spotlight');
-    expect(spotlight).toBeInTheDocument();
+    expect(spotlight).not.toBeNull();
   });
 
   it('does not render spotlight background when showSpotlight is false', () => {
@@ -57,7 +62,7 @@ describe('AuthLayout', () => {
     );
 
     const spotlight = document.querySelector('.studio-spotlight');
-    expect(spotlight).not.toBeInTheDocument();
+    expect(spotlight).not.not.toBeNull();
   });
 
   it('renders footer slot content', () => {
@@ -70,7 +75,7 @@ describe('AuthLayout', () => {
       </AuthLayout>
     );
 
-    expect(screen.getByText('Footer content')).toBeInTheDocument();
+    expect(screen.getByText('Footer content')).not.toBeNull();
   });
 
   it('renders with default props (no error, no spotlight, no footer)', () => {
@@ -80,11 +85,11 @@ describe('AuthLayout', () => {
       </AuthLayout>
     );
 
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Content')).toBeInTheDocument();
+    expect(screen.getByText('Test Title')).not.toBeNull();
+    expect(screen.getByText('Content')).not.toBeNull();
 
     // Should not have error, spotlight, or footer
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(document.querySelector('.studio-spotlight')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.not.toBeNull();
+    expect(document.querySelector('.studio-spotlight')).not.not.toBeNull();
   });
 });

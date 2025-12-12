@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HeroSection } from '../hero-section';
@@ -29,16 +30,16 @@ describe('HeroSection', () => {
       render(<HeroSection example={mockExample} />);
 
       const heading = screen.getByRole('heading', { level: 1 });
-      expect(heading).toHaveTextContent('Professional Product Photos');
-      expect(heading).toHaveTextContent('in Seconds');
-      expect(heading).toHaveAttribute('id', 'hero-heading');
+      expect(heading?.textContent).toContain('Professional Product Photos');
+      expect(heading?.textContent).toContain('in Seconds');
+      expect(heading?.getAttribute('id')).toBe('hero-heading');
     });
 
     it('renders the description text', () => {
       render(<HeroSection example={mockExample} />);
 
       const description = screen.getByText(/Transform phone photos into studio-quality product images/);
-      expect(description).toHaveAttribute('id', 'hero-description');
+      expect(description?.getAttribute('id')).toBe('hero-description');
     });
 
     it('renders the before/after slider', () => {
@@ -46,7 +47,7 @@ describe('HeroSection', () => {
 
       // The slider should be present within the hero section
       const sliderContainer = document.querySelector('[role="img"]');
-      expect(sliderContainer).toBeInTheDocument();
+      expect(sliderContainer).not.toBeNull();
       expect(sliderContainer!.getAttribute('aria-label')).toContain('Test Product');
     });
   });
@@ -56,33 +57,33 @@ describe('HeroSection', () => {
       render(<HeroSection example={mockExample} />);
 
       const primaryButton = screen.getByText('Get 5 Free Photos');
-      expect(primaryButton).toBeInTheDocument();
+      expect(primaryButton).not.toBeNull();
 
       // Check that it's a button inside a link
       expect(primaryButton.tagName).toBe('BUTTON');
       const link = primaryButton.closest('a');
-      expect(link).toHaveAttribute('href', '/signup');
+      expect(link?.getAttribute('href')).toBe('/signup');
 
-      expect(primaryButton).toHaveAttribute('aria-describedby', 'signup-description');
+      expect(primaryButton?.getAttribute('aria-describedby')).toBe('signup-description');
     });
 
     it('renders secondary CTA button', () => {
       render(<HeroSection example={mockExample} />);
 
       const secondaryButton = screen.getByRole('link', { name: /see how it works/i });
-      expect(secondaryButton).toBeInTheDocument();
-      expect(secondaryButton).toHaveAttribute('href', '#how-it-works');
+      expect(secondaryButton).not.toBeNull();
+      expect(secondaryButton?.getAttribute('href')).toBe('#how-it-works');
 
       // The aria-describedby is on the button inside the link
       const button = screen.getByRole('button', { name: /see how it works/i });
-      expect(button).toHaveAttribute('aria-describedby', 'how-it-works-description');
+      expect(button?.getAttribute('aria-describedby')).toBe('how-it-works-description');
     });
 
     it('has proper button grouping and accessibility', () => {
       render(<HeroSection example={mockExample} />);
 
       const buttonGroup = screen.getByRole('group', { name: 'Primary actions' });
-      expect(buttonGroup).toBeInTheDocument();
+      expect(buttonGroup).not.toBeNull();
 
       const buttons = screen.getAllByRole('link');
       expect(buttons).toHaveLength(2);
@@ -100,7 +101,7 @@ describe('HeroSection', () => {
 
       // Test that button can be activated (though we can't test navigation)
       await user.keyboard('{Enter}');
-      expect(primaryButton).toBeInTheDocument();
+      expect(primaryButton).not.toBeNull();
     });
   });
 
@@ -109,44 +110,50 @@ describe('HeroSection', () => {
       render(<HeroSection example={mockExample} />);
 
       const heading = screen.getByRole('heading', { level: 1 });
-      expect(heading).toHaveClass('text-5xl', 'sm:text-6xl', 'lg:text-7xl');
+      expect(heading?.classList.contains('text-5xl')).toBe(true);
+      expect(heading?.classList.contains('sm:text-6xl')).toBe(true);
+      expect(heading?.classList.contains('lg:text-7xl')).toBe(true);
     });
 
     it('applies responsive padding and spacing', () => {
       const { container } = render(<HeroSection example={mockExample} />);
 
       const section = container.querySelector('section');
-      expect(section).toHaveClass('py-24', 'px-4', 'sm:px-6', 'lg:px-8');
+      expect(section?.classList.contains('py-24', 'px-4', 'sm:px-6', 'lg:px-8')).toBe(true);
     });
 
     it('applies responsive button layout', () => {
       render(<HeroSection example={mockExample} />);
 
       const buttonContainer = screen.getByRole('group', { name: 'Primary actions' });
-      expect(buttonContainer).toHaveClass('flex-col', 'sm:flex-row');
+      expect(buttonContainer?.classList.contains('flex-col', 'sm:flex-row')).toBe(true);
     });
 
     it('applies responsive aspect ratio to slider container', () => {
       render(<HeroSection example={mockExample} />);
 
       const sliderContainer = document.querySelector('[role="img"]');
-      expect(sliderContainer).toHaveClass('aspect-square', 'md:aspect-video');
+      expect(sliderContainer?.classList.contains('aspect-square', 'md:aspect-video')).toBe(true);
     });
 
     testResponsiveBehavior(
       <HeroSection example={mockExample} />,
       async (container) => {
         // Test that component renders without layout issues
-        expect(container).toBeInTheDocument();
+        expect(container).not.toBeNull();
 
         // Test that text is readable and properly sized
         const heading = screen.getByRole('heading', { level: 1 });
-        expect(heading).toBeVisible();
+        const style = window.getComputedStyle(heading);
+      expect(style.display).not.toBe('none');
+      expect(style.visibility).not.toBe('hidden');
 
         // Test that buttons are accessible
         const buttons = screen.getAllByRole('link');
         buttons.forEach(button => {
-          expect(button).toBeVisible();
+          const style = window.getComputedStyle(button);
+      expect(style.display).not.toBe('none');
+      expect(style.visibility).not.toBe('hidden');
         });
       }
     );
@@ -157,23 +164,23 @@ describe('HeroSection', () => {
       render(<HeroSection example={mockExample} />);
 
       const h1 = screen.getByRole('heading', { level: 1 });
-      expect(h1).toBeInTheDocument();
-      expect(h1).toHaveAttribute('id', 'hero-heading');
+      expect(h1).not.toBeNull();
+      expect(h1?.getAttribute('id')).toBe('hero-heading');
     });
 
     it('provides descriptive text for screen readers', () => {
       render(<HeroSection example={mockExample} />);
 
-      expect(screen.getByText('Start with 5 free product photo generations, no credit card required')).toBeInTheDocument();
-      expect(screen.getByText('Learn about our three-step process for transforming product photos')).toBeInTheDocument();
+      expect(screen.getByText('Start with 5 free product photo generations, no credit card required')).not.toBeNull();
+      expect(screen.getByText('Learn about our three-step process for transforming product photos')).not.toBeNull();
     });
 
     it('has proper ARIA labels and descriptions', () => {
       const { container } = render(<HeroSection example={mockExample} />);
 
       const section = container.querySelector('section');
-      expect(section).toHaveAttribute('aria-labelledby', 'hero-heading');
-      expect(section).toHaveAttribute('aria-describedby', 'hero-description');
+      expect(section?.getAttribute('aria-labelledby')).toBe('hero-heading');
+      expect(section?.getAttribute('aria-describedby')).toBe('hero-description');
     });
 
     it('passes accessibility audit', async () => {
@@ -196,7 +203,7 @@ describe('HeroSection', () => {
       render(<HeroSection example={mockExample} />);
 
       const section = document.querySelector('section');
-      expect(section).toHaveClass('relative', 'overflow-hidden');
+      expect(section?.classList.contains('relative', 'overflow-hidden')).toBe(true);
     });
 
     it('includes subtle background glow effect', () => {
@@ -224,7 +231,7 @@ describe('HeroSection', () => {
       const { container } = render(<HeroSection example={mockExample} className="custom-hero" />);
 
       const section = container.querySelector('section');
-      expect(section).toHaveClass('custom-hero');
+      expect(section?.classList.contains('custom-hero')).toBe(true);
     });
   });
 });

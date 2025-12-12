@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'bun:test';
 import { render } from '@testing-library/react';
 import { FormField } from '../form-field';
 
@@ -7,10 +8,10 @@ describe('FormField', () => {
       <FormField label="Test Label" name="test" />
     );
 
-    expect(getByText('Test Label')).toBeInTheDocument();
+    expect(getByText('Test Label')).not.toBeNull();
     const input = getByRole('textbox');
-    expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute('name', 'test');
+    expect(input).not.toBeNull();
+    expect(input?.getAttribute('name')).toBe('test');
   });
 
   it('applies space-y-2 spacing between elements', () => {
@@ -19,7 +20,7 @@ describe('FormField', () => {
     );
 
     const formField = container.firstChild as HTMLElement;
-    expect(formField).toHaveClass('space-y-2');
+    expect(formField?.classList.contains('space-y-2')).toBe(true);
   });
 
   it('forwards all input props correctly', () => {
@@ -37,13 +38,13 @@ describe('FormField', () => {
     );
 
     const input = getByRole('textbox');
-    expect(input).toHaveAttribute('type', 'email');
-    expect(input).toHaveAttribute('placeholder', 'Enter email');
-    expect(input).toHaveAttribute('disabled');
-    expect(input).toHaveAttribute('required');
-    expect(input).toHaveAttribute('name', 'test');
-    expect(input).toHaveAttribute('data-testid', 'email-input');
-    expect(input).toHaveClass('custom-input');
+    expect(input?.getAttribute('type')).toBe('email');
+    expect(input?.getAttribute('placeholder')).toBe('Enter email');
+    expect((input as HTMLInputElement).disabled).toBe(true);
+    expect(input?.hasAttribute('required')).toBe(true);
+    expect(input?.getAttribute('name')).toBe('test');
+    expect(input?.getAttribute('data-testid')).toBe('email-input');
+    expect(input?.classList.contains('custom-input')).toBe(true);
   });
 
   it('displays error message with destructive styling when error is provided', () => {
@@ -52,8 +53,8 @@ describe('FormField', () => {
     );
 
     const errorElement = getByText('This field is required');
-    expect(errorElement).toBeInTheDocument();
-    expect(errorElement).toHaveClass('text-destructive');
+    expect(errorElement).not.toBeNull();
+    expect(errorElement?.classList.contains('text-destructive')).toBe(true);
   });
 
   it('does not display error message when no error is provided', () => {
@@ -61,7 +62,7 @@ describe('FormField', () => {
       <FormField label="Test Label" name="test" />
     );
 
-    expect(queryByText(/error|required|invalid/i)).not.toBeInTheDocument();
+    expect(queryByText(/error|required|invalid/i)).not.not.toBeNull();
   });
 
   it('shows required indicator when required prop is true', () => {
@@ -72,7 +73,7 @@ describe('FormField', () => {
     // The label should show some indication of being required
     // This could be an asterisk or aria-required attribute
     const label = getByText('Test Label');
-    expect(label).toHaveAttribute('data-required', 'true');
+    expect(label?.getAttribute('data-required')).toBe('true');
   });
 
   it('does not show required indicator when required prop is false or undefined', () => {
@@ -81,7 +82,7 @@ describe('FormField', () => {
     );
 
     const label = getByText('Test Label');
-    expect(label).not.toHaveAttribute('data-required');
+    expect(label?.hasAttribute('data-required')).toBe(false);
   });
 
   it('associates label with input via htmlFor', () => {
@@ -92,7 +93,7 @@ describe('FormField', () => {
     const label = container.querySelector('label');
     const input = getByRole('textbox');
 
-    expect(label).toHaveAttribute('for', input.id);
+    expect(label?.getAttribute('for')).toBe(input.id);
   });
 
   it('applies container className correctly', () => {
@@ -105,7 +106,7 @@ describe('FormField', () => {
     );
 
     const formField = container.firstChild as HTMLElement;
-    expect(formField).toHaveClass('custom-field');
-    expect(formField).toHaveClass('space-y-2');
+    expect(formField?.classList.contains('custom-field')).toBe(true);
+    expect(formField?.classList.contains('space-y-2')).toBe(true);
   });
 });

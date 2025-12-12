@@ -1,3 +1,4 @@
+import { mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
@@ -82,12 +83,12 @@ export const testCTAButton = async (
   render(component);
 
   const button = screen.getByRole('link', { name: new RegExp(buttonText, 'i') });
-  expect(button).toBeInTheDocument();
-  expect(button).toHaveAttribute('href', expectedHref);
+  expect(button).not.toBeNull();
+  expect(button?.getAttribute('href')).toBe(expectedHref);
 
   // Test keyboard navigation
   button.focus();
-  expect(button).toHaveFocus();
+  expect(button).toBe(document.activeElement);
 
   // Test click (though we can't test actual navigation in unit tests)
   await user.click(button);
@@ -111,22 +112,22 @@ export const testAnimationPerformance = (container: HTMLElement) => {
 // Mock performance API for Core Web Vitals
 export const mockPerformanceAPI = () => {
   const mockObserver = {
-    observe: jest.fn(),
-    disconnect: jest.fn(),
+    observe: mock(() => {}),
+    disconnect: mock(() => {}),
     takeRecords: jest.fn(() => []),
   };
 
   // Mock PerformanceObserver with required properties
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  global.PerformanceObserver = jest.fn().mockImplementation(() => mockObserver) as any;
+  global.PerformanceObserver = mock(() => {}).mockImplementation(() => mockObserver) as any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global.PerformanceObserver as any).supportedEntryTypes = ['measure', 'mark', 'navigation', 'resource'];
 
   // Mock performance.mark and performance.measure
-  global.performance.mark = jest.fn();
-  global.performance.measure = jest.fn();
-  global.performance.getEntriesByType = jest.fn(() => []);
-  global.performance.getEntriesByName = jest.fn(() => []);
+  (global.performance as any).mark = mock(() => ({} as PerformanceMark));
+  (global.performance as any).measure = mock(() => ({} as PerformanceMeasure));
+  global.performance.getEntriesByType = mock(() => []);
+  global.performance.getEntriesByName = mock(() => []);
 };
 
 // Test Core Web Vitals metrics
@@ -136,7 +137,7 @@ export const testCoreWebVitals = async (component: React.ReactElement) => {
   const { container } = render(component);
 
   // Test that component renders without blocking
-  expect(container).toBeInTheDocument();
+  expect(container).not.toBeNull();
 
   // In a real implementation, you'd measure:
   // - LCP (Largest Contentful Paint)
@@ -146,11 +147,11 @@ export const testCoreWebVitals = async (component: React.ReactElement) => {
   // For now, we'll check that images have proper loading attributes
   const images = container.querySelectorAll('img');
   images.forEach(img => {
-    expect(img).toHaveAttribute('loading', 'lazy');
+    expect(img?.getAttribute('loading')).toBe('lazy');
     // Check for priority on above-the-fold images
     if (img.closest('[data-priority="true"]') || img.classList.contains('priority')) {
       // Priority images should have fetchpriority
-      expect(img).toHaveAttribute('fetchpriority', 'high');
+      expect(img?.getAttribute('fetchpriority')).toBe('high');
     }
   });
 };

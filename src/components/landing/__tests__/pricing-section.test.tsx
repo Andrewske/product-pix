@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import { PricingSection } from '../pricing-section';
 
@@ -25,38 +26,38 @@ describe('PricingSection', () => {
   it('renders the section title and description', () => {
     render(<PricingSection pricing={mockPricing} />);
 
-    expect(screen.getByText('Simple, Transparent Pricing')).toBeInTheDocument();
-    expect(screen.getByText('Start free. Pay as you go. No subscriptions.')).toBeInTheDocument();
+    expect(screen.getByText('Simple, Transparent Pricing')).not.toBeNull();
+    expect(screen.getByText('Start free. Pay as you go. No subscriptions.')).not.toBeNull();
   });
 
   it('renders all three pricing tiers', () => {
     render(<PricingSection pricing={mockPricing} />);
 
-    expect(screen.getByText('50 Credits')).toBeInTheDocument();
-    expect(screen.getByText('200 Credits')).toBeInTheDocument();
-    expect(screen.getByText('500 Credits')).toBeInTheDocument();
+    expect(screen.getByText('50 Credits')).not.toBeNull();
+    expect(screen.getByText('200 Credits')).not.toBeNull();
+    expect(screen.getByText('500 Credits')).not.toBeNull();
   });
 
   it('displays correct pricing for each tier', () => {
     render(<PricingSection pricing={mockPricing} />);
 
-    expect(screen.getByText('$5')).toBeInTheDocument();
-    expect(screen.getByText('$15')).toBeInTheDocument();
-    expect(screen.getByText('$30')).toBeInTheDocument();
+    expect(screen.getByText('$5')).not.toBeNull();
+    expect(screen.getByText('$15')).not.toBeNull();
+    expect(screen.getByText('$30')).not.toBeNull();
   });
 
   it('shows credit amounts for each tier', () => {
     render(<PricingSection pricing={mockPricing} />);
 
-    expect(screen.getByText('50 photos')).toBeInTheDocument();
-    expect(screen.getByText('200 photos')).toBeInTheDocument();
-    expect(screen.getByText('500 photos')).toBeInTheDocument();
+    expect(screen.getByText('50 photos')).not.toBeNull();
+    expect(screen.getByText('200 photos')).not.toBeNull();
+    expect(screen.getByText('500 photos')).not.toBeNull();
   });
 
   it('highlights Best Value tier with primary styling and badge', () => {
     render(<PricingSection pricing={mockPricing} />);
 
-    expect(screen.getByText('Best Value')).toBeInTheDocument();
+    expect(screen.getByText('Best Value')).not.toBeNull();
   });
 
   it('displays feature checkmarks for all tiers', () => {
@@ -72,7 +73,7 @@ describe('PricingSection', () => {
 
     // Check that pricing tiers are rendered with proper accessibility
     const grid = screen.getByRole('grid', { name: 'Pricing plans' });
-    expect(grid).toBeInTheDocument();
+    expect(grid).not.toBeNull();
 
     // Check that grid cells exist
     const gridCells = screen.getAllByRole('gridcell');
@@ -87,13 +88,13 @@ describe('PricingSection', () => {
     render(<PricingSection pricing={mockPricing} />);
 
     const gridContainer = screen.getByText('50 Credits').closest('.grid');
-    expect(gridContainer).toHaveClass('md:grid-cols-3');
+    expect(gridContainer?.classList.contains('md:grid-cols-3')).toBe(true);
   });
 
   it('accepts custom className prop', () => {
     render(<PricingSection pricing={mockPricing} className="custom-class" />);
 
     const section = screen.getByText('Simple, Transparent Pricing').closest('section');
-    expect(section).toHaveClass('custom-class');
+    expect(section?.classList.contains('custom-class')).toBe(true);
   });
 });

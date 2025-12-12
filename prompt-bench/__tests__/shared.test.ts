@@ -3,7 +3,7 @@ import { mock } from 'bun:test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types';
 
-const mockCreateAdminClient = mock();
+const mockCreateAdminClient = mock(() => ({} as SupabaseClient<Database>));
 
 mock.module('@/lib/supabase/admin', () => ({
   createAdminClient: mockCreateAdminClient,

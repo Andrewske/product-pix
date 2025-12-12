@@ -1,3 +1,5 @@
+import { describe, it, expect, mock } from 'bun:test';
+import { mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LegalPageTemplate, LegalSection } from '../legal-page-template';
@@ -37,7 +39,7 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    expect(screen.getByText('Test Legal Page')).toBeInTheDocument();
+    expect(screen.getByText('Test Legal Page')).not.toBeNull();
   });
 
   it('renders last updated date when provided', () => {
@@ -49,7 +51,7 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    expect(screen.getByText('Last updated: December 11, 2025')).toBeInTheDocument();
+    expect(screen.getByText('Last updated: December 11, 2025')).not.toBeNull();
   });
 
   it('auto-generates TOC from level 2 sections', () => {
@@ -67,7 +69,7 @@ describe('LegalPageTemplate', () => {
     expect(tocLinks[1]).toHaveTextContent('Terms');
 
     // Should not show level 3 sections in TOC
-    expect(screen.queryByRole('link', { name: 'Getting Started' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Getting Started' })).not.not.toBeNull();
   });
 
   it('renders sections with correct typography hierarchy', () => {
@@ -80,11 +82,11 @@ describe('LegalPageTemplate', () => {
 
     // Check level 2 headings (text-2xl)
     const introHeading = screen.getByRole('heading', { name: 'Introduction', level: 2 });
-    expect(introHeading).toHaveClass('text-2xl');
+    expect(introHeading?.classList.contains('text-2xl')).toBe(true);
 
     // Check level 3 headings (text-xl)
     const subsectionHeading = screen.getByRole('heading', { name: 'Getting Started', level: 3 });
-    expect(subsectionHeading).toHaveClass('text-xl');
+    expect(subsectionHeading?.classList.contains('text-xl')).toBe(true);
   });
 
   it('renders section content', () => {
@@ -95,9 +97,9 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    expect(screen.getByText('Welcome to our service.')).toBeInTheDocument();
-    expect(screen.getByText("Here's how to get started.")).toBeInTheDocument();
-    expect(screen.getByText('These are the terms.')).toBeInTheDocument();
+    expect(screen.getByText('Welcome to our service.')).not.toBeNull();
+    expect(screen.getByText("Here's how to get started.")).not.toBeNull();
+    expect(screen.getByText('These are the terms.')).not.toBeNull();
   });
 
   it('applies scroll-mt-8 to all sections', () => {
@@ -110,7 +112,7 @@ describe('LegalPageTemplate', () => {
 
     const sections = document.querySelectorAll('section');
     sections.forEach(section => {
-      expect(section).toHaveClass('scroll-mt-8');
+      expect(section?.classList.contains('scroll-mt-8')).toBe(true);
     });
   });
 
@@ -122,9 +124,9 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    expect(document.getElementById('introduction')).toBeInTheDocument();
-    expect(document.getElementById('subsection')).toBeInTheDocument();
-    expect(document.getElementById('another-section')).toBeInTheDocument();
+    expect(document.getElementById('introduction')).not.toBeNull();
+    expect(document.getElementById('subsection')).not.toBeNull();
+    expect(document.getElementById('another-section')).not.toBeNull();
   });
 
   it('renders footer links when provided', () => {
@@ -136,7 +138,7 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    expect(screen.getByText(/See also:/)).toBeInTheDocument();
+    expect(screen.getByText(/See also:/)).not.toBeNull();
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
   });
@@ -149,7 +151,7 @@ describe('LegalPageTemplate', () => {
       />
     );
 
-    expect(screen.queryByText('See also:')).not.toBeInTheDocument();
+    expect(screen.queryByText('See also:')).not.not.toBeNull();
   });
 
   it('renders multiple footer links with commas', () => {
@@ -162,14 +164,14 @@ describe('LegalPageTemplate', () => {
     );
 
     const footerText = screen.getByText(/See also:/);
-    expect(footerText).toBeInTheDocument();
+    expect(footerText).not.toBeNull();
     // Check that links are separated by commas
     expect(footerText.textContent).toContain('Privacy Policy, Terms of Service');
   });
 
   it('scrolls smoothly to anchor when TOC link is clicked', async () => {
     // Mock scrollIntoView
-    const mockScrollIntoView = jest.fn();
+    const mockScrollIntoView = mock(() => {});
     Element.prototype.scrollIntoView = mockScrollIntoView;
 
     // Create a mock element with the target id
@@ -204,7 +206,7 @@ describe('LegalPageTemplate', () => {
 
     // Check that PageContainer is rendered with narrow class
     const pageContainer = container.firstChild as HTMLElement;
-    expect(pageContainer).toHaveClass('max-w-5xl'); // narrow prop applies max-w-5xl
+    expect(pageContainer?.classList.contains('max-w-5xl')).toBe(true); // narrow prop applies max-w-5xl
   });
 
   it('applies custom className', () => {
@@ -217,6 +219,6 @@ describe('LegalPageTemplate', () => {
     );
 
     const pageContainer = container.firstChild as HTMLElement;
-    expect(pageContainer).toHaveClass('custom-class');
+    expect(pageContainer?.classList.contains('custom-class')).toBe(true);
   });
 });

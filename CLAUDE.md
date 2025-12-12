@@ -114,7 +114,7 @@ See `docs/design-system.md` for full design principles.
 - **Error handling**: Result type (`ok`/`err`) in prompt-bench, try/catch in app
 - **Barrel exports**: All lib modules via index.ts
 - **API validation**: Zod schemas
-- **Testing**: Bun test for unit tests, 70-80% coverage target
+- **Testing**: Pure Bun test framework, 70-80% coverage target
 - **TypeScript**: Strict mode, no `any`, explicit return types
 - **Functions**: ≤20 lines, ≤3 nesting levels
 - **Pricing config**: `prompt-bench.toml` at project root (committed)
@@ -122,6 +122,65 @@ See `docs/design-system.md` for full design principles.
 - **Model matching**: Exact → prefix → error
 - **Unknown models**: Throw error, never guess provider
 
+## Testing Conventions
+
+### Framework
+- **Test Runner**: Pure Bun test (no Jest, no @testing-library/jest-dom)
+- **Coverage**: 70-80% target for branches/functions/lines/statements
+- **Location**: `src/**/__tests__/**/*.test.ts`
+- **Setup**: `bun-test-setup.ts` configures happy-dom and environment variables
+
+### Matchers (Pure Bun)
+Use native Bun matchers instead of custom matchers:
+
+```typescript
+// Element existence
+expect(element).not.toBeNull();
+expect(element).toBeDefined();
+
+// Attributes
+expect(element?.getAttribute('name')).toBe('value');
+expect(element?.hasAttribute('disabled')).toBe(true);
+
+// CSS classes
+expect(element?.classList.contains('active')).toBe(true);
+
+// Text content
+expect(element?.textContent).toContain('Hello');
+expect(element?.textContent).toMatch(/hello/i);
+
+// Form state
+expect((input as HTMLInputElement).disabled).toBe(true);
+expect((input as HTMLInputElement).checked).toBe(false);
+
+// Focus
+expect(element).toBe(document.activeElement as HTMLElement);
+
+// Visibility (computed style)
+const style = window.getComputedStyle(element);
+expect(style.display).not.toBe('none');
+expect(style.visibility).not.toBe('hidden');
+
+// Mocks
+import { mock } from 'bun:test';
+const mockFn = mock(() => ({}));
+mock.module('@/lib/module', () => ({ export: mockFn }));
+```
+
+### Test Structure
+- **Imports**: `describe`, `it`, `expect`, `beforeEach`, `mock` from `'bun:test'`
+- **Setup**: Use `beforeEach` for test setup, avoid `beforeAll`
+- **Mocking**: Use `mock()` for functions, `mock.module()` for modules
+- **DOM**: happy-dom provides browser environment automatically
+- **Cleanup**: Automatic between tests, no manual cleanup needed
+
+### Commands
+```bash
+bun test                    # Run all tests
+bun test <file>            # Run specific test file
+bun test --coverage        # Run with coverage report
+bun run test:watch         # Watch mode
+```
 ## Legal & Policy
 
 See `docs/legal-policy-decisions.md` for full details.

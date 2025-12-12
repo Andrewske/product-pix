@@ -1,8 +1,9 @@
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AspectRatioSelector } from '../aspect-ratio-selector';
 
 describe('AspectRatioSelector', () => {
-  const mockOnChange = jest.fn();
+  const mockOnChange = mock(() => {});
 
   beforeEach(() => {
     mockOnChange.mockClear();
@@ -15,12 +16,12 @@ describe('AspectRatioSelector', () => {
     expect(buttons).toHaveLength(6);
 
     // Check that all expected ratios are present
-    expect(screen.getByText('1:1')).toBeInTheDocument();
-    expect(screen.getByText('4:3')).toBeInTheDocument();
-    expect(screen.getByText('3:4')).toBeInTheDocument();
-    expect(screen.getByText('16:9')).toBeInTheDocument();
-    expect(screen.getByText('9:16')).toBeInTheDocument();
-    expect(screen.getByText('3:2')).toBeInTheDocument();
+    expect(screen.getByText('1:1')).not.toBeNull();
+    expect(screen.getByText('4:3')).not.toBeNull();
+    expect(screen.getByText('3:4')).not.toBeNull();
+    expect(screen.getByText('16:9')).not.toBeNull();
+    expect(screen.getByText('9:16')).not.toBeNull();
+    expect(screen.getByText('3:2')).not.toBeNull();
   });
 
   it('applies selected styling to the current value', () => {
@@ -30,14 +31,14 @@ describe('AspectRatioSelector', () => {
     const unselectedButton = screen.getByText('1:1');
 
     // Selected button should have primary styling
-    expect(selectedButton).toHaveClass('bg-primary/10');
-    expect(selectedButton).toHaveClass('border-primary');
-    expect(selectedButton).toHaveClass('text-primary');
+    expect(selectedButton?.classList.contains('bg-primary/10')).toBe(true);
+    expect(selectedButton?.classList.contains('border-primary')).toBe(true);
+    expect(selectedButton?.classList.contains('text-primary')).toBe(true);
 
     // Unselected button should have default styling
-    expect(unselectedButton).toHaveClass('border-border');
-    expect(unselectedButton).toHaveClass('hover:border-primary/50');
-    expect(unselectedButton).toHaveClass('text-foreground');
+    expect(unselectedButton?.classList.contains('border-border')).toBe(true);
+    expect(unselectedButton?.classList.contains('hover:border-primary/50')).toBe(true);
+    expect(unselectedButton?.classList.contains('text-foreground')).toBe(true);
   });
 
   it('calls onChange with the correct ratio when button is clicked', () => {
@@ -64,7 +65,7 @@ describe('AspectRatioSelector', () => {
 
     const buttons = screen.getAllByRole('button');
     buttons.forEach(button => {
-      expect(button).toBeDisabled();
+      expect((button as HTMLButtonElement).disabled).toBe(true);
     });
 
     // Clicking disabled button should not call onChange
@@ -77,7 +78,13 @@ describe('AspectRatioSelector', () => {
 
     const buttons = screen.getAllByRole('button');
     buttons.forEach(button => {
-      expect(button).toHaveClass('px-4', 'py-2', 'text-sm', 'font-medium', 'rounded-lg', 'border', 'transition-colors');
+      expect(button?.classList.contains('px-4')).toBe(true);
+      expect(button?.classList.contains('py-2')).toBe(true);
+      expect(button?.classList.contains('text-sm')).toBe(true);
+      expect(button?.classList.contains('font-medium')).toBe(true);
+      expect(button?.classList.contains('rounded-lg')).toBe(true);
+      expect(button?.classList.contains('border')).toBe(true);
+      expect(button?.classList.contains('transition-colors')).toBe(true);
     });
   });
 });

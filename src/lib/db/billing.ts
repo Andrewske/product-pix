@@ -41,7 +41,7 @@ export async function fetchUserPurchases(): Promise<PurchaseData[]> {
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from('stripe_purchases' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .from('stripe_purchases')
     .select('id, amount_cents, credits_granted, purchase_type, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });

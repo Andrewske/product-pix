@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, mock, type Mock } from 'bun:test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types';
 
@@ -11,8 +11,8 @@ interface EvaluationData {
 }
 
 describe('validateBatchSize', () => {
-  let mockCreateClient: ReturnType<typeof mock.fn<[], SupabaseClient<Database>>>;
-  let mockFetchBatchEvaluations: ReturnType<typeof mock.fn<[SupabaseClient<Database>, string], Promise<EvaluationData[]>>>;
+  let mockCreateClient: Mock<() => SupabaseClient<Database>>;
+  let mockFetchBatchEvaluations: Mock<(client: SupabaseClient<Database>, batchId: string) => Promise<EvaluationData[]>>;
 
   const createDeps = () => ({
     createClient: mockCreateClient,

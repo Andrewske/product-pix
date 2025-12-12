@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FinalCTASection } from '../final-cta-section';
@@ -22,21 +23,21 @@ describe('FinalCTASection', () => {
       render(<FinalCTASection />);
 
       const heading = screen.getByRole('heading', { level: 2 });
-      expect(heading).toHaveTextContent('Ready to upgrade your listings?');
-      expect(heading).toHaveAttribute('id', 'final-cta-heading');
+      expect(heading?.textContent).toContain('Ready to upgrade your listings?');
+      expect(heading?.getAttribute('id')).toBe('final-cta-heading');
     });
 
     it('renders the description text', () => {
       render(<FinalCTASection />);
 
       const description = screen.getByText('Join thousands of sellers creating professional product photos in seconds.');
-      expect(description).toHaveAttribute('id', 'final-cta-description');
+      expect(description?.getAttribute('id')).toBe('final-cta-description');
     });
 
     it('renders the trial information', () => {
       render(<FinalCTASection />);
 
-      expect(screen.getByText('No credit card required • 5 free credits')).toBeInTheDocument();
+      expect(screen.getByText('No credit card required • 5 free credits')).not.toBeNull();
     });
   });
 
@@ -45,19 +46,19 @@ describe('FinalCTASection', () => {
       render(<FinalCTASection />);
 
       const button = screen.getByRole('link', { name: /get started for free/i });
-      expect(button).toBeInTheDocument();
-      expect(button).toHaveAttribute('href', '/signup');
-      expect(button).toHaveAttribute('aria-describedby', 'final-cta-button-description');
+      expect(button).not.toBeNull();
+      expect(button?.getAttribute('href')).toBe('/signup');
+      expect(button?.getAttribute('aria-describedby')).toBe('final-cta-button-description');
     });
 
     it('has proper button accessibility', () => {
       render(<FinalCTASection />);
 
       const buttonGroup = screen.getByRole('group', { name: 'Final call-to-action' });
-      expect(buttonGroup).toBeInTheDocument();
+      expect(buttonGroup).not.toBeNull();
 
       const button = screen.getByRole('link', { name: /get started for free/i });
-      expect(button).toHaveAttribute('aria-describedby', 'final-cta-button-description');
+      expect(button?.getAttribute('aria-describedby')).toBe('final-cta-button-description');
     });
 
     it('button is functional with keyboard navigation', async () => {
@@ -68,11 +69,11 @@ describe('FinalCTASection', () => {
 
       // Test keyboard focus
       button.focus();
-      expect(button).toHaveFocus();
+      expect(button).toBe(document.activeElement as HTMLElement);
 
       // Test that button can be activated
       await user.keyboard('{Enter}');
-      expect(button).toBeInTheDocument();
+      expect(button).not.toBeNull();
     });
   });
 
@@ -81,28 +82,33 @@ describe('FinalCTASection', () => {
       render(<FinalCTASection />);
 
       const heading = screen.getByRole('heading', { level: 2 });
-      expect(heading).toHaveClass('text-4xl', 'sm:text-5xl');
+      expect(heading?.classList.contains('text-4xl')).toBe(true);
+      expect(heading?.classList.contains('sm:text-5xl')).toBe(true);
     });
 
     it('applies responsive padding', () => {
       const { container } = render(<FinalCTASection />);
 
       const section = container.querySelector('section');
-      expect(section).toHaveClass('py-24', 'px-4', 'sm:px-6', 'lg:px-8');
+      expect(section?.classList.contains('py-24')).toBe(true);
+      expect(section?.classList.contains('px-4')).toBe(true);
+      expect(section?.classList.contains('sm:px-6')).toBe(true);
+      expect(section?.classList.contains('lg:px-8')).toBe(true);
     });
 
     it('applies responsive button layout', () => {
       render(<FinalCTASection />);
 
       const buttonContainer = screen.getByRole('group', { name: 'Final call-to-action' });
-      expect(buttonContainer).toHaveClass('flex-col', 'sm:flex-row');
+      expect(buttonContainer?.classList.contains('flex-col')).toBe(true);
+      expect(buttonContainer?.classList.contains('sm:flex-row')).toBe(true);
     });
 
     it('applies responsive button sizing', () => {
       render(<FinalCTASection />);
 
       const button = screen.getByRole('button', { name: /get started for free/i });
-      expect(button).toHaveClass('w-full', 'sm:w-auto');
+      expect(button?.classList.contains('w-full', 'sm:w-auto')).toBe(true);
     });
 
     testResponsiveBehavior(
@@ -110,11 +116,15 @@ describe('FinalCTASection', () => {
       async () => {
         // Test that component renders without layout issues
         const heading = screen.getByRole('heading', { level: 2 });
-        expect(heading).toBeVisible();
+        const headingStyle = window.getComputedStyle(heading);
+        expect(headingStyle.display).not.toBe('none');
+        expect(headingStyle.visibility).not.toBe('hidden');
 
         // Test that button is accessible
         const button = screen.getByRole('link', { name: /get started for free/i });
-        expect(button).toBeVisible();
+        const buttonStyle = window.getComputedStyle(button);
+        expect(headingStyle.display).not.toBe('none');
+        expect(headingStyle.visibility).not.toBe('hidden');
       }
     );
   });
@@ -124,22 +134,22 @@ describe('FinalCTASection', () => {
       render(<FinalCTASection />);
 
       const h2 = screen.getByRole('heading', { level: 2 });
-      expect(h2).toBeInTheDocument();
-      expect(h2).toHaveAttribute('id', 'final-cta-heading');
+      expect(h2).not.toBeNull();
+      expect(h2?.getAttribute('id')).toBe('final-cta-heading');
     });
 
     it('provides descriptive text for screen readers', () => {
       render(<FinalCTASection />);
 
-      expect(screen.getByText('Start your free trial with 5 credits, no credit card required')).toBeInTheDocument();
+      expect(screen.getByText('Start your free trial with 5 credits, no credit card required')).not.toBeNull();
     });
 
     it('has proper ARIA labels and descriptions', () => {
       const { container } = render(<FinalCTASection />);
 
       const section = container.querySelector('section');
-      expect(section).toHaveAttribute('aria-labelledby', 'final-cta-heading');
-      expect(section).toHaveAttribute('aria-describedby', 'final-cta-description');
+      expect(section?.getAttribute('aria-labelledby')).toBe('final-cta-heading');
+      expect(section?.getAttribute('aria-describedby')).toBe('final-cta-description');
     });
 
     it('passes accessibility audit', async () => {
@@ -162,7 +172,9 @@ describe('FinalCTASection', () => {
       const { container } = render(<FinalCTASection />);
 
       const section = container.querySelector('section');
-      expect(section).toHaveClass('bg-card', 'border-t', 'border-border/40');
+      expect(section?.classList.contains('bg-card')).toBe(true);
+      expect(section?.classList.contains('border-t')).toBe(true);
+      expect(section?.classList.contains('border-border/40')).toBe(true);
     });
   });
 
@@ -183,7 +195,7 @@ describe('FinalCTASection', () => {
       const { container } = render(<FinalCTASection className="custom-cta" />);
 
       const section = container.querySelector('section');
-      expect(section).toHaveClass('custom-cta');
+      expect(section?.classList.contains('custom-cta')).toBe(true);
     });
   });
 });

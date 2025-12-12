@@ -32,10 +32,10 @@ describe('Error Boundary', () => {
 
     render(<Error error={mockError} reset={mockReset} />);
 
-    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-    expect(screen.getByText('We encountered an error while loading the page. This might be a temporary issue with our pricing service.')).toBeInTheDocument();
-    expect(screen.getByText('Test pricing error')).toBeInTheDocument();
-    expect(screen.getByText('Try again')).toBeInTheDocument();
+    expect(screen.getByText('Something went wrong')).not.toBeNull();
+    expect(screen.getByText('We encountered an error while loading the page. This might be a temporary issue with our pricing service.')).not.toBeNull();
+    expect(screen.getByText('Test pricing error')).not.toBeNull();
+    expect(screen.getByText('Try again')).not.toBeNull();
   });
 
   it('calls reset function when try again button is clicked', () => {
@@ -63,6 +63,6 @@ describe('Error Boundary', () => {
 
     render(<Error error={mockError} reset={mockReset} />);
 
-    expect(screen.getByText('Database connection failed')).toBeInTheDocument();
+    expect(screen.getByText('Database connection failed')).not.toBeNull();
   });
 });
