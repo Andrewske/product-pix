@@ -109,6 +109,25 @@
   --info-foreground: oklch(0.96 0 0);
 }
 
+/* Typography */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Heading defaults - use display font */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* Body inherits body font */
+body {
+  font-family: var(--font-body);
+}
+
 /* Studio Minimalist Animations & Effects */
 
 /* Soft Spotlight: A gentle, diffused light source */

@@ -17,7 +17,7 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
         {...props}
       >
         <div className="flex items-center justify-center gap-3 mb-4">
-          <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
+          <h2 className="text-3xl font-bold tracking-tight font-display">{title}</h2>
           {badge && <Badge variant="secondary">{badge}</Badge>}
         </div>
         {description && (
