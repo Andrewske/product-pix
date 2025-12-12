@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FinalCTASection } from '../final-cta-section';
 import {
-  testResponsiveBehavior,
   testAccessibility,
   testColorContrast,
   testAnimationPerformance,
@@ -111,22 +110,42 @@ describe('FinalCTASection', () => {
       expect(button?.classList.contains('w-full', 'sm:w-auto')).toBe(true);
     });
 
-    testResponsiveBehavior(
-      <FinalCTASection />,
-      async () => {
-        // Test that component renders without layout issues
-        const heading = screen.getByRole('heading', { level: 2 });
-        const headingStyle = window.getComputedStyle(heading);
-        expect(headingStyle.display).not.toBe('none');
-        expect(headingStyle.visibility).not.toBe('hidden');
+    it('renders correctly on mobile viewport', () => {
+      mockViewport(viewports.mobile.width, viewports.mobile.height);
+      render(<FinalCTASection />);
 
-        // Test that button is accessible
-        const button = screen.getByRole('link', { name: /get started for free/i });
-        const buttonStyle = window.getComputedStyle(button);
-        expect(headingStyle.display).not.toBe('none');
-        expect(headingStyle.visibility).not.toBe('hidden');
-      }
-    );
+      // Test that component renders without layout issues
+      const heading = screen.getByRole('heading', { level: 2 });
+      const headingStyle = window.getComputedStyle(heading);
+      expect(headingStyle.display).not.toBe('none');
+      expect(headingStyle.visibility).not.toBe('hidden');
+
+      // Test that button is accessible
+      const button = screen.getByRole('link', { name: /get started for free/i });
+      const buttonStyle = window.getComputedStyle(button);
+      expect(buttonStyle.display).not.toBe('none');
+      expect(buttonStyle.visibility).not.toBe('hidden');
+    });
+
+    it('renders correctly on tablet viewport', () => {
+      mockViewport(viewports.tablet.width, viewports.tablet.height);
+      render(<FinalCTASection />);
+
+      const heading = screen.getByRole('heading', { level: 2 });
+      const headingStyle = window.getComputedStyle(heading);
+      expect(headingStyle.display).not.toBe('none');
+      expect(headingStyle.visibility).not.toBe('hidden');
+    });
+
+    it('renders correctly on desktop viewport', () => {
+      mockViewport(viewports.desktop.width, viewports.desktop.height);
+      render(<FinalCTASection />);
+
+      const heading = screen.getByRole('heading', { level: 2 });
+      const headingStyle = window.getComputedStyle(heading);
+      expect(headingStyle.display).not.toBe('none');
+      expect(headingStyle.visibility).not.toBe('hidden');
+    });
   });
 
   describe('Accessibility', () => {

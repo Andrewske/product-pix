@@ -93,8 +93,12 @@ describe('HowItWorksSection', () => {
     expect(items).toHaveLength(3);
 
     // Check that transition delays are applied with 200ms increments
-    expect(items[0]).toHaveStyle({ 'transition-delay': '0ms' });
-    expect(items[1]).toHaveStyle({ 'transition-delay': '200ms' });
-    expect(items[2]).toHaveStyle({ 'transition-delay': '400ms' });
+    const style0 = (items[0] as HTMLElement).style.transitionDelay;
+    const style1 = (items[1] as HTMLElement).style.transitionDelay;
+    const style2 = (items[2] as HTMLElement).style.transitionDelay;
+
+    expect(style0).toBe('0ms');
+    expect(style1).toBe('200ms');
+    expect(style2).toBe('400ms');
   });
 });

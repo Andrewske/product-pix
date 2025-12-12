@@ -9,7 +9,7 @@ mock.module('@/lib/stripe/checkout-actions', () => ({
   createPackCheckout: mock(() => {}),
 }));
 
-const mockCreatePackCheckout = createPackCheckout as jest.MockedFunction<typeof createPackCheckout>;
+const mockCreatePackCheckout = createPackCheckout as ReturnType<typeof mock>;
 
 // Mock window.location.href
 const mockLocation = {
@@ -50,7 +50,7 @@ describe('CreditPacks', () => {
   };
 
   beforeEach(() => {
-    mock.clearAllMocks();
+    mockCreatePackCheckout.mockReset();
     mockLocation.href = '';
   });
 

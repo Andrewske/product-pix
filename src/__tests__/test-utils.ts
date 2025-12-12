@@ -1,4 +1,4 @@
-import { mock } from 'bun:test';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
@@ -29,24 +29,9 @@ export const mockViewport = (width: number, height: number) => {
   }
 };
 
-// Test responsive behavior across breakpoints
-export const testResponsiveBehavior = async (
-  component: React.ReactElement,
-  testFn: (container: HTMLElement) => void | Promise<void>
-) => {
-  for (const [name, viewport] of Object.entries(viewports)) {
-    describe(`on ${name} viewport`, () => {
-      beforeEach(() => {
-        mockViewport(viewport.width, viewport.height);
-      });
-
-      it(`renders correctly on ${name}`, async () => {
-        const { container } = render(component);
-        await testFn(container);
-      });
-    });
-  }
-};
+// Note: testResponsiveBehavior removed - it's an anti-pattern in Bun test
+// describe() blocks must be defined at module load time, not dynamically
+// Tests should call mockViewport() directly in their own describe blocks
 
 // Test accessibility with axe-core
 export const testAccessibility = async (component: React.ReactElement) => {
@@ -110,16 +95,16 @@ export const testAnimationPerformance = (container: HTMLElement) => {
 };
 
 // Mock performance API for Core Web Vitals
-export const mockPerformanceAPI = () => {
+export const mockPerformanceAPI = (): void => {
   const mockObserver = {
     observe: mock(() => {}),
     disconnect: mock(() => {}),
-    takeRecords: jest.fn(() => []),
+    takeRecords: mock(() => []),
   };
 
-  // Mock PerformanceObserver with required properties
+  // Bun test: Create mock constructor that returns mockObserver
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  global.PerformanceObserver = mock(() => {}).mockImplementation(() => mockObserver) as any;
+  global.PerformanceObserver = mock(() => mockObserver) as any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global.PerformanceObserver as any).supportedEntryTypes = ['measure', 'mark', 'navigation', 'resource'];
 
