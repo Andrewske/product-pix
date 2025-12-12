@@ -13,7 +13,50 @@ import { uploadBuffer } from '@/lib/r2/upload';
 import { createGeneratedImage } from '@/lib/db/generated-images';
 import { getBatchItemParameters } from '@/lib/db/types';
 
-export async function POST(request: NextRequest) {
+// =============================================================================
+// Gemini Batch Response Types
+// =============================================================================
+
+interface GeminiInlineData {
+  data: string;
+  mimeType?: string;
+}
+
+interface GeminiContentPart {
+  inlineData?: GeminiInlineData;
+}
+
+interface GeminiCandidate {
+  content?: {
+    parts?: GeminiContentPart[];
+  };
+}
+
+interface GeminiBatchResponseLine {
+  key?: string;
+  response?: {
+    candidates?: GeminiCandidate[];
+  };
+  error?: string | { message?: string };
+}
+
+// =============================================================================
+// Type Guards
+// =============================================================================
+
+const isGeminiInlineData = (data: unknown): data is GeminiInlineData => {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return typeof obj.data === 'string';
+};
+
+// =============================================================================
+// Route Handler
+// =============================================================================
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
   // Verify Vercel Cron secret
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -71,7 +114,7 @@ export async function POST(request: NextRequest) {
             if (!line.trim()) continue;
 
             try {
-              const parsed = JSON.parse(line);
+              const parsed: GeminiBatchResponseLine = JSON.parse(line);
               const key = parsed.key;
               if (!key || !key.startsWith('item-')) continue;
 
@@ -80,10 +123,10 @@ export async function POST(request: NextRequest) {
               if (parsed.response) {
                 // Extract image from response
                 const imagePart = parsed.response.candidates?.[0]?.content?.parts?.find(
-                  (p: { inlineData?: unknown }) => p.inlineData
+                  (p) => p.inlineData !== undefined
                 );
 
-                if (imagePart?.inlineData && typeof imagePart.inlineData === 'object' && imagePart.inlineData !== null && 'data' in imagePart.inlineData) {
+                if (imagePart?.inlineData && isGeminiInlineData(imagePart.inlineData)) {
                   // Upload to R2
                   const imageBuffer = Buffer.from(
                     imagePart.inlineData.data,

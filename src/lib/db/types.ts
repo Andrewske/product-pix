@@ -1,4 +1,6 @@
-import type { Json } from '@/types';
+import type { Database } from '@/lib/supabase/database.types';
+
+type Json = Database['public']['Tables']['batch_jobs']['Row']['parameters'];
 
 // =============================================================================
 // Batch Parameter Types

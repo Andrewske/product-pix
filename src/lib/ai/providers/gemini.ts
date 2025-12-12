@@ -5,12 +5,23 @@ import { env } from '@/lib/env';
 import type { ImageProvider, ImageConfig, GenerationResponse } from '../types';
 import { normalizeUsage } from '../usage-types';
 
+// =============================================================================
+// Types
+// =============================================================================
+
 interface GenerateTextResult {
   files?: Array<{
     mediaType?: string;
     base64?: string;
   }>;
-  usage?: unknown;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
 }
 
 // Map our config to Gemini's expected values
