@@ -9,12 +9,13 @@ import { getPostHogServer, sanitizeForPostHog } from '@/lib/posthog';
 /**
  * Logs error to Vercel with structured context (Tier 1)
  */
-function logToVercel(error: ProductPixError): void {
+function logToVercel(error: ProductPixError, route?: string): void {
   logger.error(error.message, {
     errorCode: error.errorCode,
     severity: error.severity,
     domain: error.domain,
     stack: error.stack,
+    route,
     ...error.context,
   });
 }
@@ -139,7 +140,7 @@ async function performThreeTierCapture(
   const isCritical = error.severity === 'critical';
 
   // Tier 1: Always log to Vercel (structured JSON with requestId auto-added)
-  logToVercel(error);
+  logToVercel(error, route);
 
   // Tier 2: Database for critical errors (full context + PII)
   if (isCritical) {

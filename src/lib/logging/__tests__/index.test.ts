@@ -275,5 +275,16 @@ describe('createLogger', () => {
       expect(output.route).toBe('/api/test');
       expect(output.context).toEqual(manualContext);
     });
+
+    it('includes requestId from context', () => {
+      process.env.LOG_LEVEL = 'info';
+      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
+      const logger = createLogger();
+
+      logger.error('test');
+
+      const output = JSON.parse((stderrSpy.mock.calls[0][0] as string).trim());
+      expect(output.requestId).toBe('req-123');
+    });
   });
 });
