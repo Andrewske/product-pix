@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LayoutWrapper } from "@/components/layout-wrapper";
+import { Toaster } from "@/components/ui/sonner";
 
 const fontDisplay = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
 const fontBody = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -29,6 +30,7 @@ export default function RootLayout({
           <LayoutWrapper>
             {children}
           </LayoutWrapper>
+          <Toaster position="bottom-right" />
         </ThemeProvider>
       </body>
     </html>

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/lib/toast';
 import { logger } from '@/lib/logging';
 import { RefundCard } from './refund-card';
 import type { PendingRefundWithDetails } from '@/types';
@@ -12,13 +12,9 @@ export function RefundApprovalQueue() {
   const [requests, setRequests] = useState<PendingRefundWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
-  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchPendingRequests();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchPendingRequests = async (): Promise<void> => {
+  const fetchPendingRequests = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await fetch('/api/refunds/image');
@@ -29,15 +25,15 @@ export function RefundApprovalQueue() {
       setRequests(data.refunds || []);
     } catch (error) {
       logger.error('Error fetching pending requests', { error });
-      toast({
-        title: 'Error',
-        description: 'Failed to load pending refund requests',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load pending refund requests');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPendingRequests();
+  }, [fetchPendingRequests]);
 
   const handleApprove = async (refundId: string): Promise<void> => {
     setProcessingIds(prev => new Set(prev).add(refundId));
@@ -54,17 +50,10 @@ export function RefundApprovalQueue() {
       // Remove from list
       setRequests(prev => prev.filter(req => req.id !== refundId));
 
-      toast({
-        title: 'Success',
-        description: 'Refund request approved successfully',
-      });
+      toast.success('Refund request approved successfully');
     } catch (error) {
       logger.error('Error approving refund', { error, refundId });
-      toast({
-        title: 'Error',
-        description: 'Failed to approve refund request',
-        variant: 'destructive',
-      });
+      toast.error('Failed to approve refund request');
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
