@@ -60,9 +60,10 @@ prompt-bench/   # Isolated CLI framework
 - **Path aliases**: `@/*` → `./src/*`, `@bench/*` → `./prompt-bench/*`
 - **Error handling**: Result type (`ok`/`err`) in prompt-bench, try/catch in app
 - **Barrel exports**: All lib modules via index.ts
-- **TypeScript**: Never `any`/unguarded `unknown`/`!`, explicit return types
-  - Enforced: `@typescript-eslint/explicit-function-return-type`
-  - Exception: React components (JSX.Element inference)
+- **TypeScript**: Never `any`/unguarded `unknown`/`!`, explicit return types on exports
+  - Enforced: `@typescript-eslint/explicit-function-return-type` on lib/API code only
+  - Rationale: Module boundaries need contracts, internal implementation relies on inference
+  - Exempted: React components (.tsx), event handlers, inline callbacks
 - **Functions**: ≤20 lines, ≤3 nesting
 - **Pricing**: `prompt-bench.toml` at root (committed)
   - Model matching: exact → prefix → error (never guess provider)
