@@ -82,7 +82,7 @@ export function ContactForm(): React.ReactElement {
         if (response.status === 400 && result.details) {
           // Handle validation errors from server
           const errors: FieldErrors = {};
-          result.details.forEach((issue: any) => {
+          result.details.forEach((issue: { path: (string | number)[]; message: string }) => {
             const field = issue.path[0] as keyof ContactFormData;
             errors[field] = issue.message;
           });
@@ -111,7 +111,7 @@ export function ContactForm(): React.ReactElement {
         <div className="bg-success/10 border border-success/20 text-success px-4 py-3 rounded-lg mb-4">
           <h3 className="font-medium">Message sent!</h3>
           <p className="text-sm mt-1">
-            Thank you for contacting us. We'll get back to you within 24 hours.
+            Thank you for contacting us. We&apos;ll get back to you within 24 hours.
           </p>
         </div>
         <Button

@@ -4,6 +4,18 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { softDeleteImage } from './generated-images';
 import type { RefundReason, RefundStatus, ImageRefundRequest, EligiblePurchase } from '@/types';
 
+type PurchaseWithLedger = {
+  id: string;
+  created_at: string | null;
+  amount_cents: number;
+  credits_granted: number;
+  purchase_credit_ledger: Array<{
+    credits_consumed: number;
+    credits_refunded_image: number;
+    credits_refunded_cash: number;
+  }>;
+};
+
 export interface CreateImageRefundRequestParams {
   userId: string;
   imageId: string;
@@ -206,9 +218,9 @@ export async function getEligibleCashRefunds(userId: string): Promise<EligiblePu
 
   const refundedPurchaseIds = new Set(refundRequests.map(r => r.stripe_purchase_id));
 
-  return data
-    .filter((purchase: any) => !refundedPurchaseIds.has(purchase.id))
-    .map((purchase: any) => {
+  return (data as PurchaseWithLedger[])
+    .filter((purchase) => !refundedPurchaseIds.has(purchase.id))
+    .map((purchase) => {
       const ledger = purchase.purchase_credit_ledger[0];
       const creditsUnused = purchase.credits_granted - ledger.credits_consumed - ledger.credits_refunded_image - ledger.credits_refunded_cash;
 

@@ -26,7 +26,7 @@ const mockFetch = mock(() => Promise.resolve({
   })
 } as any));
 
-// @ts-ignore - Test mock
+// @ts-expect-error - Test mock
 global.fetch = mockFetch;
 
 describe('TemplateSelector', () => {

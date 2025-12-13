@@ -9,7 +9,7 @@ GlobalRegistrator.register({
 
 // Mock Next.js Image component for tests
 mock.module('next/image', () => ({
-  default: (props: any) => {
+  default: (props: Record<string, unknown>) => {
     const { src, alt, width, height, className, ...rest } = props;
     // Return a simple img element for testing
     return {

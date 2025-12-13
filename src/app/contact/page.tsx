@@ -15,7 +15,7 @@ export default function ContactPage(): React.ReactElement {
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold font-display mb-2">Get in Touch</h1>
           <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-            Have a question or need help? We'd love to hear from you.
+            Have a question or need help? We&apos;d love to hear from you.
           </p>
         </div>
 
