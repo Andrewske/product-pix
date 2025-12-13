@@ -3,8 +3,13 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { approveImageRefund } from '@/lib/db/refunds';
+import { createCreditError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 
 export const POST = withAuth(async (request, { params }) => {
+  let refundAmount = 0;
+
   try {
     const { id: refundId } = await params;
 
@@ -24,6 +29,17 @@ export const POST = withAuth(async (request, { params }) => {
       );
     }
 
+    // Get refund amount before processing
+    const { createAdminClient } = await import('@/lib/supabase/admin');
+    const supabase = createAdminClient();
+    const { data: refundRequest } = await supabase
+      .from('image_refund_requests')
+      .select('credits_refunded')
+      .eq('id', refundId)
+      .single();
+
+    refundAmount = refundRequest?.credits_refunded || 0;
+
     const success = await approveImageRefund(refundId, request.user.id);
 
     if (!success) {
@@ -36,6 +52,20 @@ export const POST = withAuth(async (request, { params }) => {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Approve refund error:', error);
+
+    const creditError = createCreditError(
+      ErrorCodes.CREDIT_REFUND_FAILED,
+      'Image refund approval failed',
+      {
+        severity: 'critical',
+        amount: refundAmount,
+        operation: 'refund',
+        userId: request.user.id,
+      }
+    );
+
+    await captureError(creditError, { route: '/api/refunds/image/[id]/approve' });
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

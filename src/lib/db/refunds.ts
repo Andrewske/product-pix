@@ -174,6 +174,47 @@ export async function approveRefund(
   return await approveImageRefund(refundId, adminId);
 }
 
+export const approveCashRefund = async (
+  refundId: string,
+  adminId: string
+): Promise<boolean> => {
+  const supabase = createAdminClient();
+
+  // First get the refund request details
+  const { data: refundRequest, error: fetchError } = await supabase
+    .from('cash_refund_requests')
+    .select('user_id, refund_amount_cents, status')
+    .eq('id', refundId)
+    .single();
+
+  if (fetchError || !refundRequest) {
+    console.error('Error fetching cash refund request:', fetchError);
+    return false;
+  }
+
+  if (refundRequest.status !== 'processing') {
+    console.error('Cash refund request is not in processing status');
+    return false;
+  }
+
+  // Update the refund request status to completed (refund already processed)
+  const { error: updateError } = await supabase
+    .from('cash_refund_requests')
+    .update({
+      status: 'completed',
+      reviewed_by: adminId,
+      processed_at: new Date().toISOString(),
+    })
+    .eq('id', refundId);
+
+  if (updateError) {
+    console.error('Error approving cash refund:', updateError);
+    return false;
+  }
+
+  return true;
+};
+
 export async function getEligibleCashRefunds(userId: string): Promise<EligiblePurchase[]> {
   const supabase = await createClient();
 

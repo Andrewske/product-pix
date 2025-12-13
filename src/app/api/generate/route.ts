@@ -8,6 +8,9 @@ import { generateImage } from '@/lib/ai/generate-image';
 import { getPublicUrl } from '@/lib/r2';
 import { rateLimiters } from '@/lib/rate-limit';
 import { getCreditsForResolution } from '@/lib/pricing/credits';
+import { createGenerationError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 import { z } from 'zod';
 
 const requestSchema = z.object({
@@ -18,6 +21,10 @@ const requestSchema = z.object({
 });
 
 export const POST = withAuth(async (request) => {
+  let templateSlug = '';
+  let creditCost = 0;
+  let jobResult: { success: boolean; job_id: string | null; message?: string } | undefined;
+
   try {
 
     // Rate limit check
@@ -49,10 +56,11 @@ export const POST = withAuth(async (request) => {
       );
     }
 
-    const { uploadId, templateSlug, aspectRatio, resolution } = parsed.data;
+    const { uploadId, templateSlug: parsedTemplateSlug, aspectRatio, resolution } = parsed.data;
+    templateSlug = parsedTemplateSlug;
 
     // Calculate credits based on resolution
-    const creditCost = getCreditsForResolution(resolution);
+    creditCost = getCreditsForResolution(resolution);
 
     // If uploadId provided, fetch the upload
     let sourceImage: Buffer | undefined;
@@ -152,8 +160,26 @@ export const POST = withAuth(async (request) => {
     });
   } catch (error) {
     console.error('Generate error:', error);
+
+    const creditsConsumed = jobResult?.success === true ? creditCost : 0;
+
+    const generationError = createGenerationError(
+      ErrorCodes.GENERATION_FAILED,
+      'Image generation failed',
+      {
+        severity: creditsConsumed ? 'critical' : 'high',
+        templateSlug,
+        creditsConsumed,
+        userId: request.user.id,
+        creditAmount: creditCost,
+        retryable: false,
+      }
+    );
+
+    await captureError(generationError, { route: '/api/generate' });
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Generation failed', jobId: jobResult?.job_id },
       { status: 500 }
     );
   }

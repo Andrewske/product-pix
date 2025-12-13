@@ -4,6 +4,9 @@ import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe/client';
 import { processStripeEvent } from '@/lib/stripe/webhook-handlers';
 import { env } from '@/lib/env';
+import { createPaymentError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 
 const ALLOWED_EVENTS: Stripe.Event.Type[] = [
   'checkout.session.completed',
@@ -41,6 +44,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('[Stripe Webhook] Error:', error);
+
+    const paymentError = createPaymentError(
+      ErrorCodes.PAYMENT_WEBHOOK_INVALID,
+      'Stripe webhook processing failed',
+      {
+        severity: 'critical',
+        amount: 0, // Webhook validation doesn't have amount context
+        currency: 'usd',
+        stripeErrorCode: error instanceof Error ? error.message : 'unknown',
+      }
+    );
+
+    await captureError(paymentError, { route: '/api/webhooks/stripe' });
+
     return NextResponse.json({ error: 'Webhook error' }, { status: 400 });
   }
 }
