@@ -5,7 +5,7 @@ let _client: PostHog | null = null;
 let _shutdownRegistered = false;
 
 export function getPostHogServer(): PostHog | null {
-  if (!env.OBSERVABILITY_ENABLED || !env.POSTHOG_API_KEY) {
+  if (env.OBSERVABILITY_ENABLED !== 'true' || !env.POSTHOG_API_KEY) {
     return null;
   }
 
@@ -20,6 +20,9 @@ export function getPostHogServer(): PostHog | null {
     if (!_shutdownRegistered) {
       _shutdownRegistered = true;
       process.on('SIGTERM', async () => {
+        await _client?.shutdown();
+      });
+      process.on('SIGINT', async () => {
         await _client?.shutdown();
       });
     }
