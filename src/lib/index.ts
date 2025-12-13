@@ -13,6 +13,7 @@ export * from './db';
 export * from './images';
 export * from './landing';
 export * from './logging';
+export * from './posthog';
 export * from './pricing';
 export * from './r2';
 export * from './rate-limit';

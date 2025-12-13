@@ -35,11 +35,16 @@ const envSchema = z.object({
    STRIPE_PRICE_PRO_MONTHLY: z.string().min(1),
    STRIPE_PRICE_BUSINESS_MONTHLY: z.string().min(1),
 
-   // Resend Email
-   EMAIL_ENABLED: z.enum(['true', 'false']).optional().default('false'),
-   RESEND_API_KEY: z.string().optional(),
-   RESEND_FROM_EMAIL: z.string().optional(),
-   ADMIN_EMAIL: z.string().optional(),
+    // Resend Email
+    EMAIL_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+    RESEND_API_KEY: z.string().optional(),
+    RESEND_FROM_EMAIL: z.string().optional(),
+    ADMIN_EMAIL: z.string().optional(),
+
+    // PostHog
+    OBSERVABILITY_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+    POSTHOG_API_KEY: z.string().optional(),
+    POSTHOG_HOST: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;
