@@ -4,6 +4,12 @@ import { contactFormSchema } from '@/lib/validation/contact';
 import { createContactMessage } from '@/lib/db/contacts';
 import { rateLimiters } from '@/lib/rate-limit';
 import { logger } from '@/lib/logging';
+import {
+  sendEmail,
+  renderContactAdminNotification,
+  renderContactUserAcknowledgment,
+} from '@/lib/email';
+import { env } from '@/lib/env';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -68,10 +74,47 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 6. Success response
+    // 6. Send emails (non-blocking)
+    const adminEmailResult = await sendEmail({
+      to: env.ADMIN_EMAIL,
+      subject: `New Contact: ${parsed.data.name}`,
+      html: renderContactAdminNotification({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        message: parsed.data.message,
+        submittedAt: new Date().toISOString(),
+      }),
+      replyTo: parsed.data.email,
+    });
+
+    if (!adminEmailResult.success) {
+      logger.warn('Admin notification email failed (submission still succeeded)', {
+        messageId: result.messageId,
+        error: adminEmailResult.error,
+      });
+    }
+
+    const userEmailResult = await sendEmail({
+      to: parsed.data.email,
+      subject: 'Thanks for contacting ProductPix',
+      html: renderContactUserAcknowledgment({
+        name: parsed.data.name,
+      }),
+    });
+
+    if (!userEmailResult.success) {
+      logger.warn('User acknowledgment email failed (submission still succeeded)', {
+        messageId: result.messageId,
+        error: userEmailResult.error,
+      });
+    }
+
+    // 7. Success response
     logger.info('Contact message submitted successfully', {
       messageId: result.messageId,
       email: parsed.data.email,
+      adminEmailSent: adminEmailResult.success,
+      userEmailSent: userEmailResult.success,
     });
 
     return NextResponse.json({
