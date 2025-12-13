@@ -60,7 +60,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
 /**
  * Handle successful checkout session completion
  */
-async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
   // Sync customer data
   await syncStripeDataToKV(session.customer as string);
 }
@@ -68,7 +68,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 /**
  * Handle subscription changes
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription) {
+async function handleSubscriptionChange(subscription: Stripe.Subscription): Promise<void> {
   // Sync subscription data
   await syncStripeDataToKV(subscription.customer as string);
 
@@ -132,7 +132,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
 /**
  * Handle failed invoice payment
  */
-async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   logger.warn('Invoice payment failed', { invoiceId: invoice.id });
   // Could send notification to user, but subscription stays active until retry limit
 }
@@ -140,7 +140,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 /**
  * Handle successful payment intent (credit pack purchases)
  */
-async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
   // Extract metadata from payment intent
   const metadata = paymentIntent.metadata;
   if (!metadata.userId) return; // Not a purchase we handle
@@ -166,7 +166,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 /**
  * Handle failed payment intent
  */
-async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent): Promise<void> {
   logger.warn('Payment intent failed', { paymentIntentId: paymentIntent.id });
   // Could send notification, but payment intent status is already failed
 }
@@ -174,7 +174,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 /**
  * Handle charge refunded (cash refund completion)
  */
-async function handleChargeRefunded(charge: Stripe.Charge) {
+async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
   const refund = charge.refunds?.data[0];
   if (!refund) {
     logger.warn('Charge refunded but no refund object', { chargeId: charge.id });

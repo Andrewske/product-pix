@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
+import { Tables } from '@/types/database';
 
 export interface CreateContactMessageParams {
   name: string;
@@ -50,7 +51,7 @@ export const createContactMessage = async (
   }
 };
 
-export const getContactMessage = async (id: string) => {
+export const getContactMessage = async (id: string): Promise<Tables<'contact_messages'> | null> => {
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
@@ -67,7 +68,7 @@ export const getContactMessage = async (id: string) => {
   return data;
 };
 
-export const listContactMessages = async (limit = 50, offset = 0) => {
+export const listContactMessages = async (limit = 50, offset = 0): Promise<Tables<'contact_messages'>[]> => {
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
