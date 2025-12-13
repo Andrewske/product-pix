@@ -17,7 +17,7 @@ const ALLOWED_EVENTS: Stripe.Event.Type[] = [
   'charge.refunded',
 ];
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.text();
     const headersList = await headers();

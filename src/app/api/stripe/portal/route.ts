@@ -3,7 +3,7 @@ import { stripe } from '@/lib/stripe/client';
 import { getUserStripeCustomerId } from '@/lib/stripe/customer';
 import { requireAuth } from '@/lib/auth/server';
 
-export async function POST() {
+export async function POST(): Promise<NextResponse> {
   try {
     const user = await requireAuth();
     const customerId = await getUserStripeCustomerId(user.id);
