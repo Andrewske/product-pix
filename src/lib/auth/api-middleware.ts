@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
-import { randomUUID } from 'node:crypto';
 import { createClient } from '@/lib/supabase/server';
-import { requestContext } from '@/lib/request/context';
+import { withRequestContext, setUserId } from '@/lib/request';
 
 export interface AuthenticatedRequest extends NextRequest {
   user: User;
@@ -15,46 +14,30 @@ export type AuthenticatedHandler<T = Record<string, string>> = (
 
 export const withAuth = <T = Record<string, string>>(
   handler: AuthenticatedHandler<T>
-) => {
-  return async (
-    request: NextRequest,
-    context: { params: Promise<T> }
-  ): Promise<NextResponse> => {
-    const requestId = randomUUID();
+): ((request: NextRequest, context: { params: Promise<T> }) => Promise<NextResponse>) => {
+  return withRequestContext<T>(async (request, context) => {
+    try {
+      const supabase = await createClient();
+      const { data: { user }, error } = await supabase.auth.getUser();
 
-    return requestContext.run(
-      { requestId, route: request.nextUrl.pathname },
-      async () => {
-        try {
-          const supabase = await createClient();
-          const { data: { user }, error } = await supabase.auth.getUser();
-
-          if (error || !user) {
-            return NextResponse.json(
-              { error: 'Unauthorized' },
-              { status: 401 }
-            );
-          }
-
-          // Add userId to context after successful auth
-          const store = requestContext.getStore();
-          if (store) {
-            store.userId = user.id;
-          }
-
-          const authenticatedRequest = Object.assign(request, { user });
-          const resolvedParams = await context.params;
-
-          const response = await handler(authenticatedRequest, { params: resolvedParams });
-          response.headers.set('x-request-id', requestId);
-          return response;
-        } catch {
-          return NextResponse.json(
-            { error: 'Authentication failed' },
-            { status: 401 }
-          );
-        }
+      if (error || !user) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
       }
-    );
-  };
+
+      // Use the setUserId helper for consistency
+      setUserId(user.id);
+
+      const authenticatedRequest = Object.assign(request, { user });
+      return handler(authenticatedRequest, context);
+    } catch (error) {
+      console.error('Authentication error:', error);
+      return NextResponse.json(
+        { error: 'Authentication failed' },
+        { status: 401 }
+      );
+    }
+  });
 };

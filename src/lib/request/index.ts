@@ -1,2 +1,2 @@
-export { requestContext, getRequestContext, setUserId } from './context';
+export { requestContext, getRequestContext, setUserId, type RequestContext } from './context';
 export { withRequestContext } from './with-context';

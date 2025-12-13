@@ -13,36 +13,36 @@ export const BaseErrorContextSchema = z.object({
 });
 
 export const PaymentErrorContextSchema = BaseErrorContextSchema.extend({
-  amount: z.number(),
-  currency: z.string().default('usd'),
+  amount: z.number().nonnegative(),
+  currency: z.string().length(3).toLowerCase().default('usd'),
   paymentIntentId: z.string().optional(),
   stripeErrorCode: z.string().optional(),
 });
 
 export const CreditErrorContextSchema = BaseErrorContextSchema.extend({
-  amount: z.number(),
-  operation: z.string(),
+  amount: z.number().nonnegative(),
+  operation: z.enum(['consume', 'add', 'refund']),
   balanceBefore: z.number().optional(),
   balanceAfter: z.number().optional(),
 });
 
 export const GenerationErrorContextSchema = BaseErrorContextSchema.extend({
   templateSlug: z.string(),
-  creditsConsumed: z.number(),
+  creditsConsumed: z.number().nonnegative(),
   creditAmount: z.number().optional(),
   retryable: z.boolean().optional(),
 });
 
 export const AuthErrorContextSchema = BaseErrorContextSchema.extend({
-  authMethod: z.string(),
-  provider: z.string().optional(),
+  authMethod: z.enum(['oauth', 'email', 'magic_link']),
+  provider: z.enum(['google', 'github', 'gitlab']).optional(),
   emailDomain: z.string().optional(),
 });
 
 export const RateLimitErrorContextSchema = BaseErrorContextSchema.extend({
   limit: z.number(),
   remaining: z.number(),
-  resetAt: z.string(),
+  resetAt: z.string().datetime(),
 });
 
 export const ValidationErrorContextSchema = BaseErrorContextSchema.extend({

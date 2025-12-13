@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 
+import { getRequestContext } from '@/lib/request';
 import { ErrorCodes, type ErrorCode } from './codes';
 
 import {
@@ -11,8 +12,8 @@ import {
   ValidationErrorContextSchema,
 } from './schemas';
 
-type ErrorDomain = 'payment' | 'credit' | 'generation' | 'auth' | 'validation' | 'rate-limit' | 'system';
-type Severity = 'critical' | 'high' | 'medium' | 'low';
+export type ErrorDomain = 'payment' | 'credit' | 'generation' | 'auth' | 'validation' | 'rate-limit' | 'system';
+export type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 interface ProductPixErrorOptions {
   userId?: string;
@@ -36,9 +37,10 @@ export class ProductPixError extends Error {
 
   constructor(message: string, opts: ProductPixErrorOptions) {
     super(message);
+    const context = getRequestContext();
     this.name = 'ProductPixError';
-    this.userId = opts.userId;
-    this.requestId = opts.requestId;
+    this.userId = opts.userId ?? context?.userId;
+    this.requestId = opts.requestId ?? context?.requestId;
     this.context = opts.context ?? {};
     this.severity = opts.severity;
     this.domain = opts.domain;
@@ -97,7 +99,7 @@ export function createGenerationError(
 
   return new ProductPixError(message, {
     domain: 'generation',
-    severity: parsed.creditsConsumed ? (parsed.severity ?? 'critical') : (parsed.severity ?? 'high'),
+    severity: parsed.severity ?? (parsed.creditsConsumed > 0 ? 'critical' : 'high'),
     errorCode: code,
     context: parsed,
     userId: parsed.userId,

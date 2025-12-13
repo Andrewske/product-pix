@@ -4,7 +4,7 @@ import { requestContext } from './context';
 
 export const withRequestContext = <T = Record<string, string>>(
   handler: (request: NextRequest, context: { params: T }) => Promise<NextResponse>
-) => {
+): ((request: NextRequest, context: { params: Promise<T> }) => Promise<NextResponse>) => {
   return async (
     request: NextRequest,
     context: { params: Promise<T> }

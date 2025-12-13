@@ -65,6 +65,95 @@ describe('Error Handling', () => {
     });
   });
 
+  describe('Validation failures', () => {
+    it('throws on invalid payment amount', () => {
+      expect(() => createPaymentError(
+        ErrorCodes.PAYMENT_INTENT_FAILED,
+        'Test',
+        { amount: 'invalid' as any, currency: 'usd' }
+      )).toThrow();
+    });
+
+    it('throws on negative payment amount', () => {
+      expect(() => createPaymentError(
+        ErrorCodes.PAYMENT_INTENT_FAILED,
+        'Test',
+        { amount: -100, currency: 'usd' }
+      )).toThrow();
+    });
+
+    it('throws on invalid currency code', () => {
+      expect(() => createPaymentError(
+        ErrorCodes.PAYMENT_INTENT_FAILED,
+        'Test',
+        { amount: 100, currency: 'invalid-currency' }
+      )).toThrow();
+    });
+
+    it('throws on missing required credit fields', () => {
+      expect(() => createCreditError(
+        ErrorCodes.CREDIT_INSUFFICIENT,
+        'Test',
+        {} as any
+      )).toThrow();
+    });
+
+    it('throws on negative credit amount', () => {
+      expect(() => createCreditError(
+        ErrorCodes.CREDIT_INSUFFICIENT,
+        'Test',
+        { amount: -50, operation: 'consume' }
+      )).toThrow();
+    });
+
+    it('throws on invalid credit operation', () => {
+      expect(() => createCreditError(
+        ErrorCodes.CREDIT_INSUFFICIENT,
+        'Test',
+        { amount: 50, operation: 'invalid-operation' as any }
+      )).toThrow();
+    });
+
+    it('throws on negative creditsConsumed', () => {
+      expect(() => createGenerationError(
+        ErrorCodes.GENERATION_FAILED,
+        'Test',
+        { templateSlug: 'test', creditsConsumed: -10 }
+      )).toThrow();
+    });
+
+    it('throws on invalid authMethod', () => {
+      expect(() => createAuthError(
+        ErrorCodes.AUTH_UNAUTHORIZED,
+        'Test',
+        { authMethod: 'invalid-method' as any }
+      )).toThrow();
+    });
+
+    it('throws on invalid provider', () => {
+      expect(() => createAuthError(
+        ErrorCodes.AUTH_UNAUTHORIZED,
+        'Test',
+        { authMethod: 'oauth', provider: 'invalid-provider' as any }
+      )).toThrow();
+    });
+
+    it('throws on invalid severity value', () => {
+      expect(() => createPaymentError(
+        ErrorCodes.PAYMENT_INTENT_FAILED,
+        'Test',
+        { amount: 100, severity: 'invalid' as any }
+      )).toThrow();
+    });
+
+    it('throws on invalid resetAt datetime format', () => {
+      expect(() => createRateLimitError(
+        'Test',
+        { limit: 100, remaining: 0, resetAt: 'invalid-date' }
+      )).toThrow();
+    });
+  });
+
   describe('Factory functions', () => {
     it('creates payment error with validation', () => {
       const error = createPaymentError(

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-interface RequestContext {
+export interface RequestContext {
   requestId: string;
   userId?: string;
   route?: string;

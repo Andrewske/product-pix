@@ -1,4 +1,5 @@
 export { ErrorCodes, type ErrorCode } from './codes';
+export type { ErrorDomain, Severity } from './error-classes';
 export {
   AuthErrorContextSchema,
   BaseErrorContextSchema,
