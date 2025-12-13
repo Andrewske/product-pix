@@ -53,6 +53,10 @@ export default function GeneratePage() {
     setResult(null);
 
     try {
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,7 +66,10 @@ export default function GeneratePage() {
           aspectRatio,
           resolution: '1k',
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -82,7 +89,13 @@ export default function GeneratePage() {
         jobId: data.jobId,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed');
+      console.error('Generation error:', err);
+
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Generation failed');
+      }
     } finally {
       setGenerating(false);
     }
@@ -153,7 +166,7 @@ export default function GeneratePage() {
           )}
 
           {/* Generate Button */}
-          <Button onClick={handleGenerate} disabled={generating || credits < 1} variant="accent" className="w-full" size="lg">
+          <Button onClick={handleGenerate} disabled={generating || credits < 1} variant="accent" className="w-full border-none shadow-2xl !text-black bg-green-600 opacity-90 hover:opacity-100 hover:scale-105 transition-all" size="lg">
             {generating ? 'Generating...' : 'Generate (1 credit)'}
           </Button>
 
@@ -165,15 +178,19 @@ export default function GeneratePage() {
         {/* Right Column: Result */}
         <div>
           <SectionLabel>RESULT</SectionLabel>
-          <Card variant="hero" className="min-h-[500px] flex items-center justify-center">
+          <Card variant="hero" className="min-h-[500px] flex flex-col">
             {generating ? (
-              <GenerationLoading />
+              <div className="flex items-center justify-center h-full">
+                <GenerationLoading />
+              </div>
             ) : result ? (
               <GenerationResult imageUrl={result.imageUrl} onDownload={handleDownload} onRegenerate={handleRegenerate} />
             ) : (
-              <div className="text-center text-muted-foreground">
-                <Sparkles className="w-8 h-8 mx-auto mb-3 text-primary/50" />
-                <p>Your studio-ready photo will appear here after you generate.</p>
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <div>
+                  <Sparkles className="w-8 h-8 mx-auto mb-3 text-primary/50" />
+                  <p>Your studio-ready photo will appear here after you generate.</p>
+                </div>
               </div>
             )}
           </Card>

@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import Image from 'next/image';
 
 interface GenerationResultProps {
@@ -20,14 +19,14 @@ export function GenerationResult({
   const [isZoomed, setIsZoomed] = useState(false);
 
   return (
-    <Card variant="studio" className="p-6 space-y-4">
-      <div className="relative w-full h-64">
+    <div className="h-full flex flex-col p-6">
+      <div className="relative w-full h-96">
         <Image
           src={imageUrl}
           alt="Generated product photo"
           fill
           className={`
-            object-cover rounded-lg cursor-pointer transition-transform
+            object-contain rounded-lg cursor-pointer transition-transform
             ${isZoomed ? 'scale-150 z-50' : 'hover:scale-105'}
           `}
           onClick={() => setIsZoomed(!isZoomed)}
@@ -41,14 +40,14 @@ export function GenerationResult({
         )}
       </div>
 
-      <div className="flex gap-3">
-        <Button onClick={onDownload} className="flex-1">
+      <div className="flex gap-3 mt-4">
+        <Button onClick={onDownload} variant="accent" className="flex-1 bg-green-600 hover:bg-green-700 text-white">
           Download
         </Button>
-        <Button onClick={onRegenerate} variant="outline" className="flex-1">
+        <Button onClick={onRegenerate} variant="outline" className="flex-1 border-teal-600 text-teal-600 hover:bg-teal-50 hover:border-teal-700">
           Regenerate
         </Button>
       </div>
-    </Card>
+    </div>
   );
 }
