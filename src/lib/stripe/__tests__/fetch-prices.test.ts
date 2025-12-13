@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, mock } from 'bun:test';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { env } from '@/lib/env';
 
 const mockStripeRetrieve = mock(() => {});

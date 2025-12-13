@@ -1,5 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginForm } from '../login-form';
 
@@ -25,8 +25,6 @@ mock.module('@/lib/supabase/client', () => ({
   }),
 }));
 
-// Type for auth response
-type AuthResponse = { error: { message: string } | null };
 
 describe('LoginForm - Integration Tests', () => {
   beforeEach(() => {

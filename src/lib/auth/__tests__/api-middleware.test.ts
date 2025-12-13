@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
 import { withAuth, AuthenticatedRequest, AuthenticatedHandler } from '@/lib/auth/api-middleware';

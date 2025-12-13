@@ -1,6 +1,5 @@
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { PricingSection } from '../pricing-section';
 
 const mockPricing = {
@@ -123,7 +122,6 @@ describe('PricingSection', () => {
     expect(bestValueCard).toBeDefined();
 
     // Check that it has primary border styling
-    const style = window.getComputedStyle(bestValueCard!);
     expect(bestValueCard?.classList.contains('border-primary')).toBe(true);
     expect(bestValueCard?.classList.contains('scale-105')).toBe(true);
   });
@@ -147,7 +145,7 @@ describe('PricingSection', () => {
     expect(buttons).toHaveLength(3);
 
     // Each button should be in its respective pricing card
-    buttons.forEach((button, index) => {
+    buttons.forEach((button) => {
       const card = button.closest('[role="gridcell"]');
       expect(card).toBeDefined();
 

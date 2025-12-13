@@ -8,6 +8,13 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        }
+      ],
     },
   },
   // Relax rules for test files (standard practice)
@@ -16,7 +23,13 @@ const eslintConfig = defineConfig([
     rules: {
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        }
+      ],
     },
   },
   // Relax rules for shadcn/ui components (library code)

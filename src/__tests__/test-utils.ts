@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { expect, mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
@@ -41,7 +41,7 @@ export const testAccessibility = async (component: React.ReactElement) => {
 };
 
 // Test color contrast (simplified - in real app would use a proper contrast checker)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export const testColorContrast = (element: HTMLElement, _minRatio = 4.5) => {
   // In jsdom environment, getComputedStyle is available
   if (typeof window !== 'undefined') {
@@ -105,9 +105,9 @@ export const mockPerformanceAPI = (): void => {
   };
 
   // Bun test: Create mock constructor that returns mockObserver
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   global.PerformanceObserver = mock(() => mockObserver) as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (global.PerformanceObserver as any).supportedEntryTypes = ['measure', 'mark', 'navigation', 'resource'];
 
   // Mock performance.mark and performance.measure

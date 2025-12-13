@@ -1,5 +1,5 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
-import { afterEach, expect, mock } from 'bun:test';
+import { afterEach, mock } from 'bun:test';
 
 // Register happy-dom globals (replaces jsdom)
 GlobalRegistrator.register({

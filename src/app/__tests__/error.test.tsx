@@ -167,7 +167,7 @@ describe('ErrorBoundary', () => {
 
   it('catches errors from async data fetching components', async () => {
     const DataFetchComponent = () => {
-      const [data, setData] = React.useState<string | null>(null);
+      const [data] = React.useState<string | null>(null);
       const [error, setError] = React.useState<Error | null>(null);
 
       React.useEffect(() => {

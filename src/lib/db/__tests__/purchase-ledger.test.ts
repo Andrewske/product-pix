@@ -1,6 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
 import { createAdminClient } from '@/lib/supabase/admin';
-import type { Database } from '@/types/database';
 
 // Mock the admin client
 mock.module('@/lib/supabase/admin', () => ({

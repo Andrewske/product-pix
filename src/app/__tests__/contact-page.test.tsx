@@ -99,7 +99,6 @@ describe('ContactForm', () => {
   })
 
   it('prevents submission with validation errors', async () => {
-    const user = userEvent.setup()
     render(<ContactForm />)
 
     const form = document.querySelector('form')

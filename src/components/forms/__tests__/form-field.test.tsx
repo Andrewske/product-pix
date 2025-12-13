@@ -229,7 +229,7 @@ describe('FormField', () => {
 
     it('maintains error state while user types correction', async () => {
       const user = userEvent.setup();
-      const { rerender } = render(
+      render(
         <FormField
           label="Email"
           name="email"
@@ -359,7 +359,7 @@ describe('FormField', () => {
 
       it('supports keyboard navigation with tab order', async () => {
         const user = userEvent.setup();
-        const { getByRole } = render(
+        render(
           <div>
             <FormField label="First Field" name="first" />
             <FormField label="Second Field" name="second" />

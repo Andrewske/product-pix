@@ -98,7 +98,7 @@ export function ContactForm(): React.ReactElement {
       setSubmitted(true);
       setFormData({ name: '', email: '', message: '' });
       setFieldErrors({});
-    } catch (err) {
+    } catch {
       setError('Failed to send message. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);

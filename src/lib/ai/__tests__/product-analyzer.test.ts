@@ -1,11 +1,11 @@
 // src/lib/ai/__tests__/product-analyzer.test.ts
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import type { ProductAnalysis } from '../types';
 
 // Create mock functions
 const mockGenerateObject = mock(() => Promise.resolve({}));
-const mockGoogle = mock((modelName: string) => 'mocked-google-model');
+const mockGoogle = mock((_modelName: string) => 'mocked-google-model');
 const mockLoggerError = mock(() => {});
 const mockNormalizeUsage = mock(() => ({
   promptTokens: 150,

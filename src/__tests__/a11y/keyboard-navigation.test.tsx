@@ -263,8 +263,6 @@ describe('Keyboard Navigation Suite', () => {
   });
 
   it('skip links allow jumping to main content', async () => {
-    const user = userEvent.setup();
-
     render(
       <div>
         <a href="#main-content" className="skip-link">Skip to main content</a>
