@@ -1,242 +1,168 @@
 # AI Learnings
 
-Hard-won insights, gotchas, and patterns discovered while building ProductPix.
+> Critical insights and gotchas for ProductPix. Last cleaned: 2025-12-12
 
-## AI Image Generation
+## Architecture Decisions
 
-- **Optimal prompt length**: 10-15 words for product photography. Exceeding this causes AI to deprioritize later elements
-- **Avoid "photorealistic"**: Counter-intuitively produces digitized/artificial appearance. Use "studio lighting, product photography" instead
-- **Google Gemini prompt structure**: Subject + Context + Style framework produces best results
-- **Reference cameras for authenticity**: "shot on Hasselblad, 85mm lens" triggers more realistic outputs
-- **Negative prompts**: Keep minimal; overloading degrades overall quality
-- **Syntax matters**: Use commas to separate descriptors, avoid politeness phrases ("Please generate...")
+**Dual TypeScript configs for monorepo exclusion**: `tsconfig.json` includes `prompt-bench/`, `tsconfig.build.json` excludes it. Next.js uses `typescript.tsconfigPath: './tsconfig.build.json'`. Enables tightly-coupled dev tooling in monorepo without production bundle bloat. **Note**: `include` arrays override `exclude` — must replace entire array, not just append
 
-## E-commerce Platform Requirements
+**Stripe as price source**: Fetches live prices from Stripe API (not hardcoded). Credit economy (credits per resolution, packs, subscriptions) in TypeScript config. Merged via `getPricing()` server action with `unstable_cache` (1hr TTL). Eliminates price sync bugs
 
-- **Amazon main images**: Pure white background (RGB 255,255,255), product fills 85%+ of frame, minimum 1000px (2000px recommended for zoom)
-- **eBay optimal**: 1600×1600 pixels for zoom, prefer 1:1 aspect ratio
-- **Text in AI images**: Limit to 25 characters, max 2-3 distinct phrases — text rendering remains imperfect
+**Vision-first generation**: No user prompts. Gemini Flash analyzes source image → extracts structured product data (Zod schema enforced) → compiles template from DB with variables. Falls back to filename-based titles + empty template fields if analysis fails. Tracks two costs: vision analysis + generation
 
-## Cloudflare R2
+**Result type pattern**: `prompt-bench/` uses `Result<T>` with `ok()`/`err()` (railway-oriented programming). App code uses try/catch. Never mix patterns within same module
 
-- **CORS must be configured** before presigned URL uploads work — uploads fail silently without proper CORS
-- **OPTIONS vs PUT failure distinction**: If preflight (OPTIONS) succeeds but actual upload (PUT) fails, this indicates bucket permissions issue NOT CORS configuration. CORS only controls cross-origin requests, not authentication/authorization
-- **AllowedHeaders must include**: `Content-Type`, `Content-Length`, `x-amz-*`
-- **ExposeHeaders**: Include `ETag` for upload confirmation
+**Provider abstraction**: AI providers wrapped to enable swapping without touching business logic. Critical for regional restrictions (Gemini image gen unavailable in UK/EU/ME/Africa) and preview model deprecation
 
-## Error Handling Patterns
+## Gotchas & Pitfalls
 
-- **Result type (`ok`/`err`)**: Used in `src/lib/prompts/` for operations that can fail without exceptions
-- **Idempotency keys**: Prevent duplicate operations on script re-runs (used in prompt testing)
-- **Atomic credit operations**: Use database functions with `FOR UPDATE` locks to prevent race conditions
+**R2 CORS silent failure**: Uploads fail silently without CORS config. If preflight (OPTIONS) succeeds but PUT fails → bucket permissions issue (NOT CORS). Must include `x-amz-*` in AllowedHeaders, `ETag` in ExposeHeaders
 
-## Testing & Statistics
+**Tailwind v4 color variable mapping**: CSS custom properties MUST be mapped in `@theme` block or classes won't resolve. Example: `@theme { --color-primary: var(--electric-coral); }`. Missing mapping → unstyled black/white appearance
 
-- **Welch's t-test**: Used for A/B prompt comparisons — need 30+ samples for statistical significance
-- **Sample size warning**: <10 samples insufficient for any comparison; 10-30 may not achieve significance
-- **p < 0.05**: Standard threshold for declaring statistical significance
+**Gemini Zod limitations**: `z.union` and `z.record` don't work with structured outputs → use `structuredOutputs: false`
 
-## Gemini API
+**Gemini thinking config**: Use `thinkingLevel` ('low'|'high') for Gemini 3 models, `thinkingBudget` (number) for Gemini 2.5 models. Different APIs for different model families
 
-- **Regional restrictions**: Image generation NOT available in UK and several EU/ME/Africa countries
-- **Provider abstraction**: Always wrap AI providers to enable swapping without touching business logic
-- **Preview models**: Can change or be deprecated — design for provider flexibility
-- **Gemini 3 image migration**: Standardize on `gemini-3-pro-image-preview`; update env defaults, pricing, docs, and cost reporting together to avoid drift
-- **Zod limitations**: `z.union` and `z.record` don't work with Google Generative AI structured outputs — disable with `structuredOutputs: false`
-- **Thinking config**: Use `thinkingLevel` ('low'|'high') for Gemini 3 models, `thinkingBudget` (number) for Gemini 2.5 models
-- **Gemma system prompts**: Gemma models don't support `systemInstruction` — provider automatically prepends to first user message
+**Gemma system prompts**: Gemma models don't support `systemInstruction` — provider auto-prepends to first user message
 
-## Type System Patterns
+**Environment load order**: `prompt-bench/cli.ts:17-18` loads `.env` BEFORE `.env.local`. Reverse order breaks config precedence
 
-- **Database to app mapping**: Supabase uses `snake_case`, app interfaces use `camelCase` — create `dbToApp()`/`appToDb()` helper functions
-- **Result type access**: Use `.data` property for successful Result values (not `.value`)
+**Stripe customer creation timing**: Always create customer BEFORE checkout session (not after payment). Critical for webhook processing and userId mapping. Webhooks arrive before redirect completes
+
+**Database-level atomicity**: Use `INSERT ... ON CONFLICT DO NOTHING` with unique constraints for race-safe operations (credit granting, job creation). Application retry logic insufficient
+
+**Title uniqueness**: DB enforces unique `(user_id, title)` pairs. Auto-retry appends `-2`, `-3`, etc. up to 10 attempts. Prevents silent overwrites
+
+**Supabase JSONB merge**: No native merge operation. Must fetch existing → spread merge → update: `merged as Json`
+
+**Module init timing with unstable_cache**: Define constants inside functions when using `unstable_cache` to avoid circular dependencies
+
+**Bun test custom matchers**: Custom matchers conflict with native TypeScript types. Use native Bun matchers only: `expect(el?.getAttribute('x')).toBe('y')` not `toHaveAttribute()`
+
+**useSearchParams hydration**: Wrap client components using `useSearchParams` in `<Suspense>` boundary to prevent hydration mismatches
+
+**OAuth provider detection**: Check `user.app_metadata?.provider` or `user.identities?.[0]?.provider` for differentiating Google OAuth vs email/password (affects password management UI)
+
+**Payment metadata placement**: Credit packs → `payment_intent_data.metadata`. Subscriptions → `subscription_data.metadata`. Different paths for different payment types
+
+**Result type data access**: Use `.data` property (not `.value`) for successful Result values
+
+**Database to app mapping**: Supabase uses `snake_case`, app uses `camelCase`. Create `dbToApp()`/`appToDb()` helpers for transformations
+
+**'use server' directive**: Must be first line. Requires moving utility functions to separate files (server actions export only async functions)
+
+**Touch event validation**: Guard with array length check before `touches[0]` access. Prevents crashes during rapid interactions
+
+**Footer navigation on same page**: Use anchor scroll (`href="#pricing"`) when section exists on current page. Avoids unnecessary stub pages
+
+## AI Image Generation Patterns
+
+**Optimal prompt length**: 10-15 words for product photography. Exceeding causes deprioritization of later elements
+
+**Avoid "photorealistic"**: Produces artificial appearance. Use "studio lighting, product photography" instead
+
+**Reference cameras for authenticity**: "shot on Hasselblad, 85mm lens" triggers realistic outputs
+
+**Negative prompts**: Keep minimal; overloading degrades quality
+
+**Syntax**: Commas to separate descriptors. No politeness phrases ("Please generate...")
+
+**Platform requirements**:
+- Amazon main: RGB 255,255,255 white, 85%+ frame fill, 1000px min (2000px for zoom)
+- eBay: 1600×1600 for zoom, prefer 1:1 aspect
+- Text in images: 25 char limit, max 2-3 phrases (rendering imperfect)
 
 ## Template Improvement System
 
-- **Dimension-level feedback crucial**: Overall scores mask specific issues. AI needs breakdown of composition, lighting, product visibility, etc. to make targeted improvements
-- **Iteration history prevents regression**: Without previous attempt tracking, AI repeatedly tries failed approaches (e.g., anti-glare fixes that don't help)
-- **Statistical significance matters**: Minimum 5 evaluations needed for reliable improvement analysis; smaller batches lead to random variation dominating signal
-- **Evaluator reasoning goldmine**: The "why" behind scores contains actionable insights that overall numbers miss
-- **Structured prompt sections**: Breaking AI analysis into "Dimension Analysis" and "Per-Product Feedback" sections produces more focused improvements than free-form analysis
+**Dimension-level feedback crucial**: Overall scores mask issues. Need breakdown (composition, lighting, visibility) for targeted improvements
 
-## Stripe Payments Integration
+**Iteration history prevents regression**: Without tracking, AI retries failed approaches. Store previous attempts with reasoning
 
-- **Customer creation timing**: Always create Stripe customer BEFORE checkout session (not after payment). Critical for webhook processing and userId mapping
-- **Single sync function pattern**: Use one `syncStripeDataToKV()` function called from both webhook and success route to prevent split-brain state
-- **Payment intent metadata**: For credit packs, put metadata on `payment_intent_data` (not session). For subscriptions, use `subscription_data.metadata`
-- **Webhook signature verification**: Always verify signatures to prevent spoofing. Use raw request body
-- **Database-level atomicity**: Use `INSERT ... ON CONFLICT DO NOTHING` with unique constraints for race-safe credit granting
-- **Idempotency keys**: Format as `pi_${paymentIntentId}` for globally unique credit transactions
-- **Credits never expire**: Once granted, credits belong to user permanently. Subscription credits and purchased credits behave identically
-- **Customer portal**: Use Stripe's hosted portal instead of custom subscription management UI (production-ready, handles edge cases)
-- **Environment variable validation**: Use Zod schemas for all Stripe env vars to catch configuration issues early
-- **Webhook async processing**: Return 200 immediately, process events with `waitUntil` or background processing
-- **Redis caching strategy**: Long TTL (24h) for customer IDs, short TTL (5min) for subscription state
-- **Transaction types**: Extend enum with `pack_purchase`, `subscription_renewal`, `subscription_upgrade` for proper categorization
+**Statistical significance**: 5+ evaluations minimum for reliable analysis. Smaller batches → random variation dominates signal
 
-## Build System Patterns
+**Evaluator reasoning goldmine**: "Why" behind scores contains actionable insights numbers miss
 
-- **Tailwind v4 color variable mapping**: CSS custom properties must be explicitly mapped to theme utilities in `globals.css` `@theme` block. Without this mapping, classes like `bg-primary` won't resolve to color values, resulting in unstyled "black and white" appearance. Example: `@theme { --color-primary: var(--electric-coral); }`
-- **Dual TypeScript configs for monorepo exclusion**: When keeping tightly-coupled dev tooling in monorepo but excluding from production builds, use separate `tsconfig.build.json` that overrides `include` array to exclude dev directories. Next.js respects `typescript.tsconfigPath` config option
-- **TypeScript include vs exclude precedence**: `include` arrays take precedence over `exclude` — to exclude a directory, override the entire `include` array rather than just adding to `exclude`
-- **Build-time vs runtime separation**: CLI tools can use root tsconfig (with dev dependencies) while production builds use stripped-down config, enabling different compilation rules for same codebase
+**Structured analysis**: Breaking into "Dimension Analysis" and "Per-Product Feedback" sections → more focused improvements
 
-## Code Review Patterns
+## Integration Notes
 
-- **ButtonLink component**: When Button's asChild prop isn't available, create a dedicated ButtonLink component combining Button styling with Next.js Link for proper navigation
-- **Type safety in API responses**: Define explicit union types for API response structures (like GeminiContentPart) instead of using any[] to maintain strict TypeScript compliance
-- **Error message specificity**: Separate error handling logic for different failure modes (auth errors vs user not found) to provide more actionable debugging information
-- **Import cleanup**: Remove unused imports (like Next.js Link) when replacing raw HTML elements with custom components
+**Gemini 3 image migration**: When standardizing models, update env defaults + pricing config + docs + cost reporting together. Drift between these causes silent billing errors
 
-## Code Reduction Patterns
+**Stripe webhook processing**: Return 200 immediately, process with `waitUntil` or background. Prevents timeouts on slow operations
 
-- **Auth middleware pattern**: Higher-order function `withAuth()` wraps route handlers, guaranteeing authenticated `user` in handler scope. Follows Next.js 15 patterns with proper generic typing for route params
-- **Centralized logging**: Structured JSON logging with configurable log levels. Supports future log aggregation (Datadog, CloudWatch). Use `logger.info('msg', { context })` instead of console methods
-- **Credit pricing utilities**: Single source of truth in dedicated module with typed accessors. Resolution-based pricing constants with `getCreditsForResolution()` and `calculateBatchCredits()` functions
-- **Dead code removal**: Regularly audit for unimplemented handlers and unused functions. Add TODO comments for future work needed
-- **Helper function extraction**: Deduplicate complex logic (like Gemini response parsing) into internal helper functions to reduce ~80 lines while maintaining identical behavior
-- **Testing new utilities**: 100% coverage for utility functions with comprehensive edge case testing. Use Bun test for TypeScript-first testing
-- **Barrel exports**: Export utilities from index.ts files for clean imports. Use `export * from './module'` pattern for re-exports
-- **Type safety in refactoring**: Maintain explicit return types and avoid any/unknown/! during code consolidation
-- **Incremental migration**: Phase code changes to avoid breaking existing functionality. Test each phase before proceeding
+**Server action migration**: Eliminates HTTP fetch to internal API routes. Direct Stripe SDK calls via `stripe.checkout.sessions.create()` reduces network overhead
 
-## Hybrid Pricing Architecture
+**Server component data**: Fetch once in server component, pass as props. Avoids duplicate client fetches
 
-- **Stripe as price source of truth**: Eliminates sync bugs by fetching live prices from Stripe API instead of hardcoded values
-- **Config as credit economy source of truth**: TypeScript config file for credits per resolution, free signup credits, pack/subscription definitions
-- **Server action pattern**: Single `getPricing()` action merges Stripe prices with credit config, returns complete pricing data
-- **Next.js unstable_cache**: 1-hour TTL for Stripe API calls, proper cache tags for invalidation
-- **Module initialization timing**: Define constants inside functions when using unstable_cache to avoid circular dependencies
-- **Server component data distribution**: Fetch pricing once in server component, pass as props to avoid duplicate client fetches
-- **Type-safe pricing data**: Zod-validated config with literal types, explicit interfaces for server action responses
+## Performance Considerations
 
-## Server Actions Migration Patterns
+**Welch's t-test for A/B**: Need 30+ samples for significance. <10 samples insufficient, 10-30 may not achieve p<0.05 threshold
 
-- **API Route to Server Action Migration**: Replace `/api/stripe/checkout` with direct server action calls for better type safety, reduced network overhead, and simpler code. Server actions eliminate HTTP fetch calls and provide direct Stripe SDK integration
-- **'use server' directive placement**: Must be first line of server action files. Requires moving utility functions to separate files since server actions must export only async functions
-- **Direct Stripe SDK calls**: Server actions call `stripe.checkout.sessions.create()` directly instead of HTTP fetch to internal API routes, eliminating unnecessary network round-trips
-- **Type consolidation strategy**: Remove duplicate type definitions (CreditPack, SubscriptionTier, etc.) in favor of single source of truth in dedicated type files
-- **Consistent price formatting**: Use `Intl.NumberFormat` with USD currency across all pricing components for uniform display
-- **Utility function separation**: When adding 'use server' to existing files, extract non-async utility functions to separate `utils.ts` files to maintain clean separation of concerns
-- **Barrel export updates**: Update index.ts files to re-export new server action functions for clean imports
-- **Component migration order**: Update components to use server actions before deleting API routes to maintain working checkout flows during transition
+**Next.js image optimization**: Add `priority` prop to hero images for LCP optimization. Zero-cost improvement for Largest Contentful Paint
 
-## Settings Page Implementation Patterns
+**Redis caching strategy**: Long TTL (24h) for customer IDs, short TTL (5min) for subscription state. Balances freshness with API quota
 
-- **URL-synchronized tabs**: Use `useSearchParams()` + `useRouter()` for deep-linking without full page reloads. Default tab in component, `router.push('/settings?tab=${value}', { scroll: false })` for navigation
-- **OAuth provider detection**: Check `user.app_metadata?.provider` or `user.identities?.[0]?.provider` to differentiate Google OAuth vs email/password users for password management UI
-- **Server actions for user data**: Use server Supabase client (`createClient()`) with RLS for fetching user's own transactions. Returns empty array if unauthenticated (automatic RLS filtering)
-- **Credit transaction formatting**: Color-coded badges (green for positive, muted for negative), formatted dates with `toLocaleString()`, balance tracking per transaction
-- **Password reset flow**: OAuth users get inline "Set Password" form, email users get "Send Reset Email" button. Separate `/auth/reset-password` page for email link handling
-- **Suspense for useSearchParams**: Wrap client components using `useSearchParams` in `<Suspense>` boundary in server components to prevent hydration mismatches
-- **Radix UI shadcn integration**: Follow button.tsx pattern with `forwardRef`, `cn()` utility, compound component exports. Import from `@radix-ui/react-*` packages
-- **Auth-protected pages**: Use `requireAuth()` utility in server components for automatic redirect to `/login` if unauthenticated
+## Testing Patterns
 
-## Product Analysis Pre-Generation Implementation
+**Bun migration strategy**: Simple → complex (5-batch approach). Validates coverage preservation incrementally
 
-- **Vision-first prompt generation**: User prompts removed entirely. System automatically analyzes product images using Gemini Flash vision model, extracts structured product data (product, color, material, shape, features), then compiles optimal prompts from database templates
-- **Template-driven prompts**: Prompts fetched from `prompt_templates` table by ID, compiled with analysis data as variables. Falls back to empty fields when analysis fails, letting Gemini infer from image alone
-- **Structured analysis output**: Zod schema enforces consistent ProductAnalysis interface with required fields. Gemini `generateObject` provides reliable structured extraction from images
-- **Cost tracking duality**: Image-to-image jobs now record two separate costs - vision analysis cost and generation cost. Both tracked with `createGenerationCost()` for accurate pricing
-- **Title uniqueness with retry**: Database constraint enforces unique `(user_id, title)` pairs. Automatic retry logic appends `-2`, `-3`, etc. up to 10 attempts when conflicts occur
-- **Graceful analysis degradation**: When vision analysis fails, system falls back to filename-based titles and template compilation with empty product fields. Gemini still generates from source image alone
-- **Job parameters storage**: Analysis results stored in `jobs.parameters` JSONB field for debugging and future analysis. Merges new data without overwriting existing parameters
-- **Template ID infrastructure**: Jobs store `template_id` for future user template selection. Currently defaults to `ecommerce-base` but ready for user customization
-- **Filename fallback titles**: When analysis fails, titles derived from source filename (removing extension). Provides consistent naming even without vision analysis
-- **DB constraint + application retry**: Unique constraints at database level prevent duplicates, application-level retry with suffixes ensures user experience continuity
+**@testing-library/react**: Keep render utilities (`render()`, `screen`, queries). Framework-agnostic, work with Bun. Remove only jest-dom custom matchers
 
-## Code Review Cleanup Patterns (2025-12-09)
+**No helper functions initially**: Start with direct matchers. Add helpers only if verbose after full migration
 
-### Result Type Pattern
-- **Railway-oriented programming**: Consistent `Result<T>` type with `ok()`/`err()` constructors eliminates exception handling complexity
-- **Type safety**: Eliminates `any` usage in error handling, forces explicit error types with `{ code: string; message: string }`
-- **Import consolidation**: Single shared module (`src/lib/result.ts`) prevents duplication across AI modules
-- **Pattern**: `const result = someOperation(); if (!result.ok) return err({ code: 'OP_FAILED', message: '...' });`
+**Type safety in mocks**: Use `mock.fn<T>()` with proper generics. Avoid `as any` casts
 
-### Job Parameters Merge Pattern
-- **Fetch-then-merge**: Supabase JSONB lacks native merge, so fetch existing → spread merge → update pattern required
-- **Type casting**: Cast merged object to `Json` type for Supabase compatibility: `merged as Json`
-- **Error handling**: Centralized logger with structured context: `logger.error('message', { error, jobId })`
+**TDD workflow**: Failing tests first → minimal code → refactor. 9+ tests per component (variants, props, interactions, edge cases)
 
-### Environment Configuration Pattern
-- **Model flexibility**: Replace hardcoded model IDs with env vars (`ANALYSIS_MODEL`, `GEMINI_MODEL`) for runtime configuration
-- **Fallback defaults**: Env module provides sensible defaults, allowing deployment-specific model selection
-- **No constants files**: Direct env usage eliminates synchronization issues between code and config
+**Coverage target**: 100% for utility functions with comprehensive edge cases. 70-80% for components
 
-### Helper Function Extraction Pattern
-- **Single responsibility**: Extract helpers ≤20 lines, ≤3 nesting levels within same file (not separate modules)
-- **DRY principle**: Shared compilation logic in `compileWithAnalysis()` eliminates duplication between template functions
-- **Pure functions**: Helpers take explicit parameters, return computed values without side effects
+## Component Patterns
 
-### Logging Standardization Pattern
-- **Centralized logging**: Replace `console.error()` with `logger.error()` from `@/lib/logging` for structured output
-- **Context objects**: Pass relevant data as second parameter: `logger.error('message', { error, jobId, userId })`
-- **No scattered logs**: All logging goes through centralized module for consistent formatting and monitoring
+**CVA for variants**: Use `cva()` not manual class concatenation. Base classes for shared styles, variants for differences: `cva('rounded border px-4 py-3', { variants: { variant: { error: 'bg-destructive/10...' } } })`
 
-### Function Refactoring Pattern
-- **Main function length**: Keep under 80 lines by extracting helpers, but maintain cohesion within same file
-- **Helper naming**: Descriptive names like `runProductAnalysis()`, `recordGenerationCost()` clarify purpose
-- **Error propagation**: Maintain original error handling patterns while improving code organization
+**Compound components**: Parent provides structure (AuthLayout), children provide content. Optional slots (footer, error, spotlight) for flexibility
 
-## Landing Page Code Review Fixes Implementation
+**Data-driven templates**: Extract static content to structured data, render with templates. Enables content changes without code changes
 
-- **Error Boundary Strategy**: Use Next.js 16 `error.tsx` file convention at app root level for handling server component errors. Provides idiomatic Next.js pattern for unhandled error recovery with reset functionality
-- **Landing Page Config Location**: Create `src/lib/landing/config.ts` following const + Zod validation pattern (matches `src/lib/pricing/pricing.config.ts`). Enables type-safe configuration with build-time validation and easy URL updates
-- **Image Loading Strategy**: Add `priority` prop to hero images for LCP optimization. Zero-cost improvement for Largest Contentful Paint that loads images early without requiring blur placeholders
-- **Footer Navigation Pattern**: Use anchor scroll (`href="#pricing"`) for pricing link when section exists on same page. Avoids creating unnecessary stub pages while maintaining smooth user experience
-- **Keyboard Accessibility Implementation**: Add keyboard handlers directly to interactive components with ARIA attributes. WCAG 2.1 Level A compliance requires keyboard access for all interactive elements with screen reader announcements
-- **Touch Event Validation**: Defensive programming with guard clauses before accessing `touches[0]`. Prevents crashes during rapid touch interactions by checking array length before access
-- **Package Manager Consistency**: Use single package manager (bun) and remove conflicting lockfiles. Prevents deployment failures from package manager conflicts and maintains clean dependency resolution
-- **Loading State Management**: Use Next.js `loading.tsx` for skeleton UI during SSR. Provides enhanced UX with structured loading states that match final page layout
+**FormField composition**: Label + Input + Error wrapper with `space-y-2`. Consistent error handling with destructive text + ARIA
 
-## Component Reduction & Reusability Patterns (2025-12-11)
+**Status badges**: CVA-based component with enum status values. Prevents typos, ensures consistent handling
 
-### CVA (Class Variance Authority) Pattern
-- **Variant management**: Use `cva()` for component variants instead of manual class concatenation. Provides type safety, consistent naming, and easier maintenance
-- **Color system integration**: Map design system colors (destructive, success, info, accent) to semantic variants for consistent theming
-- **Base classes first**: Define shared styles in base classes, variants only override differences: `cva('rounded border px-4 py-3', { variants: { variant: { error: 'bg-destructive/10...' } } })`
+## Code Quality Patterns
 
-### Compound Component Pattern  
-- **Layout wrapper pattern**: Parent component provides structure (AuthLayout), children provide content. Eliminates prop drilling for layout concerns
-- **Optional slots**: Use optional props for flexible composition (footer, error, spotlight). Components render conditionally based on prop presence
-- **TypeScript interfaces**: Define clear interfaces for compound components with optional slot props
+**Auth middleware**: Higher-order `withAuth()` wraps route handlers, guarantees authenticated user. Next.js 15 patterns with generic typing
 
-### Data-Driven Template Pattern
-- **Content separation**: Extract static content to structured data files, render with reusable templates. Enables content management without code changes
-- **Type-safe sections**: Define `LegalSection[]` interfaces with id, title, level, content properties for consistent structure
-- **Auto-generated navigation**: Templates can generate TOC from section data, providing consistent navigation patterns
+**Centralized logging**: `logger.info('msg', { context })` not console methods. Structured JSON with levels. Supports future aggregation (Datadog, CloudWatch)
 
-### FormField Composition Pattern
-- **Label + Input + Error wrapper**: Single component combines form elements with consistent spacing (`space-y-2`) and error styling
-- **Prop forwarding**: Forward all input props while adding form-specific features (error display, required indicators)
-- **Consistent error handling**: Centralized error display logic with destructive text color and proper ARIA attributes
+**Helper extraction**: ≤20 lines, ≤3 nesting, within same file (not separate modules). Extract for DRY, maintain cohesion
 
-### Status Badge Centralization Pattern
-- **Hardcoded to reusable**: Replace inline statusStyles objects with CVA-based StatusBadge component
-- **Exact color preservation**: Map existing hardcoded colors to CVA variants to maintain visual consistency
-- **Type safety**: Enum-based status values prevent typos and ensure consistent status handling
+**Credit pricing utilities**: Single source of truth with typed accessors. `getCreditsForResolution()` and `calculateBatchCredits()` functions
 
-### Auth Layout Standardization Pattern
-- **Unified auth experience**: Single AuthLayout component enforces consistent title sizing (`text-3xl`), card variants (`studio`), and error display
-- **Flexible composition**: Optional error, spotlight, and footer props allow customization while maintaining structure
-- **Design system enforcement**: Centralized auth styling prevents inconsistencies between login/signup pages
+**Barrel exports**: Export from index.ts for clean imports. `export * from './module'` pattern
 
-### Pricing Card Extraction Pattern
-- **Common pattern identification**: Extract shared pricing card structure from multiple locations (home page, credit packs)
-- **Featured variant logic**: Preserve business logic (featured styling for specific plans) while centralizing presentation
-- **Loading state management**: Consistent loading UI across all pricing interactions with disabled buttons and "Creating..." text
+**Type safety in refactoring**: Maintain explicit return types, avoid `any`/`unknown`/`!` during consolidation
 
-### Legal Page Template Pattern
-- **Content-driven rendering**: Template accepts sections array, auto-generates TOC and scroll anchors
-- **Typography hierarchy**: Consistent heading levels (h1: 4xl, h2: 2xl, h3: xl) and spacing patterns
-- **Navigation integration**: Scroll anchors with `scroll-mt-8` for proper positioning, smooth scrolling behavior
+**Function length**: Main functions <80 lines by extracting helpers. Preserve cohesion within file
 
-### Test-Driven Component Development
-- **TDD workflow**: Write failing tests first, implement minimal code to pass, refactor for clarity
-- **Comprehensive coverage**: Test all variants, props, interactions, and edge cases (9+ tests per component)
-- **Integration verification**: Test component composition and real-world usage patterns
+**Error message specificity**: Separate handling for failure modes (auth errors vs user not found). Actionable debugging info
 
-### Code Reduction Metrics Tracking
-- **Line count monitoring**: Track before/after line counts to verify reduction goals (615+ lines targeted, achieved)
-- **Component inventory**: Create 8 new reusable components to replace duplicated patterns
-- **Refactoring phases**: Break complex migrations into phases with clear dependencies and rollback plans
+**Logging context**: Pass relevant data as second param: `logger.error('message', { error, jobId, userId })`
+
+## Atomic Operations
+
+**Credit operations**: Use DB functions with `FOR UPDATE` locks to prevent race conditions
+
+**Idempotency keys**: Format as `pi_${paymentIntentId}` for globally unique transactions. Prevent duplicates on re-runs
+
+**Single sync pattern**: One `syncStripeDataToKV()` called from webhook + success route. Prevents split-brain state
+
+## Legal & Compliance
+
+**Conditional script loading**: Facebook Pixel/analytics must check `preferences.cookies.marketing === true` before loading. Use Next.js Script with conditional rendering
+
+**Cascading anonymization**: Hash PII in users, strip PII from descriptions (keep amounts) in transactions, delete R2 files + DB records
+
+**30-day restore window**: Soft delete → manual restore → final anonymization. Consider day 28 warning email
+
+**Audit logging**: Track all anonymization actions. Metrics: success, failures, records affected

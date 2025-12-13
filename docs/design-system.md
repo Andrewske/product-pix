@@ -1,160 +1,121 @@
 # ProductPix Design System
 
-## Design Philosophy
+> Implementation reference for developers. For principles and rationale, see [Design Principles](./design-principles.md).
 
-ProductPix embodies a clean, minimal, inviting, and slightly playful brand identity. Our design language prioritizes clarity, approachability, and professional polish while maintaining a human touch that differentiates us from enterprise or developer-focused tools.
+**Last updated:** 2025-12-12
 
-### What We Are
-- **Clean & Minimal**: Purposeful use of whitespace, clear visual hierarchy, and restrained ornamentation
-- **Inviting**: Warm color palette, soft edges, and approachable interactions
-- **Slightly Playful**: Subtle animations, thoughtful micro-interactions, and a touch of personality
-- **Professional**: Consistent patterns, high-quality typography, and attention to detail
+---
 
-### What We Are NOT
-- **Terminal/Analytics Dashboard**: No monospace fonts for UI text, no data-dense layouts, no stark monochromatic schemes
-- **Crypto/DeFi**: No harsh neon colors, no blockchain-inspired aesthetics, no aggressive marketing language
-- **Enterprise SaaS**: No complex navigation hierarchies, no feature-heavy interfaces, no corporate color schemes
+## Quick Reference
 
-### Heuristic
-"If it looks like a terminal or analytics dashboard, it's wrong." This guiding principle ensures our interface remains accessible to non-technical users while maintaining the sophistication expected in a premium product.
+### Source of Truth
+Color tokens, typography, and effects are defined in [`src/app/globals.css`](../src/app/globals.css). This document references those values—always check globals.css for the actual implementation.
 
-## Color System
+### Color Tokens
 
-ProductPix uses a carefully calibrated two-accent strategy that supports both light and dark modes while maintaining visual harmony and accessibility.
+| Token | Purpose | Light Mode | Dark Mode |
+|-------|---------|------------|-----------|
+| `--background` | Page background | Near-white | Deep charcoal |
+| `--card` | Standard cards | White | Charcoal |
+| `--card-hero` | Result panels | White | Lighter charcoal |
+| `--card-control` | Form panels | White | Standard charcoal |
+| `--accent` | Primary actions (green) | Medium green | Softer green |
+| `--teal` | Secondary info | Medium teal | Softer teal |
+| `--destructive` | Errors/warnings | Red | Red |
+| `--foreground` | Primary text | Dark | Near-white |
+| `--muted-foreground` | Secondary text | Medium gray | Light gray |
 
-### Two-Accent Strategy
+### Typography Classes
 
-- **Green (#22c55e)**: Primary accent for CTAs, main actions, selected options, and the "Generate" button
-- **Teal (#14b8a6)**: Secondary accent for badges, info highlights, and helper text
-
-### Light Mode Palette
-
-```css
-/* Backgrounds */
---background: 0 0% 100%;          /* Pure white */
---muted: 210 40% 96%;             /* Soft gray */
---card: 0 0% 100%;                /* White cards */
-
-/* Accents */
---primary: 142 76% 36%;           /* Green */
---secondary: 178 84% 41%;         /* Teal */
-
-/* Semantic */
---success: 142 76% 36%;           /* Green */
---info: 178 84% 41%;              /* Teal */
---destructive: 0 84% 60%;         /* Red */
-
-/* Text */
---foreground: 222 84% 5%;         /* Dark gray */
---muted-foreground: 215 16% 47%;  /* Medium gray */
-```
-
-### Dark Mode Palette
-
-```css
-/* Backgrounds */
---background: 222 84% 5%;         /* Dark gray */
---muted: 217 33% 17%;             /* Charcoal */
---card: 222 84% 5%;               /* Dark gray */
---card-hero: 217 33% 17%;         /* Lighter charcoal for elevated cards */
---card-control: 210 40% 3%;       /* Darker charcoal for recessed cards */
-
-/* Accents */
---primary: 142 76% 36%;           /* Green (same as light) */
---secondary: 178 84% 41%;         /* Teal (same as light) */
-
-/* Semantic */
---success: 142 76% 36%;           /* Green */
---info: 178 84% 41%;              /* Teal */
---destructive: 0 84% 60%;         /* Red */
-
-/* Text */
---foreground: 210 40% 98%;        /* Off-white */
---muted-foreground: 215 20% 65%;  /* Light gray */
-```
-
-### Card Hierarchy in Dark Mode
-
-Dark mode uses layered charcoal backgrounds to create visual depth:
-
-- **Background (#05070b)**: Page background
-- **Card Hero (#0b1018)**: Elevated cards for results and galleries
-- **Card Control (#111827)**: Recessed cards for forms and settings
-
-### Color Usage Rules
-
-1. **Product Photos**: Always displayed on clear, defined surfaces with subtle borders in dark mode
-2. **Primary Actions**: Green buttons for main CTAs ("Generate", "Upload", "Save")
-3. **Secondary Elements**: Teal for badges, status indicators, and informational highlights
-4. **Semantic States**: Green for success, red for errors, teal for neutral information
-
-### Badge Variants
-
-- **Teal**: Status badges, feature tags, category labels
-- **Info**: Informational badges (visually identical to teal for semantic flexibility)
-- **Success**: Positive states, confirmations
-- **Destructive**: Errors, warnings, deletions
-
-## Typography
-
-ProductPix uses a carefully selected typeface system that balances personality with readability across all contexts.
-
-### Font Families
-
-- **Display**: Space Grotesk - Used for headings, hero text, and prominent UI elements
-- **Body**: Inter - Used for all body text, labels, and secondary information
+| Class | Font | Use For |
+|-------|------|---------|
+| `.font-display` | Space Grotesk | Headings (h1-h6), hero text, card titles |
+| `.font-body` | Inter | Body text, labels, descriptions (default) |
+| `font-mono` | System mono | Tiny metadata only (prices, timestamps) |
 
 ### Typography Scale
 
-```css
-/* Headings */
---text-4xl: 2.25rem;    /* 36px - Hero headings */
---text-3xl: 1.875rem;   /* 30px - Section headings */
---text-2xl: 1.5rem;     /* 24px - Card titles */
---text-xl: 1.25rem;     /* 20px - Large labels */
---text-lg: 1.125rem;    /* 18px - Body emphasis */
+| Size | Value | Use For |
+|------|-------|---------|
+| `text-4xl` | 2.25rem (36px) | Hero headings |
+| `text-3xl` | 1.875rem (30px) | Section headings |
+| `text-2xl` | 1.5rem (24px) | Card titles |
+| `text-xl` | 1.25rem (20px) | Large labels |
+| `text-lg` | 1.125rem (18px) | Body emphasis |
+| `text-base` | 1rem (16px) | Primary body text |
+| `text-sm` | 0.875rem (14px) | Secondary text, captions |
+| `text-xs` | 0.75rem (12px) | Metadata, timestamps |
 
-/* Body */
---text-base: 1rem;      /* 16px - Primary body text */
---text-sm: 0.875rem;    /* 14px - Secondary text, captions */
---text-xs: 0.75rem;     /* 12px - Metadata, timestamps */
-```
+---
 
-### Usage Guidelines
+## Component Status
 
-1. **Display Font (.font-display)**: Reserved for headings and hero content only
-2. **Body Font**: Default for all other text content
-3. **Mono Font**: Only for tiny meta information (prices, timestamps) - never for UI text
-4. **Heading Defaults**: All headings use display font by default
+| Component | Status | Variants | Notes |
+|-----------|--------|----------|-------|
+| Card | Stable | `default`, `hero`, `control`, `studio` | 4 variants with distinct purposes |
+| Button | Stable | `accent`, `studio`, `outline`, `ghost`, `destructive` | 5 variants + 4 sizes |
+| Badge | Stable | `teal`, `info`, `success`, `destructive` | 4 semantic variants |
+| Input | Stable | — | With error state support |
+| Label | Stable | — | Standard form labels |
+| Dialog | Stable | — | Modal dialogs |
+| Select | Stable | — | Dropdown selection |
+| Textarea | Stable | — | Multiline input |
 
-## Component Patterns
+---
 
-ProductPix components follow consistent patterns that support our design philosophy while providing flexibility for different use cases.
+## Components
 
 ### Card System
 
-Cards provide the foundation for content layout with semantic variants that serve different purposes.
+Cards provide the foundation for content layout with semantic variants.
 
 #### Variants
 
-```typescript
-<Card variant="default">   // Standard card
-<Card variant="hero">      // Result panels, galleries (lighter in dark mode)
-<Card variant="control">   // Forms, settings (recessed in dark mode)
-<Card variant="studio">    // Matte effect with optional hover animation
+```tsx
+<Card variant="default">   {/* Standard card */}
+<Card variant="hero">      {/* Result panels, galleries - lighter in dark mode */}
+<Card variant="control">   {/* Forms, settings - standard dark */}
+<Card variant="studio">    {/* Matte effect with hover animation */}
 ```
 
 #### Usage Rules
 
-1. **Generate Page**:
-   - Left column: `Card variant="control"` for upload forms and settings
-   - Right column: `Card variant="hero"` for result images and previews
+| Context | Variant | Example |
+|---------|---------|---------|
+| Generate page (left) | `control` | Upload forms, settings |
+| Generate page (right) | `hero` | Result images, previews |
+| Dashboard gallery | `studio` | Interactive image cards |
+| Settings panels | `control` | Account, preferences |
 
-2. **Dashboard**:
-   - Gallery items: `Card variant="studio"` with hover effects
-   - Settings panels: `Card variant="control"`
+#### DO / DON'T
 
-3. **Studio Variant Status**: **NOT deprecated** - Actively used in 14 places with dedicated tests
+```tsx
+// DO: Use hero variant for primary content
+<Card variant="hero">
+  <CardContent>
+    <img src={generatedImage} alt="Result" />
+  </CardContent>
+</Card>
+
+// DON'T: Use default for result panels (lacks visual hierarchy)
+<Card>
+  <CardContent>
+    <img src={generatedImage} alt="Result" />
+  </CardContent>
+</Card>
+
+// DO: Use control variant for form sections
+<Card variant="control">
+  <CardHeader>
+    <CardTitle>Upload Settings</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <form>...</form>
+  </CardContent>
+</Card>
+
+// DON'T: Mix card types inconsistently on the same page
+```
 
 #### Anatomy
 
@@ -173,59 +134,94 @@ Cards provide the foundation for content layout with semantic variants that serv
 </Card>
 ```
 
+---
+
 ### Button System
 
 Buttons provide clear action hierarchy with variants for different contexts.
 
 #### Variants
 
-```typescript
-<Button variant="accent">     // Green CTAs (primary actions)
-<Button variant="studio">     // Inverted with shine effect (NOT deprecated)
-<Button variant="outline">    // Secondary actions
-<Button variant="ghost">      // Minimal actions
+```tsx
+<Button variant="accent">      {/* Green CTAs - primary actions */}
+<Button variant="studio">      {/* Inverted with shine effect */}
+<Button variant="outline">     {/* Secondary actions */}
+<Button variant="ghost">       {/* Minimal/tertiary actions */}
+<Button variant="destructive"> {/* Delete, cancel actions */}
 ```
 
 #### Sizes
 
-```typescript
-<Button size="sm">           // Small buttons
-<Button size="default">      // Standard buttons
-<Button size="lg">          // Large buttons
-<Button size="xl">          // Hero CTAs (h-14, already exists)
+```tsx
+<Button size="sm">       {/* Small - inline actions */}
+<Button size="default">  {/* Standard */}
+<Button size="lg">       {/* Large - prominent actions */}
+<Button size="xl">       {/* Hero CTAs - main page actions */}
 ```
 
-#### Usage Rules
+#### DO / DON'T
 
-1. **Primary Actions**: `variant="accent"` for main CTAs ("Generate", "Upload")
-2. **Secondary Actions**: `variant="outline"` or `variant="ghost"`
-3. **Hero CTAs**: `size="xl"` for prominent actions
-4. **Studio Variant**: Provides unique inverted aesthetic with shine animation
+```tsx
+// DO: Use accent for primary CTAs
+<Button variant="accent" size="xl">Generate Photo</Button>
+
+// DON'T: Use accent for secondary actions
+<Button variant="accent">Cancel</Button>  // Should be outline or ghost
+
+// DO: Use outline for secondary actions
+<Button variant="outline">Save Draft</Button>
+
+// DON'T: Use multiple accent buttons in the same area
+<div>
+  <Button variant="accent">Save</Button>
+  <Button variant="accent">Generate</Button>  // One should be outline
+</div>
+
+// DO: Use size="xl" for hero sections
+<section className="text-center py-12">
+  <Button size="xl" variant="accent">Get Started</Button>
+</section>
+```
+
+---
 
 ### Badge System
 
-Badges provide visual status and categorization with semantic variants.
+Badges provide visual status and categorization.
 
 #### Variants
 
-```typescript
-<Badge variant="teal">        // Status badges, feature tags
-<Badge variant="info">        // Informational badges
-<Badge variant="success">     // Positive states
-<Badge variant="destructive"> // Errors, warnings
+```tsx
+<Badge variant="teal">        {/* Status, feature tags */}
+<Badge variant="info">        {/* Informational (same as teal visually) */}
+<Badge variant="success">     {/* Positive states */}
+<Badge variant="destructive"> {/* Errors, warnings */}
 ```
 
-#### Usage Rules
+#### DO / DON'T
 
-1. **Teal Badges**: Status indicators, category labels, feature tags
-2. **Info Badges**: General information (visually identical to teal for semantic flexibility)
-3. **Success/Destructive**: State indicators only
+```tsx
+// DO: Use teal for feature tags and categories
+<Badge variant="teal">AI-Powered</Badge>
+<Badge variant="teal">New</Badge>
+
+// DON'T: Use success for non-state information
+<Badge variant="success">Premium Feature</Badge>  // Should be teal
+
+// DO: Use success for confirmed states
+<Badge variant="success">Completed</Badge>
+<Badge variant="success">Verified</Badge>
+
+// DO: Use destructive for warnings and errors
+<Badge variant="destructive">Failed</Badge>
+<Badge variant="destructive">Expired</Badge>
+```
+
+---
 
 ## Layout Patterns
 
-ProductPix uses consistent layout patterns that create familiar user experiences across different pages.
-
-### Two-Column Layout (Generate Page Pattern)
+### Two-Column Layout (Generate Page)
 
 ```tsx
 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -245,7 +241,7 @@ ProductPix uses consistent layout patterns that create familiar user experiences
 </div>
 ```
 
-### Centered Content (Contact Page Pattern)
+### Centered Content (Contact/Legal Pages)
 
 ```tsx
 <div className="container max-w-2xl mx-auto py-12">
@@ -255,90 +251,21 @@ ProductPix uses consistent layout patterns that create familiar user experiences
 </div>
 ```
 
-### Gallery Grid (Dashboard Pattern)
+### Gallery Grid (Dashboard)
 
 ```tsx
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  {/* Gallery items */}
   <Card variant="studio" hover>
-    {/* Gallery item content */}
+    {/* Gallery item */}
   </Card>
 </div>
 ```
 
-## Motion & Interaction
+---
 
-ProductPix uses restrained, purposeful motion that enhances usability without being distracting.
+## Common Patterns
 
-### Transition Timing
-
-- **Standard**: 150-250ms transitions for state changes
-- **Fast**: 100-150ms for hover states and micro-interactions
-- **Slow**: 300-500ms for page transitions and major state changes
-
-### Animation Philosophy
-
-- **Restrained**: No decorative animations or excessive motion
-- **Purposeful**: Motion serves user understanding and feedback
-- **Subtle**: Effects enhance rather than dominate the experience
-
-### Studio Effects
-
-- **Spotlight**: Subtle lighting effect on interactive elements
-- **Matte Card Hover**: Soft elevation change on studio variant cards
-- **Button Studio Shine**: Animated highlight effect on studio buttons
-
-## Accessibility
-
-ProductPix maintains WCAG AA compliance across all interactive elements and content.
-
-### Color Contrast
-
-- All text combinations meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text)
-- Interactive elements maintain sufficient contrast in both light and dark modes
-
-### Form Validation
-
-```tsx
-<Input
-  aria-invalid={hasError}
-  aria-describedby={hasError ? "error-message" : undefined}
-/>
-{hasError && (
-  <p id="error-message" className="text-destructive text-sm">
-    Error message
-  </p>
-)}
-```
-
-### Focus States
-
-- Visible focus indicators using `focus-visible` pseudo-class
-- Consistent focus ring styling across all interactive elements
-- Keyboard navigation support for all functionality
-
-## Usage Guidelines
-
-### Component Selection Decision Tree
-
-1. **For content containers**:
-   - Results/galleries → `Card variant="hero"`
-   - Forms/settings → `Card variant="control"`
-   - Interactive galleries → `Card variant="studio"`
-
-2. **For buttons**:
-   - Primary actions → `Button variant="accent"`
-   - Special aesthetic → `Button variant="studio"`
-   - Secondary actions → `Button variant="outline"`
-
-3. **For status indicators**:
-   - Categories/features → `Badge variant="teal"`
-   - General info → `Badge variant="info"`
-   - States → `Badge variant="success"` or `variant="destructive"`
-
-### Common Patterns
-
-#### Hero Section
+### Hero Section
 
 ```tsx
 <section className="text-center py-12 space-y-6">
@@ -350,7 +277,7 @@ ProductPix maintains WCAG AA compliance across all interactive elements and cont
 </section>
 ```
 
-#### Form Field Pattern
+### Form Field
 
 ```tsx
 <div className="space-y-2">
@@ -362,7 +289,25 @@ ProductPix maintains WCAG AA compliance across all interactive elements and cont
 </div>
 ```
 
-#### Success Message Pattern
+### Form Field with Error
+
+```tsx
+<div className="space-y-2">
+  <Label htmlFor="email">Email</Label>
+  <Input
+    id="email"
+    aria-invalid={hasError}
+    aria-describedby={hasError ? "email-error" : undefined}
+  />
+  {hasError && (
+    <p id="email-error" className="text-destructive text-sm">
+      Please enter a valid email address
+    </p>
+  )}
+</div>
+```
+
+### Success Message
 
 ```tsx
 <div className="flex items-center gap-3 p-4 bg-success/10 border border-success/20 rounded-lg">
@@ -374,19 +319,69 @@ ProductPix maintains WCAG AA compliance across all interactive elements and cont
 </div>
 ```
 
-### Testing Components
+---
 
-Components should be tested at 70-80% coverage across branches, functions, lines, and statements:
+## Motion & Interaction
 
-- **Snapshot Tests**: Visual regression prevention
-- **Interaction Tests**: User behavior verification
-- **Accessibility Tests**: Screen reader and keyboard navigation
-- **Integration Tests**: Component composition and data flow
+### Transition Timing
 
-### Development Workflow
+| Speed | Duration | Use For |
+|-------|----------|---------|
+| Fast | 100-150ms | Hover states, micro-interactions |
+| Standard | 150-250ms | State changes, toggles |
+| Slow | 300-500ms | Page transitions, major changes |
+
+### Studio Effects (from globals.css)
+
+| Class | Effect |
+|-------|--------|
+| `.studio-spotlight` | Radial gradient spotlight |
+| `.matte-card` | Deep card with subtle shine |
+| `.matte-card-hover` | Hover elevation with accent glow |
+| `.button-studio` | Button with shine animation |
+| `.hover-lift` | 4px elevation on hover |
+
+---
+
+## Accessibility
+
+### Color Contrast
+- All text meets WCAG AA (4.5:1 normal, 3:1 large)
+- Interactive elements maintain contrast in both modes
+
+### Focus States
+- Visible focus indicators via `focus-visible`
+- Consistent focus ring (`--ring` token)
+- Full keyboard navigation support
+
+### Form Validation Pattern
+
+```tsx
+<Input
+  aria-invalid={hasError}
+  aria-describedby={hasError ? "error-id" : undefined}
+/>
+{hasError && (
+  <p id="error-id" className="text-destructive text-sm">
+    Error message
+  </p>
+)}
+```
+
+---
+
+## Development Workflow
 
 1. **Check existing patterns** before creating new components
 2. **Use design system components** instead of custom styling
 3. **Test in both light and dark modes** before committing
 4. **Verify accessibility** with automated tools and manual testing
-5. **Document new patterns** in this guide when established
+5. **Target 70-80% test coverage** for new components
+
+---
+
+## Related Documents
+
+- [Design Principles](./design-principles.md) — The "why" (brand, philosophy, sanity checks)
+- [`src/app/globals.css`](../src/app/globals.css) — Token definitions (source of truth)
+- [`src/components/ui/`](../src/components/ui/) — Component implementations
