@@ -14,6 +14,15 @@ const mockRateLimitersApi = mock(() => Promise.resolve({
 
 const mockLoggerInfo = mock(() => {});
 const mockLoggerError = mock(() => {});
+const mockLoggerWarn = mock(() => {});
+
+const mockSendEmail = mock(() => Promise.resolve({
+  success: true,
+  emailId: 'test-email-id'
+} as any));
+
+const mockRenderAdminNotification = mock(() => '<html>Admin email</html>');
+const mockRenderUserAcknowledgment = mock(() => '<html>User email</html>');
 
 // Mock modules
 mock.module('@/lib/db/contacts', () => ({
@@ -30,6 +39,20 @@ mock.module('@/lib/logging', () => ({
   logger: {
     info: mockLoggerInfo,
     error: mockLoggerError,
+    warn: mockLoggerWarn,
+  },
+}));
+
+mock.module('@/lib/email', () => ({
+  sendEmail: mockSendEmail,
+  renderContactAdminNotification: mockRenderAdminNotification,
+  renderContactUserAcknowledgment: mockRenderUserAcknowledgment,
+}));
+
+mock.module('@/lib/env', () => ({
+  env: {
+    ADMIN_EMAIL: 'admin@productpix.com',
+    NEXT_PUBLIC_APP_URL: 'https://productpix.com',
   },
 }));
 
@@ -40,6 +63,10 @@ describe('Contact API Route', () => {
     mockRateLimitersApi.mockClear();
     mockLoggerInfo.mockClear();
     mockLoggerError.mockClear();
+    mockLoggerWarn.mockClear();
+    mockSendEmail.mockClear();
+    mockRenderAdminNotification.mockClear();
+    mockRenderUserAcknowledgment.mockClear();
   });
 
   describe('POST /api/contact', () => {
@@ -78,10 +105,29 @@ describe('Contact API Route', () => {
           message: 'This is a test message with enough content to pass validation.',
         })
       );
-      expect(mockLoggerInfo).toHaveBeenCalledWith('Contact message submitted successfully', {
-        messageId: 'test-message-id',
-        email: 'john@example.com',
-      });
+       expect(mockLoggerInfo).toHaveBeenCalledWith('Contact message submitted successfully', {
+         messageId: 'test-message-id',
+         email: 'john@example.com',
+         adminEmailSent: true,
+         userEmailSent: true,
+       });
+
+       expect(mockSendEmail).toHaveBeenCalledTimes(2);
+
+       // Admin notification email
+       expect(mockSendEmail).toHaveBeenCalledWith({
+         to: 'admin@productpix.com',
+         subject: 'New Contact: John Doe',
+         html: '<html>Admin email</html>',
+         replyTo: 'john@example.com',
+       });
+
+       // User acknowledgment email
+       expect(mockSendEmail).toHaveBeenCalledWith({
+         to: 'john@example.com',
+         subject: 'Thanks for contacting ProductPix',
+         html: '<html>User email</html>',
+       });
     });
 
     it('should handle rate limit exceeded', async () => {
@@ -241,16 +287,16 @@ describe('Contact API Route', () => {
 
       await POST(mockRequest);
 
-      expect(mockCreateContactMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'John Doe',
-          email: 'john@example.com',
-          message: 'This is a test message with enough content to pass validation.',
-        })
-      );
-    });
+       expect(mockCreateContactMessage).toHaveBeenCalledWith(
+         expect.objectContaining({
+           name: 'John Doe',
+           email: 'john@example.com',
+           message: 'Valid message content.',
+         })
+       );
+     });
 
-    it('should handle missing IP headers gracefully', async () => {
+     it('should handle missing IP headers gracefully', async () => {
       const requestData = {
         name: 'John Doe',
         email: 'john@example.com',
@@ -267,13 +313,13 @@ describe('Contact API Route', () => {
       await POST(mockRequest);
 
       expect(mockRateLimitersApi).toHaveBeenCalledWith('unknown');
-      expect(mockCreateContactMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'John Doe',
-          email: 'john@example.com',
-          message: 'Valid message content.',
-        })
-      );
+       expect(mockCreateContactMessage).toHaveBeenCalledWith(
+         expect.objectContaining({
+           name: 'John Doe',
+           email: 'john@example.com',
+           message: 'Valid message content.',
+         })
+       );
     });
 
     it('should handle unexpected errors', async () => {
@@ -294,6 +340,145 @@ describe('Contact API Route', () => {
 
       expect(mockLoggerError).toHaveBeenCalledWith('Unexpected error in contact API', {
         error: expect.any(Error),
+      });
+    });
+
+    it('sends admin notification email on success', async () => {
+      const requestData = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message with enough content to pass validation.',
+      };
+
+      const mockRequest = {
+        headers: {
+          get: mock((header: string) => {
+            if (header === 'x-forwarded-for') return '192.168.1.1';
+            if (header === 'user-agent') return 'Test Browser';
+            return null;
+          }),
+        },
+        json: () => Promise.resolve(requestData),
+      } as any;
+
+      await POST(mockRequest);
+
+      expect(mockRenderAdminNotification).toHaveBeenCalledWith({
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message with enough content to pass validation.',
+        submittedAt: expect.any(String),
+      });
+
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        to: 'admin@productpix.com',
+        subject: 'New Contact: John Doe',
+        html: '<html>Admin email</html>',
+        replyTo: 'john@example.com',
+      });
+    });
+
+    it('sends user acknowledgment email on success', async () => {
+      const requestData = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message with enough content to pass validation.',
+      };
+
+      const mockRequest = {
+        headers: {
+          get: mock((header: string) => {
+            if (header === 'x-forwarded-for') return '192.168.1.1';
+            if (header === 'user-agent') return 'Test Browser';
+            return null;
+          }),
+        },
+        json: () => Promise.resolve(requestData),
+      } as any;
+
+      await POST(mockRequest);
+
+      expect(mockRenderUserAcknowledgment).toHaveBeenCalledWith({
+        name: 'John Doe',
+      });
+
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        to: 'john@example.com',
+        subject: 'Thanks for contacting ProductPix',
+        html: '<html>User email</html>',
+      });
+    });
+
+    it('succeeds even if admin email fails', async () => {
+      mockSendEmail.mockImplementation((params) => {
+        if (params.to === 'admin@productpix.com') {
+          return Promise.resolve({ success: false, error: 'Admin email failed' } as any);
+        }
+        return Promise.resolve({ success: true, emailId: 'user-email-id' } as any);
+      });
+
+      const requestData = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message with enough content to pass validation.',
+      };
+
+      const mockRequest = {
+        headers: {
+          get: mock(() => '192.168.1.1'),
+        },
+        json: () => Promise.resolve(requestData),
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(result.success).toBe(true);
+
+      expect(mockLoggerWarn).toHaveBeenCalledWith('Admin notification email failed (submission still succeeded)', {
+        messageId: 'test-message-id',
+        error: 'Admin email failed',
+      });
+
+      expect(mockLoggerInfo).toHaveBeenCalledWith('Contact message submitted successfully', {
+        messageId: 'test-message-id',
+        email: 'john@example.com',
+        adminEmailSent: false,
+        userEmailSent: true,
+      });
+    });
+
+    it('succeeds even if both emails fail', async () => {
+      mockSendEmail.mockResolvedValue({ success: false, error: 'Service down' } as any);
+
+      const requestData = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message with enough content to pass validation.',
+      };
+
+      const mockRequest = {
+        headers: {
+          get: mock(() => '192.168.1.1'),
+        },
+        json: () => Promise.resolve(requestData),
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(result.success).toBe(true);
+
+      expect(mockLoggerWarn).toHaveBeenCalledTimes(2);
+      expect(mockLoggerWarn).toHaveBeenCalledWith('Admin notification email failed (submission still succeeded)', {
+        messageId: 'test-message-id',
+        error: 'Service down',
+      });
+      expect(mockLoggerWarn).toHaveBeenCalledWith('User acknowledgment email failed (submission still succeeded)', {
+        messageId: 'test-message-id',
+        error: 'Service down',
       });
     });
   });

@@ -75,31 +75,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // 6. Send emails (non-blocking)
-    const adminEmailResult = await sendEmail({
-      to: env.ADMIN_EMAIL,
-      subject: `New Contact: ${parsed.data.name}`,
-      html: renderContactAdminNotification({
+    let adminEmailResult: { success: boolean; error?: string; emailId?: string } = { success: true };
+
+    if (env.ADMIN_EMAIL) {
+      const adminEmailHtml = await renderContactAdminNotification({
         name: parsed.data.name,
         email: parsed.data.email,
         message: parsed.data.message,
         submittedAt: new Date().toISOString(),
-      }),
-      replyTo: parsed.data.email,
-    });
-
-    if (!adminEmailResult.success) {
-      logger.warn('Admin notification email failed (submission still succeeded)', {
-        messageId: result.messageId,
-        error: adminEmailResult.error,
       });
+
+      adminEmailResult = await sendEmail({
+        to: env.ADMIN_EMAIL,
+        subject: `New Contact: ${parsed.data.name}`,
+        html: adminEmailHtml,
+        replyTo: parsed.data.email,
+      });
+
+      if (!adminEmailResult.success) {
+        logger.warn('Admin notification email failed (submission still succeeded)', {
+          messageId: result.messageId,
+          error: adminEmailResult.error,
+        });
+      }
     }
+
+    const userEmailHtml = await renderContactUserAcknowledgment({
+      name: parsed.data.name,
+    });
 
     const userEmailResult = await sendEmail({
       to: parsed.data.email,
       subject: 'Thanks for contacting ProductPix',
-      html: renderContactUserAcknowledgment({
-        name: parsed.data.name,
-      }),
+      html: userEmailHtml,
     });
 
     if (!userEmailResult.success) {
