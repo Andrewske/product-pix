@@ -3,6 +3,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { captureError } from '@/lib/observability/capture-error';
+import { ProductPixError } from '@/lib/errors/error-classes';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -25,7 +27,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('Error boundary caught:', error, errorInfo);
+
+    // Only track if ProductPixError, otherwise just log
+    if (error instanceof ProductPixError) {
+      captureError(error, {
+        route: window.location.pathname,
+      }).catch(console.error);
+    }
   }
 
   reset = () => {

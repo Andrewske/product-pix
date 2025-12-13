@@ -1,14 +1,25 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { captureError } from '@/lib/observability/capture-error';
+import { ProductPixError } from '@/lib/errors/error-classes';
 
-interface ErrorProps {
+interface ErrorPageProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
-export default function Error({ error, reset }: ErrorProps) {
+export default function ErrorPage({ error, reset }: ErrorPageProps) {
+  useEffect(() => {
+    if (error instanceof ProductPixError) {
+      captureError(error, {
+        route: window.location.pathname,
+      }).catch(console.error);
+    }
+  }, [error]);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
