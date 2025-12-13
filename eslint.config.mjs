@@ -57,8 +57,15 @@ const eslintConfig = defineConfig([
         },
       ],
     },
-  },
-  globalIgnores([
+   },
+   // Ban console.error in API routes and lib code (allow warn/info for structured logging)
+   {
+     files: ["src/app/api/**/*.ts", "src/lib/**/*.ts"],
+     rules: {
+       "no-console": ["error", { "allow": ["warn", "info"] }]
+     }
+   },
+   globalIgnores([
     ".next/**",
     "out/**",
     "build/**",
