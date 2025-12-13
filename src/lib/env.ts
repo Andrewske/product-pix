@@ -44,7 +44,9 @@ const envSchema = z.object({
     // PostHog
     OBSERVABILITY_ENABLED: z.enum(['true', 'false']).optional().default('false'),
     POSTHOG_API_KEY: z.string().optional(),
-    POSTHOG_HOST: z.string().optional(),
+    POSTHOG_HOST: z.string().url().optional().default('https://app.posthog.com'),
+    NEXT_PUBLIC_POSTHOG_API_KEY: z.string().optional(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional().default('https://app.posthog.com'),
 });
 
 type Env = z.infer<typeof envSchema>;
