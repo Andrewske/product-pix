@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/forms';
@@ -12,6 +13,7 @@ export function SignupForm(): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -32,7 +34,7 @@ export function SignupForm(): React.ReactElement {
 
     const supabase = createClient();
 
-    const { error: authError } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -46,6 +48,14 @@ export function SignupForm(): React.ReactElement {
       return;
     }
 
+    // If session exists, user is auto-logged in (confirmations disabled)
+    if (data.session) {
+      router.push('/dashboard');
+      router.refresh();
+      return;
+    }
+
+    // Otherwise, user needs to confirm email
     setSuccess(true);
     setLoading(false);
   };

@@ -4,13 +4,22 @@ import userEvent from '@testing-library/user-event';
 import { SignupForm } from '../signup-form';
 
 // Mock Supabase client
-const mockSignUp = mock(() => Promise.resolve({ error: null as any }));
+const mockSignUp = mock(() => Promise.resolve({ data: { session: null, user: {} }, error: null as any }));
+const mockPush = mock(() => {});
+const mockRefresh = mock(() => {});
 
 mock.module('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
       signUp: mockSignUp,
     },
+  }),
+}));
+
+mock.module('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    refresh: mockRefresh,
   }),
 }));
 
@@ -24,6 +33,8 @@ Object.defineProperty(window, 'location', {
 describe('SignupForm - Integration Tests', () => {
   beforeEach(() => {
     mockSignUp.mockClear();
+    mockPush.mockClear();
+    mockRefresh.mockClear();
   });
 
   it('shows error when passwords do not match', async () => {
@@ -178,10 +189,10 @@ describe('SignupForm - Integration Tests', () => {
     expect(confirmPasswordInput.disabled).toBe(true);
   });
 
-  it('shows success message on successful signup', async () => {
+  it('shows success message on successful signup when confirmations enabled', async () => {
     const user = userEvent.setup();
 
-    mockSignUp.mockResolvedValueOnce({ error: null });
+    mockSignUp.mockResolvedValueOnce({ data: { session: null, user: {} }, error: null });
 
     render(<SignupForm />);
 
@@ -212,6 +223,45 @@ describe('SignupForm - Integration Tests', () => {
         emailRedirectTo: 'http://localhost:3000/auth/callback',
       },
     });
+
+    // Should not redirect when session is null
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('redirects to dashboard when session returned (confirmations disabled)', async () => {
+    const user = userEvent.setup();
+
+    mockSignUp.mockResolvedValueOnce({
+      data: {
+        session: { access_token: 'token123' },
+        user: { id: '123' }
+      },
+      error: null
+    });
+
+    render(<SignupForm />);
+
+    const emailInput = screen.getByLabelText('Email address');
+    const passwordInput = screen.getByLabelText('Password');
+    const confirmPasswordInput = screen.getByLabelText('Confirm password');
+    const submitButton = screen.getByRole('button', { name: 'Create account' });
+
+    // Fill form
+    await user.type(emailInput, 'newuser@example.com');
+    await user.type(passwordInput, 'password123');
+    await user.type(confirmPasswordInput, 'password123');
+
+    // Submit
+    await user.click(submitButton);
+
+    // Verify redirect
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/dashboard');
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+
+    // Should not show email confirmation message
+    expect(screen.queryByText('Check your email')).toBeNull();
   });
 
   it('clears previous error on new submission attempt', async () => {
@@ -240,7 +290,7 @@ describe('SignupForm - Integration Tests', () => {
     });
 
     // Second attempt succeeds
-    mockSignUp.mockResolvedValueOnce({ error: null });
+    mockSignUp.mockResolvedValueOnce({ data: { session: null, user: {} }, error: null });
 
     // Clear and re-enter credentials
     await user.clear(emailInput);
