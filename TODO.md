@@ -13,7 +13,6 @@
 ## Future
 - [ ] Use jsx.email for email templates
 - [ ] Need to create an email series.
-- [ ] Need to create an email series.
 - [ ] Want to create a chatbot.
 - [ ] I want an admin dashboard where I can see users, their usage history, total usage history, errors, payments, outstanding credits, user profiles, messaging capabilities, and feedback.
 - [ ] Need to create an option to generate more than 1 photo and at different angles.
@@ -23,4 +22,10 @@
 - [ ] Create user onboarding flow: Build multi-step wizard guiding new users through first image generation, credit grants, and upsell opportunities with progress tracking.
 - [ ] Integrate PostHog analytics: Replace custom A/B testing with PostHog feature flags, add comprehensive event tracking, session replay, error monitoring, and source map uploads.
 - [ ] Migrate A/B testing to feature flags: Update existing A/B testing implementation to use PostHog feature flags for unified analytics platform and better experiment analysis.
+- [ ] Implement react-toastify for frontend error notifications.
+- [ ] Log all frontend and backend errors in the database, tied to logged-in users.
+- [ ] Create a user action and error timeline for the admin dashboard.
+- [ ] Implement react-toastify for frontend error notifications.
+- [ ] Log all frontend and backend errors in the database, tied to logged-in users.
+- [ ] Create a user action and error timeline for the admin dashboard.
 ## Completed

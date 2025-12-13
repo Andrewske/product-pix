@@ -1,6 +1,6 @@
 ---
 name: productpix-navigator
-description: Comprehensive ProductPix architecture guide and navigation system. Use when investigating issues, understanding data flows, finding code locations, or navigating the ProductPix codebase. Covers Next.js app structure, Supabase database, R2 storage, Gemini AI integration, credit system, and prompt-bench testing framework. Includes entry point mappings, component boundaries, data flow diagrams, and grep patterns.
+description: Navigate ProductPix codebase with architecture maps and data flow traces. Use when searching src/lib/, src/app/api/, src/components/, or prompt-bench/. Covers create_generation_job RPC, credit system, migrations, EmptyState, Toast components. Use for "where is X defined", "how does Y work", database queries, API routes, or component locations. Triggers on lib/db, lib/ai, lib/r2, route.ts, page.tsx, supabase/migrations, or any exploration of generation/upload/payment flows. (project)
 ---
 
 # ProductPix Navigator

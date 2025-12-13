@@ -7,28 +7,28 @@ Manual QA checklist covering all user flows before release.
 ## 1. Authentication Flows
 
 ### Sign Up
-- [ ] Email/password signup creates account
-- [ ] Email/password signup validates password (min 8 chars)
-- [ ] Email/password signup confirms passwords match
-- [ ] Email confirmation is sent
-- [ ] Clicking email confirmation link works
-- [ ] User record created in `public.users` with `credit_balance = 0`
-- [ ] Google OAuth signup works
-- [ ] Google OAuth creates user record correctly
-- [ ] Signup redirects to dashboard on success
+- [x] Email/password signup creates account
+- [x] Email/password signup validates password (min 8 chars)
+- [x] Email/password signup confirms passwords match
+- [x] Email confirmation is sent
+- [x] Clicking email confirmation link works
+- [x] User record created in `public.users` with `credit_balance = 0`
+- [x] Google OAuth signup works
+- [x] Google OAuth creates user record correctly
+- [x] Signup redirects to dashboard on success
 
 ### Sign In
-- [ ] Email/password login works
+- [x] Email/password login works
 - [ ] Invalid credentials show error message
-- [ ] Google OAuth login works
-- [ ] Login redirects to dashboard (or custom `redirectTo`)
-- [ ] Session persists across page refreshes
-- [ ] Session persists across browser close/reopen
+- [x] Google OAuth login works
+- [x] Login redirects to dashboard (or custom `redirectTo`)
+- [x] Session persists across page refreshes
+- [x] Session persists across browser close/reopen
 
 ### Sign Out
-- [ ] Sign out clears session
-- [ ] Sign out redirects to login page
-- [ ] Protected pages redirect after sign out
+- [x] Sign out clears session
+- [x] Sign out redirects to login page
+- [x] Protected pages redirect after sign out
 
 ### Password Reset
 - [ ] Forgot password sends reset email
@@ -71,14 +71,14 @@ Manual QA checklist covering all user flows before release.
 - [x] Generate button enabled when template selected
 - [x] Generate button shows credit cost
 - [x] Generation with source image works
-- [ ] Loading state during generation
+- [x] Loading state during generation
 - [x] Result image displays correctly
-- [ ] Download button works
-- [ ] Regenerate button works
-- [ ] Credits deducted after successful generation
-- [ ] Job record created in database
-- [ ] Generated image record created in database
-- [ ] Image uploaded to R2 correctly
+- [x] Download button works
+- [x] Regenerate button works
+- [x] Credits deducted after successful generation
+- [x] Job record created in database
+- [x] Generated image record created in database
+- [x] Image uploaded to R2 correctly
 
 ### Error Handling
 - [ ] Insufficient credits shows modal (402 response)
