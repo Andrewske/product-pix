@@ -14,7 +14,7 @@ interface CriticalErrorData {
   context: Record<string, unknown>;
 }
 
-interface CriticalError extends CriticalErrorData {
+export interface CriticalError extends CriticalErrorData {
   id: string;
   createdAt: string | null;
   resolvedAt?: string | null;
