@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-middleware';
 import { z } from 'zod';
+import { createValidationError } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 
 const batchItemSchema = z.object({
   product_name: z.string().optional(),
@@ -99,7 +101,18 @@ const parseCsvHandler = async (request: AuthenticatedRequest): Promise<NextRespo
 
     return NextResponse.json({ items, errors });
   } catch (error) {
-    console.error('CSV parse error:', error);
+    const validationError = createValidationError(
+      'Failed to parse CSV file',
+      {
+        severity: 'low',
+        field: 'csv-file',
+        validationRule: 'csv-parsing',
+        userId: request.user.id,
+      }
+    );
+
+    await captureError(validationError, { route: '/api/batch/parse-csv' });
+
     return NextResponse.json(
       { error: 'Failed to parse CSV file' },
       { status: 500 }

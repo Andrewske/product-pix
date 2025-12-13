@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getBatchJob, getBatchItems } from '@/lib/db/batch';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-middleware';
+import { createGenerationError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 
 const getBatchHandler = async (
   request: AuthenticatedRequest,
@@ -61,7 +63,19 @@ const getBatchHandler = async (
       },
     });
   } catch (error) {
-    console.error('Error fetching batch:', error);
+    const generationError = createGenerationError(
+      ErrorCodes.GENERATION_FAILED,
+      'Error fetching batch',
+      {
+        severity: 'high',
+        templateSlug: 'batch-fetch',
+        creditsConsumed: 0,
+        retryable: true,
+      }
+    );
+
+    await captureError(generationError, { route: '/api/batch/[batchId]' });
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -37,14 +37,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Process async but return 200 immediately (per notes-on-stripe.md)
-    processStripeEvent(event).catch((error) => {
-      console.error('[Stripe Webhook] Async processing failed:', error);
+    processStripeEvent(event).catch(async (error) => {
+      const paymentError = createPaymentError(
+        ErrorCodes.PAYMENT_WEBHOOK_INVALID,
+        'Stripe webhook async processing failed',
+        {
+          severity: 'critical',
+          amount: 0,
+          currency: 'usd',
+          stripeErrorCode: error instanceof Error ? error.message : 'unknown',
+        }
+      );
+
+      await captureError(paymentError, { route: '/api/webhooks/stripe' });
     });
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('[Stripe Webhook] Error:', error);
-
     const paymentError = createPaymentError(
       ErrorCodes.PAYMENT_WEBHOOK_INVALID,
       'Stripe webhook processing failed',

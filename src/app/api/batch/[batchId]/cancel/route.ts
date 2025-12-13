@@ -6,6 +6,8 @@ import { cancelBatch } from '@/lib/ai/gemini-batch';
 import { getBatchItemParameters } from '@/lib/db/types';
 import { getCreditsForResolution } from '@/lib/pricing/credits';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-middleware';
+import { createGenerationError, createCreditError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 
 const cancelBatchHandler = async (
   request: AuthenticatedRequest,
@@ -45,7 +47,18 @@ const cancelBatchHandler = async (
       try {
         await cancelBatch(batch.gemini_batch_id);
       } catch (error) {
-        console.error('Error cancelling Gemini batch:', error);
+        const generationError = createGenerationError(
+          ErrorCodes.GENERATION_FAILED,
+          'Error cancelling Gemini batch',
+          {
+            severity: 'medium',
+            templateSlug: 'batch-cancel',
+            creditsConsumed: 0,
+            retryable: true,
+          }
+        );
+
+        await captureError(generationError, { route: '/api/batch/[batchId]/cancel' });
         // Continue with cancellation even if Gemini API fails
       }
     }
@@ -80,7 +93,18 @@ const cancelBatchHandler = async (
       });
 
       if (refundError) {
-        console.error('Error refunding credits:', refundError);
+        const creditError = createCreditError(
+          ErrorCodes.CREDIT_REFUND_FAILED,
+          'Error refunding credits for batch cancellation',
+          {
+            severity: 'critical',
+            amount: refundAmount,
+            operation: 'refund',
+            userId: request.user.id,
+          }
+        );
+
+        await captureError(creditError, { route: '/api/batch/[batchId]/cancel' });
       }
     }
 
@@ -89,7 +113,19 @@ const cancelBatchHandler = async (
       refundedCredits: refundAmount,
     });
   } catch (error) {
-    console.error('Error cancelling batch:', error);
+    const generationError = createGenerationError(
+      ErrorCodes.GENERATION_FAILED,
+      'Error cancelling batch',
+      {
+        severity: 'high',
+        templateSlug: 'batch-cancel',
+        creditsConsumed: 0,
+        retryable: true,
+      }
+    );
+
+    await captureError(generationError, { route: '/api/batch/[batchId]/cancel' });
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

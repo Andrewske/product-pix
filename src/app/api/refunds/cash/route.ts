@@ -4,6 +4,8 @@ import { withAuth } from '@/lib/auth/server';
 import { createStripeRefund } from '@/lib/stripe/refunds';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getEligibleCashRefunds, createCashRefundRequest } from '@/lib/db/refunds';
+import { createCreditError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 
 export const POST = withAuth(async (request) => {
   try {
@@ -40,7 +42,19 @@ export const POST = withAuth(async (request) => {
       .single();
 
     if (purchaseError || !purchaseData) {
-      console.error('Error fetching purchase details:', purchaseError);
+      const creditError = createCreditError(
+        ErrorCodes.CREDIT_REFUND_FAILED,
+        'Failed to fetch purchase details for cash refund',
+        {
+          severity: 'critical',
+          amount: 0,
+          operation: 'refund',
+          userId,
+        }
+      );
+
+      await captureError(creditError, { route: '/api/refunds/cash' });
+
       return NextResponse.json(
         { error: 'Purchase not found' },
         { status: 404 }
@@ -85,7 +99,19 @@ export const POST = withAuth(async (request) => {
     );
 
     if (deductError) {
-      console.error('Error deducting credits:', deductError);
+      const creditError = createCreditError(
+        ErrorCodes.CREDIT_CONSUME_FAILED,
+        'Failed to deduct credits for cash refund',
+        {
+          severity: 'critical',
+          amount: purchase.creditsUnused,
+          operation: 'consume',
+          userId,
+        }
+      );
+
+      await captureError(creditError, { route: '/api/refunds/cash' });
+
       // TODO: Consider rolling back Stripe refund here
       return NextResponse.json(
         { error: 'Failed to process refund' },
@@ -99,7 +125,19 @@ export const POST = withAuth(async (request) => {
       amountCents: refundAmountCents,
     });
   } catch (error) {
-    console.error('Error processing cash refund:', error);
+    const creditError = createCreditError(
+      ErrorCodes.CREDIT_REFUND_FAILED,
+      'Cash refund processing failed',
+      {
+        severity: 'critical',
+        amount: 0,
+        operation: 'refund',
+        userId: request.user.id,
+      }
+    );
+
+    await captureError(creditError, { route: '/api/refunds/cash' });
+
     return NextResponse.json(
       { error: 'Failed to process refund' },
       { status: 500 }

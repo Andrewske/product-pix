@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/client';
 import { getUserStripeCustomerId } from '@/lib/stripe/customer';
 import { requireAuth } from '@/lib/auth/server';
+import { createPaymentError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
+import type { User } from '@supabase/supabase-js';
 
 export async function POST(): Promise<NextResponse> {
+  let user: User | undefined;
+
   try {
-    const user = await requireAuth();
+    user = await requireAuth();
     const customerId = await getUserStripeCustomerId(user.id);
 
     if (!customerId) {
@@ -21,7 +26,20 @@ export async function POST(): Promise<NextResponse> {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error('[Stripe Portal]', error);
+    const paymentError = createPaymentError(
+      ErrorCodes.PAYMENT_INTENT_FAILED,
+      'Failed to create Stripe portal session',
+      {
+        severity: 'critical',
+        amount: 0,
+        currency: 'usd',
+        stripeErrorCode: error instanceof Error ? error.message : 'unknown',
+        userId: user?.id,
+      }
+    );
+
+    await captureError(paymentError, { route: '/api/stripe/portal' });
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

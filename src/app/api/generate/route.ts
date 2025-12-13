@@ -159,8 +159,6 @@ export const POST = withAuth(async (request) => {
       fileKey: result.fileKey,
     });
   } catch (error) {
-    console.error('Generate error:', error);
-
     const creditsConsumed = jobResult?.success === true ? creditCost : 0;
 
     const generationError = createGenerationError(

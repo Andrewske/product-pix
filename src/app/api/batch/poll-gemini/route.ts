@@ -12,6 +12,8 @@ import {
 import { uploadBuffer } from '@/lib/r2/upload';
 import { createGeneratedImage } from '@/lib/db/generated-images';
 import { getBatchItemParameters } from '@/lib/db/types';
+import { createGenerationError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 
 // =============================================================================
 // Gemini Batch Response Types
@@ -80,7 +82,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .not('gemini_batch_id', 'is', null);
 
     if (fetchError) {
-      console.error('Error fetching batches:', fetchError);
+      const generationError = createGenerationError(
+        ErrorCodes.GENERATION_FAILED,
+        'Failed to fetch processing batches',
+        {
+          severity: 'high',
+          templateSlug: 'batch-poll',
+          creditsConsumed: 0,
+          retryable: true,
+        }
+      );
+
+      await captureError(generationError, { route: '/api/batch/poll-gemini' });
+
       return NextResponse.json(
         { error: 'Failed to fetch batches' },
         { status: 500 }
@@ -99,7 +113,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         if (status.state === 'JOB_STATE_SUCCEEDED') {
           if (!status.destFileName) {
-            console.error(`No destination file for batch ${batch.id}`);
+            const generationError = createGenerationError(
+              ErrorCodes.GENERATION_INVALID_INPUT,
+              `No destination file for batch ${batch.id}`,
+              {
+                severity: 'high',
+                templateSlug: 'batch-poll',
+                creditsConsumed: 0,
+                retryable: true,
+              }
+            );
+
+            await captureError(generationError, { route: '/api/batch/poll-gemini' });
             continue;
           }
 
@@ -147,7 +172,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                   const batchItem = batchItems.find((item) => item.id === itemId);
 
                   if (!batchItem) {
-                    console.error(`Batch item ${itemId} not found`);
+                    const generationError = createGenerationError(
+                      ErrorCodes.GENERATION_FAILED,
+                      `Batch item ${itemId} not found`,
+                      {
+                        severity: 'high',
+                        templateSlug: 'batch-poll',
+                        creditsConsumed: 0,
+                        retryable: true,
+                      }
+                    );
+
+                    await captureError(generationError, { route: '/api/batch/poll-gemini' });
                     continue;
                   }
 
@@ -171,7 +207,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
                     completedCount++;
                   } else {
-                    console.error(`Failed to create generated image for item ${itemId}`);
+                    const generationError = createGenerationError(
+                      ErrorCodes.GENERATION_FAILED,
+                      `Failed to create generated image for item ${itemId}`,
+                      {
+                        severity: 'high',
+                        templateSlug: 'batch-poll',
+                        creditsConsumed: 0,
+                        retryable: true,
+                      }
+                    );
+
+                    await captureError(generationError, { route: '/api/batch/poll-gemini' });
+
                     await updateBatchItem(itemId, {
                       status: 'failed',
                       error_message: 'Failed to create image record',
@@ -198,7 +246,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 failedCount++;
               }
             } catch (parseError) {
-              console.error(`Error parsing result line: ${line}`, parseError);
+              const generationError = createGenerationError(
+                ErrorCodes.GENERATION_FAILED,
+                `Error parsing result line: ${line}`,
+                {
+                  severity: 'medium',
+                  templateSlug: 'batch-poll',
+                  creditsConsumed: 0,
+                  retryable: true,
+                }
+              );
+
+              await captureError(generationError, { route: '/api/batch/poll-gemini' });
               // Continue processing other lines
             }
           }
@@ -252,14 +311,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
         // Other states (PENDING, RUNNING): do nothing, check next time
       } catch (error) {
-        console.error(`Error processing batch ${batch.id}:`, error);
+        const generationError = createGenerationError(
+          ErrorCodes.GENERATION_FAILED,
+          `Error processing batch ${batch.id}`,
+          {
+            severity: 'high',
+            templateSlug: 'batch-poll',
+            creditsConsumed: 0,
+            retryable: true,
+          }
+        );
+
+        await captureError(generationError, { route: '/api/batch/poll-gemini' });
         // Continue with next batch
       }
     }
 
     return NextResponse.json({ processed });
   } catch (error) {
-    console.error('Polling error:', error);
+    const generationError = createGenerationError(
+      ErrorCodes.GENERATION_FAILED,
+      'Batch polling failed',
+      {
+        severity: 'high',
+        templateSlug: 'batch-poll',
+        creditsConsumed: 0,
+        retryable: true,
+      }
+    );
+
+    await captureError(generationError, { route: '/api/batch/poll-gemini' });
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -9,6 +9,8 @@ import {
   getUserRefundCount,
   getPendingAdminRefunds
 } from '@/lib/db/refunds';
+import { createCreditError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 import { softDeleteImage } from '@/lib/db/generated-images';
 import { z } from 'zod';
 import type { RefundReason } from '@/types';
@@ -124,7 +126,18 @@ export const POST = withAuth(async (request) => {
         .eq('id', refundRequest.id);
 
       if (updateError) {
-        console.error('Error updating refund request status:', updateError);
+        const creditError = createCreditError(
+          ErrorCodes.CREDIT_REFUND_FAILED,
+          'Failed to update refund request status',
+          {
+            severity: 'high',
+            amount: creditsRefunded,
+            operation: 'refund',
+            userId: request.user.id,
+          }
+        );
+
+        await captureError(creditError, { route: '/api/refunds/image' });
         // Don't fail the request since refund was successful
       }
 
@@ -154,7 +167,19 @@ export const POST = withAuth(async (request) => {
       });
     }
   } catch (error) {
-    console.error('Refund request error:', error);
+    const creditError = createCreditError(
+      ErrorCodes.CREDIT_REFUND_FAILED,
+      'Image refund request failed',
+      {
+        severity: 'critical',
+        amount: 0,
+        operation: 'refund',
+        userId: request.user.id,
+      }
+    );
+
+    await captureError(creditError, { route: '/api/refunds/image' });
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -177,7 +202,19 @@ export const GET = withAuth(async (request) => {
 
     return NextResponse.json({ refunds: pendingRefunds });
   } catch (error) {
-    console.error('Get pending refunds error:', error);
+    const creditError = createCreditError(
+      ErrorCodes.CREDIT_REFUND_FAILED,
+      'Failed to get pending refunds',
+      {
+        severity: 'high',
+        amount: 0,
+        operation: 'refund',
+        userId: request.user.id,
+      }
+    );
+
+    await captureError(creditError, { route: '/api/refunds/image' });
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

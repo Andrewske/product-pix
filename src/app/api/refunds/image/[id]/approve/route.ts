@@ -51,8 +51,6 @@ export const POST = withAuth(async (request, { params }) => {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Approve refund error:', error);
-
     const creditError = createCreditError(
       ErrorCodes.CREDIT_REFUND_FAILED,
       'Image refund approval failed',

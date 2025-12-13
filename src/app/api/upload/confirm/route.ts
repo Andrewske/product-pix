@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/server';
 import { createUpload } from '@/lib/db/uploads';
 import { z } from 'zod';
+import { createGenerationError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 
 const requestSchema = z.object({
   fileKey: z.string().min(1),
@@ -59,7 +61,20 @@ export const POST = withAuth(async (request) => {
       fileKey: upload.file_key,
     });
   } catch (error) {
-    console.error('Upload confirm error:', error);
+    const generationError = createGenerationError(
+      ErrorCodes.GENERATION_FAILED,
+      'Failed to confirm upload',
+      {
+        severity: 'medium',
+        templateSlug: 'upload-confirm',
+        creditsConsumed: 0,
+        userId: request.user.id,
+        retryable: true,
+      }
+    );
+
+    await captureError(generationError, { route: '/api/upload/confirm' });
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

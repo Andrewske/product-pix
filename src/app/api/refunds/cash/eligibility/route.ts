@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/server';
 import { getEligibleCashRefunds } from '@/lib/db/refunds';
+import { createCreditError, ErrorCodes } from '@/lib/errors';
+import { captureError } from '@/lib/observability/capture-error';
 
 export const GET = withAuth(async (request) => {
   try {
@@ -11,7 +13,19 @@ export const GET = withAuth(async (request) => {
       eligiblePurchases,
     });
   } catch (error) {
-    console.error('Error fetching cash refund eligibility:', error);
+    const creditError = createCreditError(
+      ErrorCodes.CREDIT_REFUND_FAILED,
+      'Failed to fetch cash refund eligibility',
+      {
+        severity: 'high',
+        amount: 0,
+        operation: 'refund',
+        userId: request.user.id,
+      }
+    );
+
+    await captureError(creditError, { route: '/api/refunds/cash/eligibility' });
+
     return NextResponse.json(
       { error: 'Failed to fetch refund eligibility' },
       { status: 500 }
