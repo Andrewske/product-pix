@@ -23,12 +23,14 @@ export function AspectRatioSelector({ value, onChange, disabled }: AspectRatioSe
           type="button"
           disabled={disabled}
           onClick={() => value !== ratio && onChange(ratio)}
-          className={cn(
-            'px-4 py-2 text-sm font-medium rounded-lg border transition-colors',
-            value === ratio
-              ? 'bg-primary/10 border-primary text-primary'
-              : 'border-border hover:border-primary/50 text-foreground'
-          )}
+            className={cn(
+              'px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200',
+              'focus:outline-none',
+              value === ratio
+                ? 'bg-green-600 text-black border-green-600 focus:ring-0'
+                : 'border-border hover:border-primary/50 text-foreground hover:bg-primary/5 focus:ring-2 focus:ring-primary/20 focus:ring-offset-2',
+              disabled && 'opacity-50 cursor-not-allowed'
+            )}
         >
           {ratio}
         </button>

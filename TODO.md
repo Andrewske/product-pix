@@ -1,7 +1,9 @@
 # TODO
 
 ## Active
-- [ ] **Configure SMTP for production email**: Set up production email provider (SendGrid, Resend, etc.) and configure in Supabase dashboard under Auth > Email > SMTP settings. Required for email confirmations to work in production (local dev uses Inbucket).
+- [x] **Configure SMTP for production email**: ~~Set up production email provider~~ **COMPLETED: Resend integrated**
+  - See `docs/reference/resend-email-setup.md` for deployment steps
+  - Next: Create Resend account, get API key, add env vars, configure Supabase SMTP
 - [ ] **Complete pre-launch QA testing**: Execute comprehensive manual testing checklist covering authentication flows, image generation, batch processing, credit system, payments, settings, error handling, landing page, mobile responsiveness, performance, and security (303 checklist items).
 - [ ] **Implement cookie consent foundation**: Build TypeScript types, storage abstraction (database + localStorage), sync logic, and React Context provider for cookie consent state management.
 - [ ] **Create cookie consent UI components**: Add bottom-corner consent banner with accept/reject buttons and Privacy settings tab with granular toggles for analytics and marketing preferences.

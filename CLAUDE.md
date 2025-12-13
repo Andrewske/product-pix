@@ -47,6 +47,13 @@ prompt-bench/   # Isolated CLI framework
 
 **Key RPC**: `create_generation_job`, `add_credits`, `consume_credits`, `refund_credits`
 
+**Email Service:**
+- Provider: Resend (SMTP for auth, SDK for contact form)
+- Local dev: Inbucket (http://127.0.0.1:54324)
+- Production: Configured via env vars (`RESEND_API_KEY`, `EMAIL_ENABLED`)
+- Contact emails: Admin notification + user acknowledgment
+- Error handling: Failures logged but don't block submissions
+
 ## Code Conventions
 
 - **Package manager**: `bun` only (NOT npm/yarn/pnpm)

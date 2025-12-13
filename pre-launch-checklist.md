@@ -41,37 +41,31 @@ Manual QA checklist covering all user flows before release.
 ## 2. Single Image Generation
 
 ### Upload Flow
-- [ ] Drag-and-drop upload works
-- [ ] Click-to-browse upload works
-- [ ] JPEG files accepted
-- [ ] PNG files accepted
-- [ ] WebP files accepted
-- [ ] Invalid file types rejected (GIF, BMP, etc.)
-- [ ] Files > 10MB rejected
-- [ ] Upload preview displays correctly
-- [ ] Upload progress indicator works
-- [ ] Upload to R2 completes successfully
-- [ ] Upload confirmation creates DB record
+- [x] Drag-and-drop upload works
+- [x] Click-to-browse upload works
+- [x] JPEG files accepted
+- [x] PNG files accepted
+- [x] WebP files accepted
+- [x] Invalid file types rejected (GIF, BMP, etc.)
+- [x] Files > 10MB rejected
+- [x] Upload preview displays correctly
+- [x] Upload progress indicator works
+- [x] Upload to R2 completes successfully
+- [x] Upload confirmation creates DB record
 
 ### Template Selection
-- [ ] Templates load from `/api/templates`
-- [ ] Template list displays correctly
-- [ ] Template selection updates UI
+- [x] Templates load from `/api/templates`
+- [x] Template list displays correctly
+- [x] Template selection updates UI
 
 ### Aspect Ratio Selection
-- [ ] 1:1 selectable
-- [ ] 4:3 selectable
-- [ ] 3:4 selectable
-- [ ] 16:9 selectable
-- [ ] 9:16 selectable
-- [ ] 3:2 selectable
-- [ ] 2:3 selectable
-
-### Resolution Selection
-- [ ] 1k resolution selectable
-- [ ] 2k resolution selectable
-- [ ] 4k resolution selectable
-- [ ] Credit cost updates based on resolution
+- [x] 1:1 selectable
+- [x] 4:3 selectable
+- [x] 3:4 selectable
+- [x] 16:9 selectable
+- [x] 9:16 selectable
+- [x] 3:2 selectable
+- [x] 2:3 selectable
 
 ### Generation
 - [ ] Generate button enabled when template selected
@@ -79,7 +73,7 @@ Manual QA checklist covering all user flows before release.
 - [ ] Generation with source image works
 - [ ] Generation without source image works (text-to-image)
 - [ ] Loading state during generation
-- [ ] Result image displays correctly
+- [x] Result image displays correctly
 - [ ] Download button works
 - [ ] Regenerate button works
 - [ ] Credits deducted after successful generation
