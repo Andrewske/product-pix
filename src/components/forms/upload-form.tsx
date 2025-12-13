@@ -1,7 +1,7 @@
 // src/components/forms/upload-form.tsx
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Upload } from 'lucide-react';
 import { IMAGE_CONFIG } from '@/lib/images';
@@ -9,13 +9,26 @@ import { IMAGE_CONFIG } from '@/lib/images';
 interface UploadFormProps {
   onUploadComplete: (uploadId: string, previewUrl: string) => void;
   onError: (error: string) => void;
+  reset?: boolean;
 }
 
-export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
+export function UploadForm({ onUploadComplete, onError, reset }: UploadFormProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset internal state when reset prop changes
+  useEffect(() => {
+    if (reset) {
+      setPreview(null);
+      setIsDragging(false);
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [reset]);
 
   const validateFile = (file: File): string | null => {
     if (!IMAGE_CONFIG.allowedMimeTypes.includes(file.type as typeof IMAGE_CONFIG.allowedMimeTypes[number])) {
@@ -156,7 +169,7 @@ export function UploadForm({ onUploadComplete, onError }: UploadFormProps) {
 
       {preview ? (
         <div className="space-y-4">
-          <div className="relative max-h-64 mx-auto rounded-lg overflow-hidden">
+          <div className="relative w-full max-w-md h-64 mx-auto rounded-lg overflow-hidden">
             <Image
               src={preview}
               alt="Preview"

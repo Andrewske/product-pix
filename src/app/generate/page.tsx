@@ -29,6 +29,7 @@ export default function GeneratePage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [creditsNeeded, setCreditsNeeded] = useState(0);
+  const [resetUploadForm, setResetUploadForm] = useState(false);
 
   const handleUploadComplete = (id: string, preview: string) => {
     setUploadId(id);
@@ -105,6 +106,9 @@ export default function GeneratePage() {
     setPreviewUrl(null);
     setResult(null);
     setError(null);
+    setResetUploadForm(true);
+    // Reset the flag after a short delay to allow re-triggering
+    setTimeout(() => setResetUploadForm(false), 100);
   };
 
   return (
@@ -123,7 +127,7 @@ export default function GeneratePage() {
           {/* Upload Section */}
           <div>
             <SectionLabel>UPLOAD PRODUCT IMAGE</SectionLabel>
-            <UploadForm onUploadComplete={handleUploadComplete} onError={setError} />
+            <UploadForm onUploadComplete={handleUploadComplete} onError={setError} reset={resetUploadForm} />
             {previewUrl && (
               <Button onClick={handleReset} variant="link" className="mt-2 text-sm text-destructive px-0">
                 Remove image
