@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { safeStringify } from '@/lib/utils/safe-stringify';
 
 interface TimelineEvent {
   id: string;
@@ -23,7 +24,7 @@ interface TimelineEventCardProps {
   onUnresolve: () => void;
 }
 
-export function TimelineEventCard({ event, onResolve, onUnresolve }: TimelineEventCardProps) {
+export const TimelineEventCard = memo(function TimelineEventCard({ event, onResolve, onUnresolve }: TimelineEventCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const severityColors = {
@@ -79,9 +80,9 @@ export function TimelineEventCard({ event, onResolve, onUnresolve }: TimelineEve
 
       {expanded && (
         <pre className="mt-2 text-xs bg-black/5 p-2 rounded overflow-auto max-h-96">
-          {JSON.stringify(event.metadata, null, 2)}
+          {safeStringify(event.metadata)}
         </pre>
       )}
     </div>
   );
-}
+});

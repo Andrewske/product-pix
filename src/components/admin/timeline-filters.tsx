@@ -1,6 +1,22 @@
 'use client';
 
+import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Database } from '@/lib/supabase/database.types';
+
+// Domain options from database enum
+const DOMAIN_OPTIONS: Array<{
+  value: Database['public']['Enums']['critical_errors_domain'];
+  label: string;
+}> = [
+  { value: 'payment', label: 'Payment' },
+  { value: 'credit', label: 'Credit' },
+  { value: 'generation', label: 'Generation' },
+  { value: 'auth', label: 'Auth' },
+  { value: 'validation', label: 'Validation' },
+  { value: 'rate-limit', label: 'Rate Limit' },
+  { value: 'system', label: 'System' },
+];
 
 interface TimelineFiltersProps {
   filters: {
@@ -12,7 +28,7 @@ interface TimelineFiltersProps {
   onChange: (filters: TimelineFiltersProps['filters']) => void;
 }
 
-export function TimelineFilters({ filters, onChange }: TimelineFiltersProps) {
+export const TimelineFilters = memo(function TimelineFilters({ filters, onChange }: TimelineFiltersProps) {
   return (
     <div className="flex gap-4 flex-wrap">
       <div className="flex flex-col gap-1">
@@ -55,12 +71,11 @@ export function TimelineFilters({ filters, onChange }: TimelineFiltersProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            <SelectItem value="payment">Payment</SelectItem>
-            <SelectItem value="credit">Credit</SelectItem>
-            <SelectItem value="generation">Generation</SelectItem>
-            <SelectItem value="auth">Auth</SelectItem>
-            <SelectItem value="validation">Validation</SelectItem>
-            <SelectItem value="rate-limit">Rate Limit</SelectItem>
+            {DOMAIN_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -110,4 +125,4 @@ export function TimelineFilters({ filters, onChange }: TimelineFiltersProps) {
       </div>
     </div>
   );
-}
+});

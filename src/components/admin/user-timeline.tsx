@@ -5,15 +5,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TimelineFilters } from './timeline-filters';
 import { TimelineEventCard } from './timeline-event-card';
+import { getUserTimeline, resolveError, unresolveError, type TimelineFilters as ApiFilters } from '@/lib/admin-api/client';
 
 export function UserTimeline({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState<{
-    severity?: string;
-    domain?: string;
-    resolved: 'all' | 'unresolved' | 'resolved';
-    days: number;
-  }>({
+  const [filters, setFilters] = useState<ApiFilters>({
     resolved: 'all',
     days: 30,
   });
@@ -21,36 +17,28 @@ export function UserTimeline({ userId }: { userId: string }) {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
       queryKey: ['user-timeline', userId, filters],
-      queryFn: ({ pageParam }) => {
-        const params = new URLSearchParams();
-        if (filters.severity) params.set('severity', filters.severity);
-        if (filters.domain) params.set('domain', filters.domain);
-        params.set('resolved', filters.resolved);
-        params.set('days', filters.days.toString());
-        if (pageParam) params.set('cursor', pageParam);
-        return fetch(`/api/admin/users/${userId}/timeline?${params}`).then(r => r.json());
+      queryFn: async ({ pageParam }: { pageParam?: string }) => {
+        return getUserTimeline(userId, filters, pageParam);
       },
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-      initialPageParam: undefined,
+      initialPageParam: undefined as string | undefined,
     });
 
   const resolveErrorMutation = useMutation({
-    mutationFn: (errorId: string) =>
-      fetch(`/api/admin/errors/${errorId}/resolve`, { method: 'POST' }),
+    mutationFn: (errorId: string) => resolveError(errorId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-timeline', userId] });
     },
   });
 
   const unresolveErrorMutation = useMutation({
-    mutationFn: (errorId: string) =>
-      fetch(`/api/admin/errors/${errorId}/resolve`, { method: 'DELETE' }),
+    mutationFn: (errorId: string) => unresolveError(errorId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-timeline', userId] });
     },
   });
 
-  const events = data?.pages.flatMap(page => page.events) ?? [];
+  const events = data?.pages.flatMap((page: any) => page.events) ?? [];
 
   return (
     <div className="space-y-4">
