@@ -101,12 +101,32 @@ export default function GeneratePage() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!result) return;
-    const link = document.createElement('a');
-    link.href = result.imageUrl;
-    link.download = 'product-photo.png';
-    link.click();
+
+    try {
+      // Fetch the image as a blob to ensure proper download
+      const response = await fetch(result.imageUrl);
+      const blob = await response.blob();
+
+      // Create object URL for download
+      const objectUrl = URL.createObjectURL(blob);
+
+      // Create and trigger download
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = 'product-photo.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up object URL
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback to opening in new tab if download fails
+      window.open(result.imageUrl, '_blank');
+    }
   };
 
   const handleRegenerate = () => {

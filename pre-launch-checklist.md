@@ -68,10 +68,9 @@ Manual QA checklist covering all user flows before release.
 - [x] 2:3 selectable
 
 ### Generation
-- [ ] Generate button enabled when template selected
-- [ ] Generate button shows credit cost
-- [ ] Generation with source image works
-- [ ] Generation without source image works (text-to-image)
+- [x] Generate button enabled when template selected
+- [x] Generate button shows credit cost
+- [x] Generation with source image works
 - [ ] Loading state during generation
 - [x] Result image displays correctly
 - [ ] Download button works
