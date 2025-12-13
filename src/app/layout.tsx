@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { Toaster } from "@/components/ui/sonner";
+import { ClientProviders } from "@/components/providers/client-providers";
 
 const fontDisplay = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
 const fontBody = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -21,17 +22,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning style={{ scrollBehavior: 'smooth' }}>
       <body className={`${fontDisplay.variable} ${fontBody.variable} font-sans antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <LayoutWrapper>
-            {children}
-          </LayoutWrapper>
-          <Toaster position="bottom-right" />
-        </ThemeProvider>
+        <ClientProviders>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={false}
+            disableTransitionOnChange
+          >
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+            <Toaster position="bottom-right" />
+          </ThemeProvider>
+        </ClientProviders>
       </body>
     </html>
   );
