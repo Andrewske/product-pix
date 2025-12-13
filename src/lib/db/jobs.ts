@@ -14,26 +14,16 @@ export const createGenerationJob = async (
 ): Promise<CreateJobResult> => {
   const supabase = createAdminClient();
 
-  const rpcParams: {
-    p_user_id: string;
-    p_prompt: string;
-    p_parameters: Json;
-    p_credits: number;
-    p_template_slug: string;
-    p_upload_id?: string;
-  } = {
+  // Pass parameters in the exact order expected by the database function:
+  // p_user_id, p_upload_id, p_prompt, p_parameters, p_credits, p_template_slug
+  const { data, error } = await supabase.rpc('create_generation_job', {
     p_user_id: userId,
+    p_upload_id: uploadId,
     p_prompt: prompt,
     p_parameters: parameters,
     p_credits: credits,
     p_template_slug: templateSlug || 'ecommerce-base',
-  };
-
-  if (uploadId !== null) {
-    rpcParams.p_upload_id = uploadId;
-  }
-
-  const { data, error } = await supabase.rpc('create_generation_job', rpcParams as any);
+  });
 
   if (error) {
     logger.error('Error creating job', { error, userId, uploadId, prompt });
