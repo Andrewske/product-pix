@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
-import type { Json } from '@/lib/supabase/database.types';
+import type { Json, Database } from '@/lib/supabase/database.types';
 
 interface CriticalErrorData {
   userId?: string | null;
@@ -8,8 +8,8 @@ interface CriticalErrorData {
   errorMessage: string;
   errorCode: string;
   errorStack?: string | null;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  domain: 'payment' | 'credit' | 'generation' | 'auth' | 'validation' | 'rate-limit' | 'system';
+  severity: Database["public"]["Enums"]["critical_errors_severity"];
+  domain: Database["public"]["Enums"]["critical_errors_domain"];
   route?: string | null;
   context: Record<string, unknown>;
 }
@@ -21,7 +21,7 @@ interface CriticalError extends CriticalErrorData {
   resolvedBy?: string | null;
 }
 
-export async function saveCriticalError(data: CriticalErrorData): Promise<void> {
+export async function saveCriticalError(data: CriticalErrorData): Promise<boolean> {
   const supabase = createAdminClient();
 
   const { error } = await supabase.from('critical_errors').insert({
@@ -38,15 +38,18 @@ export async function saveCriticalError(data: CriticalErrorData): Promise<void> 
 
   if (error) {
     logger.error('Failed to save critical error', { error, data });
+    return false;
   }
+
+  return true;
 }
 
 interface GetCriticalErrorsOptions {
   limit?: number;
   beforeDate?: string;
   afterDate?: string;
-  severity?: 'critical' | 'high' | 'medium' | 'low';
-  domain?: string;
+  severity?: Database["public"]["Enums"]["critical_errors_severity"];
+  domain?: Database["public"]["Enums"]["critical_errors_domain"];
   resolved?: 'true' | 'false' | 'all';
 }
 
@@ -55,7 +58,8 @@ export async function getCriticalErrors(
   options: GetCriticalErrorsOptions = {}
 ): Promise<CriticalError[]> {
   const supabase = createAdminClient();
-  const { limit = 50, beforeDate, afterDate, severity, domain, resolved = 'all' } = options;
+  const { limit: rawLimit = 50, beforeDate, afterDate, severity, domain, resolved = 'all' } = options;
+  const limit = Math.min(rawLimit, 250);
 
   let query = supabase
     .from('critical_errors')
@@ -103,10 +107,10 @@ export async function getCriticalErrors(
     errorMessage: row.error_message,
     errorCode: row.error_code,
     errorStack: row.error_stack,
-    severity: row.severity as 'critical' | 'high' | 'medium' | 'low',
-    domain: row.domain as 'payment' | 'credit' | 'generation' | 'auth' | 'validation' | 'rate-limit' | 'system',
+    severity: row.severity,
+    domain: row.domain,
     route: row.route,
-    context: row.context as Record<string, unknown>,
+    context: (row.context ?? {}) as Record<string, unknown>,
     createdAt: row.created_at,
     resolvedAt: row.resolved_at,
     resolvedBy: row.resolved_by,
@@ -116,7 +120,7 @@ export async function getCriticalErrors(
 export async function resolveCriticalError(
   errorId: string,
   resolvedBy: string
-): Promise<void> {
+): Promise<boolean> {
   const supabase = createAdminClient();
 
   const { error } = await supabase
@@ -129,10 +133,13 @@ export async function resolveCriticalError(
 
   if (error) {
     logger.error('Failed to resolve critical error', { error, errorId, resolvedBy });
+    return false;
   }
+
+  return true;
 }
 
-export async function unresolveCriticalError(errorId: string): Promise<void> {
+export async function unresolveCriticalError(errorId: string): Promise<boolean> {
   const supabase = createAdminClient();
 
   const { error } = await supabase
@@ -145,5 +152,8 @@ export async function unresolveCriticalError(errorId: string): Promise<void> {
 
   if (error) {
     logger.error('Failed to unresolve critical error', { error, errorId });
+    return false;
   }
+
+  return true;
 }

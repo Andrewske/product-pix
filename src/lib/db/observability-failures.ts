@@ -8,7 +8,7 @@ interface ObservabilityFailureData {
   occurredAt?: string;
 }
 
-export async function saveObservabilityFailure(data: ObservabilityFailureData): Promise<void> {
+export async function saveObservabilityFailure(data: ObservabilityFailureData): Promise<boolean> {
   const supabase = createAdminClient();
 
   const { error } = await supabase.from('observability_failures').insert({
@@ -18,7 +18,9 @@ export async function saveObservabilityFailure(data: ObservabilityFailureData): 
   });
 
   if (error) {
-    // Last resort - just log, don't throw
     logger.error('Failed to save observability failure', { error, data });
+    return false;
   }
+
+  return true;
 }

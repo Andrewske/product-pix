@@ -329,7 +329,7 @@ export type Database = {
         Row: {
           context: Json | null
           created_at: string | null
-          domain: string
+          domain: Database["public"]["Enums"]["critical_errors_domain"]
           error_code: string
           error_message: string
           error_name: string
@@ -338,13 +338,13 @@ export type Database = {
           resolved_at: string | null
           resolved_by: string | null
           route: string | null
-          severity: string
+          severity: Database["public"]["Enums"]["critical_errors_severity"]
           user_id: string | null
         }
         Insert: {
           context?: Json | null
           created_at?: string | null
-          domain: string
+          domain: Database["public"]["Enums"]["critical_errors_domain"]
           error_code: string
           error_message: string
           error_name: string
@@ -353,13 +353,13 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           route?: string | null
-          severity: string
+          severity: Database["public"]["Enums"]["critical_errors_severity"]
           user_id?: string | null
         }
         Update: {
           context?: Json | null
           created_at?: string | null
-          domain?: string
+          domain?: Database["public"]["Enums"]["critical_errors_domain"]
           error_code?: string
           error_message?: string
           error_name?: string
@@ -368,7 +368,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           route?: string | null
-          severity?: string
+          severity?: Database["public"]["Enums"]["critical_errors_severity"]
           user_id?: string | null
         }
         Relationships: [
@@ -1437,6 +1437,8 @@ export type Database = {
         | "image_refund"
         | "cash_refund_reversal"
       user_tier: "free" | "pro" | "business"
+      critical_errors_severity: "critical" | "high" | "medium" | "low"
+      critical_errors_domain: "payment" | "credit" | "generation" | "auth" | "validation" | "rate-limit" | "system"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1576,6 +1578,8 @@ export const Constants = {
         "failed",
       ],
       cash_refund_status: ["pending", "processing", "completed", "failed"],
+      critical_errors_domain: ["payment", "credit", "generation", "auth", "validation", "rate-limit", "system"],
+      critical_errors_severity: ["critical", "high", "medium", "low"],
       job_status: ["pending", "processing", "completed", "failed", "cancelled"],
       prompt_test_status: [
         "pending",
