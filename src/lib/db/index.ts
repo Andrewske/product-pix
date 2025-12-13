@@ -7,3 +7,5 @@ export * from './batch';
 export * from './billing';
 export * from './templates';
 export * from './contacts';
+export * from './critical-errors';
+export * from './observability-failures';
