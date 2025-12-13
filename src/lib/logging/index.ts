@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getRequestContext } from '@/lib/request';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -15,6 +16,9 @@ export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
+  requestId?: string;
+  userId?: string;
+  route?: string;
   context?: Record<string, unknown>;
 }
 
@@ -38,12 +42,19 @@ const createLogEntry = (
   level: LogLevel,
   message: string,
   context?: Record<string, unknown>
-): LogEntry => ({
-  timestamp: new Date().toISOString(),
-  level,
-  message,
-  ...(context && { context }),
-});
+): LogEntry => {
+  const reqContext = getRequestContext();
+
+  return {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    requestId: reqContext?.requestId,
+    userId: reqContext?.userId,
+    route: reqContext?.route,
+    ...(context && { context }),
+  };
+};
 
 const writeLog = (entry: LogEntry): void => {
   const output = JSON.stringify(entry);

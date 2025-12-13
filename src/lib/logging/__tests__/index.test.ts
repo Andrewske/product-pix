@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, spyOn } from 'bun:test';
 import { createLogger } from '../index';
+import { requestContext } from '@/lib/request/context';
 
 describe('createLogger', () => {
   let stdoutSpy: ReturnType<typeof spyOn>;
@@ -194,6 +195,85 @@ describe('createLogger', () => {
 
       const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
       expect(output.context).toEqual(context);
+    });
+  });
+
+  describe('automatic context injection', () => {
+    let getStoreSpy: ReturnType<typeof spyOn>;
+
+    beforeEach(() => {
+      getStoreSpy = spyOn(requestContext, 'getStore');
+    });
+
+    afterEach(() => {
+      getStoreSpy.mockRestore();
+    });
+
+    it('auto-injects requestId when available', () => {
+      process.env.LOG_LEVEL = 'info';
+      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
+      const logger = createLogger();
+
+      logger.info('test message');
+
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
+      expect(output.requestId).toBe('req-123');
+      expect(output.userId).toBeUndefined();
+      expect(output.route).toBeUndefined();
+    });
+
+    it('auto-injects userId when available', () => {
+      process.env.LOG_LEVEL = 'info';
+      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: undefined });
+      const logger = createLogger();
+
+      logger.info('test message');
+
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
+      expect(output.requestId).toBe('req-123');
+      expect(output.userId).toBe('user-456');
+      expect(output.route).toBeUndefined();
+    });
+
+    it('auto-injects route when available', () => {
+      process.env.LOG_LEVEL = 'info';
+      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
+      const logger = createLogger();
+
+      logger.info('test message');
+
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
+      expect(output.requestId).toBe('req-123');
+      expect(output.userId).toBe('user-456');
+      expect(output.route).toBe('/api/test');
+    });
+
+    it('does not inject context when AsyncLocalStorage is empty', () => {
+      process.env.LOG_LEVEL = 'info';
+      getStoreSpy.mockReturnValue(undefined);
+      const logger = createLogger();
+
+      logger.info('test message');
+
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
+      expect(output.requestId).toBeUndefined();
+      expect(output.userId).toBeUndefined();
+      expect(output.route).toBeUndefined();
+    });
+
+    it('merges manual context with auto-injected context', () => {
+      process.env.LOG_LEVEL = 'info';
+      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
+      const logger = createLogger();
+      const manualContext = { action: 'login', status: 'success' };
+
+      logger.info('user logged in', manualContext);
+
+      const output = JSON.parse((stdoutSpy.mock.calls[0][0] as string).trim());
+      expect(output.requestId).toBe('req-123');
+      expect(output.userId).toBe('user-456');
+      expect(output.route).toBe('/api/test');
+      expect(output.context).toEqual(manualContext);
     });
   });
 });
