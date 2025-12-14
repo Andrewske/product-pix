@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { Toaster } from "@/components/ui/sonner";
 import { ClientProviders } from "@/components/providers/client-providers";
+import { CookieConsentProvider } from "@/components/cookie-consent";
+import { AnalyticsScripts } from "@/components/analytics";
 
 const fontDisplay = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
 const fontBody = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -29,10 +31,13 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
-            <Toaster position="bottom-right" />
+            <CookieConsentProvider>
+              <LayoutWrapper>
+                {children}
+              </LayoutWrapper>
+              <Toaster position="bottom-right" />
+              <AnalyticsScripts />
+            </CookieConsentProvider>
           </ThemeProvider>
         </ClientProviders>
       </body>

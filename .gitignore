@@ -51,3 +51,5 @@ prompt-bench/sessions/*.json
 
 notes.md
 .eslintcache
+
+docs/archive/*
