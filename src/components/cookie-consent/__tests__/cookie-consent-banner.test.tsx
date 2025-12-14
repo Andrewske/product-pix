@@ -1,14 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { CookieConsentBanner } from '../cookie-consent-banner';
 import { useCookieConsent } from '../use-cookie-consent';
 
-type MockUseCookieConsent = {
-  hasConsented: boolean;
-  loading: boolean;
-  acceptAll: () => void;
-  rejectAll: () => void;
-};
+
 
 // Mock the hook
 mock.module('../use-cookie-consent', () => ({
@@ -18,19 +13,23 @@ mock.module('../use-cookie-consent', () => ({
 describe('CookieConsentBanner', () => {
   const mockAcceptAll = mock();
   const mockRejectAll = mock();
+  const mockDismissBanner = mock();
 
   beforeEach(() => {
     mockAcceptAll.mockClear();
     mockRejectAll.mockClear();
+    mockDismissBanner.mockClear();
   });
 
   it('renders banner when hasConsented is false and loading is false', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: false,
+      dismissedThisSession: false,
       loading: false,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -44,10 +43,12 @@ describe('CookieConsentBanner', () => {
   it('hides banner when hasConsented is true', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: true,
+      dismissedThisSession: false,
       loading: false,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -58,10 +59,12 @@ describe('CookieConsentBanner', () => {
   it('hides banner when loading is true', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: false,
+      dismissedThisSession: false,
       loading: true,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -72,10 +75,12 @@ describe('CookieConsentBanner', () => {
   it('calls acceptAll when Accept All button is clicked', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: false,
+      dismissedThisSession: false,
       loading: false,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -88,10 +93,12 @@ describe('CookieConsentBanner', () => {
   it('calls rejectAll when Reject All button is clicked', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: false,
+      dismissedThisSession: false,
       loading: false,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -104,10 +111,12 @@ describe('CookieConsentBanner', () => {
   it('has correct Privacy Policy link', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: false,
+      dismissedThisSession: false,
       loading: false,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -118,10 +127,12 @@ describe('CookieConsentBanner', () => {
   it('has correct ARIA attributes', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: false,
+      dismissedThisSession: false,
       loading: false,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -140,10 +151,12 @@ describe('CookieConsentBanner', () => {
   it('has focus management and keyboard navigation', () => {
     (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
       hasConsented: false,
+      dismissedThisSession: false,
       loading: false,
       acceptAll: mockAcceptAll,
       rejectAll: mockRejectAll,
-    } as MockUseCookieConsent);
+      dismissBanner: mockDismissBanner,
+    });
 
     render(<CookieConsentBanner />);
 
@@ -154,5 +167,38 @@ describe('CookieConsentBanner', () => {
     const privacyLink = screen.getByText('Privacy Policy');
     expect(privacyLink?.classList.contains('focus-visible:outline-none')).toBe(true);
     expect(privacyLink?.classList.contains('focus-visible:ring-2')).toBe(true);
+  });
+
+  it('hides banner when dismissedThisSession is true', () => {
+    (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
+      hasConsented: false,
+      dismissedThisSession: true,
+      loading: false,
+      acceptAll: mockAcceptAll,
+      rejectAll: mockRejectAll,
+      dismissBanner: mockDismissBanner,
+    });
+
+    render(<CookieConsentBanner />);
+
+    const dialog = screen.queryByRole('dialog');
+    expect(dialog).toBeNull();
+  });
+
+  it('dismisses banner when Escape is pressed', () => {
+    (useCookieConsent as ReturnType<typeof mock>).mockReturnValue({
+      hasConsented: false,
+      dismissedThisSession: false,
+      loading: false,
+      acceptAll: mockAcceptAll,
+      rejectAll: mockRejectAll,
+      dismissBanner: mockDismissBanner,
+    });
+
+    render(<CookieConsentBanner />);
+    const dialog = screen.getByRole('dialog');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+
+    expect(mockDismissBanner).toHaveBeenCalledTimes(1);
   });
 });

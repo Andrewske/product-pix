@@ -13,7 +13,7 @@ export function PrivacyTab() {
   }, [updateConsent]);
 
   if (loading || !consent) {
-    return <div>Loading preferences...</div>;
+    return <div className="text-muted-foreground">Loading preferences...</div>;
   }
 
   return (
@@ -31,6 +31,7 @@ export function PrivacyTab() {
           <CardTitle className="flex items-center justify-between">
             <span>Essential Cookies</span>
             <Switch
+              data-testid="essential-cookies-switch"
               checked
               disabled
               aria-label="Essential cookies switch (always enabled)"
@@ -49,6 +50,7 @@ export function PrivacyTab() {
           <CardTitle className="flex items-center justify-between">
             <span>Analytics (PostHog)</span>
             <Switch
+              data-testid="analytics-switch"
               checked={consent.analytics}
               onCheckedChange={(checked) => handleToggle('analytics', checked)}
               aria-label="Enable analytics cookies for PostHog tracking"
@@ -68,6 +70,7 @@ export function PrivacyTab() {
           <CardTitle className="flex items-center justify-between">
             <span>Marketing (Facebook Pixel)</span>
             <Switch
+              data-testid="marketing-switch"
               checked={consent.marketing}
               onCheckedChange={(checked) => handleToggle('marketing', checked)}
               aria-label="Enable marketing cookies for Facebook Pixel tracking"

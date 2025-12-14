@@ -84,7 +84,7 @@ describe('PrivacyTab', () => {
 
     render(<PrivacyTab />);
 
-    const essentialSwitch = screen.getByText('Essential Cookies').parentElement?.querySelector('[data-slot="switch"]');
+    const essentialSwitch = screen.getByTestId('essential-cookies-switch');
     expect(essentialSwitch?.getAttribute('data-disabled')).not.toBeNull();
     expect(essentialSwitch?.getAttribute('data-state')).toBe('checked');
   });
@@ -103,7 +103,7 @@ describe('PrivacyTab', () => {
 
     render(<PrivacyTab />);
 
-    const analyticsSwitch = screen.getByText('Analytics (PostHog)').parentElement?.querySelector('[data-slot="switch"]');
+    const analyticsSwitch = screen.getByTestId('analytics-switch');
     expect(analyticsSwitch?.getAttribute('data-state')).toBe('checked');
   });
 
@@ -121,7 +121,7 @@ describe('PrivacyTab', () => {
 
     render(<PrivacyTab />);
 
-    const marketingSwitch = screen.getByText('Marketing (Facebook Pixel)').parentElement?.querySelector('[data-slot="switch"]');
+    const marketingSwitch = screen.getByTestId('marketing-switch');
     expect(marketingSwitch?.getAttribute('data-state')).toBe('checked');
   });
 
@@ -139,11 +139,8 @@ describe('PrivacyTab', () => {
 
     render(<PrivacyTab />);
 
-    // Find the switch by its data-slot attribute
-    const analyticsSwitch = screen.getByText('Analytics (PostHog)').parentElement?.querySelector('[data-slot="switch"]');
-    if (analyticsSwitch) {
-      fireEvent.click(analyticsSwitch);
-    }
+    const analyticsSwitch = screen.getByTestId('analytics-switch');
+    fireEvent.click(analyticsSwitch);
 
     expect(mockUpdateConsent).toHaveBeenCalledWith({ analytics: false });
   });
@@ -162,11 +159,8 @@ describe('PrivacyTab', () => {
 
     render(<PrivacyTab />);
 
-    // Find the switch by its data-slot attribute
-    const marketingSwitch = screen.getByText('Marketing (Facebook Pixel)').parentElement?.querySelector('[data-slot="switch"]');
-    if (marketingSwitch) {
-      fireEvent.click(marketingSwitch);
-    }
+    const marketingSwitch = screen.getByTestId('marketing-switch');
+    fireEvent.click(marketingSwitch);
 
     expect(mockUpdateConsent).toHaveBeenCalledWith({ marketing: true });
   });
@@ -223,15 +217,15 @@ describe('PrivacyTab', () => {
     render(<PrivacyTab />);
 
     // Check essential switch (disabled)
-    const essentialSwitch = screen.getByText('Essential Cookies').parentElement?.querySelector('[data-slot="switch"]');
+    const essentialSwitch = screen.getByTestId('essential-cookies-switch');
     expect(essentialSwitch?.getAttribute('aria-label')).toBe('Essential cookies switch (always enabled)');
 
     // Check analytics switch
-    const analyticsSwitch = screen.getByText('Analytics (PostHog)').parentElement?.querySelector('[data-slot="switch"]');
+    const analyticsSwitch = screen.getByTestId('analytics-switch');
     expect(analyticsSwitch?.getAttribute('aria-label')).toBe('Enable analytics cookies for PostHog tracking');
 
     // Check marketing switch
-    const marketingSwitch = screen.getByText('Marketing (Facebook Pixel)').parentElement?.querySelector('[data-slot="switch"]');
+    const marketingSwitch = screen.getByTestId('marketing-switch');
     expect(marketingSwitch?.getAttribute('aria-label')).toBe('Enable marketing cookies for Facebook Pixel tracking');
   });
 });

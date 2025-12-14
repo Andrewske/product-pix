@@ -19,9 +19,11 @@ export interface CookieConsentContextValue {
   consent: CookieConsent | null;
   loading: boolean;
   hasConsented: boolean;  // Derived from consentedAt !== null
+  dismissedThisSession: boolean;
   updateConsent: (updates: Partial<CookieConsentUpdates>) => Promise<void>;
   acceptAll: () => Promise<void>;
   rejectAll: () => Promise<void>;
+  dismissBanner: () => void;
   canUseAnalytics: () => boolean;
   canUseMarketing: () => boolean;
 }

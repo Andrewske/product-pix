@@ -11,6 +11,7 @@ const CookieConsentContext = createContext<CookieConsentContextValue | null>(nul
 export function CookieConsentProvider({ children }: { children: React.ReactNode }) {
   const { consent: authConsent, loading } = useCookieConsentAuth();
   const [consent, setConsent] = useState<CookieConsent | null>(null);
+  const [dismissedThisSession, setDismissedThisSession] = useState(false);
   const { user } = useUser();
 
   // Sync auth consent to local state
@@ -64,6 +65,9 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
     });
   }, [updateConsent]);
 
+  // Dismiss banner (session-only)
+  const dismissBanner = useCallback(() => setDismissedThisSession(true), []);
+
   // Convenience getters
   const canUseAnalytics = useCallback(() => {
     return consent?.analytics === true;
@@ -79,9 +83,11 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
     consent,
     loading,
     hasConsented,
+    dismissedThisSession,
     updateConsent,
     acceptAll,
     rejectAll,
+    dismissBanner,
     canUseAnalytics,
     canUseMarketing,
   };

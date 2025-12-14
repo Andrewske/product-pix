@@ -6,14 +6,14 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
 export function CookieConsentBanner() {
-  const { hasConsented, acceptAll, rejectAll, loading } = useCookieConsent();
+  const { hasConsented, dismissedThisSession, dismissBanner, acceptAll, rejectAll, loading } = useCookieConsent();
   const bannerRef = useRef<HTMLDivElement>(null);
   const acceptButtonRef = useRef<HTMLButtonElement>(null);
 
   // Focus trap and keyboard navigation
   useEffect(() => {
     const banner = bannerRef.current;
-    if (!banner || hasConsented || loading) return;
+    if (!banner || hasConsented || dismissedThisSession || loading) return;
 
     const focusableElements = banner.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -26,8 +26,7 @@ export function CookieConsentBanner() {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        // For MVP, just blur focus. Could be enhanced to reject all
-        (document.activeElement as HTMLElement)?.blur();
+        dismissBanner();
         return;
       }
 
@@ -50,10 +49,10 @@ export function CookieConsentBanner() {
 
     banner.addEventListener('keydown', handleKeyDown);
     return () => banner.removeEventListener('keydown', handleKeyDown);
-  }, [hasConsented, loading]);
+  }, [hasConsented, dismissedThisSession, dismissBanner, loading]);
 
-  // Don't show if user has already consented or still loading
-  if (hasConsented || loading) return null;
+  // Don't show if user has already consented, dismissed this session, or still loading
+  if (hasConsented || dismissedThisSession || loading) return null;
 
   return (
     <div
