@@ -1,4 +1,5 @@
 import type { CookieConsent } from './types';
+import { logger } from '@/lib/logging';
 import { saveConsentToDatabase, clearLocalStorageConsent } from './storage';
 
 export function getDefaultConsent(): CookieConsent {
@@ -8,6 +9,28 @@ export function getDefaultConsent(): CookieConsent {
     essential: true,  // Always true
     consentedAt: null, // No consent yet
   };
+}
+
+function getNewerConsent(
+  localConsent: CookieConsent,
+  dbConsent: CookieConsent
+): CookieConsent {
+  const localTime = new Date(localConsent.consentedAt || 0).getTime();
+  const dbTime = new Date(dbConsent.consentedAt || 0).getTime();
+  return localTime > dbTime ? localConsent : dbConsent;
+}
+
+async function syncLocalConsentToDatabase(
+  userId: string,
+  consent: CookieConsent
+): Promise<void> {
+  try {
+    await saveConsentToDatabase(userId, { cookies: consent });
+    clearLocalStorageConsent(); // Only clear after successful save
+    } catch (error) {
+      logger.error('Failed to sync consent to database, keeping localStorage backup', { error });
+      throw error;
+    }
 }
 
 export async function syncConsentOnLogin(
@@ -22,14 +45,7 @@ export async function syncConsentOnLogin(
 
   // Only local consent exists: save to DB
   if (!dbConsent && localConsent) {
-    try {
-      await saveConsentToDatabase(userId, { cookies: localConsent });
-      clearLocalStorageConsent(); // Only clear after successful save
-    } catch (error) {
-      console.error('Failed to sync consent to database, keeping localStorage backup:', error);
-      // Keep localStorage as backup, will retry on next login
-      throw error;
-    }
+    await syncLocalConsentToDatabase(userId, localConsent);
     return localConsent;
   }
 
@@ -39,20 +55,11 @@ export async function syncConsentOnLogin(
   }
 
   // Both exist: use newer one (compare timestamps)
-  const localTime = new Date(localConsent!.consentedAt || 0).getTime();
-  const dbTime = new Date(dbConsent!.consentedAt || 0).getTime();
-
-  const winner = localTime > dbTime ? localConsent! : dbConsent!;
+  const winner = getNewerConsent(localConsent!, dbConsent!);
 
   // Save winner to DB if it was local
   if (winner === localConsent) {
-    try {
-      await saveConsentToDatabase(userId, { cookies: localConsent! });
-      clearLocalStorageConsent(); // Only clear after successful save
-    } catch (error) {
-      console.error('Failed to sync consent to database, keeping localStorage backup:', error);
-      throw error;
-    }
+    await syncLocalConsentToDatabase(userId, localConsent!);
   }
 
   return winner;

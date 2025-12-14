@@ -4,7 +4,6 @@ import {
   loadConsentFromLocalStorage,
   clearLocalStorageConsent,
   saveConsentToDatabase,
-  loadConsentFromDatabase,
 } from '../storage';
 
 // Mock localStorage
@@ -25,20 +24,7 @@ mock.module('@/lib/supabase/admin', () => ({
   })
 }));
 
-// Mock Supabase server client
-const mockServerClient = {
-  from: mock(() => ({
-    select: mock(() => ({
-      eq: mock(() => ({
-        single: mock(async () => ({ data: { preferences: { cookies: null } }, error: null }))
-      }))
-    }))
-  }))
-};
 
-mock.module('@/lib/supabase/server', () => ({
-  createClient: mock(async () => mockServerClient)
-}));
 
 describe('storage', () => {
   beforeEach(() => {
@@ -89,12 +75,6 @@ describe('storage', () => {
       }
     });
 
-    it('loads consent from database', async () => {
-      const userId = 'user-123';
 
-      // Should return null with default mock (no data)
-      const result = await loadConsentFromDatabase(userId);
-      expect(result).toBeNull();
-    });
   });
 });

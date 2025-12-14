@@ -1,54 +1,22 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/lib/auth/hooks';
 import type { CookieConsent, CookieConsentContextValue, CookieConsentUpdates } from '@/lib/cookie-consent';
-import {
-  saveConsentToLocalStorage,
-  loadConsentFromLocalStorage,
-  saveConsentToDatabase,
-  loadConsentFromDatabase,
-} from '@/lib/cookie-consent/storage';
-import {
-  syncConsentOnLogin,
-  getDefaultConsent,
-} from '@/lib/cookie-consent/sync';
+import { saveConsentToLocalStorage, saveConsentToDatabase } from '@/lib/cookie-consent/storage';
+import { useCookieConsentAuth } from './use-cookie-consent';
 
 const CookieConsentContext = createContext<CookieConsentContextValue | null>(null);
 
 export function CookieConsentProvider({ children }: { children: React.ReactNode }) {
+  const { consent: authConsent, loading } = useCookieConsentAuth();
   const [consent, setConsent] = useState<CookieConsent | null>(null);
-  const [loading, setLoading] = useState(true);
   const { user } = useUser();
 
-  // Consolidated auth state handler (fixes race condition)
+  // Sync auth consent to local state
   useEffect(() => {
-    async function handleAuthStateChange() {
-      setLoading(true);
-      try {
-        if (user) {
-          // User logged in - sync localStorage → DB
-          const localConsent = loadConsentFromLocalStorage();
-          const dbConsent = await loadConsentFromDatabase(user.id);
-          const merged = await syncConsentOnLogin(user.id, localConsent, dbConsent);
-          setConsent(merged);
-        } else {
-          // User logged out - load from localStorage
-          const localConsent = loadConsentFromLocalStorage();
-          setConsent(localConsent || getDefaultConsent());
-        }
-      } catch (error) {
-        console.error('Failed to initialize cookie consent:', error);
-        // Fallback: use localStorage if available, otherwise default
-        const localConsent = loadConsentFromLocalStorage();
-        setConsent(localConsent || getDefaultConsent());
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    handleAuthStateChange();
-  }, [user]);
+    setConsent(authConsent);
+  }, [authConsent]);
 
   // Update consent (functional state update fixes race condition)
   const updateConsent = useCallback(async (updates: Partial<CookieConsentUpdates>) => {

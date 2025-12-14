@@ -9,6 +9,11 @@ export interface CookieConsent {
 // Updatable fields only (excludes essential, enforces type safety)
 export type CookieConsentUpdates = Pick<CookieConsent, 'analytics' | 'marketing'>;
 
+// User preferences structure stored in database
+export interface UserPreferences {
+  cookies: CookieConsent;
+}
+
 // Context value interface
 export interface CookieConsentContextValue {
   consent: CookieConsent | null;

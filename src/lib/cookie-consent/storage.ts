@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient as createServerClient } from '@/lib/supabase/server';
-import type { CookieConsent } from './types';
+import { logger } from '@/lib/logging';
+import type { CookieConsent, UserPreferences } from './types';
 
 const STORAGE_KEY = 'productpix_cookie_consent';
 
@@ -10,7 +10,7 @@ export function saveConsentToLocalStorage(consent: CookieConsent): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
   } catch (error) {
-    console.error('Failed to save consent to localStorage:', error);
+    logger.error('Failed to save consent to localStorage', { error });
     // Graceful degradation: continue without localStorage
   }
 }
@@ -21,7 +21,7 @@ export function loadConsentFromLocalStorage(): CookieConsent | null {
     if (!stored) return null;
     return JSON.parse(stored) as CookieConsent;
   } catch (error) {
-    console.error('Failed to load consent from localStorage:', error);
+    logger.error('Failed to load consent from localStorage', { error });
     return null;
   }
 }
@@ -30,7 +30,7 @@ export function clearLocalStorageConsent(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error('Failed to clear localStorage consent:', error);
+    logger.error('Failed to clear localStorage consent', { error });
   }
 }
 
@@ -43,37 +43,17 @@ export async function saveConsentToDatabase(
 ): Promise<void> {
   try {
     const supabase = createAdminClient();
-    const { error } = await (supabase.rpc as any)('update_user_preferences', {
+    // Type assertion needed until RPC function is added to generated types
+    const result = await (supabase as any).rpc('update_user_preferences', {
       user_id: userId,
       prefs: preferences
     });
+    const { error } = result as { error: Error | null };
 
     if (error) throw error;
   } catch (error) {
-    console.error('Failed to save consent to database:', error);
+    logger.error('Failed to save consent to database', { error });
     throw error; // Propagate for error handling in caller
   }
 }
 
-// Load consent from database
-export async function loadConsentFromDatabase(
-  userId: string
-): Promise<CookieConsent | null> {
-  try {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-      .from('users')
-      .select('preferences')
-      .eq('id', userId)
-      .single();
-
-    if (error) throw error;
-    if (!data?.preferences) return null;
-
-    const prefs = data.preferences as any; // JSONB type
-    return prefs.cookies || null;
-  } catch (error) {
-    console.error('Failed to load consent from database:', error);
-    return null;
-  }
-}
