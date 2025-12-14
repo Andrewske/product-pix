@@ -325,6 +325,69 @@ export type Database = {
           },
         ]
       }
+      critical_errors: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          domain: string
+          error_code: string
+          error_message: string
+          error_name: string
+          error_stack: string | null
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          route: string | null
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          domain: string
+          error_code: string
+          error_message: string
+          error_name: string
+          error_stack?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route?: string | null
+          severity: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          domain?: string
+          error_code?: string
+          error_message?: string
+          error_name?: string
+          error_stack?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critical_errors_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "critical_errors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_images: {
         Row: {
           created_at: string
@@ -438,6 +501,54 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          feedback_type: Database["public"]["Enums"]["feedback_type"]
+          id: string
+          image_id: string
+          reasons: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          feedback_type: Database["public"]["Enums"]["feedback_type"]
+          id?: string
+          image_id: string
+          reasons?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          feedback_type?: Database["public"]["Enums"]["feedback_type"]
+          id?: string
+          image_id?: string
+          reasons?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_feedback_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "generated_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -628,6 +739,44 @@ export type Database = {
           {
             foreignKeyName: "jobs_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      observability_failures: {
+        Row: {
+          created_at: string | null
+          error_data: Json
+          failure_reason: string
+          id: string
+          occurred_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_data: Json
+          failure_reason: string
+          id?: string
+          occurred_at: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_data?: Json
+          failure_reason?: string
+          id?: string
+          occurred_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observability_failures_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -1296,6 +1445,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_user_preferences: {
+        Args: { prefs: Json; user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       batch_item_status: "pending" | "processing" | "completed" | "failed"
@@ -1306,6 +1459,7 @@ export type Database = {
         | "cancelled"
         | "failed"
       cash_refund_status: "pending" | "processing" | "completed" | "failed"
+      feedback_type: "positive" | "negative"
       job_status:
         | "pending"
         | "processing"
@@ -1475,6 +1629,7 @@ export const Constants = {
         "failed",
       ],
       cash_refund_status: ["pending", "processing", "completed", "failed"],
+      feedback_type: ["positive", "negative"],
       job_status: ["pending", "processing", "completed", "failed", "cancelled"],
       prompt_test_status: [
         "pending",

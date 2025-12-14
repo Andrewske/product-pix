@@ -152,9 +152,18 @@ export const POST = withAuth(async (request) => {
       );
     }
 
+    // Get the generated image ID
+    const supabase = await createClient();
+    const { data: imageData } = await supabase
+      .from('generated_images')
+      .select('id')
+      .eq('job_id', jobResult.job_id)
+      .single();
+
     return NextResponse.json({
       success: true,
       jobId: jobResult.job_id,
+      imageId: imageData?.id,
       imageUrl: result.imageUrl,
       fileKey: result.fileKey,
     });

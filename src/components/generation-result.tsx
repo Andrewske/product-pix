@@ -4,19 +4,34 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { useImageFeedback } from '@/hooks/use-image-feedback';
+import { FeedbackButtons } from '@/components/feedback/feedback-buttons';
+import { NegativeFeedbackModal } from '@/components/feedback/negative-feedback-modal';
 
 interface GenerationResultProps {
   imageUrl: string;
+  imageId: string;
   onDownload: () => void;
   onRegenerate: () => void;
 }
 
 export function GenerationResult({
   imageUrl,
+  imageId,
   onDownload,
   onRegenerate,
 }: GenerationResultProps) {
   const [isZoomed, setIsZoomed] = useState(false);
+
+  const {
+    currentFeedback,
+    isSubmitting,
+    showNegativeModal,
+    setShowNegativeModal,
+    handleThumbsUp,
+    handleThumbsDown,
+    handleNegativeSubmit,
+  } = useImageFeedback({ imageId });
 
   return (
     <div className="h-full flex flex-col p-6">
@@ -48,6 +63,23 @@ export function GenerationResult({
           Regenerate
         </Button>
       </div>
+
+      <div className="mt-4">
+        <FeedbackButtons
+          imageId={imageId}
+          currentFeedback={currentFeedback}
+          onThumbsUp={handleThumbsUp}
+          onThumbsDown={handleThumbsDown}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <NegativeFeedbackModal
+        open={showNegativeModal}
+        onOpenChange={setShowNegativeModal}
+        onSubmit={handleNegativeSubmit}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

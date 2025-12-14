@@ -25,7 +25,7 @@ export default function GeneratePage() {
   const [templateSlug, setTemplateSlug] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<{ imageUrl: string; jobId: string } | null>(null);
+  const [result, setResult] = useState<{ imageUrl: string; jobId: string; imageId: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [creditsNeeded, setCreditsNeeded] = useState(0);
@@ -87,6 +87,7 @@ export default function GeneratePage() {
       setResult({
         imageUrl: data.imageUrl,
         jobId: data.jobId,
+        imageId: data.imageId,
       });
     } catch (err) {
       console.error('Generation error:', err);
@@ -204,7 +205,12 @@ export default function GeneratePage() {
                 <GenerationLoading />
               </div>
             ) : result ? (
-              <GenerationResult imageUrl={result.imageUrl} onDownload={handleDownload} onRegenerate={handleRegenerate} />
+              <GenerationResult
+                imageUrl={result.imageUrl}
+                imageId={result.imageId}
+                onDownload={handleDownload}
+                onRegenerate={handleRegenerate}
+              />
             ) : (
               <div className="flex items-center justify-center h-full text-center text-muted-foreground">
                 <div>

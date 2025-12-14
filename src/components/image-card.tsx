@@ -6,6 +6,9 @@ import { Card } from '@/components/ui/card';
 import Image from 'next/image';
 import { Undo2 } from 'lucide-react';
 import { ImageRefundModal } from '@/components/refunds/image-refund-modal';
+import { useImageFeedback } from '@/hooks/use-image-feedback';
+import { FeedbackButtons } from '@/components/feedback/feedback-buttons';
+import { NegativeFeedbackModal } from '@/components/feedback/negative-feedback-modal';
 import type { GeneratedImage } from '@/types';
 
 interface ImageCardProps {
@@ -18,6 +21,16 @@ interface ImageCardProps {
 export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCardProps) {
   const [showActions, setShowActions] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
+
+  const {
+    currentFeedback,
+    isSubmitting,
+    showNegativeModal,
+    setShowNegativeModal,
+    handleThumbsUp,
+    handleThumbsDown,
+    handleNegativeSubmit,
+  } = useImageFeedback({ imageId: image.id });
 
   return (
     <Card
@@ -72,14 +85,44 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
           <Undo2 className="w-5 h-5" />
         </button>
 
+        <FeedbackButtons
+          imageId={image.id}
+          currentFeedback={currentFeedback}
+          onThumbsUp={handleThumbsUp}
+          onThumbsDown={handleThumbsDown}
+          disabled={isSubmitting}
+          size="sm"
+        />
+
         <button
-          onClick={() => onDelete(image.id)}
+          onClick={() => onDownload(image.public_url)}
           className="p-2 bg-background rounded-full hover:bg-secondary"
-          title="Delete"
+          title="Download"
+          type="button"
         >
-          <svg className="w-5 h-5 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
+        </button>
+
+        <button
+          onClick={() => onFavorite(image.id)}
+          className={`p-2 rounded-full ${image.is_favorite ? 'bg-destructive text-destructive-foreground' : 'bg-background hover:bg-secondary'}`}
+          title={image.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+          type="button"
+        >
+          <svg className="w-5 h-5" fill={image.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
+
+        <button
+          onClick={() => setShowRefundModal(true)}
+          className="p-2 bg-background rounded-full hover:bg-secondary"
+          title="Request refund"
+          type="button"
+        >
+          <Undo2 className="w-5 h-5" />
         </button>
       </div>
 
@@ -99,6 +142,13 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
         isOpen={showRefundModal}
         onClose={() => setShowRefundModal(false)}
         onSuccess={() => onDelete(image.id)}
+      />
+
+      <NegativeFeedbackModal
+        open={showNegativeModal}
+        onOpenChange={setShowNegativeModal}
+        onSubmit={handleNegativeSubmit}
+        isSubmitting={isSubmitting}
       />
     </Card>
   );
