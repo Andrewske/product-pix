@@ -38,7 +38,7 @@ export function UserTimeline({ userId }: { userId: string }) {
     },
   });
 
-  const events = data?.pages.flatMap((page: any) => page.events) ?? [];
+  const events = data?.pages.flatMap((page) => page.events) ?? [];
 
   return (
     <div className="space-y-4">
