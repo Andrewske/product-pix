@@ -66,7 +66,6 @@ export function GenerationResult({
 
       <div className="mt-4">
         <FeedbackButtons
-          imageId={imageId}
           currentFeedback={currentFeedback}
           onThumbsUp={handleThumbsUp}
           onThumbsDown={handleThumbsDown}

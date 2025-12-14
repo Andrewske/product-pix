@@ -31,6 +31,15 @@ export function NegativeFeedbackModal({
   const [selectedReasons, setSelectedReasons] = useState<NegativeFeedbackReason[]>([]);
   const [comment, setComment] = useState('');
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      // Reset state when modal closes
+      setSelectedReasons([]);
+      setComment('');
+    }
+    onOpenChange(newOpen);
+  };
+
   const handleReasonToggle = (reason: NegativeFeedbackReason, checked: boolean) => {
     setSelectedReasons(prev =>
       checked
@@ -54,7 +63,7 @@ export function NegativeFeedbackModal({
     (!isOtherSelected || (isOtherSelected && comment.trim().length > 0));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Help us improve</DialogTitle>

@@ -1,7 +1,31 @@
 // src/lib/db/feedback.ts
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
-import type { ImageFeedback, SubmitFeedbackParams } from '@/types';
+import type { ImageFeedback, SubmitFeedbackParams, FeedbackReason } from '@/types';
+
+// Type for database row shape
+interface DbFeedbackRow {
+  id: string;
+  image_id: string;
+  user_id: string;
+  feedback_type: 'positive' | 'negative';
+  reasons: string[];
+  comment: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Helper function to map database row to interface
+const mapDbFeedbackToInterface = (data: DbFeedbackRow): ImageFeedback => ({
+  id: data.id,
+  imageId: data.image_id,
+  userId: data.user_id,
+  feedbackType: data.feedback_type,
+  reasons: data.reasons as FeedbackReason[],
+  comment: data.comment,
+  createdAt: data.created_at,
+  updatedAt: data.updated_at,
+});
 
 export const submitFeedback = async (
   userId: string,
@@ -37,17 +61,7 @@ export const submitFeedback = async (
     return null;
   }
 
-  // Convert snake_case to camelCase for the interface
-  return {
-    id: data.id,
-    imageId: data.image_id,
-    userId: data.user_id,
-    feedbackType: data.feedback_type,
-    reasons: data.reasons,
-    comment: data.comment,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+  return mapDbFeedbackToInterface(data);
 };
 
 export const getFeedbackForImage = async (
@@ -77,17 +91,7 @@ export const getFeedbackForImage = async (
     return null;
   }
 
-  // Convert snake_case to camelCase for the interface
-  return {
-    id: data.id,
-    imageId: data.image_id,
-    userId: data.user_id,
-    feedbackType: data.feedback_type,
-    reasons: data.reasons,
-    comment: data.comment,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+  return mapDbFeedbackToInterface(data);
 };
 
 export const deleteFeedback = async (

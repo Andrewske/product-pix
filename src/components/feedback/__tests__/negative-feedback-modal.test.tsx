@@ -1,10 +1,135 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect, mock } from 'bun:test';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NegativeFeedbackModal } from '../negative-feedback-modal';
 
 describe('NegativeFeedbackModal', () => {
-  describe('component', () => {
-    it('should be a function', () => {
-      expect(typeof NegativeFeedbackModal).toBe('function');
-    });
+  const defaultProps = {
+    open: true,
+    onOpenChange: mock(() => {}),
+    onSubmit: mock(() => {}),
+    isSubmitting: false,
+  };
+
+  it('renders modal when open is true', () => {
+    render(<NegativeFeedbackModal {...defaultProps} />);
+
+    expect(screen.getByText('Help us improve')).toBeTruthy();
+    expect(screen.getByText(/What didn't you like about this image/)).toBeTruthy();
   });
+
+  it('does not render modal when open is false', () => {
+    render(<NegativeFeedbackModal {...defaultProps} open={false} />);
+
+    expect(screen.queryByText('Help us improve')).toBeFalsy();
+  });
+
+  it('renders all negative feedback reason checkboxes', () => {
+    render(<NegativeFeedbackModal {...defaultProps} />);
+
+    expect(screen.getByLabelText('Quality issues')).toBeTruthy();
+    expect(screen.getByLabelText("Doesn't match my request")).toBeTruthy();
+    expect(screen.getByLabelText('Product not visible/clear')).toBeTruthy();
+    expect(screen.getByLabelText('Wrong style/aesthetic')).toBeTruthy();
+    expect(screen.getByLabelText('Background problems')).toBeTruthy();
+    expect(screen.getByLabelText('Other')).toBeTruthy();
+  });
+
+  it('shows comment textarea when "Other" is selected', async () => {
+    const user = userEvent.setup();
+    render(<NegativeFeedbackModal {...defaultProps} />);
+
+    const otherCheckbox = screen.getByLabelText('Other');
+    await user.click(otherCheckbox);
+
+    expect(screen.getByPlaceholderText("Describe what didn't work for you...")).toBeTruthy();
+  });
+
+  it('enables submit button when reasons are selected', async () => {
+    const user = userEvent.setup();
+    render(<NegativeFeedbackModal {...defaultProps} />);
+
+    const qualityCheckbox = screen.getByLabelText('Quality issues');
+    await user.click(qualityCheckbox);
+
+    const submitButton = screen.getByRole('button', { name: 'Submit Feedback' }) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(false);
+  });
+
+  it('disables submit button when no reasons selected', () => {
+    render(<NegativeFeedbackModal {...defaultProps} />);
+
+    const submitButton = screen.getByRole('button', { name: 'Submit Feedback' }) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(true);
+  });
+
+  it('disables submit button when "Other" selected but no comment', async () => {
+    const user = userEvent.setup();
+    render(<NegativeFeedbackModal {...defaultProps} />);
+
+    const otherCheckbox = screen.getByLabelText('Other');
+    await user.click(otherCheckbox);
+
+    const submitButton = screen.getByRole('button', { name: 'Submit Feedback' }) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(true);
+  });
+
+  it('enables submit button when "Other" selected and comment provided', async () => {
+    const user = userEvent.setup();
+    render(<NegativeFeedbackModal {...defaultProps} />);
+
+    const otherCheckbox = screen.getByLabelText('Other');
+    await user.click(otherCheckbox);
+
+    const commentTextarea = screen.getByPlaceholderText("Describe what didn't work for you...");
+    await user.type(commentTextarea, 'Test comment');
+
+    const submitButton = screen.getByRole('button', { name: 'Submit Feedback' }) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(false);
+  });
+
+  it('calls onSubmit with selected reasons and comment', async () => {
+    const user = userEvent.setup();
+    const mockOnSubmit = mock(() => {});
+    render(<NegativeFeedbackModal {...defaultProps} onSubmit={mockOnSubmit} />);
+
+    // Select reasons
+    const qualityCheckbox = screen.getByLabelText('Quality issues');
+    const otherCheckbox = screen.getByLabelText('Other');
+    await user.click(qualityCheckbox);
+    await user.click(otherCheckbox);
+
+    // Add comment
+    const commentTextarea = screen.getByPlaceholderText("Describe what didn't work for you...");
+    await user.type(commentTextarea, 'Test comment');
+
+    // Submit
+    const submitButton = screen.getByRole('button', { name: 'Submit Feedback' });
+    await user.click(submitButton);
+
+    expect(mockOnSubmit).toHaveBeenCalledWith(['quality_issues', 'other'], 'Test comment');
+  });
+
+  it('calls onOpenChange with false when Cancel button clicked', async () => {
+    const user = userEvent.setup();
+    const mockOnOpenChange = mock(() => {});
+    render(<NegativeFeedbackModal {...defaultProps} onOpenChange={mockOnOpenChange} />);
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    await user.click(cancelButton);
+
+    expect(mockOnOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('shows submitting state when isSubmitting is true', () => {
+    render(<NegativeFeedbackModal {...defaultProps} isSubmitting={true} />);
+
+    const submitButton = screen.getByRole('button', { name: 'Submitting...' }) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(true);
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement;
+    expect(cancelButton.disabled).toBe(true);
+  });
+
+
 });

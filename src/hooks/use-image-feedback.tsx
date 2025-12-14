@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { PositiveFeedbackToast } from '@/components/feedback/positive-feedback-toast';
 import type {
   FeedbackType,
   PositiveFeedbackReason,
@@ -27,6 +28,8 @@ interface UseImageFeedbackReturn {
   handleThumbsDown: () => void;
   handleNegativeSubmit: (reasons: NegativeFeedbackReason[], comment: string) => Promise<void>;
   handlePositiveDismiss: () => void;
+  submissionError: Error | null;
+  isError: boolean;
 }
 
 async function fetchFeedback(imageId: string): Promise<ImageFeedback | null> {
@@ -73,6 +76,11 @@ export function useImageFeedback({ imageId }: UseImageFeedbackOptions): UseImage
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedback', imageId] });
     },
+    onError: (error: Error) => {
+      toast.error('Failed to submit feedback', {
+        description: error.message || 'Please try again',
+      });
+    },
   });
 
   const currentFeedback = feedback?.feedbackType ?? null;
@@ -87,24 +95,28 @@ export function useImageFeedback({ imageId }: UseImageFeedbackOptions): UseImage
   };
 
   const handleThumbsUp = () => {
-    // Submit positive feedback with empty reasons initially
-    submitMutation.mutate({
-      imageId,
-      feedbackType: 'positive',
-      reasons: [],
-    });
-
-    // Show toast
-    toast.success('Thanks for the feedback!', {
-      description: 'What did you like about this image?',
-      action: {
-        label: 'Add details',
-        onClick: () => {
-          // Toast will auto-dismiss, triggering handlePositiveDismiss
-        },
+    submitMutation.mutate(
+      {
+        imageId,
+        feedbackType: 'positive',
+        reasons: [],
       },
-      duration: 5000,
-    });
+      {
+        onSuccess: () => {
+          // Show custom toast with PositiveFeedbackToast component
+          toast.custom((t) => (
+            <PositiveFeedbackToast
+              selectedReasons={selectedPositiveReasons}
+              onReasonToggle={togglePositiveReason}
+              onDismiss={() => {
+                handlePositiveDismiss();
+                toast.dismiss(t);
+              }}
+            />
+          ), { duration: 5000 });
+        },
+      }
+    );
   };
 
   const handleThumbsDown = () => {
@@ -112,28 +124,37 @@ export function useImageFeedback({ imageId }: UseImageFeedbackOptions): UseImage
   };
 
   const handleNegativeSubmit = async (reasons: NegativeFeedbackReason[], comment: string) => {
-    await submitMutation.mutateAsync({
-      imageId,
-      feedbackType: 'negative',
-      reasons,
-      comment,
-    });
-
-    setShowNegativeModal(false);
+    try {
+      await submitMutation.mutateAsync({
+        imageId,
+        feedbackType: 'negative',
+        reasons,
+        comment,
+      });
+      setShowNegativeModal(false);
+    } catch (_error) {
+      // Error toast already shown by onError callback
+      // Keep modal open so user can retry
+    }
   };
 
   const handlePositiveDismiss = () => {
-    // Update feedback with selected reasons if any were chosen
     if (selectedPositiveReasons.length > 0) {
-      submitMutation.mutate({
-        imageId,
-        feedbackType: 'positive',
-        reasons: selectedPositiveReasons,
-      });
+      submitMutation.mutate(
+        {
+          imageId,
+          feedbackType: 'positive',
+          reasons: selectedPositiveReasons,
+        },
+        {
+          onSuccess: () => {
+            setSelectedPositiveReasons([]);
+          },
+        }
+      );
+    } else {
+      setSelectedPositiveReasons([]);
     }
-
-    // Clear local state
-    setSelectedPositiveReasons([]);
   };
 
   return {
@@ -148,5 +169,7 @@ export function useImageFeedback({ imageId }: UseImageFeedbackOptions): UseImage
     handleThumbsDown,
     handleNegativeSubmit,
     handlePositiveDismiss,
+    submissionError: submitMutation.error,
+    isError: submitMutation.isError,
   };
 }
