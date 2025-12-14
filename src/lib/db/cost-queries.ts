@@ -1,5 +1,6 @@
 // src/lib/db/cost-queries.ts
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logging';
 
 interface GenerationCostRecord {
   total_cost_usd: number;
@@ -38,7 +39,14 @@ export const createGenerationCost = async (
     });
 
   if (error) {
-    console.error('Error creating generation cost record:', error);
+    logger.error('Error creating generation cost record', {
+      error: error.message,
+      jobId: params.jobId,
+      generatedImageId: params.generatedImageId,
+      modelId: params.modelId,
+      provider: params.provider,
+      totalCostUsd: params.totalCostUsd,
+    });
     return false;
   }
 
@@ -54,7 +62,10 @@ export const getTotalCostByJob = async (jobId: string): Promise<number> => {
     .eq('job_id', jobId);
 
   if (error) {
-    console.error('Error fetching costs by job:', error);
+    logger.error('Error fetching costs by job', {
+      error: error.message,
+      jobId,
+    });
     return 0;
   }
 
@@ -75,7 +86,11 @@ export const getTotalCostByDateRange = async (
     .order('created_at');
 
   if (error) {
-    console.error('Error fetching costs by date range:', error);
+    logger.error('Error fetching costs by date range', {
+      error: error.message,
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+    });
     return [];
   }
 
@@ -102,7 +117,10 @@ export const getTotalCostByModel = async (modelId: string): Promise<number> => {
     .eq('model_id', modelId);
 
   if (error) {
-    console.error('Error fetching costs by model:', error);
+    logger.error('Error fetching costs by model', {
+      error: error.message,
+      modelId,
+    });
     return 0;
   }
 

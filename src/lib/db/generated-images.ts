@@ -77,7 +77,11 @@ export const getUserGeneratedImages = async (
     .limit(limit);
 
   if (error) {
-    console.error('Error fetching generated images:', error);
+    logger.error('Error fetching generated images', {
+      error: error.message,
+      userId,
+      limit,
+    });
     return [];
   }
 

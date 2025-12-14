@@ -6,6 +6,9 @@ import { getOrCreateStripeCustomer } from '@/lib/stripe/customer';
 import { CREDIT_PACKS, SUBSCRIPTION_TIERS, type CreditPackId, type SubscriptionTier } from '@/lib/stripe/products';
 import { getPricing } from '@/lib/pricing/actions';
 import { type PricingPack } from '@/lib/pricing/utils';
+import { createPaymentError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 
 /**
  * Server action to get pricing data for the insufficient credits modal
@@ -19,14 +22,15 @@ export async function getPricingForModal(): Promise<Record<string, PricingPack>>
  * Server action to create a checkout session for a credit pack
  */
 export async function createPackCheckout(packId: CreditPackId): Promise<{ url: string }> {
+  const user = await requireAuth();
+  const pack = CREDIT_PACKS[packId];
+
   try {
-    const user = await requireAuth();
     if (!user.email) {
       throw new Error('Email is required to create a checkout session');
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const pack = CREDIT_PACKS[packId];
 
     if (!pack) {
       throw new Error(`Invalid credit pack ID: ${packId}`);
@@ -53,7 +57,17 @@ export async function createPackCheckout(packId: CreditPackId): Promise<{ url: s
 
     return { url: session.url };
   } catch (error) {
-    console.error('[createPackCheckout]', error);
+    const paymentError = createPaymentError(
+      ErrorCodes.PAYMENT_INTENT_FAILED,
+      'Failed to create credit pack checkout session',
+      {
+        severity: 'critical',
+        amount: pack.credits,
+        originalError: error instanceof Error ? error.message : String(error),
+        userId: user.id,
+      }
+    );
+    await captureError(paymentError);
     if (error instanceof Error) {
       throw new Error(`Failed to create credit pack checkout: ${error.message}`);
     }
@@ -65,14 +79,15 @@ export async function createPackCheckout(packId: CreditPackId): Promise<{ url: s
  * Server action to create a checkout session for a subscription
  */
 export async function createSubscriptionCheckout(tier: SubscriptionTier): Promise<{ url: string }> {
+  const user = await requireAuth();
+  const subscriptionTier = SUBSCRIPTION_TIERS[tier];
+
   try {
-    const user = await requireAuth();
     if (!user.email) {
       throw new Error('Email is required to create a checkout session');
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const subscriptionTier = SUBSCRIPTION_TIERS[tier];
 
     if (!subscriptionTier) {
       throw new Error(`Invalid subscription tier: ${tier}`);
@@ -99,7 +114,17 @@ export async function createSubscriptionCheckout(tier: SubscriptionTier): Promis
 
     return { url: session.url };
   } catch (error) {
-    console.error('[createSubscriptionCheckout]', error);
+    const paymentError = createPaymentError(
+      ErrorCodes.PAYMENT_INTENT_FAILED,
+      'Failed to create subscription checkout session',
+      {
+        severity: 'critical',
+        amount: subscriptionTier.credits,
+        originalError: error instanceof Error ? error.message : String(error),
+        userId: user.id,
+      }
+    );
+    await captureError(paymentError);
     if (error instanceof Error) {
       throw new Error(`Failed to create subscription checkout: ${error.message}`);
     }

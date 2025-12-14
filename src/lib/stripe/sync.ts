@@ -5,6 +5,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserIdByStripeCustomerId } from './customer';
 import { formatSubscriptionForDb } from './types';
 import { getSubscriptionTimestamps } from './sdk-extensions';
+import { createPaymentError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 
 /**
  * Sync Stripe data to KV store (Redis) and database
@@ -38,10 +41,19 @@ export async function syncStripeDataToKV(customerId: string): Promise<void> {
     if (subscriptions.data.length > 0) {
       await upsertSubscription(userId, subscriptions.data[0]);
     }
-  } catch (error) {
-    console.error('[Stripe Sync]', error);
+   } catch (error) {
+    const syncError = createPaymentError(
+      ErrorCodes.PAYMENT_INTENT_FAILED,
+      'Failed to sync Stripe data to KV store and database',
+      {
+        severity: 'high',
+        amount: 0,
+        originalError: error instanceof Error ? error.message : String(error),
+      }
+    );
+    await captureError(syncError);
     throw error;
-  }
+   }
 }
 
 /**

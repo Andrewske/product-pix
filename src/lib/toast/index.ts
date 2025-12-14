@@ -1,5 +1,6 @@
 import { ProductPixError } from '@/lib/errors/error-classes';
 import { captureError } from '@/lib/observability/capture-error';
+import { logger } from '@/lib/logging';
 import { toast as sonnerToast } from 'sonner';
 
 export const toast = {
@@ -24,7 +25,12 @@ export const toast = {
 
     // Auto-track ProductPixError instances (intentional errors with context)
     if (messageOrError instanceof ProductPixError) {
-      captureError(messageOrError).catch(console.error);
+      captureError(messageOrError).catch((captureFailure) => {
+        logger.error('OBSERVABILITY_FAILURE in toast handler', {
+          originalError: messageOrError.name,
+          captureError: captureFailure instanceof Error ? captureFailure.message : 'Unknown',
+        });
+      });
     }
     // Plain strings and generic Errors are NOT tracked
   },

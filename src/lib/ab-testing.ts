@@ -107,5 +107,5 @@ export function trackABTestEvent(
   userId?: string
 ): void {
   // Placeholder for analytics integration
-  console.log(`AB Test: ${testName} variant ${variant} - ${event}`, { userId });
+  console.info(`AB Test: ${testName} variant ${variant} - ${event}`, { userId });
 }

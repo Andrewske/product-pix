@@ -1,5 +1,6 @@
 // src/lib/db/uploads.ts
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logging';
 import type { Upload, UploadInsert } from '@/types';
 
 export const createUpload = async (
@@ -14,7 +15,13 @@ export const createUpload = async (
     .single();
 
   if (error) {
-    console.error('Error creating upload:', error);
+    logger.error('Error creating upload', {
+      error: error.message,
+      userId: upload.user_id,
+      fileKey: upload.file_key,
+      fileName: upload.filename,
+      fileSize: upload.file_size,
+    });
     return null;
   }
 
@@ -32,7 +39,10 @@ export const getUpload = async (uploadId: string): Promise<Upload | null> => {
     .single();
 
   if (error) {
-    console.error('Error fetching upload:', error);
+    logger.error('Error fetching upload', {
+      error: error.message,
+      uploadId,
+    });
     return null;
   }
 
@@ -54,7 +64,11 @@ export const getUserUploads = async (
     .limit(limit);
 
   if (error) {
-    console.error('Error fetching uploads:', error);
+    logger.error('Error fetching uploads', {
+      error: error.message,
+      userId,
+      limit,
+    });
     return [];
   }
 
@@ -70,7 +84,10 @@ export const softDeleteUpload = async (uploadId: string): Promise<boolean> => {
     .eq('id', uploadId);
 
   if (error) {
-    console.error('Error deleting upload:', error);
+    logger.error('Error deleting upload', {
+      error: error.message,
+      uploadId,
+    });
     return false;
   }
 

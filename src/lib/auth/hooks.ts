@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logging';
 import type { User as DbUser } from '@/types';
 
 interface UseUserResult {
@@ -74,7 +75,10 @@ export function useUserProfile(): UseUserProfileResult {
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) {
-          console.error('Error fetching profile:', error);
+          logger.error('Error fetching profile', {
+            error: error.message,
+            userId: user.id,
+          });
         }
         setProfile(data);
         setProfileLoading(false);

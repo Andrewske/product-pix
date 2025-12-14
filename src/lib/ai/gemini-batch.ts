@@ -1,6 +1,7 @@
 // src/lib/ai/gemini-batch.ts
 import { GoogleGenAI } from '@google/genai';
 import { env } from '@/lib/env';
+import { logger } from '@/lib/logging';
 
 const client = new GoogleGenAI({
   apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -71,7 +72,11 @@ export async function createBatchJob(
           const imageData = await fetchImageAsBase64(item.sourceImageUrl);
           return { ...item, imageData };
         } catch (error) {
-          console.error(`Failed to fetch image for item ${item.id}:`, error);
+          logger.error('Failed to fetch image for batch item', {
+            error: error instanceof Error ? error.message : String(error),
+            itemId: item.id,
+            sourceImageUrl: item.sourceImageUrl,
+          });
           throw error;
         }
       }

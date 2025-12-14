@@ -3,6 +3,9 @@
 import { fetchStripePrices } from '@/lib/stripe/fetch-prices';
 import { creditEconomy } from '@/lib/pricing/pricing.config';
 import { mergePacks, mergeSubscriptions, type PricingData, type PricingPack, type PricingSubscription } from './utils';
+import { createPaymentError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 
 // Re-export types for convenience
 export type { PricingData, PricingPack, PricingSubscription };
@@ -29,9 +32,18 @@ export async function getPricing(): Promise<PricingData> {
         freeCreditsOnSignup: creditEconomy.freeCreditsOnSignup,
       },
     };
-  } catch (error) {
+   } catch (error) {
     // Log error for monitoring but re-throw to let caller handle
-    console.error('Failed to fetch pricing data:', error);
+    const pricingError = createPaymentError(
+      ErrorCodes.PAYMENT_INTENT_FAILED,
+      'Failed to fetch pricing data from Stripe',
+      {
+        severity: 'high',
+        amount: 0,
+        originalError: error instanceof Error ? error.message : String(error),
+      }
+    );
+    await captureError(pricingError);
     throw new Error(`Pricing data fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+   }
 }

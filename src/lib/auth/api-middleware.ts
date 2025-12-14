@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { withRequestContext, setUserId } from '@/lib/request';
+import { logger } from '@/lib/logging';
 
 export interface AuthenticatedRequest extends NextRequest {
   user: User;
@@ -33,7 +34,9 @@ export const withAuth = <T = Record<string, string>>(
       const authenticatedRequest = Object.assign(request, { user });
       return handler(authenticatedRequest, context);
     } catch (error) {
-      console.error('Authentication error:', error);
+      logger.error('Authentication error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return NextResponse.json(
         { error: 'Authentication failed' },
         { status: 401 }

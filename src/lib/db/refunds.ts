@@ -2,6 +2,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { softDeleteImage } from './generated-images';
+import { createCreditError, createValidationError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 import type { RefundReason, RefundStatus, ImageRefundRequest, EligiblePurchase } from '@/types';
 
 type PurchaseWithLedger = {
@@ -44,7 +47,18 @@ export const createImageRefundRequest = async (
     .single();
 
   if (error) {
-    console.error('Error creating refund request:', error);
+    const refundError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to create image refund request',
+      {
+        severity: 'high',
+        amount: params.creditsRefunded,
+        operation: 'refund',
+        originalError: error.message,
+        userId: params.userId,
+      }
+    );
+    await captureError(refundError);
     throw new Error('Failed to create refund request');
   }
 
@@ -61,7 +75,18 @@ export const getUserRefundCount = async (userId: string): Promise<number> => {
     .eq('status', 'approved');
 
   if (error) {
-    console.error('Error getting user refund count:', error);
+    const refundError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to get user refund count',
+      {
+        severity: 'medium',
+        amount: 0,
+        operation: 'refund',
+        originalError: error.message,
+        userId,
+      }
+    );
+    await captureError(refundError);
     return 0;
   }
 
@@ -82,12 +107,31 @@ export const approveImageRefund = async (
     .single();
 
   if (fetchError || !refundRequest) {
-    console.error('Error fetching refund request:', fetchError);
+    const refundError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to fetch refund request for approval',
+      {
+        severity: 'high',
+        amount: 0,
+        operation: 'refund',
+        originalError: fetchError?.message,
+      }
+    );
+    await captureError(refundError);
     return false;
   }
 
   if (refundRequest.status !== 'pending_admin') {
-    console.error('Refund request is not pending admin approval');
+    const validationError = createValidationError(
+      'Refund request is not pending admin approval',
+      {
+        severity: 'medium',
+        field: 'status',
+        validationRule: `Expected 'pending_admin', got '${refundRequest.status}'`,
+        userId: refundRequest.user_id,
+      }
+    );
+    await captureError(validationError);
     return false;
   }
 
@@ -104,7 +148,18 @@ export const approveImageRefund = async (
   );
 
   if (refundError || !refundResult?.[0]?.success) {
-    console.error('Error refunding credits:', refundError);
+    const creditError = createCreditError(
+      ErrorCodes.CREDIT_REFUND_FAILED,
+      'Failed to refund credits for approved image refund',
+      {
+        severity: 'critical',
+        amount: refundRequest.credits_refunded,
+        operation: 'refund',
+        originalError: refundError?.message,
+        userId: refundRequest.user_id,
+      }
+    );
+    await captureError(creditError);
     return false;
   }
 
@@ -119,14 +174,35 @@ export const approveImageRefund = async (
     .eq('id', refundId);
 
   if (updateError) {
-    console.error('Error updating refund request:', updateError);
+    const statusUpdateError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to update refund request status after credit refund',
+      {
+        severity: 'critical',
+        amount: refundRequest.credits_refunded,
+        operation: 'refund',
+        originalError: updateError.message,
+        userId: refundRequest.user_id,
+      }
+    );
+    await captureError(statusUpdateError);
     return false;
   }
 
   // Soft delete the image
   const deleteSuccess = await softDeleteImage(refundRequest.image_id, refundRequest.user_id);
   if (!deleteSuccess) {
-    console.error('Error soft deleting image');
+    const deleteError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to soft delete image after credit refund',
+      {
+        severity: 'critical',
+        amount: refundRequest.credits_refunded,
+        operation: 'refund',
+        userId: refundRequest.user_id,
+      }
+    );
+    await captureError(deleteError);
     return false;
   }
 
@@ -157,7 +233,17 @@ export const getPendingAdminRefunds = async (): Promise<ImageRefundRequest[]> =>
     .order('requested_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching pending admin refunds:', error);
+    const fetchError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to fetch pending admin refunds',
+      {
+        severity: 'medium',
+        amount: 0,
+        operation: 'refund',
+        originalError: error.message,
+      }
+    );
+    await captureError(fetchError);
     return [];
   }
 
@@ -188,12 +274,31 @@ export const approveCashRefund = async (
     .single();
 
   if (fetchError || !refundRequest) {
-    console.error('Error fetching cash refund request:', fetchError);
+    const cashRefundFetchError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to fetch cash refund request for approval',
+      {
+        severity: 'critical',
+        amount: 0,
+        operation: 'refund',
+        originalError: fetchError?.message,
+      }
+    );
+    await captureError(cashRefundFetchError);
     return false;
   }
 
   if (refundRequest.status !== 'processing') {
-    console.error('Cash refund request is not in processing status');
+    const statusValidationError = createValidationError(
+      'Cash refund request is not in processing status',
+      {
+        severity: 'high',
+        field: 'status',
+        validationRule: `Expected 'processing', got '${refundRequest.status}'`,
+        userId: refundRequest.user_id,
+      }
+    );
+    await captureError(statusValidationError);
     return false;
   }
 
@@ -208,7 +313,18 @@ export const approveCashRefund = async (
     .eq('id', refundId);
 
   if (updateError) {
-    console.error('Error approving cash refund:', updateError);
+    const cashRefundApprovalError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to approve cash refund request',
+      {
+        severity: 'critical',
+        amount: refundRequest.refund_amount_cents,
+        operation: 'refund',
+        originalError: updateError.message,
+        userId: refundRequest.user_id,
+      }
+    );
+    await captureError(cashRefundApprovalError);
     return false;
   }
 
@@ -241,7 +357,18 @@ export async function getEligibleCashRefunds(userId: string): Promise<EligiblePu
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching eligible cash refunds:', error);
+    const eligibleRefundsError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to fetch eligible cash refunds',
+      {
+        severity: 'high',
+        amount: 0,
+        operation: 'refund',
+        originalError: error.message,
+        userId,
+      }
+    );
+    await captureError(eligibleRefundsError);
     throw new Error('Failed to fetch eligible cash refunds');
   }
 
@@ -253,7 +380,18 @@ export async function getEligibleCashRefunds(userId: string): Promise<EligiblePu
     .in('stripe_purchase_id', purchaseIds);
 
   if (refundError) {
-    console.error('Error fetching refund requests:', refundError);
+    const refundRequestsError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to fetch existing refund requests for eligibility check',
+      {
+        severity: 'high',
+        amount: 0,
+        operation: 'refund',
+        originalError: refundError.message,
+        userId,
+      }
+    );
+    await captureError(refundRequestsError);
     throw new Error('Failed to fetch refund requests');
   }
 
@@ -308,7 +446,18 @@ export async function createCashRefundRequest(params: {
     .single();
 
   if (error) {
-    console.error('Error creating cash refund request:', error);
+    const cashRefundCreateError = createCreditError(
+      ErrorCodes.SYSTEM_ERROR,
+      'Failed to create cash refund request',
+      {
+        severity: 'critical',
+        amount: params.refundAmountCents,
+        operation: 'refund',
+        originalError: error.message,
+        userId: params.userId,
+      }
+    );
+    await captureError(cashRefundCreateError);
     throw new Error('Failed to create cash refund request');
   }
 

@@ -77,7 +77,7 @@ export function loadPricingConfig(): PricingConfig {
     google: pricing.google || {},
   };
 
-  console.log(`💰 Pricing config loaded with ${Object.keys(config.anthropic).length + Object.keys(config.openai).length + Object.keys(config.google).length} models`);
+  console.info(`💰 Pricing config loaded with ${Object.keys(config.anthropic).length + Object.keys(config.openai).length + Object.keys(config.google).length} models`);
 
   pricingConfigCache = config;
   return config;

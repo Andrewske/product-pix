@@ -1,6 +1,9 @@
 import { unstable_cache } from 'next/cache';
 import { stripe } from './client';
 import { env } from '@/lib/env';
+import { createPaymentError } from '@/lib/errors/error-classes';
+import { captureError } from '@/lib/observability/capture-error';
+import { ErrorCodes } from '@/lib/errors/codes';
 
 // =============================================================================
 // Types
@@ -73,11 +76,20 @@ export async function fetchStripePricesCore(): Promise<StripePriceData> {
     }, {} as StripePriceData);
 
     return priceData;
-  } catch (error) {
+   } catch (error) {
     // Log error for monitoring but re-throw to let caller handle
-    console.error('Failed to fetch Stripe prices:', error);
+    const stripeError = createPaymentError(
+      ErrorCodes.PAYMENT_INTENT_FAILED,
+      'Failed to fetch Stripe prices from API',
+      {
+        severity: 'medium',
+        amount: 0,
+        originalError: error instanceof Error ? error.message : String(error),
+      }
+    );
+    await captureError(stripeError);
     throw new Error(`Stripe API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+   }
 }
 
 /**

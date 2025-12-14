@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logging';
 import type { User } from '@/types';
 
 export async function getUserById(userId: string): Promise<User | null> {
@@ -11,7 +12,10 @@ export async function getUserById(userId: string): Promise<User | null> {
     .single();
 
   if (error) {
-    console.error('Error fetching user:', error);
+    logger.error('Error fetching user', {
+      error: error.message,
+      userId,
+    });
     return null;
   }
 

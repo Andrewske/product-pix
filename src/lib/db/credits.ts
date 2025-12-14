@@ -1,5 +1,6 @@
 // src/lib/db/credits.ts
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logging';
 import type { CreditOperationResult, CreditTransaction, TransactionType } from '@/types';
 
 export const addCredits = async (
@@ -22,7 +23,14 @@ export const addCredits = async (
   });
 
   if (error) {
-    console.error('Error adding credits:', error);
+    logger.error('Error adding credits', {
+      error: error.message,
+      userId,
+      amount,
+      type,
+      referenceId,
+      idempotencyKey,
+    });
     return { success: false, new_balance: 0 };
   }
 
@@ -50,7 +58,13 @@ export const consumeCredits = async (
   });
 
   if (error) {
-    console.error('Error consuming credits:', error);
+    logger.error('Error consuming credits', {
+      error: error.message,
+      userId,
+      amount,
+      jobId,
+      description: description ?? 'Image generation',
+    });
     return { success: false, new_balance: 0 };
   }
 
@@ -77,7 +91,13 @@ export const refundCredits = async (
   });
 
   if (error) {
-    console.error('Error refunding credits:', error);
+    logger.error('Error refunding credits', {
+      error: error.message,
+      userId,
+      amount,
+      jobId,
+      description: description ?? 'Refund for failed generation',
+    });
     return { success: false, new_balance: 0 };
   }
 
@@ -102,7 +122,11 @@ export const getCreditHistory = async (
     .limit(limit);
 
   if (error) {
-    console.error('Error fetching credit history:', error);
+    logger.error('Error fetching credit history', {
+      error: error.message,
+      userId,
+      limit,
+    });
     return [];
   }
 
