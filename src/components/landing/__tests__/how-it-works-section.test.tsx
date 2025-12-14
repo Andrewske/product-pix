@@ -86,7 +86,6 @@ describe('HowItWorksSection', () => {
     render(<HowItWorksSection />);
 
     // Verify the ordered list contains exactly 3 items
-    const orderedList = screen.getByRole('list');
     const listItems = screen.getAllByRole('listitem');
 
     // Check that transition delays are applied with 200ms increments
