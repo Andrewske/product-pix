@@ -34,6 +34,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_audit: {
+        Row: {
+          deleted_at: string
+          email: string
+          id: string
+          r2_files_queued: number
+          r2_keys: string[]
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          email: string
+          id?: string
+          r2_files_queued?: number
+          r2_keys?: string[]
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          email?: string
+          id?: string
+          r2_files_queued?: number
+          r2_keys?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       batch_items: {
         Row: {
           batch_id: string
@@ -329,7 +356,7 @@ export type Database = {
         Row: {
           context: Json | null
           created_at: string | null
-          domain: Database["public"]["Enums"]["critical_errors_domain"]
+          domain: string
           error_code: string
           error_message: string
           error_name: string
@@ -338,13 +365,13 @@ export type Database = {
           resolved_at: string | null
           resolved_by: string | null
           route: string | null
-          severity: Database["public"]["Enums"]["critical_errors_severity"]
+          severity: string
           user_id: string | null
         }
         Insert: {
           context?: Json | null
           created_at?: string | null
-          domain: Database["public"]["Enums"]["critical_errors_domain"]
+          domain: string
           error_code: string
           error_message: string
           error_name: string
@@ -353,13 +380,13 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           route?: string | null
-          severity: Database["public"]["Enums"]["critical_errors_severity"]
+          severity: string
           user_id?: string | null
         }
         Update: {
           context?: Json | null
           created_at?: string | null
-          domain?: Database["public"]["Enums"]["critical_errors_domain"]
+          domain?: string
           error_code?: string
           error_message?: string
           error_name?: string
@@ -368,7 +395,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           route?: string | null
-          severity?: Database["public"]["Enums"]["critical_errors_severity"]
+          severity?: string
           user_id?: string | null
         }
         Relationships: [
@@ -399,6 +426,7 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
+          refunded_at: string | null
           title: string | null
           user_id: string
           width: number | null
@@ -413,6 +441,7 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
+          refunded_at?: string | null
           title?: string | null
           user_id: string
           width?: number | null
@@ -427,6 +456,7 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
+          refunded_at?: string | null
           title?: string | null
           user_id?: string
           width?: number | null
@@ -501,6 +531,54 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          feedback_type: Database["public"]["Enums"]["feedback_type"]
+          id: string
+          image_id: string
+          reasons: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          feedback_type: Database["public"]["Enums"]["feedback_type"]
+          id?: string
+          image_id: string
+          reasons?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          feedback_type?: Database["public"]["Enums"]["feedback_type"]
+          id?: string
+          image_id?: string
+          reasons?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_feedback_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "generated_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1206,10 +1284,12 @@ export type Database = {
         Row: {
           created_at: string
           credit_balance: number
+          deleted_at: string | null
           display_name: string | null
           email: string
           id: string
           is_admin: boolean
+          original_email: string | null
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -1218,10 +1298,12 @@ export type Database = {
         Insert: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email: string
           id: string
           is_admin?: boolean
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1230,10 +1312,12 @@ export type Database = {
         Update: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email?: string
           id?: string
           is_admin?: boolean
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1290,21 +1374,6 @@ export type Database = {
               p_credits?: number
               p_parameters?: Json
               p_prompt: string
-              p_template_slug?: string
-              p_upload_id: string
-              p_user_id: string
-            }
-            Returns: {
-              job_id: string
-              message: string
-              success: boolean
-            }[]
-          }
-        | {
-            Args: {
-              p_credits?: number
-              p_parameters?: Json
-              p_prompt: string
               p_template_id?: string
               p_upload_id: string
               p_user_id: string
@@ -1321,6 +1390,21 @@ export type Database = {
               p_parameters?: Json
               p_prompt: string
               p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt?: string
+              p_template_slug?: string
+              p_upload_id?: string
               p_user_id: string
             }
             Returns: {
@@ -1382,8 +1466,30 @@ export type Database = {
           success: boolean
         }[]
       }
-      show_limit: { Args: never; Returns: number }
+      refund_generation: {
+        Args: { p_image_id: string; p_user_id: string }
+        Returns: {
+          credits_refunded: number
+          message: string
+          success: boolean
+        }[]
+       }
+       restore_deleted_account: {
+         Args: { p_admin_id: string; p_user_id: string }
+         Returns: {
+           message: string
+           success: boolean
+         }[]
+       }
+       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      soft_delete_account: {
+        Args: { p_user_id: string }
+        Returns: {
+          message: string
+          success: boolean
+        }[]
+      }
       update_batch_progress: {
         Args: { p_batch_id: string; p_completed: number; p_failed: number }
         Returns: undefined
@@ -1397,6 +1503,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_user_preferences: {
+        Args: { prefs: Json; user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       batch_item_status: "pending" | "processing" | "completed" | "failed"
@@ -1407,6 +1517,7 @@ export type Database = {
         | "cancelled"
         | "failed"
       cash_refund_status: "pending" | "processing" | "completed" | "failed"
+      feedback_type: "positive" | "negative"
       job_status:
         | "pending"
         | "processing"
@@ -1437,8 +1548,6 @@ export type Database = {
         | "image_refund"
         | "cash_refund_reversal"
       user_tier: "free" | "pro" | "business"
-      critical_errors_severity: "critical" | "high" | "medium" | "low"
-      critical_errors_domain: "payment" | "credit" | "generation" | "auth" | "validation" | "rate-limit" | "system"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1578,8 +1687,7 @@ export const Constants = {
         "failed",
       ],
       cash_refund_status: ["pending", "processing", "completed", "failed"],
-      critical_errors_domain: ["payment", "credit", "generation", "auth", "validation", "rate-limit", "system"],
-      critical_errors_severity: ["critical", "high", "medium", "low"],
+      feedback_type: ["positive", "negative"],
       job_status: ["pending", "processing", "completed", "failed", "cancelled"],
       prompt_test_status: [
         "pending",
