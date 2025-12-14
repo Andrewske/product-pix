@@ -254,6 +254,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                   templateSlug: 'batch-poll',
                   creditsConsumed: 0,
                   retryable: true,
+                  originalError: parseError instanceof Error ? parseError.message : String(parseError),
+                  stack: parseError instanceof Error ? parseError.stack : undefined,
                 }
               );
 
@@ -319,6 +321,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             templateSlug: 'batch-poll',
             creditsConsumed: 0,
             retryable: true,
+            originalError: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
           }
         );
 
@@ -337,6 +341,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         templateSlug: 'batch-poll',
         creditsConsumed: 0,
         retryable: true,
+        originalError: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       }
     );
 

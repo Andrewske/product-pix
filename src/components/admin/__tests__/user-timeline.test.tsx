@@ -2,17 +2,47 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UserTimeline } from '../user-timeline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, beforeEach, mock, spyOn } from 'bun:test';
+
+const mockTimelineResponse = {
+  events: [
+    {
+      id: 'event-1',
+      title: 'Payment Failed',
+      description: 'Credit card declined',
+      severity: 'high' as const,
+      domain: 'payment' as const,
+      source: 'database' as const,
+      timestamp: '2024-01-01T10:00:00Z',
+      resolvedAt: null,
+      metadata: { transactionId: 'txn_123' },
+    },
+    {
+      id: 'event-2',
+      title: 'Image Generation',
+      description: 'Generated product image',
+      severity: 'low' as const,
+      domain: 'generation' as const,
+      source: 'other' as const,
+      timestamp: '2024-01-01T09:00:00Z',
+      resolvedAt: null,
+      metadata: { imageId: 'img_456' },
+    },
+  ],
+  nextCursor: null,
+};
 
 // Mock the admin API client
-jest.mock('@/lib/admin-api/client', () => ({
-  getUserTimeline: jest.fn(),
-  resolveError: jest.fn(),
-  unresolveError: jest.fn(),
+mock.module('@/lib/admin-api/client', () => ({
+  getUserTimeline: mock(() => Promise.resolve(mockTimelineResponse)),
+  resolveError: mock(() => Promise.resolve(undefined)),
+  unresolveError: mock(() => Promise.resolve(undefined)),
 }));
 
-const mockGetUserTimeline = require('@/lib/admin-api/client').getUserTimeline;
-const mockResolveError = require('@/lib/admin-api/client').resolveError;
-const mockUnresolveError = require('@/lib/admin-api/client').unresolveError;
+import * as adminApiClient from '@/lib/admin-api/client';
+const mockGetUserTimeline = adminApiClient.getUserTimeline as ReturnType<typeof mock>;
+const mockResolveError = adminApiClient.resolveError as ReturnType<typeof mock>;
+const mockUnresolveError = adminApiClient.unresolveError as ReturnType<typeof mock>;
 
 const createTestQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -37,38 +67,12 @@ const renderWithProviders = (component: React.ReactElement) => {
 describe('UserTimeline', () => {
   const mockUserId = 'user-123';
 
-  const mockTimelineResponse = {
-    events: [
-      {
-        id: 'event-1',
-        title: 'Payment Failed',
-        description: 'Credit card declined',
-        severity: 'high' as const,
-        domain: 'payment' as const,
-        source: 'database' as const,
-        timestamp: '2024-01-01T10:00:00Z',
-        resolvedAt: null,
-        metadata: { transactionId: 'txn_123' },
-      },
-      {
-        id: 'event-2',
-        title: 'Image Generation',
-        description: 'Generated product image',
-        severity: 'low' as const,
-        domain: 'generation' as const,
-        source: 'other' as const,
-        timestamp: '2024-01-01T09:00:00Z',
-        resolvedAt: null,
-        metadata: { imageId: 'img_456' },
-      },
-    ],
-    nextCursor: null,
-  };
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGetUserTimeline.mockReset();
     mockGetUserTimeline.mockResolvedValue(mockTimelineResponse);
+    mockResolveError.mockReset();
     mockResolveError.mockResolvedValue(undefined);
+    mockUnresolveError.mockReset();
     mockUnresolveError.mockResolvedValue(undefined);
   });
 
@@ -200,7 +204,7 @@ describe('UserTimeline', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
     mockGetUserTimeline.mockRejectedValue(new Error('API Error'));
 
     renderWithProviders(<UserTimeline userId={mockUserId} />);

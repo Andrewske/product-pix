@@ -47,20 +47,22 @@ const cancelBatchHandler = async (
       try {
         await cancelBatch(batch.gemini_batch_id);
       } catch (error) {
-        const generationError = createGenerationError(
-          ErrorCodes.GENERATION_FAILED,
-          'Error cancelling Gemini batch',
-          {
-            severity: 'medium',
-            templateSlug: 'batch-cancel',
-            creditsConsumed: 0,
-            retryable: true,
-          }
-        );
+         const generationError = createGenerationError(
+           ErrorCodes.GENERATION_FAILED,
+           'Error cancelling Gemini batch',
+           {
+             severity: 'medium',
+             templateSlug: 'batch-cancel',
+             creditsConsumed: 0,
+             retryable: true,
+             originalError: error instanceof Error ? error.message : String(error),
+             stack: error instanceof Error ? error.stack : undefined,
+           }
+         );
 
-        await captureError(generationError, { route: '/api/batch/[batchId]/cancel' });
-        // Continue with cancellation even if Gemini API fails
-      }
+         await captureError(generationError, { route: '/api/batch/[batchId]/cancel' });
+         // Continue with cancellation even if Gemini API fails
+       }
     }
 
     // Update status
@@ -121,6 +123,8 @@ const cancelBatchHandler = async (
         templateSlug: 'batch-cancel',
         creditsConsumed: 0,
         retryable: true,
+        originalError: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       }
     );
 

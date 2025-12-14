@@ -108,6 +108,8 @@ const parseCsvHandler = async (request: AuthenticatedRequest): Promise<NextRespo
         field: 'csv-file',
         validationRule: 'csv-parsing',
         userId: request.user.id,
+        originalError: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       }
     );
 

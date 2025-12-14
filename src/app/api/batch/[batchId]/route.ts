@@ -71,6 +71,8 @@ const getBatchHandler = async (
         templateSlug: 'batch-fetch',
         creditsConsumed: 0,
         retryable: true,
+        originalError: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       }
     );
 

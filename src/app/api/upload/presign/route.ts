@@ -41,6 +41,8 @@ export const POST = withAuth(async (request) => {
         creditsConsumed: 0,
         userId: request.user.id,
         retryable: true,
+        originalError: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       }
     );
 

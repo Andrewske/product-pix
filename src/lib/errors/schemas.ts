@@ -10,6 +10,8 @@ export const BaseErrorContextSchema = z.object({
   tags: z.array(z.string()).optional(),
   environment: z.string().optional(),
   severity: z.enum(['critical', 'high', 'medium', 'low']).optional(),
+  originalError: z.string().optional(),
+  stack: z.string().optional(),
 });
 
 export const PaymentErrorContextSchema = BaseErrorContextSchema.extend({

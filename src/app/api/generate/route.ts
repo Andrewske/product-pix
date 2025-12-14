@@ -171,6 +171,8 @@ export const POST = withAuth(async (request) => {
         userId: request.user.id,
         creditAmount: creditCost,
         retryable: false,
+        originalError: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       }
     );
 
