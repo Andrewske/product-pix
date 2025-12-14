@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { AccountTab } from './account-tab';
 import { CreditsTab } from './credits-tab';
 import { BillingTab } from './billing-tab';
+import { PrivacyTab } from './privacy-tab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function SettingsTabs() {
@@ -22,6 +23,7 @@ export function SettingsTabs() {
         <TabsTrigger value="account">Account</TabsTrigger>
         <TabsTrigger value="billing">Billing</TabsTrigger>
         <TabsTrigger value="credits">Credits</TabsTrigger>
+        <TabsTrigger value="privacy">Privacy</TabsTrigger>
       </TabsList>
 
       <TabsContent value="account" className="space-y-6">
@@ -32,6 +34,9 @@ export function SettingsTabs() {
       </TabsContent>
       <TabsContent value="credits" className="space-y-6">
         <CreditsTab />
+      </TabsContent>
+      <TabsContent value="privacy" className="space-y-6">
+        <PrivacyTab />
       </TabsContent>
     </Tabs>
   );

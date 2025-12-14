@@ -6,6 +6,7 @@ import { LayoutWrapper } from "@/components/layout-wrapper";
 import { Toaster } from "@/components/ui/sonner";
 import { ClientProviders } from "@/components/providers/client-providers";
 import { CookieConsentProvider } from "@/components/cookie-consent";
+import { CookieConsentBanner } from "@/components/cookie-consent";
 import { AnalyticsScripts } from "@/components/analytics";
 
 const fontDisplay = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
@@ -35,6 +36,7 @@ export default function RootLayout({
               <LayoutWrapper>
                 {children}
               </LayoutWrapper>
+              <CookieConsentBanner />
               <Toaster position="bottom-right" />
               <AnalyticsScripts />
             </CookieConsentProvider>
