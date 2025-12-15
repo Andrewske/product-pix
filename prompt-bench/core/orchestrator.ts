@@ -23,6 +23,9 @@ import { uploadBuffer, getPublicUrl } from '@/lib/r2';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { resolveSourceImage, type ResolvedSourceImage } from '@bench/core/source-image';
 import { calculateCost } from '@bench/core/cost';
+import { classifyProduct } from '@bench/core/category-classifier';
+import { getAnglesForCategory } from '@bench/core/category-angles';
+import type { CollectionTemplate, ProductCategory } from '@bench/core/types';
 
 // =============================================================================
 // Types
@@ -193,6 +196,11 @@ const runPhase = async (
   batchFilePath: string,
   onProgress?: ProgressCallback
 ): Promise<Result<RunPhaseResult>> => {
+  // Handle collection templates differently
+  if ('type' in template && template.type === 'collection') {
+    return runCollectionPhase(template as CollectionTemplate, batch, batchLabel, dryRun, batchFilePath, onProgress);
+  }
+
   const supabase = createAdminClient();
   const gemini = createGeminiProvider();
 
@@ -426,6 +434,321 @@ const runPhase = async (
   }
 
   onProgress?.('run', total, total, `Run phase completed: ${completed} generated, ${skipped} skipped, ${failed} failed`);
+
+  return ok({ completed, failed, skipped, tests });
+};
+
+const runCollectionPhase = async (
+  template: CollectionTemplate,
+  batch: BatchFile,
+  batchLabel: string,
+  dryRun: boolean,
+  batchFilePath: string,
+  onProgress?: ProgressCallback
+): Promise<Result<RunPhaseResult>> => {
+  const supabase = createAdminClient();
+  const gemini = createGeminiProvider();
+
+  let completed = 0;
+  let failed = 0;
+  let skipped = 0;
+  const tests: PromptTest[] = [];
+
+  const total = batch.tests.length;
+
+  for (let i = 0; i < total; i++) {
+    const testCase = batch.tests[i];
+    onProgress?.('run', i, total, `Processing collection test ${i + 1}/${total}...`);
+
+    try {
+      // STEP 1: Detect product category (if using category-based or hybrid strategy)
+      let category: ProductCategory = 'generic';
+      let angles: string[] = [];
+
+      if (template.varietyStrategy === 'category-based' || template.varietyStrategy === 'hybrid') {
+        // Use the first source image for category detection
+        const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
+        if (sourceImages.length === 0) {
+          return err(createError(
+            'VALIDATION_ERROR',
+            `Collection test ${i + 1}/${total} requires at least one source image for category detection`,
+            { testId: `test-${i}` }
+          ));
+        }
+
+        // Resolve the first source image for category detection
+        const resolveResult = await resolveSourceImage(sourceImages[0], {
+          batchFilePath: batchFilePath,
+          skipUpload: false,
+        });
+        if (!isOk(resolveResult)) {
+          return err(createError(
+            'SOURCE_IMAGE_ERROR',
+            `Test ${i + 1}/${total} failed to resolve source image for category detection: ${resolveResult.error.message}`,
+            { testId: `test-${i}` }
+          ));
+        }
+        const resolvedImage = resolveResult.data;
+
+        const categoryResult = await classifyProduct(resolvedImage.r2Url);
+        if (!isOk(categoryResult)) {
+          console.warn(`Category detection failed for test ${i + 1}, falling back to generic: ${categoryResult.error.message}`);
+          category = 'generic';
+        } else {
+          category = categoryResult.data;
+        }
+        angles = getAnglesForCategory(category);
+        console.log(`Detected category: ${category}, using angles: ${angles.join(', ')}`);
+      }
+
+      // STEP 2: Generate each image in the collection
+      for (let j = 0; j < template.outputCount; j++) {
+        let angle: string | undefined;
+
+        if (template.varietyStrategy === 'category-based') {
+          // Use all angles from category
+          angle = angles[j] || angles[angles.length - 1]; // Fallback to last angle if not enough
+        } else if (template.varietyStrategy === 'hybrid') {
+          // First 2 from category, rest AI-decided
+          angle = j < 2 ? (angles[j] || angles[angles.length - 1]) : undefined;
+        }
+        // ai-decided: angle stays undefined, AI chooses
+
+        // Compile prompt with angle if specified
+        const compileResult = compileTemplate(
+          template.templateData,
+          template.variablesSchema,
+          {
+            ...testCase.variables,
+            angle,
+            category,  // Include detected category for context
+            outputIndex: j,
+            totalOutputs: template.outputCount
+          }
+        );
+        if (!isOk(compileResult)) {
+          return err(createError(
+            'COMPILATION_ERROR',
+            `Test ${i + 1}/${total}, image ${j + 1} failed to compile: ${compileResult.error.message}`,
+            { testId: `test-${i}-${j}` }
+          ));
+        }
+        const compiled = compileResult.data;
+
+        // Resolve all source images for this generation
+        const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
+        const resolvedSourceImages: ResolvedSourceImage[] = [];
+
+        for (const sourceImagePath of sourceImages) {
+          const resolveResult = await resolveSourceImage(sourceImagePath, {
+            batchFilePath: batchFilePath,
+            skipUpload: false,
+          });
+          if (!isOk(resolveResult)) {
+            return err(createError(
+              'SOURCE_IMAGE_ERROR',
+              `Test ${i + 1}/${total}, image ${j + 1} failed to resolve source image: ${resolveResult.error.message}`,
+              { testId: `test-${i}-${j}` }
+            ));
+          }
+          resolvedSourceImages.push(resolveResult.data);
+        }
+
+        // Generate idempotency key for this specific image in the collection
+        const idempotencyKey = generateIdempotencyKey(
+          template.slug,
+          template.version,
+          {
+            ...testCase.variables,
+            angle,
+            outputIndex: j,
+            detectedCategory: category,
+          },
+          batchLabel,
+          resolvedSourceImages.length > 0 ? resolvedSourceImages[0].hash : undefined
+        );
+
+        // Check for existing test
+        const { data: existingTest } = await supabase
+          .from('prompt_tests')
+          .select('*')
+          .eq('idempotency_key', idempotencyKey)
+          .single();
+
+        if (existingTest && (existingTest as any).status !== 'failed') {
+          // Skip existing successful test
+          tests.push(existingTest as any);
+          continue;
+        }
+
+        if (dryRun) {
+          completed++;
+          continue;
+        }
+
+        if (!template.id) {
+          return err(createError(
+            'VALIDATION_ERROR',
+            `Template ${template.slug} has no ID. Ensure template is synced to database first.`
+          ));
+        }
+
+        // Create test record
+        const { data: testRecord, error: insertError } = await (supabase
+          .from('prompt_tests')
+          .insert({
+            template_id: template.id,
+            idempotency_key: idempotencyKey,
+            status: 'generating',
+            inputs: {
+              ...testCase.variables,
+              angle,
+              outputIndex: j,
+              detectedCategory: category,
+              anglesUsed: angles,
+            } as any,
+            final_prompt: compiled.prompt,
+            batch_label: batchLabel,
+            source_image_url: resolvedSourceImages.length > 0 ? resolvedSourceImages[0].r2Url : null,
+            source_image_key: resolvedSourceImages.length > 0 ? resolvedSourceImages[0].r2Key : null,
+          })
+          .select()
+          .single() as any);
+
+        if (insertError || !testRecord) {
+          return err(createError(
+            'DATABASE_ERROR',
+            `Test ${i + 1}/${total}, image ${j + 1} failed to create: ${insertError?.message || 'Unknown error'}`,
+            { testId: `test-${i}-${j}` }
+          ));
+        }
+
+        // Generate image with multiple source images
+        const generationStart = Date.now();
+
+        let generationResult;
+        if (resolvedSourceImages.length > 0) {
+          // Use the first source image for now (Gemini 3 Pro Image supports up to 14)
+          // TODO: Implement multi-image input when Gemini supports it
+          generationResult = await gemini.generateFromImage(
+            resolvedSourceImages[0].buffer,
+            resolvedSourceImages[0].mimeType,
+            compiled.prompt,
+            {
+              rawPrompt: true,
+              aspectRatio: '1:1' as const,
+              resolution: '1k' as const
+            }
+          );
+        } else {
+          generationResult = await gemini.generateFromText(compiled.prompt, {
+            rawPrompt: true,
+            aspectRatio: '1:1' as const,
+            resolution: '1k' as const
+          });
+        }
+
+        if (!generationResult.success) {
+          // Update test status to failed
+          await (supabase
+            .from('prompt_tests')
+            .update({
+              status: 'failed',
+              error_message: generationResult.error,
+              completed_at: new Date().toISOString(),
+              duration_ms: Date.now() - generationStart,
+            })
+            .eq('id', testRecord.id) as any);
+
+          failed++;
+          return err(createError(
+            'GENERATION_ERROR',
+            `Test ${i + 1}/${total}, image ${j + 1} failed: ${generationResult.error}`,
+            { testId: testRecord.id }
+          ));
+        }
+
+        // Upload image to R2
+        const imageKey = `prompt-tests/${testRecord.id}.png`;
+        const buffer = Buffer.from(generationResult.imageData, 'base64');
+        await uploadBuffer(buffer, imageKey, 'image/png');
+
+        // Calculate generation cost
+        let generationCost = 0;
+        if (generationResult.usage) {
+          const costResult = calculateCost('gemini-3-pro-image-preview', {
+            input: generationResult.usage.promptTokens,
+            output: generationResult.usage.completionTokens,
+          });
+
+          if (costResult.ok) {
+            generationCost = costResult.data.total;
+          } else {
+            console.warn(`⚠️  Failed to calculate cost for test generation: ${costResult.error.message}`);
+          }
+        } else {
+          // Fallback cost for image generation
+          const estimatedInputTokens = 1000;
+          const estimatedOutputTokens = 50000;
+          const costResult = calculateCost('gemini-3-pro-image-preview', {
+            input: estimatedInputTokens,
+            output: estimatedOutputTokens,
+          });
+
+          if (costResult.ok) {
+            generationCost = costResult.data.total;
+            console.log(`📊 Using estimated cost for test generation: ${testRecord.id} (${generationCost.toFixed(6)})`);
+          } else {
+            console.warn(`⚠️  Failed to calculate estimated cost for test generation: ${costResult.error.message}`);
+          }
+        }
+
+        // Update test record with success
+        const imageUrl = getPublicUrl(imageKey);
+
+        const updateData: {
+          status: 'completed';
+          image_url: string;
+          image_key: string;
+          completed_at: string;
+          duration_ms: number;
+          cost_usd: number;
+          input_tokens?: number;
+          output_tokens?: number;
+        } = {
+          status: 'completed',
+          image_url: imageUrl,
+          image_key: imageKey,
+          completed_at: new Date().toISOString(),
+          duration_ms: Date.now() - generationStart,
+          cost_usd: generationCost,
+        };
+
+        if (generationResult.usage) {
+          updateData.input_tokens = generationResult.usage.promptTokens;
+          updateData.output_tokens = generationResult.usage.completionTokens;
+        }
+
+        await supabase
+          .from('prompt_tests')
+          .update(updateData)
+          .eq('id', testRecord.id);
+
+        completed++;
+        tests.push(testRecord);
+      }
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return err(createError(
+        'RUN_PHASE_ERROR',
+        `Collection test ${i + 1}/${total} failed: ${message}`,
+        { testId: `test-${i}` }
+      ));
+    }
+  }
+
+  onProgress?.('run', total, total, `Collection run phase completed: ${completed} generated, ${skipped} skipped, ${failed} failed`);
 
   return ok({ completed, failed, skipped, tests });
 };

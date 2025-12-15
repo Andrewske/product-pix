@@ -2,6 +2,26 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { parse } from '@iarna/toml';
 
+interface PricingModelConfig {
+  input: number;
+  output: number;
+  [key: string]: unknown;
+}
+
+interface TomlConfig {
+  pricing: {
+    anthropic?: Record<string, PricingModelConfig>;
+    openai?: Record<string, PricingModelConfig>;
+    google?: Record<string, PricingModelConfig>;
+    [key: string]: Record<string, PricingModelConfig> | undefined;
+  };
+  defaults?: {
+    improvement_model?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -30,12 +50,12 @@ function getRequiredModels(): { critical: string[]; environmentDefaults: Record<
 /**
  * Load and parse pricing configuration from TOML file
  */
-function loadFullConfig(): { pricing: Record<string, Record<string, any>>; defaults: Record<string, any> } {
+function loadFullConfig(): { pricing: Record<string, Record<string, PricingModelConfig> | undefined>; defaults: { improvement_model?: string; [key: string]: unknown } } {
   const configPath = resolve(process.cwd(), 'prompt-bench.toml');
 
   try {
     const fileContent = readFileSync(configPath, 'utf-8');
-    const parsed = parse(fileContent) as any;
+    const parsed = parse(fileContent) as TomlConfig;
 
     if (!parsed.pricing) {
       throw new Error('Missing [pricing] section in config file');
@@ -53,7 +73,7 @@ function loadFullConfig(): { pricing: Record<string, Record<string, any>>; defau
 /**
  * Extract all configured models from pricing config
  */
-function getConfiguredModels(pricingConfig: Record<string, Record<string, any>>): Set<string> {
+function getConfiguredModels(pricingConfig: Record<string, Record<string, PricingModelConfig> | undefined>): Set<string> {
   const configuredModels = new Set<string>();
 
   ['anthropic', 'openai', 'google'].forEach(provider => {

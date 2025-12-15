@@ -20,6 +20,7 @@ config({ path: '.env.local', override: true });
 
 import { runCommand } from '@bench/commands/run';
 import { evaluateCommand } from '@bench/commands/evaluate';
+import { evaluateCollectionCommand } from '@bench/commands/evaluate-collection';
 import { compareCommand } from '@bench/commands/compare';
 import { reportCommand } from '@bench/commands/report';
 import { syncCommand } from '@bench/commands/sync';
@@ -27,7 +28,7 @@ import { testCommand } from '@bench/commands/test';
 import { openLastReportCommand } from '@bench/commands/open-last-report';
 import { improveCommand } from '@bench/commands/improve';
 
-const COMMANDS = ['test', 'run', 'evaluate', 'compare', 'report', 'sync', 'open-last-report', 'improve'] as const;
+const COMMANDS = ['test', 'run', 'evaluate', 'evaluate-collection', 'compare', 'report', 'sync', 'open-last-report', 'improve'] as const;
 
 type Command = (typeof COMMANDS)[number];
 
@@ -39,26 +40,28 @@ Usage:
   bun bench <command> [options]
 
 Commands:
-  test             Run full pipeline: generate → evaluate → report
-  run              Generate images from prompts
-  evaluate         Score generated images with AI evaluator
-  compare          Compare two batch runs (baseline vs candidate)
-  report           Generate HTML report for a batch
-  sync             Sync local templates to database
-  open-last-report Open the most recent HTML report
-  improve          AI-powered template improvement
+   test                Run full pipeline: generate → evaluate → report
+   run                 Generate images from prompts
+   evaluate            Score generated images with AI evaluator
+   evaluate-collection Score image collections with AI evaluator
+   compare             Compare two batch runs (baseline vs candidate)
+   report              Generate HTML report for a batch
+   sync                Sync local templates to database
+   open-last-report    Open the most recent HTML report
+   improve             AI-powered template improvement
 
 Examples:
-  bun bench test --template product-photo --batch ./batches/test.csv
-  bun bench run --template product-photo --batch ./batches/test.csv --label v1
-  bun bench evaluate --label v1
-  bun bench compare --baseline v1 --candidate v2
-  bun bench report --label v1
-  bun bench open-last-report
-   bun bench improve                    # Uses config defaults
-   bun bench improve --continue         # Resume previous session
-   bun bench improve --new              # End previous session and start new one
-   bun bench improve --history          # View past sessions
+   bun bench test --template product-photo --batch ./batches/test.csv
+   bun bench run --template product-photo --batch ./batches/test.csv --label v1
+   bun bench evaluate --label v1
+   bun bench evaluate-collection --label v1
+   bun bench compare --baseline v1 --candidate v2
+   bun bench report --label v1
+   bun bench open-last-report
+    bun bench improve                    # Uses config defaults
+    bun bench improve --continue         # Resume previous session
+    bun bench improve --new              # End previous session and start new one
+    bun bench improve --history          # View past sessions
 
 Run 'bun bench <command> --help' for command-specific options.
 `);
@@ -95,6 +98,9 @@ const main = async (): Promise<void> => {
       break;
     case 'evaluate':
       await evaluateCommand(args);
+      break;
+    case 'evaluate-collection':
+      await evaluateCollectionCommand(args);
       break;
     case 'compare':
       await compareCommand(args);

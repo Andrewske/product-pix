@@ -5,9 +5,12 @@ export * from './types';
 export * from './errors';
 export * from './compiler';
 export * from './evaluator';
+export * from './collection-evaluator';
 export * from './statistics';
 export * from './source-image';
 export * from './orchestrator';
+export * from './category-classifier';
+export * from './category-angles';
 
 // Refinement system exports
 export * from './refinement-types';
