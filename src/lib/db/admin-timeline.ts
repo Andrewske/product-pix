@@ -1,31 +1,10 @@
 // src/lib/db/admin-timeline.ts
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
-import type { Tables } from '@/types/database';
+import { metadataSchemas } from './admin-timeline-schemas';
+import type { Database } from '@/lib/supabase/database.types';
 
-// Temporary table types until types are regenerated
-interface UserMessagesTable {
-  Row: {
-    id: string;
-    user_id: string;
-    content: string;
-    is_from_admin: boolean;
-    read_at: string | null;
-    created_at: string;
-    updated_at: string;
-    analysis: unknown | null;
-  };
-}
 
-interface UserActivityTable {
-  Row: {
-    id: string;
-    user_id: string;
-    event_type: string;
-    properties: unknown | null;
-    created_at: string | null;
-  };
-}
 
 export type TimelineEventType =
   | 'job' | 'transaction' | 'message' | 'image'
@@ -50,14 +29,14 @@ export async function getUnifiedTimeline(
   userId: string,
   options: {
     limit: number;
-    cursor?: string;       // Format: "{timestamp}_{id}"
+    cursor?: string;
     filters?: TimelineFilters;
   }
 ): Promise<{ events: TimelineEvent[]; nextCursor: string | null }> {
   const supabase = createAdminClient();
   const { limit, cursor, filters } = options;
 
-  // Parse cursor: "{timestamp}_{id}"
+  // Parse cursor
   let cursorTimestamp: string | null = null;
   let cursorId: string | null = null;
   if (cursor) {
@@ -68,398 +47,97 @@ export async function getUnifiedTimeline(
     }
   }
 
-  // Determine which tables to query based on filters
-  const tablesToQuery: TimelineEventType[] = filters?.types || [
-    'job', 'transaction', 'message', 'image', 'feedback', 'error', 'upload', 'activity'
-  ];
+  // Build query against view
+  let query = (supabase as any)
+    .from('user_timeline_view')
+    .select('id, type, subtype, timestamp, metadata')
+    .eq('user_id', userId)
+    .order('timestamp', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit + 1); // +1 to check for next page
 
-  // Build queries for each table
-  const queryPromises: Promise<TimelineEvent[]>[] = [];
-
-  // Jobs table
-  if (tablesToQuery.includes('job')) {
-    queryPromises.push(
-      (async () => {
-        let query = supabase
-          .from('jobs')
-          .select('id, created_at, status, template_slug, credits_charged, error_message, prompt')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
-
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching jobs for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as Tables<'jobs'>[]).map(job => ({
-          id: job.id,
-          type: 'job' as TimelineEventType,
-          subtype: job.status,
-          timestamp: job.created_at,
-          title: `Generated image with ${job.template_slug} (${job.credits_charged} credits)`,
-          metadata: {
-            template_slug: job.template_slug,
-            status: job.status,
-            credits_charged: job.credits_charged,
-            error_message: job.error_message,
-            prompt: job.prompt.substring(0, 100) + (job.prompt.length > 100 ? '...' : ''),
-          },
-        }));
-      })()
-    );
+  // Apply cursor pagination
+  if (cursorTimestamp && cursorId) {
+    query = query.or(`timestamp.lt.${cursorTimestamp},and(timestamp.eq.${cursorTimestamp},id.lt.${cursorId})`);
   }
 
-  // Credit transactions table
-  if (tablesToQuery.includes('transaction')) {
-    queryPromises.push(
-      (async () => {
-        let query = supabase
-          .from('credit_transactions')
-          .select('id, created_at, transaction_type, amount, description, balance_after')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
-
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching credit transactions for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as Tables<'credit_transactions'>[]).map(tx => ({
-          id: tx.id,
-          type: 'transaction' as TimelineEventType,
-          subtype: tx.transaction_type,
-          timestamp: tx.created_at,
-          title: `${tx.transaction_type}: ${tx.amount > 0 ? '+' : ''}${tx.amount} credits`,
-          metadata: {
-            transaction_type: tx.transaction_type,
-            amount: tx.amount,
-            description: tx.description,
-            balance_after: tx.balance_after,
-          },
-        }));
-      })()
-    );
+  // Apply type filter
+  if (filters?.types && filters.types.length > 0) {
+    query = query.in('type', filters.types);
   }
 
-  // User messages table
-  if (tablesToQuery.includes('message')) {
-    queryPromises.push(
-      (async () => {
-        let query = (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-          .from('user_messages')
-          .select('id, created_at, content, is_from_admin, read_at')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
-
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching user messages for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as UserMessagesTable['Row'][]).map(msg => ({
-          id: msg.id,
-          type: 'message' as TimelineEventType,
-          subtype: msg.is_from_admin ? 'admin' : 'user',
-          timestamp: msg.created_at,
-          title: msg.is_from_admin ? 'Message from admin' : 'Message sent',
-          metadata: {
-            content: msg.content.substring(0, 200) + (msg.content.length > 200 ? '...' : ''),
-            is_from_admin: msg.is_from_admin,
-            read_at: msg.read_at,
-          },
-        }));
-      })()
-    );
+  // Apply date filters
+  if (filters?.startDate && filters.startDate !== null) {
+    query = query.gte('timestamp', filters.startDate);
+  }
+  if (filters?.endDate && filters.endDate !== null) {
+    query = query.lte('timestamp', filters.endDate);
   }
 
-  // Generated images table
-  if (tablesToQuery.includes('image')) {
-    queryPromises.push(
-      (async () => {
-        let query = supabase
-          .from('generated_images')
-          .select('id, created_at, title, file_key, public_url, is_favorite')
-          .eq('user_id', userId)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
+  const { data, error } = await query;
 
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching generated images for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as Tables<'generated_images'>[]).map(img => ({
-          id: img.id,
-          type: 'image' as TimelineEventType,
-          subtype: 'generated',
-          timestamp: img.created_at,
-          title: img.title || 'Image generated',
-          metadata: {
-            file_key: img.file_key,
-            public_url: img.public_url,
-            is_favorite: img.is_favorite,
-          },
-        }));
-      })()
-    );
+  if (error) {
+    logger.error('Error fetching unified timeline', { error, userId });
+    return { events: [], nextCursor: null };
   }
 
-  // Image feedback table
-  if (tablesToQuery.includes('feedback')) {
-    queryPromises.push(
-      (async () => {
-        let query = supabase
-          .from('image_feedback')
-          .select('id, created_at, feedback_type, comment, reasons, image_id')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
+  // Check for next page
+  const hasMore = data.length > limit;
+  const events = hasMore ? data.slice(0, limit) : data;
 
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
+  // Map to TimelineEvent format with validation
+  const validatedEvents = events.map((row: any) => ({
+    id: row.id,
+    type: row.type as TimelineEventType,
+    subtype: row.subtype,
+    timestamp: row.timestamp,
+    title: generateTitle(row),
+    metadata: validateMetadata(row.type, row.metadata),
+  }));
 
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching image feedback for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as Tables<'image_feedback'>[]).map(fb => ({
-          id: fb.id,
-          type: 'feedback' as TimelineEventType,
-          subtype: fb.feedback_type,
-          timestamp: fb.created_at,
-          title: `Feedback: ${fb.feedback_type}`,
-          metadata: {
-            feedback_type: fb.feedback_type,
-            comment: fb.comment,
-            reasons: fb.reasons,
-            image_id: fb.image_id,
-          },
-        }));
-      })()
-    );
-  }
-
-  // Critical errors table
-  if (tablesToQuery.includes('error')) {
-    queryPromises.push(
-      (async () => {
-        let query = supabase
-          .from('critical_errors')
-          .select('id, created_at, error_name, error_message, domain, severity, resolved_at')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
-
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching critical errors for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as Tables<'critical_errors'>[]).map(err => ({
-          id: err.id,
-          type: 'error' as TimelineEventType,
-          subtype: err.severity,
-          timestamp: err.created_at || '',
-          title: `${err.domain}: ${err.error_name}`,
-          metadata: {
-            error_name: err.error_name,
-            error_message: err.error_message,
-            domain: err.domain,
-            severity: err.severity,
-            resolved_at: err.resolved_at,
-          },
-        }));
-      })()
-    );
-  }
-
-  // Uploads table
-  if (tablesToQuery.includes('upload')) {
-    queryPromises.push(
-      (async () => {
-        let query = supabase
-          .from('uploads')
-          .select('id, created_at, filename, file_size, mime_type')
-          .eq('user_id', userId)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
-
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching uploads for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as Tables<'uploads'>[]).map(upload => ({
-          id: upload.id,
-          type: 'upload' as TimelineEventType,
-          subtype: 'file',
-          timestamp: upload.created_at,
-          title: `Uploaded ${upload.filename}`,
-          metadata: {
-            filename: upload.filename,
-            file_size: upload.file_size,
-            mime_type: upload.mime_type,
-          },
-        }));
-      })()
-    );
-  }
-
-  // User activity table
-  if (tablesToQuery.includes('activity')) {
-    queryPromises.push(
-      (async () => {
-        let query = (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-          .from('user_activity')
-          .select('id, created_at, event_type, properties')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(limit);
-
-        if (cursorTimestamp && cursorId) {
-          query = query.lt('created_at', cursorTimestamp).or(`created_at.eq.${cursorTimestamp},id.lt.${cursorId}`);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('created_at', filters.startDate);
-        }
-        if (filters?.endDate) {
-          query = query.lte('created_at', filters.endDate);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          logger.error('Error fetching user activity for timeline', { error, userId });
-          return [];
-        }
-
-        return (data as UserActivityTable['Row'][]).map(activity => ({
-          id: activity.id,
-          type: 'activity' as TimelineEventType,
-          subtype: activity.event_type,
-          timestamp: activity.created_at || '',
-          title: activity.event_type.replace(/_/g, ' '),
-          metadata: activity.properties as Record<string, unknown> || {},
-        }));
-      })()
-    );
-  }
-
-  // Execute all queries in parallel
-  const results = await Promise.all(queryPromises);
-
-  // Merge all results
-  const allEvents = results.flat();
-
-  // Sort by timestamp DESC, then by id DESC
-  allEvents.sort((a, b) => {
-    const timeDiff = new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-    if (timeDiff !== 0) return timeDiff;
-    return b.id.localeCompare(a.id);
-  });
-
-  // Apply limit and compute next cursor
-  const limitedEvents = allEvents.slice(0, limit);
+  // Compute next cursor
   let nextCursor: string | null = null;
-  if (limitedEvents.length === limit && allEvents.length > limit) {
-    const lastEvent = limitedEvents[limitedEvents.length - 1];
+  if (hasMore && validatedEvents.length > 0) {
+    const lastEvent = validatedEvents[validatedEvents.length - 1];
     nextCursor = `${lastEvent.timestamp}_${lastEvent.id}`;
   }
 
-  return { events: limitedEvents, nextCursor };
+  return { events: validatedEvents, nextCursor };
+}
+
+// Helper: Generate human-readable title
+function generateTitle(row: { type: string; subtype: string; metadata: any }): string {
+  switch (row.type) {
+    case 'job':
+      return `Generated image with ${row.metadata.template_slug} (${row.metadata.credits_charged} credits)`;
+    case 'transaction':
+      return `${row.metadata.transaction_type}: ${row.metadata.amount > 0 ? '+' : ''}${row.metadata.amount} credits`;
+    case 'message':
+      return row.metadata.is_from_admin ? 'Message from admin' : 'Message sent';
+    case 'image':
+      return 'Image generated';
+    case 'feedback':
+      return `Feedback: ${row.metadata.feedback_type}`;
+    case 'error':
+      return `${row.metadata.domain}: ${row.metadata.error_name}`;
+    case 'upload':
+      return `Uploaded ${row.metadata.filename}`;
+    case 'activity':
+      return row.subtype.replace(/_/g, ' ');
+    default:
+      return row.subtype.replace(/_/g, ' ');
+  }
+}
+
+// Helper: Validate metadata with Zod schemas
+function validateMetadata(type: string, metadata: unknown): Record<string, unknown> {
+  const schema = metadataSchemas[type as TimelineEventType];
+  if (!schema) return metadata as Record<string, unknown>;
+
+  const result = schema.safeParse(metadata);
+  if (!result.success) {
+    logger.warn('Invalid timeline metadata', { type, error: result.error });
+    return {};
+  }
+  return result.data;
 }

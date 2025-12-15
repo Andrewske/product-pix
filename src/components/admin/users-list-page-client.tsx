@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { DashboardStats } from '@/components/admin/dashboard-stats';
@@ -87,7 +87,7 @@ export function UsersListPageClient({ initialStats, initialUserList }: UsersList
     router.push(`/admin/users/${userId}`);
   };
 
-  const allUsers = data?.pages.flatMap(page => page.users) || [];
+  const allUsers = useMemo(() => data?.pages.flatMap(page => page.users) || [], [data?.pages]);
   const isEmpty = allUsers.length === 0 && !isLoading;
 
   if (isError) {
@@ -157,30 +157,31 @@ export function UsersListPageClient({ initialStats, initialUserList }: UsersList
                       No users found matching the current filters.
                     </TableCell>
                   </TableRow>
-                ) : (
-                  allUsers.map((user) => (
-                    <TableRow
-                      key={user.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleRowClick(user.id)}
-                    >
-                      <TableCell className="font-medium">{user.email}</TableCell>
-                      <TableCell>{user.displayName || '-'}</TableCell>
-                      <TableCell className="text-right font-mono">{user.creditBalance}</TableCell>
-                      <TableCell className="text-right font-mono">{user.jobCount}</TableCell>
-                      <TableCell className="text-right">
-                        {user.errorCount > 0 ? (
-                          <Badge variant="destructive">{user.errorCount}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">0</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                 ) : (
+                   allUsers.map((user) => (
+                     <button
+                       key={user.id}
+                       type="button"
+                       className="w-full grid grid-cols-[1fr_1fr_120px_80px_80px_40px] gap-4 px-4 py-2 text-left hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm border-0 bg-transparent"
+                       onClick={() => handleRowClick(user.id)}
+                     >
+                       <div className="font-medium truncate">{user.email}</div>
+                       <div className="truncate">{user.displayName || '-'}</div>
+                       <div className="text-right font-mono">{user.creditBalance}</div>
+                       <div className="text-right font-mono">{user.jobCount}</div>
+                       <div className="text-right">
+                         {user.errorCount > 0 ? (
+                           <Badge variant="destructive">{user.errorCount}</Badge>
+                         ) : (
+                           <span className="text-muted-foreground">0</span>
+                         )}
+                       </div>
+                       <div className="flex justify-end">
+                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                       </div>
+                     </button>
+                   ))
+                 )}
               </TableBody>
             </Table>
           </div>

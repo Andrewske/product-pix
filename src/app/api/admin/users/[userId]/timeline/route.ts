@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { getUnifiedTimeline, type TimelineEvent } from '@/lib/db/admin-timeline';
+import { logger } from '@/lib/logging';
 
 export async function GET(
   request: NextRequest,
@@ -32,8 +33,8 @@ export async function GET(
       cursor,
       filters: {
         types,
-        startDate,
-        endDate,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
       },
     });
 
@@ -42,8 +43,8 @@ export async function GET(
       events: result.events,
       nextCursor: result.nextCursor,
     });
-  } catch (error) {
-    console.warn('Error fetching timeline:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+   } catch (error) {
+     logger.error('Error fetching timeline', { error });
+     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+   }
 }
