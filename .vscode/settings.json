@@ -28,5 +28,6 @@
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-  }
+  },
+  "livePreview.defaultPreviewPath": "/reports/ecommerce-base-20251210-svtivg.html"
 }

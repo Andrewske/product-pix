@@ -22,11 +22,11 @@ const navItems = [
     label: 'Analytics',
     active: true,
   },
-  {
+   {
     href: '/admin/users',
     label: 'Users',
-    active: false,
-  },
+    active: true,
+   },
   {
     href: '/admin/settings',
     label: 'Settings',

@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/server';
 import { requireAdmin } from '@/lib/auth/admin';
-import { getCriticalErrors, type CriticalError } from '@/lib/db/critical-errors';
-import { getPostHogEvents, type PostHogEvent } from '@/lib/posthog/api';
-
-type TimelineEvent = CriticalError | PostHogEvent;
-
-function getEventTimestamp(event: TimelineEvent): string {
-  return 'timestamp' in event ? event.timestamp : (event.createdAt || '');
-}
+import { getUnifiedTimeline, type TimelineEvent } from '@/lib/db/admin-timeline';
 
 export async function GET(
   request: NextRequest,
@@ -28,46 +21,26 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 200);
     const cursor = searchParams.get('cursor');
-    const days = Math.min(parseInt(searchParams.get('days') || '30', 10), 365);
-    const severity = searchParams.get('severity') as 'critical' | 'high' | 'medium' | 'low' | undefined;
-    const domain = searchParams.get('domain') as 'payment' | 'credit' | 'generation' | 'auth' | 'validation' | 'rate-limit' | 'system' | undefined;
-    const resolved = searchParams.get('resolved') || 'all';
+    const typesParam = searchParams.get('types');
+    const types = typesParam ? typesParam.split(',').filter(Boolean) as TimelineEvent['type'][] : undefined;
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
-    // 3. Calculate date range
-    const endDate = cursor || new Date().toISOString();
-    const startDate = new Date(
-      Date.parse(endDate) - days * 24 * 60 * 60 * 1000
-    ).toISOString();
+    // 3. Fetch unified timeline
+    const result = await getUnifiedTimeline(userId, {
+      limit,
+      cursor,
+      filters: {
+        types,
+        startDate,
+        endDate,
+      },
+    });
 
-    // 4. Fetch from both sources in parallel
-    const [dbErrors, posthogEvents] = await Promise.all([
-      getCriticalErrors(userId, {
-        limit,
-        beforeDate: endDate,
-        afterDate: startDate,
-        severity,
-        domain,
-        resolved: resolved as 'true' | 'false' | 'all'
-      }),
-      getPostHogEvents(userId, {
-        limit,
-        beforeDate: endDate,
-        afterDate: startDate,
-        severity,
-        domain
-      }),
-    ]);
-
-    // 5. Merge and sort
-    const merged = [...dbErrors, ...posthogEvents]
-      .sort((a, b) => new Date(getEventTimestamp(b)).getTime() - new Date(getEventTimestamp(a)).getTime())
-      .slice(0, limit);
-
-    // 6. Return paginated response
+    // 4. Return paginated response
     return NextResponse.json({
-      events: merged,
-      nextCursor: merged.length === limit ? getEventTimestamp(merged[merged.length - 1]) : null,
-      hasMore: merged.length === limit,
+      events: result.events,
+      nextCursor: result.nextCursor,
     });
   } catch (error) {
     console.warn('Error fetching timeline:', error);

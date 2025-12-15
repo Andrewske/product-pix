@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUserProfile, signOut } from '@/lib/auth';
+import { trackActivity } from '@/lib/db';
 import {
   Avatar,
   AvatarFallback,
@@ -21,6 +22,7 @@ export function UserMenu() {
   const router = useRouter();
 
   const handleSignOut = async () => {
+    await trackActivity(user!.id, 'logout');
     await signOut();
     router.push('/login');
     router.refresh();
@@ -38,7 +40,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="relative h-8 w-8 rounded-full">
+        <button type="button" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarFallback>{userInitial}</AvatarFallback>
           </Avatar>

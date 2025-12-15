@@ -3,6 +3,7 @@
  import { syncStripeDataToKV } from '@/lib/stripe/sync';
  import { getPricing } from '@/lib/pricing/actions';
  import { type PricingData } from '@/lib/pricing/utils';
+ import { trackActivity } from '@/lib/db';
  import { CreditPacks } from '@/components/pricing/credit-packs';
  import { PageContainer } from '@/components/layout/page-container';
  import { SectionHeader } from '@/components/ui/section-header';
@@ -11,6 +12,9 @@ export default async function PricingPage() {
   // Sync Stripe data on page load to ensure fresh data
   // If sync fails, still render page - components will show cached/stale data
   const user = await requireAuth();
+
+  // Track pricing page view for authenticated users
+  await trackActivity(user.id, 'pricing_viewed');
   const customerId = await getUserStripeCustomerId(user.id);
   if (customerId) {
     try {
