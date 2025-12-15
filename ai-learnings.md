@@ -117,6 +117,12 @@
 
 **Coverage target**: 100% for utility functions with comprehensive edge cases. 70-80% for components
 
+**Supabase Mock Utilities**: Use type-safe helpers from `src/lib/db/__tests__/helpers.ts`. No `as any` casts, explicit types, proper Zod validation. Follow established patterns for consistent mocking across test suites
+
+**Environment Variable Naming**: PostHog variables follow `NEXT_PUBLIC_*` prefix for client-side, plain names for server-side. `OBSERVABILITY_ENABLED` controls feature flag. Project ID and personal API key for advanced server-side operations
+
+**TypeScript Strictness**: Never `any`/`unknown` without guards/`!` non-null assertions. Explicit return types on exported functions. Module boundaries require contracts, internal code uses inference
+
 ## Component Patterns
 
 **CVA for variants**: Use `cva()` not manual class concatenation. Base classes for shared styles, variants for differences: `cva('rounded border px-4 py-3', { variants: { variant: { error: 'bg-destructive/10...' } } })`

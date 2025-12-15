@@ -16,18 +16,12 @@ mock.module('@/lib/analytics', () => ({
 // Mock supabase
 const mockSupabaseClient = {
   auth: {
-    getUser: mock(() => Promise.resolve({ data: { user: null }, error: null })),
+    getUser: mock(),
     onAuthStateChange: mock(() => ({
       data: { subscription: { unsubscribe: mock(() => {}) } },
     })),
   },
-  from: mock(() => ({
-    select: mock(() => ({
-      eq: mock(() => ({
-        maybeSingle: mock(() => Promise.resolve({ data: null, error: null })),
-      })),
-    })),
-  })),
+  from: mock(),
 };
 
 mock.module('@/lib/supabase/client', () => ({

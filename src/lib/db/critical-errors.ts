@@ -1,6 +1,10 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
-import type { Json, Database } from '@/lib/supabase/database.types';
+import type { Json } from '@/lib/supabase/database.types';
+
+// Temporary local type unions until database enums are added
+type CriticalErrorSeverity = 'critical' | 'high' | 'medium' | 'low';
+type CriticalErrorDomain = 'payment' | 'credit' | 'generation' | 'auth' | 'validation' | 'rate-limit' | 'system';
 
 interface CriticalErrorData {
   userId?: string | null;
@@ -8,8 +12,8 @@ interface CriticalErrorData {
   errorMessage: string;
   errorCode: string;
   errorStack?: string | null;
-  severity: Database["public"]["Enums"]["critical_errors_severity"];
-  domain: Database["public"]["Enums"]["critical_errors_domain"];
+  severity: CriticalErrorSeverity;
+  domain: CriticalErrorDomain;
   route?: string | null;
   context: Record<string, unknown>;
 }
@@ -48,8 +52,8 @@ interface GetCriticalErrorsOptions {
   limit?: number;
   beforeDate?: string;
   afterDate?: string;
-  severity?: Database["public"]["Enums"]["critical_errors_severity"];
-  domain?: Database["public"]["Enums"]["critical_errors_domain"];
+  severity?: CriticalErrorSeverity;
+  domain?: CriticalErrorDomain;
   resolved?: 'true' | 'false' | 'all';
 }
 
@@ -107,8 +111,8 @@ export async function getCriticalErrors(
     errorMessage: row.error_message,
     errorCode: row.error_code,
     errorStack: row.error_stack,
-    severity: row.severity,
-    domain: row.domain,
+    severity: row.severity as CriticalErrorSeverity,
+    domain: row.domain as CriticalErrorDomain,
     route: row.route,
     context: (row.context ?? {}) as Record<string, unknown>,
     createdAt: row.created_at,

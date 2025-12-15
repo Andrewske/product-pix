@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { POST } from '../route';
+import { createFromMock } from '@/lib/test-utils';
 
 // Mock environment
 process.env.CRON_SECRET = 'test-secret';
@@ -134,6 +135,7 @@ describe('POST /api/cron/analyze-sentiment', () => {
     });
 
     it('handles empty queue gracefully', async () => {
+      // @ts-ignore - Complex mock chain for specific test scenario
       mockSupabase.from = mock(() => ({
         select: mock(() => ({
           is: mock(() => ({
@@ -264,7 +266,8 @@ describe('POST /api/cron/analyze-sentiment', () => {
 
   describe('Error handling', () => {
     it('increments retry count on analysis failure', async () => {
-      mockAnalyzeSentiment.mockImplementationOnce(() => Promise.resolve(null) as any);
+      // @ts-ignore - Mock returns null for failure case
+      mockAnalyzeSentiment.mockImplementationOnce(() => Promise.resolve(null));
 
       const updateMock = mock(() => ({
         eq: mock(() => ({ error: null })),
@@ -371,6 +374,7 @@ describe('POST /api/cron/analyze-sentiment', () => {
     });
 
     it('respects MAX_RETRIES limit', async () => {
+      // @ts-ignore - Complex mock chain for specific test scenario
       mockSupabase.from = mock(() => ({
         select: mock(() => ({
           is: mock(() => ({
@@ -401,6 +405,7 @@ describe('POST /api/cron/analyze-sentiment', () => {
     });
 
     it('handles database fetch errors', async () => {
+      // @ts-ignore - Complex mock chain for specific test scenario
       mockSupabase.from = mock(() => ({
         select: mock(() => ({
           is: mock(() => ({

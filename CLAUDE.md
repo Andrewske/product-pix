@@ -125,6 +125,12 @@ See `docs/analytics-guide.md` for full documentation.
 
 **Privacy-first principles:** masking, identified users only, snake_case properties.
 
+**Environment variables:**
+- `NEXT_PUBLIC_*`: Client-side accessible variables
+- Server-only variables: No prefix, available only in server contexts
+- PostHog: `NEXT_PUBLIC_POSTHOG_KEY` (client), `POSTHOG_API_KEY` (server), `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_HOST`, `OBSERVABILITY_ENABLED`
+- Feature flags: `*_ENABLED` boolean variables control optional features
+
 ## Legal & Policy
 
 See `docs/legal-policy-decisions.md`

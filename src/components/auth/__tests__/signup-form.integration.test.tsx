@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { SignupForm } from '../signup-form';
 
 // Mock Supabase client
-const mockSignUp = mock(() => Promise.resolve({ data: { session: null, user: {} }, error: null as any }));
+const mockSignUp = mock(() => Promise.resolve({ data: { session: null, user: {} }, error: null } as any));
 const mockPush = mock(() => {});
 const mockRefresh = mock(() => {});
 
@@ -133,6 +133,7 @@ describe('SignupForm - Integration Tests', () => {
 
     const errorMessage = 'User already registered';
     mockSignUp.mockResolvedValueOnce({
+      data: { session: null, user: null },
       error: { message: errorMessage } as any
     });
 

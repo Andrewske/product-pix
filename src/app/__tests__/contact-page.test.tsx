@@ -4,16 +4,19 @@ import userEvent from '@testing-library/user-event'
 import { ContactForm } from '@/components/contact/contact-form'
 
 // Mock fetch
-const mockFetch = mock(() => Promise.resolve({
-  ok: true,
-  json: () => Promise.resolve({ success: true, messageId: 'test-id' }),
-} as Response))
+const mockFetch = mock((url, options) => {
+  console.log('Mock fetch called with:', url, options);
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ success: true, messageId: 'test-id' }),
+  } as Response);
+})
 
 global.fetch = mockFetch as unknown as typeof fetch
 
 describe('ContactForm', () => {
   beforeEach(() => {
-    mockFetch.mockClear()
+    mockFetch.mockReset()
   })
 
   afterEach(() => {
@@ -213,8 +216,8 @@ describe('ContactForm', () => {
     await user.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid email format')).toBeDefined()
-      expect(screen.getByText('Message too short')).toBeDefined()
+      expect(screen.getByText('Please enter a valid email address')).toBeDefined()
+      expect(screen.getByText('Message must be at least 10 characters')).toBeDefined()
     })
   })
 

@@ -4,7 +4,7 @@ import { ErrorCodes } from '../codes';
 
 describe('createPaymentError', () => {
   it('validates required fields', () => {
-    expect(() => createPaymentError(ErrorCodes.PAYMENT_INTENT_FAILED, 'test', {})).toThrow();
+    expect(() => createPaymentError(ErrorCodes.PAYMENT_INTENT_FAILED, 'test', {} as any)).toThrow();
   });
 
   it('sets default severity to critical', () => {

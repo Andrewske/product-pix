@@ -74,7 +74,6 @@ describe('Analytics Events', () => {
             job_id: 'job-123',
             user_id: 'user-456',
             template_slug: 'ecommerce-base',
-            // @ts-expect-error - testing invalid aspect_ratio value
             aspect_ratio: 'invalid',
             resolution: '2k' as const,
             has_source_image: false,

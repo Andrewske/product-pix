@@ -2,11 +2,13 @@
 
 import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Database } from '@/lib/supabase/database.types';
 
-// Domain options from database enum
+// Temporary local type unions until database enums are added
+type CriticalErrorDomain = 'payment' | 'credit' | 'generation' | 'auth' | 'validation' | 'rate-limit' | 'system';
+
+// Domain options
 const DOMAIN_OPTIONS: Array<{
-  value: Database['public']['Enums']['critical_errors_domain'];
+  value: CriticalErrorDomain;
   label: string;
 }> = [
   { value: 'payment', label: 'Payment' },

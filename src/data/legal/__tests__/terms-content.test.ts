@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'bun:test';
 import { termsSections, termsFooterLinks, termsLastUpdated } from '../terms-content';
 import { privacySections, privacyFooterLinks, privacyLastUpdated } from '../privacy-content';
 

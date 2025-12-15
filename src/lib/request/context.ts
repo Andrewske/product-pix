@@ -14,7 +14,7 @@ function getAsyncLocalStorage(): any | null {
   if (!_requestContext) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { AsyncLocalStorage } = require('node:async_hooks');
-    _requestContext = new AsyncLocalStorage<RequestContext>();
+    _requestContext = new AsyncLocalStorage();
   }
   return _requestContext;
 }

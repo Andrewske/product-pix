@@ -11,8 +11,8 @@ export function validateObservabilityConfig(): void {
     errors.push('POSTHOG_API_KEY required in production when OBSERVABILITY_ENABLED=true');
   }
 
-  if (!env.NEXT_PUBLIC_POSTHOG_API_KEY) {
-    errors.push('NEXT_PUBLIC_POSTHOG_API_KEY required in production when OBSERVABILITY_ENABLED=true');
+  if (!env.NEXT_PUBLIC_POSTHOG_KEY) {
+    errors.push('NEXT_PUBLIC_POSTHOG_KEY required in production when OBSERVABILITY_ENABLED=true');
   }
 
   if (errors.length > 0) {
