@@ -105,7 +105,7 @@ const fetchUsersThisWeek = async (supabase: SupabaseClient<Database>): Promise<n
  */
 const fetchActiveUsersToday = async (supabase: SupabaseClient<Database>): Promise<number> => {
   const { startOfDay, endOfDay } = getTodayRange();
-  const { count, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { count, error } = await supabase
     .from('user_activity')
     .select('user_id', { count: 'exact', head: true })
     .gte('created_at', startOfDay)
@@ -161,7 +161,7 @@ const fetchErrorsToday = async (supabase: SupabaseClient<Database>): Promise<num
  * Fetch pending messages count (unread user messages)
  */
 const fetchPendingMessages = async (supabase: SupabaseClient<Database>): Promise<number> => {
-  const { count, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { count, error } = await supabase
     .from('user_messages')
     .select('*', { count: 'exact', head: true })
     .eq('is_from_admin', false)
@@ -246,104 +246,7 @@ export const getAdminDashboardStats = async (): Promise<AdminDashboardStats> => 
   }
 };
 
-/**
- * Build user list query with filters
- */
-const buildUserListQuery = (supabase: SupabaseClient<Database>, filters: UserListFilters, limit: number, cursor?: string): any => { // eslint-disable-line @typescript-eslint/no-explicit-any
-  let query = supabase
-    .from('users')
-    .select('id, email, display_name, credit_balance, created_at');
 
-  // Apply search filter (email or display_name)
-  if (filters.search) {
-    query = query.or(`email.ilike.%${filters.search}%,display_name.ilike.%${filters.search}%`);
-  }
-
-  // Apply credit balance filters
-  if (filters.minCredits !== undefined) {
-    query = query.gte('credit_balance', filters.minCredits);
-  }
-  if (filters.maxCredits !== undefined) {
-    query = query.lte('credit_balance', filters.maxCredits);
-  }
-
-  // Apply date filters
-  if (filters.createdAfter) {
-    query = query.gte('created_at', filters.createdAfter);
-  }
-  if (filters.createdBefore) {
-    query = query.lte('created_at', filters.createdBefore);
-  }
-
-  // Apply sorting
-  const sortBy = filters.sortBy || 'created_at';
-  const sortOrder = filters.sortOrder === 'asc';
-  query = query.order(sortBy, { ascending: sortOrder });
-
-  // Apply cursor-based pagination
-  if (cursor) {
-    // For simplicity, using created_at as cursor. In production, might need more sophisticated cursor logic
-    query = query.lt('created_at', cursor);
-  }
-
-  query = query.limit(limit);
-
-  return query;
-};
-
-/**
- * Calculate job count for a user
- */
-const getJobCount = async (supabase: SupabaseClient<Database>, userId: string): Promise<number> => {
-  const { count, error } = await supabase
-    .from('jobs')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
-
-  if (error) {
-    logger.error('Error fetching job count for user', { error: error.message, userId });
-    return 0;
-  }
-
-  return count || 0;
-};
-
-/**
- * Calculate error count for last 7 days for a user
- */
-const getErrorCountLast7Days = async (supabase: SupabaseClient<Database>, userId: string): Promise<number> => {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { count, error } = await supabase
-    .from('critical_errors')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('created_at', sevenDaysAgo);
-
-  if (error) {
-    logger.error('Error fetching error count for user', { error: error.message, userId });
-    return 0;
-  }
-
-  return count || 0;
-};
-
-/**
- * Calculate message count for a user
- */
-const getMessageCount = async (supabase: SupabaseClient<Database>, userId: string): Promise<number> => {
-  const { count, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-    .from('user_messages')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('is_from_admin', false);
-
-  if (error) {
-    logger.error('Error fetching message count for user', { error: error.message, userId });
-    return 0;
-  }
-
-  return count || 0;
-};
 
 /**
  * Get filtered user list for admin browsing
@@ -355,59 +258,47 @@ export const getFilteredUserList = async (
   const supabase = createAdminClient();
 
   try {
-    // First, get basic user data with joins for counts
-    const query = buildUserListQuery(supabase, filters, options.limit, options.cursor);
-    const { data: usersData, error } = await query;
+    const { data, error } = await supabase.rpc('get_filtered_user_list', {
+      p_search: filters.search || null,
+      p_has_errors: filters.hasErrors,
+      p_has_messages: filters.hasMessages,
+      p_min_credits: filters.minCredits,
+      p_max_credits: filters.maxCredits,
+      p_created_after: filters.createdAfter,
+      p_created_before: filters.createdBefore,
+      p_sort_by: filters.sortBy || 'created_at',
+      p_sort_order: filters.sortOrder || 'desc',
+      p_limit: options.limit,
+      p_cursor: options.cursor || null
+    });
 
     if (error) {
       logger.error('Error fetching filtered users', { error: error.message });
       throw error;
     }
 
-    if (!usersData || usersData.length === 0) {
+    if (!data || data.length === 0) {
       return { users: [], nextCursor: null };
     }
 
-    // For each user, get additional computed data
-    const userPromises = usersData.map(async (user: { id: string; email: string; display_name: string | null; credit_balance: number; created_at: string }) => {
-      const [jobCount, errorCount, messageCount] = await Promise.all([
-        getJobCount(supabase, user.id),
-        getErrorCountLast7Days(supabase, user.id),
-        getMessageCount(supabase, user.id)
-      ]);
+    // Convert the RPC results to UserListItem format
+    const users: UserListItem[] = data.map((user) => ({
+      id: user.id,
+      email: user.email,
+      displayName: user.display_name,
+      creditBalance: user.credit_balance,
+      createdAt: user.created_at,
+      lastActiveAt: user.last_active_at,
+      jobCount: Number(user.job_count),
+      errorCount: Number(user.error_count),
+      messageCount: Number(user.message_count)
+    }));
 
-      // Apply hasErrors and hasMessages filters (post-query since they require computed data)
-      if (filters.hasErrors !== undefined && filters.hasErrors !== (errorCount > 0)) {
-        return null;
-      }
-      if (filters.hasMessages !== undefined && filters.hasMessages !== (messageCount > 0)) {
-        return null;
-      }
-
-      return {
-        id: user.id,
-        email: user.email,
-        displayName: user.display_name,
-        creditBalance: user.credit_balance,
-        createdAt: user.created_at,
-        lastActiveAt: null, // Will be populated after migration runs
-        jobCount,
-        errorCount,
-        messageCount
-      };
-    });
-
-    const users = await Promise.all(userPromises);
-
-    // Filter out null results from post-query filters
-    const validUsers = users.filter((user): user is NonNullable<typeof user> => user !== null);
-
-    // Determine next cursor
-    const lastUser = validUsers[validUsers.length - 1];
-    const nextCursor = lastUser ? lastUser.createdAt : null;
+    // Get next cursor from the first result (since RPC returns it for each row)
+    const nextCursor = data[0]?.next_cursor || null;
 
     return {
-      users: validUsers,
+      users,
       nextCursor
     };
   } catch (error) {

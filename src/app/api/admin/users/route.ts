@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { logger } from '@/lib/logging';
-import type { UserListFilters } from '@/lib/db/admin-stats';
 import { getAdminDashboardStats, getFilteredUserList } from '@/lib/db/admin-stats';
+import { userListQuerySchema } from '@/lib/validation/admin';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const supabase = await createClient();
   const { data: { user: currentUser } } = await supabase.auth.getUser();
 
@@ -33,30 +33,35 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Handle user list endpoint
+  // Handle user list endpoint with validation
   try {
-    const searchParams = request.nextUrl.searchParams;
+    // Validate query parameters
+    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
+    const validation = userListQuerySchema.safeParse(searchParams);
 
-    const minCreditsParam = searchParams.get('minCredits');
-    const maxCreditsParam = searchParams.get('maxCredits');
-    const limitParam = searchParams.get('limit');
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: validation.error.issues },
+        { status: 400 }
+      );
+    }
 
-    const filters: UserListFilters = {
-      search: searchParams.get('search') || undefined,
-      hasErrors: searchParams.get('hasErrors') === 'true' ? true : searchParams.get('hasErrors') === 'false' ? false : undefined,
-      hasMessages: searchParams.get('hasMessages') === 'true' ? true : searchParams.get('hasMessages') === 'false' ? false : undefined,
-      minCredits: minCreditsParam ? parseInt(minCreditsParam, 10) : undefined,
-      maxCredits: maxCreditsParam ? parseInt(maxCreditsParam, 10) : undefined,
-      createdAfter: searchParams.get('createdAfter') || undefined,
-      createdBefore: searchParams.get('createdBefore') || undefined,
-      sortBy: (searchParams.get('sortBy') as UserListFilters['sortBy']) || 'created_at',
-      sortOrder: (searchParams.get('sortOrder') as UserListFilters['sortOrder']) || 'desc',
-    };
+    const filters = validation.data;
 
-    const limit = Math.min(limitParam ? parseInt(limitParam, 10) : 20, 100); // Max 100 per page
-    const cursor = searchParams.get('cursor') || undefined;
-
-    const result = await getFilteredUserList(filters, { limit, cursor });
+    const result = await getFilteredUserList(
+      {
+        search: filters.search,
+        hasErrors: filters.hasErrors,
+        hasMessages: filters.hasMessages,
+        minCredits: filters.minCredits,
+        maxCredits: filters.maxCredits,
+        createdAfter: filters.createdAfter,
+        createdBefore: filters.createdBefore,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+      },
+      { limit: filters.limit, cursor: filters.cursor }
+    );
 
     return NextResponse.json(result);
   } catch (error) {

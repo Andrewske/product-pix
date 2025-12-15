@@ -1,13 +1,13 @@
 // src/lib/db/user-activity.ts
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
-import type { Tables, Json } from '@/types/database';
+import type { Database, Json } from '@/lib/supabase/database.types';
 
 export type ActivityEventType =
   | 'login' | 'logout'
   | 'image_download' | 'pricing_viewed' | 'insufficient_credits';
 
-export type UserActivity = Tables<'user_activity'>;
+export type UserActivity = Database['public']['Tables']['user_activity']['Row'];
 
 export async function trackActivity(
   userId: string,
@@ -16,8 +16,7 @@ export async function trackActivity(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: insertError } = await (supabase as any)
+  const { error: insertError } = await supabase
     .from('user_activity')
     .insert({
       user_id: userId,
@@ -35,8 +34,7 @@ export async function trackActivity(
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updateError } = await (supabase as any)
+  const { error: updateError } = await supabase
     .from('users')
     .update({ last_active_at: new Date().toISOString() })
     .eq('id', userId);
@@ -55,8 +53,7 @@ export async function getUserActivity(
 ): Promise<{ activities: UserActivity[]; nextCursor: string | null }> {
   const supabase = createAdminClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
+  let query = supabase
     .from('user_activity')
     .select('*')
     .eq('user_id', userId)

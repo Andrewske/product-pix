@@ -34,32 +34,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      account_deletion_audit: {
+      batch_feedback: {
         Row: {
-          deleted_at: string
-          email: string
+          batch_id: string
+          comment: string | null
+          created_at: string
           id: string
-          r2_files_queued: number
-          r2_keys: string[]
+          rating: number
+          reasons: string[]
+          updated_at: string
           user_id: string
         }
         Insert: {
-          deleted_at?: string
-          email: string
+          batch_id: string
+          comment?: string | null
+          created_at?: string
           id?: string
-          r2_files_queued?: number
-          r2_keys?: string[]
+          rating: number
+          reasons?: string[]
+          updated_at?: string
           user_id: string
         }
         Update: {
-          deleted_at?: string
-          email?: string
+          batch_id?: string
+          comment?: string | null
+          created_at?: string
           id?: string
-          r2_files_queued?: number
-          r2_keys?: string[]
+          rating?: number
+          reasons?: string[]
+          updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "batch_feedback_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batch_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batch_feedback_images: {
+        Row: {
+          batch_feedback_id: string
+          image_id: string
+        }
+        Insert: {
+          batch_feedback_id: string
+          image_id: string
+        }
+        Update: {
+          batch_feedback_id?: string
+          image_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_feedback_images_batch_feedback_id_fkey"
+            columns: ["batch_feedback_id"]
+            isOneToOne: false
+            referencedRelation: "batch_feedback"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_feedback_images_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "generated_images"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       batch_items: {
         Row: {
@@ -426,7 +477,6 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
-          refunded_at: string | null
           title: string | null
           user_id: string
           width: number | null
@@ -441,7 +491,6 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
-          refunded_at?: string | null
           title?: string | null
           user_id: string
           width?: number | null
@@ -456,7 +505,6 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
-          refunded_at?: string | null
           title?: string | null
           user_id?: string
           width?: number | null
@@ -1023,6 +1071,41 @@ export type Database = {
           },
         ]
       }
+      sentiment_analysis_queue: {
+        Row: {
+          created_at: string
+          id: string
+          last_error: string | null
+          message_id: string
+          processed_at: string | null
+          retry_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          message_id: string
+          processed_at?: string | null
+          retry_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          message_id?: string
+          processed_at?: string | null
+          retry_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sentiment_analysis_queue_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "user_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_purchases: {
         Row: {
           amount_cents: number
@@ -1280,16 +1363,88 @@ export type Database = {
           },
         ]
       }
+      user_activity: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          properties: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          properties?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          properties?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_messages: {
+        Row: {
+          analysis: Json | null
+          content: string
+          created_at: string
+          id: string
+          is_from_admin: boolean
+          read_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          read_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          read_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
           credit_balance: number
-          deleted_at: string | null
           display_name: string | null
           email: string
           id: string
           is_admin: boolean
-          original_email: string | null
+          last_active_at: string | null
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -1298,12 +1453,11 @@ export type Database = {
         Insert: {
           created_at?: string
           credit_balance?: number
-          deleted_at?: string | null
           display_name?: string | null
           email: string
           id: string
           is_admin?: boolean
-          original_email?: string | null
+          last_active_at?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1312,12 +1466,11 @@ export type Database = {
         Update: {
           created_at?: string
           credit_balance?: number
-          deleted_at?: string | null
           display_name?: string | null
           email?: string
           id?: string
           is_admin?: boolean
-          original_email?: string | null
+          last_active_at?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1374,6 +1527,21 @@ export type Database = {
               p_credits?: number
               p_parameters?: Json
               p_prompt: string
+              p_template_slug?: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt: string
               p_template_id?: string
               p_upload_id: string
               p_user_id: string
@@ -1390,21 +1558,6 @@ export type Database = {
               p_parameters?: Json
               p_prompt: string
               p_upload_id: string
-              p_user_id: string
-            }
-            Returns: {
-              job_id: string
-              message: string
-              success: boolean
-            }[]
-          }
-        | {
-            Args: {
-              p_credits?: number
-              p_parameters?: Json
-              p_prompt?: string
-              p_template_slug?: string
-              p_upload_id?: string
               p_user_id: string
             }
             Returns: {
@@ -1437,6 +1590,34 @@ export type Database = {
           total_tests: number
         }[]
       }
+      get_filtered_user_list: {
+        Args: {
+          p_search?: string | null
+          p_has_errors?: boolean | null
+          p_has_messages?: boolean | null
+          p_min_credits?: number | null
+          p_max_credits?: number | null
+          p_created_after?: string | null
+          p_created_before?: string | null
+          p_sort_by?: string | null
+          p_sort_order?: string | null
+          p_limit?: number | null
+          p_cursor?: string | null
+        }
+        Returns: {
+          id: string
+          email: string
+          display_name: string | null
+          credit_balance: number
+          created_at: string
+          last_active_at: string | null
+          job_count: number
+          error_count: number
+          message_count: number
+          next_cursor: string | null
+        }[]
+      }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
       refund_batch_failures: {
         Args: { p_batch_id: string; p_credits_per_item: number }
         Returns: number
@@ -1466,30 +1647,15 @@ export type Database = {
           success: boolean
         }[]
       }
-      refund_generation: {
-        Args: { p_image_id: string; p_user_id: string }
-        Returns: {
-          credits_refunded: number
-          message: string
-          success: boolean
-        }[]
-       }
-       restore_deleted_account: {
-         Args: { p_admin_id: string; p_user_id: string }
-         Returns: {
-           message: string
-           success: boolean
-         }[]
-       }
-       show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
-      soft_delete_account: {
-        Args: { p_user_id: string }
+      restore_deleted_account: {
+        Args: { p_admin_id: string; p_user_id: string }
         Returns: {
           message: string
           success: boolean
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       update_batch_progress: {
         Args: { p_batch_id: string; p_completed: number; p_failed: number }
         Returns: undefined
