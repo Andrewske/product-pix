@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/auth/server';
 import { createClient } from '@/lib/supabase/client';
 import { createGenerationJob, getJob } from '@/lib/db/jobs';
 import { getUpload } from '@/lib/db/uploads';
+import { trackActivity } from '@/lib/db';
 import { generateImage } from '@/lib/ai/generate-image';
 import { getPublicUrl } from '@/lib/r2';
 import { rateLimiters } from '@/lib/rate-limit';
@@ -131,7 +132,13 @@ export const POST = withAuth(async (request) => {
         .select("credit_balance")
         .eq("id", request.user.id)
         .single();
-      
+
+      // Track insufficient credits event
+      await trackActivity(request.user.id, 'insufficient_credits', {
+        required: creditCost,
+        available: userData?.credit_balance || 0
+      });
+
       return NextResponse.json(
         {
           error: "Insufficient credits",

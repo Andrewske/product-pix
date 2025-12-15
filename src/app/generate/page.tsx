@@ -17,6 +17,7 @@ import { SectionLabel } from '@/components/ui/section-label';
 import { PageContainer } from '@/components/layout/page-container';
 import { useCredits, useUserProfile } from '@/lib/auth';
 import { trackEvent } from '@/lib/analytics';
+import { trackActivity } from '@/lib/db';
 
 export default function GeneratePage() {
   const { credits } = useCredits();
@@ -166,6 +167,8 @@ export default function GeneratePage() {
         download_format: 'png',
       },
     });
+
+    await trackActivity(user!.id, 'image_download', { imageId: result.imageId });
 
     try {
       // Fetch the image as a blob to ensure proper download
