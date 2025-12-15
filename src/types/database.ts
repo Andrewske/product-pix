@@ -1640,7 +1640,6 @@ export type Database = {
           job_count: number
           last_active_at: string
           message_count: number
-          next_cursor: string
         }[]
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }

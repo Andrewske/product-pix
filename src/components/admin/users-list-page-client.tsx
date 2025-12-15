@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronRight, RefreshCw } from 'lucide-react';
 import type { AdminDashboardStats, UserListFilters, UserListItem } from '@/lib/db/admin-stats';
+import { logger } from '@/lib/logging';
 
 interface UsersListPageClientProps {
   initialStats: AdminDashboardStats;
@@ -79,7 +80,7 @@ export function UsersListPageClient({ initialStats, initialUserList }: UsersList
       const newStats = await fetchStats();
       setStats(newStats);
     } catch (error) {
-      console.error('Failed to refresh stats:', error);
+      logger.error('Failed to refresh stats', { error });
     }
   };
 
@@ -141,7 +142,7 @@ export function UsersListPageClient({ initialStats, initialUserList }: UsersList
               <TableBody>
                 {isLoading && allUsers.length === 0 ? (
                   // Loading skeleton
-                  ['skeleton-1', 'skeleton-2', 'skeleton-3', 'skeleton-4', 'skeleton-5', 'skeleton-6', 'skeleton-7', 'skeleton-8', 'skeleton-9', 'skeleton-10'].map((key) => (
+                  Array.from({ length: 10 }, (_, i) => `skeleton-${i + 1}`).map((key) => (
                     <TableRow key={key}>
                       <TableCell><Skeleton className="h-4 w-48" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
@@ -157,31 +158,37 @@ export function UsersListPageClient({ initialStats, initialUserList }: UsersList
                       No users found matching the current filters.
                     </TableCell>
                   </TableRow>
-                 ) : (
-                   allUsers.map((user) => (
-                     <button
-                       key={user.id}
-                       type="button"
-                       className="w-full grid grid-cols-[1fr_1fr_120px_80px_80px_40px] gap-4 px-4 py-2 text-left hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm border-0 bg-transparent"
-                       onClick={() => handleRowClick(user.id)}
-                     >
-                       <div className="font-medium truncate">{user.email}</div>
-                       <div className="truncate">{user.displayName || '-'}</div>
-                       <div className="text-right font-mono">{user.creditBalance}</div>
-                       <div className="text-right font-mono">{user.jobCount}</div>
-                       <div className="text-right">
-                         {user.errorCount > 0 ? (
-                           <Badge variant="destructive">{user.errorCount}</Badge>
-                         ) : (
-                           <span className="text-muted-foreground">0</span>
-                         )}
-                       </div>
-                       <div className="flex justify-end">
-                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                       </div>
-                     </button>
-                   ))
-                 )}
+                  ) : (
+                    allUsers.map((user) => (
+                      <TableRow
+                        key={user.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleRowClick(user.id)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleRowClick(user.id);
+                          }
+                        }}
+                      >
+                        <TableCell className="font-medium">{user.email}</TableCell>
+                        <TableCell>{user.displayName || '-'}</TableCell>
+                        <TableCell className="text-right font-mono">{user.creditBalance}</TableCell>
+                        <TableCell className="text-right font-mono">{user.jobCount}</TableCell>
+                        <TableCell className="text-right">
+                          {user.errorCount > 0 ? (
+                            <Badge variant="destructive">{user.errorCount}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
               </TableBody>
             </Table>
           </div>

@@ -16,7 +16,7 @@ export async function trackActivity(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  const { error: insertError } = await supabase
+  const { error } = await supabase
     .from('user_activity')
     .insert({
       user_id: userId,
@@ -24,25 +24,12 @@ export async function trackActivity(
       properties: (properties as Json) ?? {},
     });
 
-  if (insertError) {
+  if (error) {
     logger.error('Error inserting user activity', {
-      error: insertError.message,
+      error: error.message,
       userId,
       eventType,
       properties,
-    });
-    return;
-  }
-
-  const { error: updateError } = await supabase
-    .from('users')
-    .update({ last_active_at: new Date().toISOString() })
-    .eq('id', userId);
-
-  if (updateError) {
-    logger.error('Error updating user last_active_at', {
-      error: updateError.message,
-      userId,
     });
   }
 }
