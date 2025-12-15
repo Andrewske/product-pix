@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logging';
+import { identifyUser, resetUser } from '@/lib/analytics';
 import type { User as DbUser } from '@/types';
 
 interface UseUserResult {
@@ -52,6 +53,7 @@ export function useUserProfile(): UseUserProfileResult {
   const { user, loading: authLoading } = useUser();
   const [profile, setProfile] = useState<DbUser | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const identifiedRef = useRef(false);
 
   // Reset profile when user changes
   const currentProfile = useMemo(() => {
@@ -84,6 +86,20 @@ export function useUserProfile(): UseUserProfileResult {
         setProfileLoading(false);
       });
   }, [user]);
+
+  useEffect(() => {
+    if (!profile) {
+      resetUser();
+      identifiedRef.current = false;
+    } else if (!identifiedRef.current) {
+      identifyUser(profile.id, {
+        email: profile.email,
+        tier: profile.tier,
+        created_at: profile.created_at,
+      });
+      identifiedRef.current = true;
+    }
+  }, [profile]);
 
   return { user, profile: currentProfile, loading: authLoading || profileLoading };
 }

@@ -6,6 +6,7 @@ const nextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.build.json',
   },
+  productionBrowserSourceMaps: true,
   experimental: {
     turbo: false, // Disable Turbopack
   },

@@ -8,6 +8,7 @@ import {
   getSubscriptionTimestamps,
 } from './sdk-extensions';
 import { logger } from '../logging';
+import { trackServerEvent } from '../analytics/server';
 
 /**
  * Process Stripe webhook events
@@ -71,6 +72,42 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
 async function handleSubscriptionChange(subscription: Stripe.Subscription): Promise<void> {
   // Sync subscription data
   await syncStripeDataToKV(subscription.customer as string);
+
+  // Get userId from customer metadata or lookup
+  const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+  const customer = await stripe.customers.retrieve(customerId);
+  const userId = (customer as Stripe.Customer).metadata?.userId;
+
+  if (!userId) return;
+
+  const tier = subscription.metadata.tier as keyof typeof SUBSCRIPTION_TIERS;
+
+  if (subscription.status === 'active') {
+    // Track subscription started
+    trackServerEvent(userId, {
+      event: 'subscription_started',
+      properties: {
+        user_id: userId,
+        plan_id: subscription.id,
+        plan_name: tier || 'unknown',
+        billing_interval: 'monthly',
+        amount: subscription.items.data[0]?.price?.unit_amount || 0,
+        currency: 'usd',
+      },
+    });
+  } else if (subscription.status === 'canceled') {
+    // Track subscription cancelled
+    trackServerEvent(userId, {
+      event: 'subscription_cancelled',
+      properties: {
+        user_id: userId,
+        plan_id: subscription.id,
+        plan_name: tier || 'unknown',
+        cancellation_reason: 'user_cancelled',
+        remaining_credits: 0,
+      },
+    });
+  }
 
   // TODO: Implement subscription tier upgrade handling with prorated credits
   // Business logic needed: How to handle mid-cycle upgrades?
@@ -151,17 +188,29 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     return;
   }
 
-  // Grant pack credits
-  await grantCreditsForPayment({
-    userId: metadata.userId,
-    paymentIntentId: paymentIntent.id,
-    customerId: paymentIntent.customer as string,
-    credits: CREDIT_PACKS[packId].credits,
-    amountCents: paymentIntent.amount,
-    purchaseType: 'pack_purchase',
-    metadata: { packId },
-  });
-}
+   // Grant pack credits
+   await grantCreditsForPayment({
+     userId: metadata.userId,
+     paymentIntentId: paymentIntent.id,
+     customerId: paymentIntent.customer as string,
+     credits: CREDIT_PACKS[packId].credits,
+     amountCents: paymentIntent.amount,
+     purchaseType: 'pack_purchase',
+     metadata: { packId },
+   });
+
+   // Track credits purchased event
+   trackServerEvent(metadata.userId, {
+     event: 'credits_purchased',
+     properties: {
+       user_id: metadata.userId,
+       amount: paymentIntent.amount,
+       currency: 'usd',
+       payment_method: 'stripe',
+       transaction_id: paymentIntent.id,
+     },
+   });
+ }
 
 /**
  * Handle failed payment intent

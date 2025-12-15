@@ -8,7 +8,8 @@ import type { ParsedBatchItem, ParseError } from '@/components/batch';
 import { Card } from '@/components/ui/card';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { PageContainer } from '@/components/layout/page-container';
-import { useCredits } from '@/lib/auth';
+import { useCredits, useUserProfile } from '@/lib/auth';
+import { trackEvent } from '@/lib/analytics';
 import Link from 'next/link';
 
 type Step = 'upload' | 'preview' | 'creating';
@@ -16,6 +17,7 @@ type Step = 'upload' | 'preview' | 'creating';
 export default function NewBatchPage() {
   const router = useRouter();
   const { credits } = useCredits();
+  const { user } = useUserProfile();
   const [step, setStep] = useState<Step>('upload');
   const [items, setItems] = useState<ParsedBatchItem[]>([]);
   const [errors, setErrors] = useState<ParseError[]>([]);
@@ -43,10 +45,20 @@ export default function NewBatchPage() {
        return;
      }
 
-     if (credits < totalCredits) {
-      setCreateError(`Insufficient credits. Need ${totalCredits}, have ${credits}`);
-      return;
-    }
+      if (credits < totalCredits) {
+        trackEvent({
+          event: 'insufficient_credits',
+          properties: {
+            user_id: user?.id || '',
+            required_credits: totalCredits,
+            available_credits: credits,
+            operation_type: 'batch',
+          },
+        });
+
+       setCreateError(`Insufficient credits. Need ${totalCredits}, have ${credits}`);
+       return;
+     }
 
     setCreating(true);
     setCreateError(null);
@@ -67,6 +79,17 @@ export default function NewBatchPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create batch');
       }
+
+      trackEvent({
+        event: 'batch_created',
+        properties: {
+          batch_id: data.batchId,
+          user_id: user?.id || '',
+          template_slug: '',
+          item_count: items.length,
+          estimated_credits: totalCredits,
+        },
+      });
 
       // Redirect to batch detail page
       router.push(`/batch/${data.batchId}`);
