@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'bun:test';
 import { getCreditsForResolution, calculateBatchCredits, type Resolution } from '../credits';
 
 describe('getCreditsForResolution', () => {

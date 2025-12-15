@@ -16,7 +16,7 @@ const mockLoggerInfo = mock(() => {});
 const mockLoggerError = mock(() => {});
 const mockLoggerWarn = mock(() => {});
 
-const mockSendEmail = mock(() => Promise.resolve({
+const mockSendEmail = mock((params: any) => Promise.resolve({
   success: true,
   emailId: 'test-email-id'
 } as any));
@@ -410,11 +410,11 @@ describe('Contact API Route', () => {
     });
 
     it('succeeds even if admin email fails', async () => {
-      mockSendEmail.mockImplementation((params) => {
+      mockSendEmail.mockImplementation((params: any) => {
         if (params.to === 'admin@productpix.com') {
-          return Promise.resolve({ success: false, error: 'Admin email failed' } as any);
+          return Promise.resolve({ success: false, error: 'Admin email failed' });
         }
-        return Promise.resolve({ success: true, emailId: 'user-email-id' } as any);
+        return Promise.resolve({ success: true, emailId: 'user-email-id' });
       });
 
       const requestData = {
@@ -450,7 +450,7 @@ describe('Contact API Route', () => {
     });
 
     it('succeeds even if both emails fail', async () => {
-      mockSendEmail.mockResolvedValue({ success: false, error: 'Service down' } as any);
+      mockSendEmail.mockResolvedValue({ success: false, error: 'Service down' });
 
       const requestData = {
         name: 'John Doe',

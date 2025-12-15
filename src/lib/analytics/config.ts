@@ -33,11 +33,6 @@ export function createClientConfig(): {
     session_recording: {
       maskTextSelector: '*',
       maskAllInputs: true,
-      recordCrossOriginIframes: false,
-      maskTextFn: (text: string) => {
-        // Redact URL parameters and fragments to prevent token leakage
-        return text.replace(/[?#].*/, '[REDACTED]');
-      },
     },
   };
 }

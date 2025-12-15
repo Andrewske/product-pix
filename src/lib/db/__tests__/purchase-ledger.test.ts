@@ -1,23 +1,10 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createSupabaseMock } from '@/lib/test-utils';
 
 // Mock the admin client
 mock.module('@/lib/supabase/admin', () => ({
-  createAdminClient: mock(() => ({
-    rpc: mock(() => Promise.resolve({ data: null, error: null })),
-    from: mock(() => ({
-      select: mock(() => ({
-        eq: mock(() => ({
-          single: mock(() => Promise.resolve({ data: null, error: null }))
-        }))
-      })),
-      insert: mock(() => ({
-        select: mock(() => ({
-          single: mock(() => Promise.resolve({ data: null, error: null }))
-        }))
-      }))
-    }))
-  }))
+  createAdminClient: () => createSupabaseMock()
 }));
 
 describe('consume_credits RPC', () => {

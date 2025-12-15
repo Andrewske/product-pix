@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 // Mock auth
 const mockSupabase = {
   auth: {
-    getUser: mock(() => Promise.resolve({ data: { user: { id: 'user-123' } } }))
+    getUser: mock(() => Promise.resolve({ data: { user: { id: 'user-123' } } } as any))
   },
   from: mock(() => ({
     select: mock(() => ({
@@ -12,10 +12,10 @@ const mockSupabase = {
         single: mock(() => Promise.resolve({
           data: { user_id: 'user-123' },
           error: null
-        }))
-      }))
-    }))
-  }))
+        }) as any)
+      }) as any)
+    }) as any)
+  }) as any)
 } as any;
 
 mock.module('@/lib/supabase/server', () => ({
@@ -23,8 +23,17 @@ mock.module('@/lib/supabase/server', () => ({
 }));
 
 // Mock database functions
-const mockSubmitFeedback = mock(() => Promise.resolve({ id: 'feedback-123' }));
-const mockGetFeedbackForImage = mock(() => Promise.resolve(null));
+const mockSubmitFeedback = mock(() => Promise.resolve({
+  id: 'feedback-123',
+  imageId: 'image-123',
+  userId: 'user-123',
+  feedbackType: 'positive' as const,
+  reasons: [],
+  comment: null,
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-01T00:00:00Z',
+} as any));
+const mockGetFeedbackForImage = mock(() => Promise.resolve(null) as any);
 const mockDeleteFeedback = mock(() => Promise.resolve(true));
 
 mock.module('@/lib/db/feedback', () => ({

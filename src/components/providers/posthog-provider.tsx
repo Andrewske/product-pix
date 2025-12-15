@@ -9,10 +9,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }): Re
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    if (!env.NEXT_PUBLIC_POSTHOG_API_KEY) return;
+   useEffect(() => {
+     if (!env.NEXT_PUBLIC_POSTHOG_KEY) return;
 
-    posthog.init(env.NEXT_PUBLIC_POSTHOG_API_KEY, {
+     posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
       api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
       // Manual pageview tracking for Next.js App Router SPA navigation
       capture_pageview: false,

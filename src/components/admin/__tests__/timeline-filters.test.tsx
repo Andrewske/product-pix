@@ -1,9 +1,10 @@
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TimelineFilters } from '../timeline-filters';
 
 describe('TimelineFilters', () => {
-  const mockOnChange = jest.fn();
+  const mockOnChange = mock();
 
   const defaultFilters = {
     severity: undefined,
@@ -13,7 +14,7 @@ describe('TimelineFilters', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    // Clear mocks - not needed in Bun
   });
 
   it('renders component without crashing', () => {

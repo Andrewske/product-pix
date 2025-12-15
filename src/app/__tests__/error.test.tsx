@@ -63,6 +63,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('logs errors to console when they occur', () => {
+    const originalError = console.error;
     const mockConsoleError = mock(() => {});
     console.error = mockConsoleError;
 
@@ -74,12 +75,13 @@ describe('ErrorBoundary', () => {
 
     // Should have logged the error
     expect(mockConsoleError).toHaveBeenCalledWith(
-      'ErrorBoundary caught an error:',
+      'Error boundary caught:',
       expect.any(Error),
       expect.any(Object)
     );
 
-    console.error = console.error;
+    // Restore console.error
+    console.error = originalError;
   });
 
   it('does not catch errors outside its tree', () => {
@@ -114,7 +116,7 @@ describe('ErrorBoundary', () => {
     const CustomFallback = ({ error, reset }: { error: Error; reset: () => void }) => (
       <div data-testid="custom-fallback">
         Custom: {error.message}
-        <button onClick={reset}>Custom Reset</button>
+        <button type="button" onClick={reset}>Custom Reset</button>
       </div>
     );
 

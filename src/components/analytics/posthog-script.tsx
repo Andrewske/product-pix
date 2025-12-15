@@ -6,19 +6,19 @@ import posthog from 'posthog-js';
 import { useCookieConsent } from '@/components/cookie-consent';
 
 export function PostHogScript() {
-  const { canUseAnalytics, hasConsented } = useCookieConsent();
+  const { canUseAnalytics } = useCookieConsent();
   const [initialized, setInitialized] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
 
   // Initialize PostHog when consent granted
   useEffect(() => {
     if (!apiKey) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('PostHog API key not configured (NEXT_PUBLIC_POSTHOG_API_KEY)');
+        console.warn('PostHog API key not configured (NEXT_PUBLIC_POSTHOG_KEY)');
       }
       return;
     }
@@ -29,9 +29,9 @@ export function PostHogScript() {
       api_host: apiHost,
       person_profiles: 'always',  // Track all users with consent (not just identified)
       capture_pageview: false,    // Manual pageview tracking
-      loaded: (posthog) => {
+      loaded: (posthog_instance) => {
         // Track initial pageview after initialization
-        posthog.capture('$pageview');
+        posthog_instance.capture('$pageview');
         setInitialized(true);
       }
     });
