@@ -32,7 +32,10 @@ export const withAuth = <T = Record<string, string>>(
       setUserId(user.id);
 
       const authenticatedRequest = Object.assign(request, { user });
-      return handler(authenticatedRequest, context);
+
+      // Await params before passing to handler
+      const awaitedParams = await context.params;
+      return handler(authenticatedRequest, { params: awaitedParams });
     } catch (error) {
       logger.error('Authentication error', {
         error: error instanceof Error ? error.message : String(error),

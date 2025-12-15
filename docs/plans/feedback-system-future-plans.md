@@ -2,54 +2,8 @@
 
 Related features to implement after the core generation feedback system.
 
-## 1. Chat/Messaging System
 
-**Purpose**: Floating feedback tab for general suggestions/issues
 
-**Scope**:
-- Floating tab on right edge (authenticated pages only)
-- Chat-style UI (single ongoing thread per user)
-- Database table for messages
-- Unread indicator on tab
-- Email notification when admin replies
-- Admin dashboard for viewing/responding
-
-**Database**:
-```sql
-CREATE TABLE user_messages (
-  id UUID PRIMARY KEY,
-  user_id UUID NOT NULL,
-  content TEXT NOT NULL,
-  is_from_admin BOOLEAN DEFAULT FALSE,
-  read_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ
-);
-```
-
-**Components**:
-- `FeedbackTab` - Floating side tab
-- `ChatPanel` - Slide-out message panel
-- `MessageList` - Chat history
-- `MessageInput` - Compose area
-
----
-
-## 2. Sentiment Analysis & Auto-Categorization
-
-**Purpose**: Automatically categorize and analyze feedback messages
-
-**Scope**:
-- Run on message submission (background job)
-- Categories: Bug report, Feature suggestion, Billing question, Praise, Complaint, Other
-- Sentiment: Positive, Neutral, Negative (with confidence score)
-- Store results in message metadata
-
-**Implementation**:
-- LLM-based classification (Claude or similar)
-- JSONB column for analysis results
-- Admin dashboard filtering by category/sentiment
-
----
 
 ## 3. Admin Dashboard
 

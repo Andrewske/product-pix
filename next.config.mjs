@@ -6,6 +6,7 @@ const nextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.build.json',
   },
+  serverExternalPackages: ['posthog-node'],
   experimental: {
     turbo: false, // Disable Turbopack
   },

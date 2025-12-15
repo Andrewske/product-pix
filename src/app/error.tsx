@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { captureError } from '@/lib/observability/capture-error';
+import { captureError } from '@/lib/observability/capture-error-client';
 import { ProductPixError } from '@/lib/errors/error-classes';
 
 interface ErrorPageProps {

@@ -12,7 +12,7 @@ function getEventTimestamp(event: TimelineEvent): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ): Promise<NextResponse> {
   try {
     // 1. Verify admin auth
@@ -21,6 +21,8 @@ export async function GET(
     if (!isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { userId } = await params;
 
     // 2. Parse query params
     const { searchParams } = new URL(request.url);
@@ -39,7 +41,7 @@ export async function GET(
 
     // 4. Fetch from both sources in parallel
     const [dbErrors, posthogEvents] = await Promise.all([
-      getCriticalErrors(params.userId, {
+      getCriticalErrors(userId, {
         limit,
         beforeDate: endDate,
         afterDate: startDate,
@@ -47,7 +49,7 @@ export async function GET(
         domain,
         resolved: resolved as 'true' | 'false' | 'all'
       }),
-      getPostHogEvents(params.userId, {
+      getPostHogEvents(userId, {
         limit,
         beforeDate: endDate,
         afterDate: startDate,

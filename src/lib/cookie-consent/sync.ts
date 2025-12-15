@@ -1,5 +1,4 @@
 import type { CookieConsent } from './types';
-import { logger } from '@/lib/logging';
 import { saveConsentToDatabase, clearLocalStorageConsent } from './storage';
 
 export function getDefaultConsent(): CookieConsent {
@@ -27,10 +26,10 @@ async function syncLocalConsentToDatabase(
   try {
     await saveConsentToDatabase(userId, { cookies: consent });
     clearLocalStorageConsent(); // Only clear after successful save
-    } catch (error) {
-      logger.error('Failed to sync consent to database, keeping localStorage backup', { error });
-      throw error;
-    }
+  } catch (error) {
+    console.error('Failed to sync consent to database, keeping localStorage backup', { error });
+    throw error;
+  }
 }
 
 export async function syncConsentOnLogin(

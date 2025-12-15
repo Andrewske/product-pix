@@ -6,7 +6,7 @@ import { logger } from '@/lib/logging';
 const MAX_RETRIES = 3;
 const BATCH_SIZE = 50;
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: Request): Promise<NextResponse> {
   // Verify Vercel Cron secret
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;

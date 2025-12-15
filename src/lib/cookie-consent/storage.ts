@@ -1,5 +1,4 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { logger } from '@/lib/logging';
 import type { CookieConsent, UserPreferences } from './types';
 
 const STORAGE_KEY = 'productpix_cookie_consent';
@@ -10,7 +9,7 @@ export function saveConsentToLocalStorage(consent: CookieConsent): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
   } catch (error) {
-    logger.error('Failed to save consent to localStorage', { error });
+    console.error('Failed to save consent to localStorage', { error });
     // Graceful degradation: continue without localStorage
   }
 }
@@ -21,7 +20,7 @@ export function loadConsentFromLocalStorage(): CookieConsent | null {
     if (!stored) return null;
     return JSON.parse(stored) as CookieConsent;
   } catch (error) {
-    logger.error('Failed to load consent from localStorage', { error });
+    console.error('Failed to load consent from localStorage', { error });
     return null;
   }
 }
@@ -30,7 +29,7 @@ export function clearLocalStorageConsent(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    logger.error('Failed to clear localStorage consent', { error });
+    console.error('Failed to clear localStorage consent', { error });
   }
 }
 
@@ -52,7 +51,7 @@ export async function saveConsentToDatabase(
 
     if (error) throw error;
   } catch (error) {
-    logger.error('Failed to save consent to database', { error });
+    console.error('Failed to save consent to database', { error });
     throw error; // Propagate for error handling in caller
   }
 }

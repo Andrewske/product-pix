@@ -30,6 +30,11 @@ export interface Logger {
 }
 
 const getCurrentLogLevel = (): LogLevel => {
+  // Browser: default to 'info' (no process.env access)
+  if (typeof window !== 'undefined') {
+    return 'info';
+  }
+  // Server: read from env
   const envLevel = process.env.LOG_LEVEL?.toLowerCase();
   const parsed = LOG_LEVEL_SCHEMA.safeParse(envLevel);
   return parsed.success ? parsed.data : 'info';
@@ -57,6 +62,29 @@ const createLogEntry = (
 };
 
 const writeLog = (entry: LogEntry): void => {
+  // Browser environment: use console
+  if (typeof window !== 'undefined') {
+    const { level, message, context } = entry;
+    const data = context ? { ...context } : undefined;
+
+    switch (level) {
+      case 'error':
+        console.error(message, data);
+        break;
+      case 'warn':
+        console.warn(message, data);
+        break;
+      case 'info':
+        console.info(message, data);
+        break;
+      case 'debug':
+        console.debug(message, data);
+        break;
+    }
+    return;
+  }
+
+  // Server environment: use process.stdout/stderr
   const output = JSON.stringify(entry);
   if (entry.level === 'error') {
     process.stderr.write(`${output}\n`);

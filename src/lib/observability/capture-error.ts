@@ -1,10 +1,14 @@
+import 'server-only';
+
 import type { ProductPixError } from '@/lib/errors';
 
 import { env } from '@/lib/env';
 import { saveCriticalError } from '@/lib/db/critical-errors';
 import { saveObservabilityFailure } from '@/lib/db/observability-failures';
 import { logger } from '@/lib/logging';
-import { getPostHogServer, sanitizeForPostHog } from '@/lib/posthog';
+import { getPostHogServer } from '@/lib/posthog/server';
+import type { CaptureErrorOptions } from './types';
+import { createPostHogErrorProperties } from './types';
 
 /**
  * Logs error to Vercel with structured context (Tier 1)
@@ -41,27 +45,6 @@ async function saveCriticalToDatabase(
 }
 
 /**
- * Creates sanitized properties object for PostHog capture
- */
-function createPostHogProperties(
-  error: ProductPixError,
-  route?: string
-): Record<string, unknown> {
-  const sanitizedContext = sanitizeForPostHog(error.context);
-
-  return {
-    error_name: error.name,
-    error_message: error.message,
-    error_code: error.errorCode,
-    severity: error.severity,
-    domain: error.domain,
-    route,
-    retryable: error.retryable,
-    ...sanitizedContext,
-  };
-}
-
-/**
  * Sends sanitized error data to PostHog analytics (Tier 3)
  */
 async function sendToPostHog(
@@ -71,7 +54,7 @@ async function sendToPostHog(
   const posthog = getPostHogServer();
   if (!posthog) return;
 
-  const properties = createPostHogProperties(error, route);
+  const properties = createPostHogErrorProperties(error, route);
 
   posthog.capture({
     distinctId: error.userId || 'anonymous',
@@ -155,12 +138,14 @@ async function performThreeTierCapture(
 }
 
 /**
- * Captures errors with three-tier fallback: Vercel logs → Database → PostHog
+ * SERVER-ONLY: Captures errors with three-tier fallback: Vercel logs → Database → PostHog
  * Implements graceful degradation and observability failure tracking
+ *
+ * For client-side capture, use: @/lib/observability/capture-error-client
  */
 export async function captureError(
   error: ProductPixError,
-  options?: { route?: string }
+  options?: CaptureErrorOptions
 ): Promise<void> {
   try {
     await performThreeTierCapture(error, options?.route);
