@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PostHogProvider } from './posthog-provider';
+import { PostHogProvider } from '@/lib/analytics';
 
 export function ClientProviders({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [queryClient] = useState(() => new QueryClient({

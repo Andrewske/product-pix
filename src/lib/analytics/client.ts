@@ -1,0 +1,120 @@
+'use client';
+
+import { validateAnalyticsEvent, type AnalyticsEvent } from './events';
+
+// Global PostHog client for testing
+let posthogClient: {
+  capture: (event: string, properties?: Record<string, unknown>) => void;
+  identify: (userId: string, properties?: Record<string, unknown>) => void;
+  reset: () => void;
+  __loaded: boolean;
+} | null = null;
+
+// Set PostHog client for testing
+export function setPostHogClientForTesting(client: {
+  capture: (event: string, properties?: Record<string, unknown>) => void;
+  identify: (userId: string, properties?: Record<string, unknown>) => void;
+  reset: () => void;
+  __loaded: boolean;
+}): void {
+  posthogClient = client;
+}
+
+// Helper function for PostHog access
+async function getPostHogClient(): Promise<{
+  capture: (event: string, properties?: Record<string, unknown>) => void;
+  identify: (userId: string, properties?: Record<string, unknown>) => void;
+  reset: () => void;
+  __loaded: boolean;
+}> {
+  if (posthogClient) {
+    return posthogClient; // For testing
+  }
+  const posthog = await import('posthog-js');
+  return posthog.default;
+}
+
+/**
+ * Tracks an analytics event with type-safe validation
+ */
+export function trackEvent<T extends AnalyticsEvent>(event: T): void {
+  // Validate event against Zod schemas
+  if (!validateAnalyticsEvent(event)) {
+    console.warn('Invalid analytics event:', event);
+    return;
+  }
+
+  try {
+    // Dynamic import to avoid SSR issues
+    getPostHogClient().then((posthog) => {
+      if (posthog.__loaded) {
+        posthog.capture(event.event, event.properties);
+      }
+    }).catch((error) => {
+      console.warn('Failed to track analytics event:', error);
+    });
+  } catch (error) {
+    console.warn('Failed to track analytics event:', error);
+  }
+}
+
+let identifiedUserId: string | null = null;
+
+/**
+ * Identifies a user with optional properties, preventing duplicate identification
+ */
+export function identifyUser(userId: string, properties?: Record<string, unknown>): void {
+  // Prevent duplicate identification
+  if (identifiedUserId === userId) {
+    return;
+  }
+
+  identifiedUserId = userId;
+
+  try {
+    // Dynamic import to avoid SSR issues
+    getPostHogClient().then((posthog) => {
+      if (posthog.__loaded) {
+        posthog.identify(userId, properties);
+      }
+    }).catch((error) => {
+      console.warn('Failed to identify user:', error);
+    });
+  } catch (error) {
+    console.warn('Failed to identify user:', error);
+  }
+}
+
+/**
+ * Resets the current user identification
+ */
+export function resetUser(): void {
+  identifiedUserId = null;
+
+  try {
+    // Dynamic import to avoid SSR issues
+    getPostHogClient().then((posthog) => {
+      if (posthog.__loaded) {
+        posthog.reset();
+      }
+    }).catch((error) => {
+      console.warn('Failed to reset user:', error);
+    });
+  } catch (error) {
+    console.warn('Failed to reset user:', error);
+  }
+}
+
+/**
+ * Checks if a user is currently identified
+ */
+export function isUserIdentified(): boolean {
+  return identifiedUserId !== null;
+}
+
+/**
+ * Reset user identification state (for testing)
+ */
+export function resetUserIdentificationState(): void {
+  identifiedUserId = null;
+}

@@ -7,6 +7,7 @@ const nextConfig = {
     tsconfigPath: './tsconfig.build.json',
   },
   serverExternalPackages: ['posthog-node'],
+  productionBrowserSourceMaps: true,
   experimental: {
     turbo: false, // Disable Turbopack
   },
