@@ -10,4 +10,5 @@ export * from './contacts';
 export * from './critical-errors';
 export * from './observability-failures';
 export * from './feedback';
+export * from './messages';
 export * from './admin-analytics';

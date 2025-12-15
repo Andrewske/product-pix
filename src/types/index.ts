@@ -3,6 +3,7 @@ export * from './database';
 export type { Json } from './database';
 export * from './database.helpers';
 export * from './feedback';
+export * from './messages';
 
 export type CashRefundStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
