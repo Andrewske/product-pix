@@ -5,24 +5,6 @@ Related features to implement after the core generation feedback system.
 
 
 
-## 3. Admin Dashboard
-
-**Purpose**: View and respond to user feedback/messages
-
-**Scope**:
-- View all image feedback (filter by type, date, reasons)
-- View all chat messages
-- Respond to messages
-- Analytics: feedback trends, common complaints, satisfaction over time
-- Export capabilities
-
-**Pages**:
-- `/admin/feedback` - Image feedback browser
-- `/admin/messages` - Chat inbox
-- `/admin/analytics` - Trends and reports
-
----
-
 ## 4. Job-Level Ratings (Bulk Generation)
 
 **Purpose**: Rate entire batch jobs, not just individual images
@@ -60,6 +42,8 @@ CREATE TABLE batch_feedback (
 - Track feedback → refund conversion
 
 **Note**: Refund limits/logic defined in separate refund plan document.
+
+If they give a negative give them two options, refund and delete, or just submit feedback. I don't want to make it obviously disappear if maybe it's good enough but they still have negative feedback.
 
 ---
 
