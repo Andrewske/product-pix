@@ -3,8 +3,8 @@ declare global {
     posthog?: typeof import('posthog-js').default;
     fbq?: {
       (command: 'init', pixelId: string): void;
-      (command: 'track', event: string, params?: any): void;
-      (command: 'trackCustom', event: string, params?: any): void;
+      (command: 'track', event: string, params?: Record<string, unknown>): void;
+      (command: 'trackCustom', event: string, params?: Record<string, unknown>): void;
     };
   }
 }

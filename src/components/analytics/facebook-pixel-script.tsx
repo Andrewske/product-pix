@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import ReactPixel from 'react-facebook-pixel';
 import { useCookieConsent } from '@/components/cookie-consent';
 
 export function FacebookPixelScript() {
   const { canUseMarketing } = useCookieConsent();
-  const [initialized, setInitialized] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const initializedRef = useRef(false);
 
   const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
 
@@ -22,19 +22,22 @@ export function FacebookPixelScript() {
       return;
     }
 
-    if (!canUseMarketing() || initialized) return;
+    if (!canUseMarketing() || initializedRef.current) return;
 
     ReactPixel.init(pixelId);
     ReactPixel.pageView(); // Initial pageview
-    setInitialized(true);
-  }, [canUseMarketing, initialized, pixelId]);
+    initializedRef.current = true;
+  }, [canUseMarketing, pixelId]);
 
   // Track pageview on route changes
   useEffect(() => {
-    if (!initialized || !canUseMarketing()) return;
+    if (!initializedRef.current || !canUseMarketing()) return;
 
-    ReactPixel.pageView();
-  }, [pathname, searchParams, initialized, canUseMarketing]);
+    // Use pathname to ensure effect runs on route changes
+    if (pathname) {
+      ReactPixel.pageView();
+    }
+  }, [pathname, searchParams, canUseMarketing]);
 
   return null;
 }

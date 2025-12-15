@@ -44,11 +44,11 @@ export async function saveConsentToDatabase(
   try {
     const supabase = createAdminClient();
     // Type assertion needed until RPC function is added to generated types
-    const result = await (supabase as any).rpc('update_user_preferences', {
+    const result = await (supabase as unknown as { rpc: (name: string, params: Record<string, unknown>) => Promise<{ error: Error | null }> }).rpc('update_user_preferences', {
       user_id: userId,
       prefs: preferences
     });
-    const { error } = result as { error: Error | null };
+    const { error } = result;
 
     if (error) throw error;
   } catch (error) {
