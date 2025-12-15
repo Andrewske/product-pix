@@ -93,6 +93,38 @@ See `docs/design-principles.md` (philosophy) and `docs/design-system.md` (implem
 **Typography**: Space Grotesk (display), Inter (body), mono (meta only)
 **Heuristic**: If it looks like terminal/dashboard → wrong
 
+## Analytics & Tracking
+
+**Client-side:**
+```typescript
+import { trackEvent } from '@/lib/analytics';
+
+trackEvent({
+  event: 'generation_started',
+  properties: { template_slug, aspect_ratio }
+});
+```
+
+**Server-side (webhooks):**
+```typescript
+import { trackServerEvent } from '@/lib/analytics/server';
+
+// Non-blocking queue
+trackServerEvent(userId, {
+  event: 'credits_purchased',
+  properties: { pack_id, credits }
+});
+```
+
+See `docs/analytics-guide.md` for full documentation.
+
+**Environment variables:**
+- NEXT_PUBLIC_POSTHOG_KEY
+- NEXT_PUBLIC_POSTHOG_HOST
+- POSTHOG_API_KEY
+
+**Privacy-first principles:** masking, identified users only, snake_case properties.
+
 ## Legal & Policy
 
 See `docs/legal-policy-decisions.md`

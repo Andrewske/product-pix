@@ -3,6 +3,8 @@
  * Provides simple variant assignment and tracking
  */
 
+import { trackEvent } from '@/lib/analytics';
+
 export type ABTestVariant = 'A' | 'B';
 
 export interface ABTestConfig {
@@ -98,7 +100,7 @@ export const AB_TESTS = {
 } as const;
 
 /**
- * Track A/B test events (placeholder for future analytics integration)
+ * Track A/B test events
  */
 export function trackABTestEvent(
   testName: string,
@@ -106,6 +108,12 @@ export function trackABTestEvent(
   event: string,
   userId?: string
 ): void {
-  // Placeholder for analytics integration
-  console.info(`AB Test: ${testName} variant ${variant} - ${event}`, { userId });
+  trackEvent({
+    event: 'ab_test_exposure',
+    properties: {
+      test_name: testName,
+      variant: variant,
+      user_id: userId,
+    },
+  });
 }

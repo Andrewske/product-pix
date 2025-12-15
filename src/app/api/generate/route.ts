@@ -1,7 +1,8 @@
 // src/app/api/generate/route.ts
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { withAuth } from '@/lib/auth/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import { createGenerationJob, getJob } from '@/lib/db/jobs';
 import { getUpload } from '@/lib/db/uploads';
 import { generateImage } from '@/lib/ai/generate-image';
@@ -11,6 +12,7 @@ import { getCreditsForResolution } from '@/lib/pricing/credits';
 import { createGenerationError } from '@/lib/errors/error-classes';
 import { captureError } from '@/lib/observability/capture-error';
 import { ErrorCodes } from '@/lib/errors/codes';
+import { trackServerEvent } from '@/lib/analytics/server';
 import { z } from 'zod';
 
 const requestSchema = z.object({
@@ -30,6 +32,17 @@ export const POST = withAuth(async (request) => {
     // Rate limit check
     const rateLimitResult = await rateLimiters.generation(request.user.id);
     if (!rateLimitResult.success) {
+      // Track rate limit hit
+      trackServerEvent(request.user.id, {
+        event: 'rate_limit_hit',
+        properties: {
+          user_id: request.user.id,
+          limit_type: 'generation_per_hour',
+          current_count: 0, // Placeholder, actual count not available
+          limit: 10, // Placeholder
+        },
+      });
+
       return NextResponse.json(
         {
           error: 'Rate limit exceeded. Please try again later.',

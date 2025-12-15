@@ -15,10 +15,12 @@ import { Badge } from '@/components/ui/badge';
 import { AlertBox } from '@/components/ui/alert-box';
 import { SectionLabel } from '@/components/ui/section-label';
 import { PageContainer } from '@/components/layout/page-container';
-import { useCredits } from '@/lib/auth';
+import { useCredits, useUserProfile } from '@/lib/auth';
+import { trackEvent } from '@/lib/analytics';
 
 export default function GeneratePage() {
   const { credits } = useCredits();
+  const { user } = useUserProfile();
 
   const [uploadId, setUploadId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -52,6 +54,21 @@ export default function GeneratePage() {
     setError(null);
     setResult(null);
 
+    const startTime = Date.now();
+    const jobId = crypto.randomUUID();
+
+    trackEvent({
+      event: 'generation_started',
+      properties: {
+        job_id: jobId,
+        user_id: user?.id || '',
+        template_slug: templateSlug,
+        aspect_ratio: aspectRatio,
+        resolution: '1k',
+        has_source_image: !!uploadId,
+      },
+    });
+
     try {
       // Add timeout to prevent hanging requests
       const controller = new AbortController();
@@ -74,6 +91,16 @@ export default function GeneratePage() {
       const data = await response.json();
 
       if (response.status === 402) {
+        trackEvent({
+          event: 'insufficient_credits',
+          properties: {
+            user_id: user?.id || '',
+            required_credits: data.required,
+            available_credits: credits,
+            operation_type: 'generation',
+          },
+        });
+
         setCreditsNeeded(data.required);
         setShowCreditsModal(true);
         setGenerating(false);
@@ -89,8 +116,32 @@ export default function GeneratePage() {
         jobId: data.jobId,
         imageId: data.imageId,
       });
+
+      trackEvent({
+        event: 'generation_completed',
+        properties: {
+          job_id: data.jobId,
+          user_id: user?.id || '',
+          template_slug: templateSlug,
+          image_count: 1,
+          processing_time_seconds: (Date.now() - startTime) / 1000,
+          credits_consumed: 1,
+        },
+      });
     } catch (err) {
       console.error('Generation error:', err);
+
+      trackEvent({
+        event: 'generation_failed',
+        properties: {
+          job_id: jobId,
+          user_id: user?.id || '',
+          template_slug: templateSlug,
+          error_type: 'api_error',
+          error_message: err instanceof Error ? err.message : 'Generation failed',
+          credits_consumed: 0,
+        },
+      });
 
       if (err instanceof Error && err.name === 'AbortError') {
         setError('Request timed out. Please try again.');
@@ -104,6 +155,17 @@ export default function GeneratePage() {
 
   const handleDownload = async () => {
     if (!result) return;
+
+    trackEvent({
+      event: 'image_downloaded',
+      properties: {
+        image_id: result.imageId,
+        user_id: user?.id || '',
+        job_id: result.jobId,
+        template_slug: templateSlug,
+        download_format: 'png',
+      },
+    });
 
     try {
       // Fetch the image as a blob to ensure proper download

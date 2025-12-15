@@ -194,6 +194,15 @@ export const errorOccurredSchema = z.object({
   }),
 });
 
+export const abTestExposureSchema = z.object({
+  event: z.literal('ab_test_exposure'),
+  properties: z.object({
+    test_name: z.string(),
+    variant: z.enum(['A', 'B']),
+    user_id: z.string().optional(),
+  }),
+});
+
 export const rateLimitHitSchema = z.object({
   event: z.literal('rate_limit_hit'),
   properties: z.object({
@@ -227,6 +236,7 @@ export type PricingViewedEvent = z.infer<typeof pricingViewedSchema>;
 export type DashboardViewedEvent = z.infer<typeof dashboardViewedSchema>;
 export type TemplateSelectedEvent = z.infer<typeof templateSelectedSchema>;
 
+export type ABTestExposureEvent = z.infer<typeof abTestExposureSchema>;
 export type ErrorOccurredEvent = z.infer<typeof errorOccurredSchema>;
 export type RateLimitHitEvent = z.infer<typeof rateLimitHitSchema>;
 
@@ -249,6 +259,7 @@ export type AnalyticsEvent =
   | PricingViewedEvent
   | DashboardViewedEvent
   | TemplateSelectedEvent
+  | ABTestExposureEvent
   | ErrorOccurredEvent
   | RateLimitHitEvent;
 
@@ -267,6 +278,7 @@ export const analyticsEventSchemas = {
   credits_purchased: creditsPurchasedSchema,
   subscription_started: subscriptionStartedSchema,
   subscription_cancelled: subscriptionCancelledSchema,
+  ab_test_exposure: abTestExposureSchema,
   insufficient_credits: insufficientCreditsSchema,
   pricing_viewed: pricingViewedSchema,
   dashboard_viewed: dashboardViewedSchema,
