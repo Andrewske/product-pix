@@ -1,5 +1,5 @@
 import { describe, it, expect, mock } from 'bun:test';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NegativeFeedbackModal } from '../negative-feedback-modal';
 
@@ -24,23 +24,23 @@ describe('NegativeFeedbackModal', () => {
     expect(screen.queryByText('Help us improve')).toBeFalsy();
   });
 
-  it('renders all negative feedback reason checkboxes', () => {
+  it('renders all negative feedback reason toggle buttons', () => {
     render(<NegativeFeedbackModal {...defaultProps} />);
 
-    expect(screen.getByLabelText('Quality issues')).toBeTruthy();
-    expect(screen.getByLabelText("Doesn't match my request")).toBeTruthy();
-    expect(screen.getByLabelText('Product not visible/clear')).toBeTruthy();
-    expect(screen.getByLabelText('Wrong style/aesthetic')).toBeTruthy();
-    expect(screen.getByLabelText('Background problems')).toBeTruthy();
-    expect(screen.getByLabelText('Other')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Quality issues' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Doesn't match my request" })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Product not visible/clear' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Wrong style/aesthetic' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Background problems' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Other' })).toBeTruthy();
   });
 
   it('shows comment textarea when "Other" is selected', async () => {
     const user = userEvent.setup();
     render(<NegativeFeedbackModal {...defaultProps} />);
 
-    const otherCheckbox = screen.getByLabelText('Other');
-    await user.click(otherCheckbox);
+    const otherToggle = screen.getByRole('button', { name: 'Other' });
+    await user.click(otherToggle);
 
     expect(screen.getByPlaceholderText("Describe what didn't work for you...")).toBeTruthy();
   });
@@ -49,8 +49,8 @@ describe('NegativeFeedbackModal', () => {
     const user = userEvent.setup();
     render(<NegativeFeedbackModal {...defaultProps} />);
 
-    const qualityCheckbox = screen.getByLabelText('Quality issues');
-    await user.click(qualityCheckbox);
+    const qualityToggle = screen.getByRole('button', { name: 'Quality issues' });
+    await user.click(qualityToggle);
 
     const submitButton = screen.getByRole('button', { name: 'Submit Feedback' }) as HTMLButtonElement;
     expect(submitButton.disabled).toBe(false);
@@ -67,8 +67,8 @@ describe('NegativeFeedbackModal', () => {
     const user = userEvent.setup();
     render(<NegativeFeedbackModal {...defaultProps} />);
 
-    const otherCheckbox = screen.getByLabelText('Other');
-    await user.click(otherCheckbox);
+    const otherToggle = screen.getByRole('button', { name: 'Other' });
+    await user.click(otherToggle);
 
     const submitButton = screen.getByRole('button', { name: 'Submit Feedback' }) as HTMLButtonElement;
     expect(submitButton.disabled).toBe(true);
@@ -78,8 +78,8 @@ describe('NegativeFeedbackModal', () => {
     const user = userEvent.setup();
     render(<NegativeFeedbackModal {...defaultProps} />);
 
-    const otherCheckbox = screen.getByLabelText('Other');
-    await user.click(otherCheckbox);
+    const otherToggle = screen.getByRole('button', { name: 'Other' });
+    await user.click(otherToggle);
 
     const commentTextarea = screen.getByPlaceholderText("Describe what didn't work for you...");
     await user.type(commentTextarea, 'Test comment');
@@ -94,10 +94,10 @@ describe('NegativeFeedbackModal', () => {
     render(<NegativeFeedbackModal {...defaultProps} onSubmit={mockOnSubmit} />);
 
     // Select reasons
-    const qualityCheckbox = screen.getByLabelText('Quality issues');
-    const otherCheckbox = screen.getByLabelText('Other');
-    await user.click(qualityCheckbox);
-    await user.click(otherCheckbox);
+    const qualityToggle = screen.getByRole('button', { name: 'Quality issues' });
+    const otherToggle = screen.getByRole('button', { name: 'Other' });
+    await user.click(qualityToggle);
+    await user.click(otherToggle);
 
     // Add comment
     const commentTextarea = screen.getByPlaceholderText("Describe what didn't work for you...");

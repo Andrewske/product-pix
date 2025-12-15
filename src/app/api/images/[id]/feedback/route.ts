@@ -8,7 +8,7 @@ import { areValidReasonsForType, isPositiveFeedbackReason, isNegativeFeedbackRea
 const feedbackSchema = z.object({
   feedbackType: z.enum(['positive', 'negative']),
   reasons: z.array(z.string()),
-  comment: z.string().max(1000).optional(),
+  comment: z.string().max(500).optional(),
 });
 
 export async function POST(

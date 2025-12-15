@@ -1,5 +1,5 @@
 // src/lib/db/feedback.ts
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logging';
 import type { ImageFeedback, SubmitFeedbackParams, FeedbackReason } from '@/types';
 
@@ -31,7 +31,24 @@ export const submitFeedback = async (
   userId: string,
   params: SubmitFeedbackParams
 ): Promise<ImageFeedback | null> => {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
+
+  // Verify user owns the image before allowing feedback
+  const { data: imageData, error: imageError } = await supabase
+    .from('generated_images')
+    .select('id')
+    .eq('id', params.imageId)
+    .eq('user_id', userId)
+    .single();
+
+  if (imageError || !imageData) {
+    logger.error('User does not own image or image does not exist', {
+      userId,
+      imageId: params.imageId,
+      error: imageError?.message,
+    });
+    return null;
+  }
 
   const { data, error } = await supabase
     .from('image_feedback')
@@ -68,7 +85,7 @@ export const getFeedbackForImage = async (
   imageId: string,
   userId: string
 ): Promise<ImageFeedback | null> => {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('image_feedback')
@@ -98,7 +115,7 @@ export const deleteFeedback = async (
   imageId: string,
   userId: string
 ): Promise<boolean> => {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('image_feedback')

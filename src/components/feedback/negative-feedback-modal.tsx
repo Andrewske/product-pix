@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Toggle } from '@/components/ui/toggle';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -40,9 +40,9 @@ export function NegativeFeedbackModal({
     onOpenChange(newOpen);
   };
 
-  const handleReasonToggle = (reason: NegativeFeedbackReason, checked: boolean) => {
+  const handleReasonToggle = (reason: NegativeFeedbackReason, pressed: boolean) => {
     setSelectedReasons(prev =>
-      checked
+      pressed
         ? [...prev, reason]
         : prev.filter(r => r !== reason)
     );
@@ -73,23 +73,19 @@ export function NegativeFeedbackModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2">
             {NEGATIVE_FEEDBACK_REASONS.map((reason) => (
-              <div key={reason} className="flex items-center space-x-2">
-                <Checkbox
-                  id={reason}
-                  checked={selectedReasons.includes(reason)}
-                  onCheckedChange={(checked) =>
-                    handleReasonToggle(reason, checked as boolean)
-                  }
-                />
-                <label
-                  htmlFor={reason}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {NEGATIVE_REASON_LABELS[reason]}
-                </label>
-              </div>
+              <Toggle
+                key={reason}
+                pressed={selectedReasons.includes(reason)}
+                onPressedChange={(pressed) =>
+                  handleReasonToggle(reason, pressed)
+                }
+                variant="outline"
+                className="justify-start"
+              >
+                {NEGATIVE_REASON_LABELS[reason]}
+              </Toggle>
             ))}
           </div>
 

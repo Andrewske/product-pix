@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { FeedbackType } from '@/types';
 
 interface FeedbackButtonsProps {
+  imageId: string;
   currentFeedback: FeedbackType | null;
   onThumbsUp: () => void;
   onThumbsDown: () => void;

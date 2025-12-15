@@ -192,6 +192,26 @@ describe('Feedback API Route', () => {
       expect(result.error).toBe('Validation failed');
     });
 
+    it('returns 400 when comment exceeds 500 characters', async () => {
+      const longComment = 'a'.repeat(501); // 501 characters
+
+      const mockRequest = new NextRequest('http://localhost/api/images/image-123/feedback', {
+        method: 'POST',
+        body: JSON.stringify({
+          feedbackType: 'negative',
+          reasons: ['quality_issues'],
+          comment: longComment,
+        }),
+      });
+
+      const response = await POST(mockRequest, { params: Promise.resolve({ id: 'image-123' }) });
+      const result = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(result.error).toBe('Validation failed');
+      expect(result.details[0].message).toContain('Too big');
+    });
+
     it('returns 500 when feedback submission fails', async () => {
       mockSubmitFeedback.mockResolvedValueOnce(null);
 

@@ -27,6 +27,11 @@ export function areValidReasonsForType(
 ): reasons is FeedbackReason[] {
   if (!Array.isArray(reasons)) return false;
 
+  // Runtime validation: ensure feedbackType is valid before type assertions
+  if (feedbackType !== 'positive' && feedbackType !== 'negative') {
+    return false;
+  }
+
   const validator = feedbackType === 'positive'
     ? isPositiveFeedbackReason
     : isNegativeFeedbackReason;

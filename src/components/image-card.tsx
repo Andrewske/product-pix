@@ -52,14 +52,14 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
       {/* Overlay actions */}
       <div
         className={`
-          absolute inset-0 bg-black/40 flex items-center justify-center space-x-2
+          absolute inset-0 bg-black/20 flex items-center justify-center space-x-2
           transition-opacity duration-200
           ${showActions ? 'opacity-100' : 'opacity-0'}
         `}
       >
         <button
           onClick={() => onDownload(image.public_url)}
-          className="p-2 bg-background rounded-full hover:bg-secondary"
+          className="p-2 bg-background rounded-full hover:bg-secondary z-10"
           title="Download"
           type="button"
         >
@@ -70,7 +70,7 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
 
         <button
           onClick={() => onFavorite(image.id)}
-          className={`p-2 rounded-full ${image.is_favorite ? 'bg-destructive text-destructive-foreground' : 'bg-background hover:bg-secondary'}`}
+          className={`p-2 rounded-full z-10 ${image.is_favorite ? 'bg-destructive text-destructive-foreground' : 'bg-background hover:bg-secondary'}`}
           title={image.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
           type="button"
         >
@@ -81,14 +81,24 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
 
         <button
           onClick={() => setShowRefundModal(true)}
-          className="p-2 bg-background rounded-full hover:bg-secondary"
+          className="p-2 bg-background rounded-full hover:bg-secondary z-10"
           title="Request refund"
           type="button"
         >
           <Undo2 className="w-5 h-5" aria-label="Request refund" />
         </button>
+      </div>
 
+      {/* Feedback buttons - positioned outside overlay for better accessibility */}
+      <div
+        className={`
+          absolute bottom-2 left-1/2 transform -translate-x-1/2
+          transition-opacity duration-200 z-20
+          ${showActions ? 'opacity-100' : 'opacity-0'}
+        `}
+      >
         <FeedbackButtons
+          imageId={image.id}
           currentFeedback={currentFeedback}
           onThumbsUp={handleThumbsUp}
           onThumbsDown={handleThumbsDown}

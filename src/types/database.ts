@@ -34,6 +34,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_audit: {
+        Row: {
+          deleted_at: string
+          email: string
+          id: string
+          r2_files_queued: number
+          r2_keys: string[]
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          email: string
+          id?: string
+          r2_files_queued?: number
+          r2_keys?: string[]
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          email?: string
+          id?: string
+          r2_files_queued?: number
+          r2_keys?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       batch_items: {
         Row: {
           batch_id: string
@@ -399,6 +426,7 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
+          refunded_at: string | null
           title: string | null
           user_id: string
           width: number | null
@@ -413,6 +441,7 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
+          refunded_at?: string | null
           title?: string | null
           user_id: string
           width?: number | null
@@ -427,6 +456,7 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
+          refunded_at?: string | null
           title?: string | null
           user_id?: string
           width?: number | null
@@ -1254,10 +1284,12 @@ export type Database = {
         Row: {
           created_at: string
           credit_balance: number
+          deleted_at: string | null
           display_name: string | null
           email: string
           id: string
           is_admin: boolean
+          original_email: string | null
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -1266,10 +1298,12 @@ export type Database = {
         Insert: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email: string
           id: string
           is_admin?: boolean
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1278,10 +1312,12 @@ export type Database = {
         Update: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email?: string
           id?: string
           is_admin?: boolean
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1338,21 +1374,6 @@ export type Database = {
               p_credits?: number
               p_parameters?: Json
               p_prompt: string
-              p_template_slug?: string
-              p_upload_id: string
-              p_user_id: string
-            }
-            Returns: {
-              job_id: string
-              message: string
-              success: boolean
-            }[]
-          }
-        | {
-            Args: {
-              p_credits?: number
-              p_parameters?: Json
-              p_prompt: string
               p_template_id?: string
               p_upload_id: string
               p_user_id: string
@@ -1369,6 +1390,21 @@ export type Database = {
               p_parameters?: Json
               p_prompt: string
               p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt?: string
+              p_template_slug?: string
+              p_upload_id?: string
               p_user_id: string
             }
             Returns: {
@@ -1430,8 +1466,23 @@ export type Database = {
           success: boolean
         }[]
       }
+      refund_generation: {
+        Args: { p_image_id: string; p_user_id: string }
+        Returns: {
+          credits_refunded: number
+          message: string
+          success: boolean
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      soft_delete_account: {
+        Args: { p_user_id: string }
+        Returns: {
+          message: string
+          success: boolean
+        }[]
+      }
       update_batch_progress: {
         Args: { p_batch_id: string; p_completed: number; p_failed: number }
         Returns: undefined

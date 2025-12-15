@@ -2,41 +2,43 @@ import { describe, it, expect, mock, beforeEach } from 'bun:test';
 
 // Mock Supabase before importing
 const mockSupabase = {
-  from: mock(() => ({
-    upsert: mock(() => ({
-      select: mock(() => ({
-        single: mock(() => Promise.resolve({
-          data: {
-            id: 'feedback-123',
-            image_id: 'image-123',
-            user_id: 'user-123',
-            feedback_type: 'positive',
-            reasons: ['great_quality'],
-            comment: null,
-            created_at: '2025-01-01T00:00:00Z',
-            updated_at: '2025-01-01T00:00:00Z',
-          },
-          error: null
+  from: mock((table: string) => {
+    if (table === 'generated_images') {
+      return {
+        select: mock(() => ({
+          eq: mock(() => ({
+            eq: mock(() => ({
+              single: mock(() => Promise.resolve({
+                data: { id: 'image-123' },
+                error: null
+              }))
+            }))
+          }))
         }))
-      }))
-    })),
-    select: mock(() => ({
-      eq: mock(() => ({
-        eq: mock(() => ({
-          single: mock(() => Promise.resolve({ data: null, error: { code: 'PGRST116' } }))
+      };
+    }
+    if (table === 'image_feedback') {
+      return {
+        select: mock(() => ({
+          eq: mock(() => ({
+            eq: mock(() => ({
+              single: mock(() => Promise.resolve({ data: null, error: { code: 'PGRST116' } }))
+            }))
+          }))
+        })),
+        delete: mock(() => ({
+          eq: mock(() => ({
+            eq: mock(() => Promise.resolve({ error: null }))
+          }))
         }))
-      }))
-    })),
-    delete: mock(() => ({
-      eq: mock(() => ({
-        eq: mock(() => Promise.resolve({ error: null }))
-      }))
-    }))
-  }))
+      };
+    }
+    return {};
+  })
 };
 
-mock.module('@/lib/supabase/admin', () => ({
-  createAdminClient: mock(() => mockSupabase)
+mock.module('@/lib/supabase/server', () => ({
+  createClient: mock(() => Promise.resolve(mockSupabase))
 }));
 
 // Import after mocking
@@ -49,6 +51,41 @@ describe('Feedback Database Functions', () => {
 
   describe('submitFeedback', () => {
     it('submits feedback and returns mapped result', async () => {
+      // Mock image ownership check
+      mockSupabase.from.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              single: () => Promise.resolve({
+                data: { id: 'image-123' },
+                error: null
+              })
+            })
+          })
+        })
+      } as any);
+
+      // Mock feedback upsert
+      mockSupabase.from.mockReturnValueOnce({
+        upsert: () => ({
+          select: () => ({
+            single: () => Promise.resolve({
+              data: {
+                id: 'feedback-123',
+                image_id: 'image-123',
+                user_id: 'user-123',
+                feedback_type: 'positive',
+                reasons: ['great_quality'],
+                comment: null,
+                created_at: '2025-01-01T00:00:00Z',
+                updated_at: '2025-01-01T00:00:00Z',
+              },
+              error: null
+            })
+          })
+        })
+      } as any);
+
       const result = await submitFeedback('user-123', {
         imageId: 'image-123',
         feedbackType: 'positive',
@@ -67,6 +104,21 @@ describe('Feedback Database Functions', () => {
     });
 
     it('handles feedback with comment', async () => {
+      // Mock image ownership check
+      mockSupabase.from.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              single: () => Promise.resolve({
+                data: { id: 'image-456' },
+                error: null
+              })
+            })
+          })
+        })
+      } as any);
+
+      // Mock feedback upsert
       mockSupabase.from.mockReturnValueOnce({
         upsert: () => ({
           select: () => ({
@@ -100,6 +152,21 @@ describe('Feedback Database Functions', () => {
     });
 
     it('returns null on database error', async () => {
+      // Mock image ownership check
+      mockSupabase.from.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              single: () => Promise.resolve({
+                data: { id: 'image-123' },
+                error: null
+              })
+            })
+          })
+        })
+      } as any);
+
+      // Mock feedback upsert error
       mockSupabase.from.mockReturnValueOnce({
         upsert: () => ({
           select: () => ({
@@ -112,6 +179,30 @@ describe('Feedback Database Functions', () => {
         imageId: 'image-123',
         feedbackType: 'positive',
         reasons: [],
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when user does not own image', async () => {
+      // Mock image ownership check - user doesn't own image
+      mockSupabase.from.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              single: () => Promise.resolve({
+                data: null,
+                error: { message: 'Not found' }
+              })
+            })
+          })
+        })
+      } as any);
+
+      const result = await submitFeedback('user-123', {
+        imageId: 'image-999',
+        feedbackType: 'positive',
+        reasons: ['great_quality'],
       });
 
       expect(result).toBeNull();

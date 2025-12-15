@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import { POSITIVE_FEEDBACK_REASONS, POSITIVE_REASON_LABELS } from '@/types/feedback';
 import type { PositiveFeedbackReason } from '@/types';
 
@@ -13,7 +13,7 @@ interface PositiveFeedbackToastProps {
 export function PositiveFeedbackToast({
   selectedReasons,
   onReasonToggle,
-  onDismiss,
+  onDismiss: _onDismiss,
 }: PositiveFeedbackToastProps) {
   return (
     <div className="space-y-3">
@@ -25,19 +25,16 @@ export function PositiveFeedbackToast({
         {POSITIVE_FEEDBACK_REASONS.map((reason) => {
           const isSelected = selectedReasons.includes(reason);
           return (
-            <Button
+            <Toggle
               key={reason}
-              variant={isSelected ? 'default' : 'outline'}
+              pressed={isSelected}
+              onPressedChange={() => onReasonToggle(reason)}
+              variant="outline"
               size="sm"
-              onClick={() => onReasonToggle(reason)}
-              className={`text-xs transition-colors ${
-                isSelected
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'hover:bg-green-50'
-              }`}
+              className="text-xs transition-colors data-[state=on]:bg-green-600 data-[state=on]:text-white data-[state=on]:hover:bg-green-700 data-[state=off]:hover:bg-green-50"
             >
               {POSITIVE_REASON_LABELS[reason]}
-            </Button>
+            </Toggle>
           );
         })}
       </div>

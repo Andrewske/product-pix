@@ -7,6 +7,7 @@ describe('FeedbackButtons', () => {
   it('renders both thumbs up and thumbs down buttons', () => {
     render(
       <FeedbackButtons
+        imageId="test-image-id"
         currentFeedback={null}
         onThumbsUp={() => {}}
         onThumbsDown={() => {}}
@@ -20,6 +21,7 @@ describe('FeedbackButtons', () => {
   it('shows positive feedback as selected when currentFeedback is positive', () => {
     render(
       <FeedbackButtons
+        imageId="test-image-id"
         currentFeedback="positive"
         onThumbsUp={() => {}}
         onThumbsDown={() => {}}
@@ -33,6 +35,7 @@ describe('FeedbackButtons', () => {
   it('shows negative feedback as selected when currentFeedback is negative', () => {
     render(
       <FeedbackButtons
+        imageId="test-image-id"
         currentFeedback="negative"
         onThumbsUp={() => {}}
         onThumbsDown={() => {}}
@@ -49,6 +52,7 @@ describe('FeedbackButtons', () => {
 
     render(
       <FeedbackButtons
+        imageId="test-image-id"
         currentFeedback={null}
         onThumbsUp={mockOnThumbsUp}
         onThumbsDown={() => {}}
@@ -67,6 +71,7 @@ describe('FeedbackButtons', () => {
 
     render(
       <FeedbackButtons
+        imageId="test-image-id"
         currentFeedback={null}
         onThumbsUp={() => {}}
         onThumbsDown={mockOnThumbsDown}
@@ -82,6 +87,7 @@ describe('FeedbackButtons', () => {
   it('applies disabled state when disabled prop is true', () => {
     render(
       <FeedbackButtons
+        imageId="test-image-id"
         currentFeedback={null}
         onThumbsUp={() => {}}
         onThumbsDown={() => {}}
@@ -99,6 +105,7 @@ describe('FeedbackButtons', () => {
   it('applies small size when size prop is sm', () => {
     render(
       <FeedbackButtons
+        imageId="test-image-id"
         currentFeedback={null}
         onThumbsUp={() => {}}
         onThumbsDown={() => {}}

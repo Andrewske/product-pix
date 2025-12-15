@@ -23,19 +23,19 @@ describe('PositiveFeedbackToast', () => {
     expect(screen.getByText('Fast')).toBeTruthy();
   });
 
-  it('shows unselected buttons with outline style', () => {
+  it('shows unselected toggles with outline style', () => {
     render(<PositiveFeedbackToast {...defaultProps} />);
 
-    const greatQualityButton = screen.getByText('Great quality').closest('button');
-    expect(greatQualityButton?.className).toContain('border');
-    expect(greatQualityButton?.className).not.toContain('bg-green-600');
+    const greatQualityToggle = screen.getByText('Great quality').closest('button');
+    expect(greatQualityToggle?.getAttribute('data-state')).toBe('off');
+    expect(greatQualityToggle?.className).toContain('border');
   });
 
-  it('shows selected buttons with filled style', () => {
+  it('shows selected toggles with pressed state', () => {
     render(<PositiveFeedbackToast {...defaultProps} selectedReasons={['great_quality']} />);
 
-    const greatQualityButton = screen.getByText('Great quality').closest('button');
-    expect(greatQualityButton?.className).toContain('bg-green-600');
+    const greatQualityToggle = screen.getByText('Great quality').closest('button');
+    expect(greatQualityToggle?.getAttribute('data-state')).toBe('on');
   });
 
   it('calls onReasonToggle when a reason button is clicked', async () => {
@@ -57,11 +57,11 @@ describe('PositiveFeedbackToast', () => {
   it('handles multiple selected reasons', () => {
     render(<PositiveFeedbackToast {...defaultProps} selectedReasons={['great_quality', 'fast']} />);
 
-    const greatQualityButton = screen.getByText('Great quality').closest('button');
-    const fastButton = screen.getByText('Fast').closest('button');
+    const greatQualityToggle = screen.getByText('Great quality').closest('button');
+    const fastToggle = screen.getByText('Fast').closest('button');
 
-    expect(greatQualityButton?.className).toContain('bg-green-600');
-    expect(fastButton?.className).toContain('bg-green-600');
+    expect(greatQualityToggle?.getAttribute('data-state')).toBe('on');
+    expect(fastToggle?.getAttribute('data-state')).toBe('on');
   });
 
   it('calls onDismiss when dismiss action is triggered', () => {

@@ -20,7 +20,7 @@ CREATE INDEX idx_image_feedback_type ON public.image_feedback(feedback_type);
 CREATE INDEX idx_image_feedback_created_at ON public.image_feedback(created_at DESC);
 
 -- Updated_at trigger
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+CREATE OR REPLACE FUNCTION update_image_feedback_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -31,7 +31,7 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_image_feedback_updated_at
   BEFORE UPDATE ON public.image_feedback
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION update_image_feedback_updated_at();
 
 -- RLS
 ALTER TABLE public.image_feedback ENABLE ROW LEVEL SECURITY;
