@@ -1,6 +1,11 @@
 -- Drop existing view if recreating
 DROP VIEW IF EXISTS public.user_timeline_view;
 
+-- TODO: Convert to MATERIALIZED VIEW for better performance with large datasets
+-- Will require refresh strategy (manual, trigger-based, or scheduled)
+-- Example: CREATE MATERIALIZED VIEW user_timeline_view AS ...
+-- Then: REFRESH MATERIALIZED VIEW user_timeline_view;
+
 -- Unified timeline view (UNION ALL of 8 tables)
 CREATE VIEW public.user_timeline_view AS
   -- Jobs

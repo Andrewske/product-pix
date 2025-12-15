@@ -105,9 +105,9 @@ const fetchUsersThisWeek = async (supabase: SupabaseClient<Database>): Promise<n
  */
 const fetchActiveUsersToday = async (supabase: SupabaseClient<Database>): Promise<number> => {
   const { startOfDay, endOfDay } = getTodayRange();
-  const { count, error } = await supabase
+  const { data, error } = await supabase
     .from('user_activity')
-    .select('user_id', { count: 'exact', head: true })
+    .select('user_id', { count: 'exact', head: false })
     .gte('created_at', startOfDay)
     .lt('created_at', endOfDay);
 
@@ -116,7 +116,9 @@ const fetchActiveUsersToday = async (supabase: SupabaseClient<Database>): Promis
     throw error;
   }
 
-  return count || 0;
+  // Count unique user_ids
+  const uniqueUsers = new Set(data?.map(row => row.user_id) || []);
+  return uniqueUsers.size;
 };
 
 /**
@@ -258,18 +260,18 @@ export const getFilteredUserList = async (
   const supabase = createAdminClient();
 
   try {
-    const { data, error } = await supabase.rpc('get_filtered_user_list', {
-      p_search: filters.search || null,
-      p_has_errors: filters.hasErrors,
-      p_has_messages: filters.hasMessages,
-      p_min_credits: filters.minCredits,
-      p_max_credits: filters.maxCredits,
-      p_created_after: filters.createdAfter,
-      p_created_before: filters.createdBefore,
-      p_sort_by: filters.sortBy || 'created_at',
-      p_sort_order: filters.sortOrder || 'desc',
+    const { data, error } = await (supabase.rpc as any)('get_filtered_user_list', {
+      p_search: filters.search ?? null,
+      p_has_errors: filters.hasErrors ?? null,
+      p_has_messages: filters.hasMessages ?? null,
+      p_min_credits: filters.minCredits ?? null,
+      p_max_credits: filters.maxCredits ?? null,
+      p_created_after: filters.createdAfter ?? null,
+      p_created_before: filters.createdBefore ?? null,
+      p_sort_by: filters.sortBy ?? 'created_at',
+      p_sort_order: filters.sortOrder ?? 'desc',
       p_limit: options.limit,
-      p_cursor: options.cursor || null
+      p_cursor: options.cursor ?? null
     });
 
     if (error) {
@@ -282,7 +284,7 @@ export const getFilteredUserList = async (
     }
 
     // Convert the RPC results to UserListItem format
-    const users: UserListItem[] = data.map((user) => ({
+    const users: UserListItem[] = data.map((user: any) => ({
       id: user.id,
       email: user.email,
       displayName: user.display_name,
@@ -294,8 +296,10 @@ export const getFilteredUserList = async (
       messageCount: Number(user.message_count)
     }));
 
-    // Get next cursor from the first result (since RPC returns it for each row)
-    const nextCursor = data[0]?.next_cursor || null;
+    // Compute next cursor from last returned row
+    const nextCursor = users.length === options.limit && users.length > 0
+      ? users[users.length - 1].createdAt
+      : null;
 
     return {
       users,

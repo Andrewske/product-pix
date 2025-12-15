@@ -11,13 +11,13 @@ export type TimelineEventType =
   | 'feedback' | 'error' | 'upload' | 'activity';
 
 // Type for user_timeline_view row
-type TimelineViewRow = {
+interface TimelineViewRow {
   id: string;
-  type: string;
+  type: TimelineEventType;
   subtype: string;
   timestamp: string;
   metadata: Record<string, unknown>;
-};
+}
 
 export interface TimelineEvent {
   id: string;
@@ -56,6 +56,18 @@ export async function getUnifiedTimeline(
     }
   }
 
+  // Validate cursor parts to prevent SQL injection
+  if (cursorTimestamp && cursorId) {
+    const timestampRegex = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!timestampRegex.test(cursorTimestamp) || !uuidRegex.test(cursorId)) {
+      logger.warn('Invalid cursor format', { cursor });
+      cursorTimestamp = null;
+      cursorId = null;
+    }
+  }
+
   // Build query against view
   let query = (supabase as SupabaseClient)
     .from('user_timeline_view')
@@ -87,7 +99,7 @@ export async function getUnifiedTimeline(
 
   if (error) {
     logger.error('Error fetching unified timeline', { error, userId });
-    return { events: [], nextCursor: null };
+    throw new Error(`Failed to fetch timeline: ${error.message}`);
   }
 
   // Check for next page

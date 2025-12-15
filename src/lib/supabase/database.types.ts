@@ -34,6 +34,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_audit: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          r2_files_queued: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          r2_files_queued?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          r2_files_queued?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_deletion_audit_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       batch_feedback: {
         Row: {
           batch_id: string
@@ -477,6 +509,7 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
+          refunded_at: string | null
           title: string | null
           user_id: string
           width: number | null
@@ -491,6 +524,7 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
+          refunded_at?: string | null
           title?: string | null
           user_id: string
           width?: number | null
@@ -505,6 +539,7 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
+          refunded_at?: string | null
           title?: string | null
           user_id?: string
           width?: number | null
@@ -1440,11 +1475,13 @@ export type Database = {
         Row: {
           created_at: string
           credit_balance: number
+          deleted_at: string | null
           display_name: string | null
           email: string
           id: string
           is_admin: boolean
           last_active_at: string | null
+          original_email: string | null
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -1453,11 +1490,13 @@ export type Database = {
         Insert: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email: string
           id: string
           is_admin?: boolean
           last_active_at?: string | null
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1466,11 +1505,13 @@ export type Database = {
         Update: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email?: string
           id?: string
           is_admin?: boolean
           last_active_at?: string | null
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1480,7 +1521,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_timeline_view: {
+        Row: {
+          id: string | null
+          metadata: Json | null
+          subtype: string | null
+          timestamp: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_credits: {
@@ -1592,29 +1643,28 @@ export type Database = {
       }
       get_filtered_user_list: {
         Args: {
-          p_search?: string | null
-          p_has_errors?: boolean | null
-          p_has_messages?: boolean | null
-          p_min_credits?: number | null
-          p_max_credits?: number | null
-          p_created_after?: string | null
-          p_created_before?: string | null
-          p_sort_by?: string | null
-          p_sort_order?: string | null
-          p_limit?: number | null
-          p_cursor?: string | null
+          p_created_after?: string
+          p_created_before?: string
+          p_cursor?: string
+          p_has_errors?: boolean
+          p_has_messages?: boolean
+          p_limit?: number
+          p_max_credits?: number
+          p_min_credits?: number
+          p_search?: string
+          p_sort_by?: string
+          p_sort_order?: string
         }
         Returns: {
-          id: string
-          email: string
-          display_name: string | null
-          credit_balance: number
           created_at: string
-          last_active_at: string | null
-          job_count: number
+          credit_balance: number
+          display_name: string
+          email: string
           error_count: number
+          id: string
+          job_count: number
+          last_active_at: string
           message_count: number
-          next_cursor: string | null
         }[]
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }

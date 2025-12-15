@@ -12,6 +12,12 @@ CREATE POLICY "Admins can view all user activity"
   );
 
 -- Admin-only INSERT policy (for activity tracking via service role)
-CREATE POLICY "Service role can insert user activity"
+CREATE POLICY "Users and admins can insert their own activity"
   ON public.user_activity FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (
+    user_id = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
