@@ -6,7 +6,7 @@ import { updateJobStatus, getJob, updateJobParameters } from '@/lib/db/jobs';
 import { refundCredits } from '@/lib/db/credits';
 import { resolveTemplateIdToSlug } from '@/lib/db/templates';
 import { createGeneratedImage } from '@/lib/db/generated-images';
-import { calculateCost } from '@/lib/pricing';
+import { calculateCost } from '@/lib/pricing/calculator';
 import { createGenerationCost } from '@/lib/db/cost-queries';
 import { logger } from '@/lib/logging';
 import { env } from '@/lib/env';

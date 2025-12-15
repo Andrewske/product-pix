@@ -142,7 +142,7 @@ describe('UserTimeline', () => {
   });
 
   it('shows loading state when fetching more events', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
 
     // Mock response with nextCursor to enable infinite scroll
     mockFetch.mockResolvedValueOnce({

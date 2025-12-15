@@ -87,14 +87,7 @@ describe('PostHog Integration', () => {
       expect(posthog.default.__loaded).toBe(true);
     });
 
-    it('should initialize PostHog when provider is used', async () => {
-      // Import the provider
-      const { PostHogProvider } = await import('@/lib/analytics/posthog-provider');
 
-      // Verify the provider component exists
-      expect(PostHogProvider).toBeDefined();
-      expect(typeof PostHogProvider).toBe('function');
-    });
   });
 
   describe('Client-Side Event Tracking', () => {

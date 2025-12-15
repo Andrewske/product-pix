@@ -16,7 +16,7 @@ const mockLoggerInfo = mock(() => {});
 const mockLoggerError = mock(() => {});
 const mockLoggerWarn = mock(() => {});
 
-const mockSendEmail = mock((params: any) => Promise.resolve({
+const mockSendEmail = mock((_params: any) => Promise.resolve({
   success: true,
   emailId: 'test-email-id'
 } as any));

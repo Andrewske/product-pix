@@ -16,8 +16,8 @@ import { AlertBox } from '@/components/ui/alert-box';
 import { SectionLabel } from '@/components/ui/section-label';
 import { PageContainer } from '@/components/layout/page-container';
 import { useCredits, useUserProfile } from '@/lib/auth';
-import { trackEvent } from '@/lib/analytics';
-import { trackActivity } from '@/lib/db';
+import { trackEvent } from '@/lib/analytics/client';
+import { trackActivity } from '@/lib/db/user-activity';
 
 export default function GeneratePage() {
   const { credits } = useCredits();

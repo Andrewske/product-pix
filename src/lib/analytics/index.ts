@@ -1,19 +1,8 @@
-// Re-export PostHogProvider
-export { PostHogProvider } from './posthog-provider';
+// Client-side exports (browser safe)
+export * from './client';
 
-// Re-export client functions
-export {
-  trackEvent,
-  identifyUser,
-  resetUser,
-  isUserIdentified,
-} from './client';
-
-// Re-export server functions
-export {
-  trackServerEvent,
-  identifyUserServer,
-} from './server';
+// Server-side exports (Node.js only)
+export * from './server';
 
 // Re-export event types
 export type {

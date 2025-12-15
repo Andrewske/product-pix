@@ -1,6 +1,5 @@
 // src/app/api/generate/route.ts
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { withAuth } from '@/lib/auth/server';
 import { createClient } from '@/lib/supabase/client';
 import { createGenerationJob, getJob } from '@/lib/db/jobs';

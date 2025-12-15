@@ -8,9 +8,6 @@ const nextConfig = {
   },
   serverExternalPackages: ['posthog-node'],
   productionBrowserSourceMaps: true,
-  experimental: {
-    turbo: false, // Disable Turbopack
-  },
   images: {
     remotePatterns: [
       {

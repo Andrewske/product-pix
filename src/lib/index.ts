@@ -15,7 +15,7 @@ export * from './landing';
 export * from './logging';
 export * from './observability';
 export * from './posthog';
-export * from './pricing';
+// export * from './pricing'; // Contains server-only code
 export * from './r2';
 export * from './rate-limit';
 export * from './stripe';

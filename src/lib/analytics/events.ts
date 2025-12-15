@@ -296,15 +296,11 @@ export function validateAnalyticsEvent(event: unknown): event is AnalyticsEvent 
   const eventObj = event as Record<string, unknown>;
   const eventType = eventObj.event;
 
-  if (typeof eventType !== 'string') {
+  if (typeof eventType !== 'string' || !Object.keys(analyticsEventSchemas).includes(eventType)) {
     return false;
   }
 
   const schema = analyticsEventSchemas[eventType as keyof typeof analyticsEventSchemas];
-
-  if (!schema) {
-    return false;
-  }
 
   const result = schema.safeParse(event);
   return result.success;

@@ -3,7 +3,7 @@
  * Provides simple variant assignment and tracking
  */
 
-import { trackEvent } from '@/lib/analytics';
+import { trackEvent } from '@/lib/analytics/client';
 
 export type ABTestVariant = 'A' | 'B';
 

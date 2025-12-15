@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { PageContainer } from '@/components/layout/page-container';
 import { useCredits, useUserProfile } from '@/lib/auth';
-import { trackEvent } from '@/lib/analytics';
+import { trackEvent } from '@/lib/analytics/client';
 import Link from 'next/link';
 
 type Step = 'upload' | 'preview' | 'creating';
