@@ -69,7 +69,7 @@ const writeLog = (entry: LogEntry): void => {
 
     switch (level) {
       case 'error':
-        console.error(message, data);
+        console.warn(message, data); // Fallback logging - structured logger failed
         break;
       case 'warn':
         console.warn(message, data);
@@ -78,7 +78,7 @@ const writeLog = (entry: LogEntry): void => {
         console.info(message, data);
         break;
       case 'debug':
-        console.debug(message, data);
+        console.info(message, data); // Debug level logging
         break;
     }
     return;

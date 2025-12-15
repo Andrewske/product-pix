@@ -132,7 +132,7 @@ export function useImageFeedback({ imageId }: UseImageFeedbackOptions): UseImage
         comment,
       });
       setShowNegativeModal(false);
-    } catch (_error) {
+    } catch {
       // Error toast already shown by onError callback
       // Keep modal open so user can retry
     }

@@ -78,12 +78,11 @@ describe('Individual Message API Route', () => {
     });
 
     it('rejects non-admin users', async () => {
-      // @ts-ignore - Complex mock setup for admin check
       mockAdminSupabase.from.mockReturnValueOnce({
         select: () => ({
-          eq: () => ({
-            // @ts-ignore - Complex mock setup for admin check
-            single: () => Promise.resolve({
+            eq: () => ({
+              // @ts-expect-error - Complex mock setup for admin check
+              single: () => Promise.resolve({
               data: { is_admin: false },
               error: null
             })

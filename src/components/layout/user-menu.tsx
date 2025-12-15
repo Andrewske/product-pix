@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUserProfile, signOut } from '@/lib/auth';
-import { trackActivity } from '@/lib/db';
+import { trackActivity } from '@/lib/db/user-activity';
 import {
   Avatar,
   AvatarFallback,

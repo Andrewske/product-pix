@@ -7,8 +7,70 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      account_deletion_audit: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          r2_files_queued: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          r2_files_queued?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          r2_files_queued?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_deletion_audit_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       batch_feedback: {
         Row: {
           batch_id: string
@@ -452,6 +514,7 @@ export type Database = {
           is_favorite: boolean
           job_id: string
           public_url: string
+          refunded_at: string | null
           title: string | null
           user_id: string
           width: number | null
@@ -466,6 +529,7 @@ export type Database = {
           is_favorite?: boolean
           job_id: string
           public_url: string
+          refunded_at?: string | null
           title?: string | null
           user_id: string
           width?: number | null
@@ -480,6 +544,7 @@ export type Database = {
           is_favorite?: boolean
           job_id?: string
           public_url?: string
+          refunded_at?: string | null
           title?: string | null
           user_id?: string
           width?: number | null
@@ -1415,11 +1480,13 @@ export type Database = {
         Row: {
           created_at: string
           credit_balance: number
+          deleted_at: string | null
           display_name: string | null
           email: string
           id: string
           is_admin: boolean
           last_active_at: string | null
+          original_email: string | null
           preferences: Json | null
           stripe_customer_id: string | null
           tier: Database["public"]["Enums"]["user_tier"]
@@ -1428,11 +1495,13 @@ export type Database = {
         Insert: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email: string
           id: string
           is_admin?: boolean
           last_active_at?: string | null
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1441,11 +1510,13 @@ export type Database = {
         Update: {
           created_at?: string
           credit_balance?: number
+          deleted_at?: string | null
           display_name?: string | null
           email?: string
           id?: string
           is_admin?: boolean
           last_active_at?: string | null
+          original_email?: string | null
           preferences?: Json | null
           stripe_customer_id?: string | null
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -1455,7 +1526,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_timeline_view: {
+        Row: {
+          id: string | null
+          metadata: Json | null
+          subtype: string | null
+          timestamp: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_credits: {
@@ -1496,51 +1577,21 @@ export type Database = {
         }
         Returns: string
       }
-      create_generation_job:
-        | {
-            Args: {
-              p_credits?: number
-              p_parameters?: Json
-              p_prompt: string
-              p_template_slug?: string
-              p_upload_id: string
-              p_user_id: string
-            }
-            Returns: {
-              job_id: string
-              message: string
-              success: boolean
-            }[]
-          }
-        | {
-            Args: {
-              p_credits?: number
-              p_parameters?: Json
-              p_prompt: string
-              p_template_id?: string
-              p_upload_id: string
-              p_user_id: string
-            }
-            Returns: {
-              job_id: string
-              message: string
-              success: boolean
-            }[]
-          }
-        | {
-            Args: {
-              p_credits?: number
-              p_parameters?: Json
-              p_prompt: string
-              p_upload_id: string
-              p_user_id: string
-            }
-            Returns: {
-              job_id: string
-              message: string
-              success: boolean
-            }[]
-          }
+      create_generation_job: {
+        Args: {
+          p_credits?: number
+          p_parameters?: Json
+          p_prompt?: string
+          p_template_slug?: string
+          p_upload_id?: string
+          p_user_id: string
+        }
+        Returns: {
+          job_id: string
+          message: string
+          success: boolean
+        }[]
+      }
       deduct_credits_for_cash_refund: {
         Args: {
           p_amount: number
@@ -1563,6 +1614,33 @@ export type Database = {
           min_score: number
           total_cost: number
           total_tests: number
+        }[]
+      }
+      get_filtered_user_list: {
+        Args: {
+          p_created_after?: string
+          p_created_before?: string
+          p_cursor?: string
+          p_has_errors?: boolean
+          p_has_messages?: boolean
+          p_limit?: number
+          p_max_credits?: number
+          p_min_credits?: number
+          p_search?: string
+          p_sort_by?: string
+          p_sort_order?: string
+        }
+        Returns: {
+          created_at: string
+          credit_balance: number
+          display_name: string
+          email: string
+          error_count: number
+          id: string
+          job_count: number
+          last_active_at: string
+          message_count: number
+          next_cursor: string
         }[]
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }
@@ -1787,6 +1865,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       batch_item_status: ["pending", "processing", "completed", "failed"],
@@ -1830,4 +1911,3 @@ export const Constants = {
     },
   },
 } as const
-

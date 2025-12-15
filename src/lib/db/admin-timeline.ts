@@ -2,13 +2,22 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
 import { metadataSchemas } from './admin-timeline-schemas';
-import type { Database } from '@/lib/supabase/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 
 
 export type TimelineEventType =
   | 'job' | 'transaction' | 'message' | 'image'
   | 'feedback' | 'error' | 'upload' | 'activity';
+
+// Type for user_timeline_view row
+type TimelineViewRow = {
+  id: string;
+  type: string;
+  subtype: string;
+  timestamp: string;
+  metadata: Record<string, unknown>;
+};
 
 export interface TimelineEvent {
   id: string;
@@ -48,7 +57,7 @@ export async function getUnifiedTimeline(
   }
 
   // Build query against view
-  let query = (supabase as any)
+  let query = (supabase as SupabaseClient)
     .from('user_timeline_view')
     .select('id, type, subtype, timestamp, metadata')
     .eq('user_id', userId)
@@ -86,7 +95,7 @@ export async function getUnifiedTimeline(
   const events = hasMore ? data.slice(0, limit) : data;
 
   // Map to TimelineEvent format with validation
-  const validatedEvents = events.map((row: any) => ({
+  const validatedEvents = (events as TimelineViewRow[]).map((row) => ({
     id: row.id,
     type: row.type as TimelineEventType,
     subtype: row.subtype,
@@ -106,22 +115,35 @@ export async function getUnifiedTimeline(
 }
 
 // Helper: Generate human-readable title
-function generateTitle(row: { type: string; subtype: string; metadata: any }): string {
+function generateTitle(row: { type: string; subtype: string; metadata: Record<string, unknown> }): string {
   switch (row.type) {
-    case 'job':
-      return `Generated image with ${row.metadata.template_slug} (${row.metadata.credits_charged} credits)`;
-    case 'transaction':
-      return `${row.metadata.transaction_type}: ${row.metadata.amount > 0 ? '+' : ''}${row.metadata.amount} credits`;
-    case 'message':
-      return row.metadata.is_from_admin ? 'Message from admin' : 'Message sent';
+    case 'job': {
+      const metadata = row.metadata;
+      return `Generated image with ${metadata.template_slug as string} (${metadata.credits_charged as number} credits)`;
+    }
+    case 'transaction': {
+      const metadata = row.metadata;
+      const amount = metadata.amount as number;
+      return `${metadata.transaction_type as string}: ${amount > 0 ? '+' : ''}${amount} credits`;
+    }
+    case 'message': {
+      const metadata = row.metadata;
+      return (metadata.is_from_admin as boolean) ? 'Message from admin' : 'Message sent';
+    }
     case 'image':
       return 'Image generated';
-    case 'feedback':
-      return `Feedback: ${row.metadata.feedback_type}`;
-    case 'error':
-      return `${row.metadata.domain}: ${row.metadata.error_name}`;
-    case 'upload':
-      return `Uploaded ${row.metadata.filename}`;
+    case 'feedback': {
+      const metadata = row.metadata;
+      return `Feedback: ${metadata.feedback_type as string}`;
+    }
+    case 'error': {
+      const metadata = row.metadata;
+      return `${metadata.domain as string}: ${metadata.error_name as string}`;
+    }
+    case 'upload': {
+      const metadata = row.metadata;
+      return `Uploaded ${metadata.filename as string}`;
+    }
     case 'activity':
       return row.subtype.replace(/_/g, ' ');
     default:

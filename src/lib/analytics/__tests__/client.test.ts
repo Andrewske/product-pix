@@ -13,26 +13,19 @@ const mockPostHog = {
 // Set up PostHog client for testing
 setPostHogClientForTesting(mockPostHog);
 
-// Mock validateAnalyticsEvent
-const mockValidateAnalyticsEvent = mock(() => true);
-mock.module('../events', () => ({
-  validateAnalyticsEvent: mockValidateAnalyticsEvent,
-}));
-
 describe('Analytics Client', () => {
   beforeEach(() => {
     // Reset mocks
     mockPostHog.capture.mockClear();
     mockPostHog.identify.mockClear();
     mockPostHog.reset.mockClear();
-    mockValidateAnalyticsEvent.mockClear();
 
     // Reset the global identified user state
     resetUserIdentificationState();
   });
 
   describe('trackEvent', () => {
-    it('validates event before capturing', async () => {
+    it('captures valid events', async () => {
       const validEvent: GenerationStartedEvent = {
         event: 'generation_started',
         properties: {
@@ -50,7 +43,6 @@ describe('Analytics Client', () => {
       // Wait for async operations
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(mockValidateAnalyticsEvent).toHaveBeenCalledWith(validEvent);
       expect(mockPostHog.capture).toHaveBeenCalledWith('generation_started', validEvent.properties);
     });
 
@@ -59,9 +51,6 @@ describe('Analytics Client', () => {
         event: 'invalid_event',
         properties: {},
       } as any;
-
-      // Mock validation failure
-      mockValidateAnalyticsEvent.mockReturnValueOnce(false);
 
       const consoleSpy = mock(() => {});
       const originalConsole = console.warn;
@@ -72,7 +61,6 @@ describe('Analytics Client', () => {
       // Wait for async operations
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(mockValidateAnalyticsEvent).toHaveBeenCalledWith(invalidEvent);
       expect(mockPostHog.capture).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith('Invalid analytics event:', invalidEvent);
 

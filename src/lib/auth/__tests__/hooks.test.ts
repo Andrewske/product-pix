@@ -1,4 +1,4 @@
-import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import { describe, it, expect, mock } from 'bun:test';
 import { renderHook, waitFor } from '@testing-library/react';
 import { User } from '@supabase/supabase-js';
 import { useUserProfile } from '../hooks';
@@ -51,6 +51,7 @@ describe('useUserProfile', () => {
       deleted_at: null,
       display_name: null,
       is_admin: false,
+      last_active_at: null,
       original_email: null,
       preferences: {},
       stripe_customer_id: null,
@@ -99,6 +100,7 @@ describe('useUserProfile', () => {
       deleted_at: null,
       display_name: null,
       is_admin: false,
+      last_active_at: null,
       original_email: null,
       preferences: {},
       stripe_customer_id: null,
@@ -147,6 +149,7 @@ describe('useUserProfile', () => {
       deleted_at: null,
       display_name: null,
       is_admin: false,
+      last_active_at: null,
       original_email: null,
       preferences: {},
       stripe_customer_id: null,
@@ -207,12 +210,13 @@ describe('useUserProfile', () => {
     const mockProfile: DbUser = {
       id: 'user-1',
       email: 'test@example.com',
-      tier: 'pro',
+      tier: 'free',
       created_at: '2023-01-01T00:00:00Z',
-      credit_balance: 500,
+      credit_balance: 100,
       deleted_at: null,
       display_name: null,
       is_admin: false,
+      last_active_at: null,
       original_email: null,
       preferences: {},
       stripe_customer_id: null,

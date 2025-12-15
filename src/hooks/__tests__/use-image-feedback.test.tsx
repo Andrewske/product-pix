@@ -1,7 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { useImageFeedback } from '../use-image-feedback';
 
 // Mock toast

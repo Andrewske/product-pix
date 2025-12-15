@@ -9,7 +9,7 @@ export * from './templates';
 export * from './contacts';
 export * from './critical-errors';
 export * from './observability-failures';
-export * from './feedback';
+// export * from './feedback'; // Server-only, not for client use
 export * from './messages';
 export * from './admin-analytics';
 export * from './user-activity';

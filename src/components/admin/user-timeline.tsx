@@ -16,7 +16,7 @@ interface UserTimelineFilters {
 
 export function UserTimeline({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
-  const observerRef = useRef<IntersectionObserver>();
+  const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState<UserTimelineFilters>({

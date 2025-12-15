@@ -1,5 +1,6 @@
 import { ProductPixError } from '@/lib/errors/error-classes';
 import { captureError } from '@/lib/observability/capture-error-client';
+import { logger } from '@/lib/logging';
 import { toast as sonnerToast } from 'sonner';
 
 export const toast = {
@@ -24,7 +25,7 @@ export const toast = {
 
     // Auto-track ProductPixError instances (intentional errors with context)
     if (messageOrError instanceof ProductPixError) {
-      captureError(messageOrError).catch(console.error);
+      captureError(messageOrError).catch((error) => logger.error('Failed to capture error', { error }));
     }
     // Plain strings and generic Errors are NOT tracked
     // Note: captureError already logs to console, no need for additional logging

@@ -99,7 +99,7 @@ describe('Feedback API Route', () => {
       });
 
       const response = await POST(mockRequest, { params: Promise.resolve({ id: 'image-456' }) });
-      const result = await response.json();
+      const _result = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockSubmitFeedback).toHaveBeenCalledWith('user-123', {

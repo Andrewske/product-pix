@@ -3,7 +3,7 @@
  import { syncStripeDataToKV } from '@/lib/stripe/sync';
  import { getPricing } from '@/lib/pricing/actions';
  import { type PricingData } from '@/lib/pricing/utils';
- import { trackActivity } from '@/lib/db';
+  import { trackActivity } from '@/lib/db/user-activity';
  import { CreditPacks } from '@/components/pricing/credit-packs';
  import { PageContainer } from '@/components/layout/page-container';
  import { SectionHeader } from '@/components/ui/section-header';

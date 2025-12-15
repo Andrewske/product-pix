@@ -1,5 +1,5 @@
 import { describe, it, expect, mock } from 'bun:test';
-import { render, renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { CookieConsentProvider } from '../cookie-consent-provider';
 import { useCookieConsent } from '../use-cookie-consent';
 

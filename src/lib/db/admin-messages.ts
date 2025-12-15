@@ -2,40 +2,10 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
 import type { UserMessage, MessageAnalysis, SendAdminReplyParams } from '@/types';
+import type { Database } from '@/lib/supabase/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Temporary table types until migration runs and types are regenerated
-interface UserMessagesTable {
-  Row: {
-    id: string;
-    user_id: string;
-    content: string;
-    is_from_admin: boolean;
-    read_at: string | null;
-    analysis: MessageAnalysis | null;
-    created_at: string;
-    updated_at: string;
-  };
-  Insert: {
-    id?: string;
-    user_id: string;
-    content: string;
-    is_from_admin?: boolean;
-    read_at?: string | null;
-    analysis?: MessageAnalysis | null;
-    created_at?: string;
-    updated_at?: string;
-  };
-  Update: {
-    id?: string;
-    user_id?: string;
-    content?: string;
-    is_from_admin?: boolean;
-    read_at?: string | null;
-    analysis?: MessageAnalysis | null;
-    created_at?: string;
-    updated_at?: string;
-  };
-}
+
 
 // Analytics data types
 export interface MessageStats {
@@ -90,10 +60,10 @@ const calculateDateRange = (days: number): { startDate: Date; endDate: Date } =>
  * Fetch raw message data for stats calculation
  */
 const fetchMessageStatsData = async (
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   startDate: Date
 ): Promise<{ analysis: MessageAnalysis | null }[]> => {
-  const { data, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data, error } = await supabase
     .from('user_messages')
     .select('analysis')
     .gte('created_at', startDate.toISOString())
@@ -104,7 +74,7 @@ const fetchMessageStatsData = async (
     throw error;
   }
 
-  return data;
+  return data.map(row => ({ analysis: row.analysis as MessageAnalysis | null }));
 };
 
 /**
@@ -154,17 +124,9 @@ const calculateMessageStats = (statsData: { analysis: MessageAnalysis | null }[]
 };
 
 // Type for database row with user join
-interface MessageWithUserRow {
-  id: string;
-  user_id: string;
-  content: string;
-  is_from_admin: boolean;
-  read_at: string | null;
-  analysis: MessageAnalysis | null;
-  created_at: string;
-  updated_at: string;
+type MessageWithUserRow = Database['public']['Tables']['user_messages']['Row'] & {
   users?: { email: string } | null;
-}
+};
 
 /**
  * Map database message row to MessageSummary interface
@@ -175,7 +137,7 @@ const mapMessageRowToSummary = (row: MessageWithUserRow): MessageSummary => ({
   content: row.content,
   isFromAdmin: row.is_from_admin,
   readAt: row.read_at,
-  analysis: row.analysis,
+  analysis: row.analysis as MessageAnalysis | null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   userEmail: row.users?.email,
@@ -185,11 +147,11 @@ const mapMessageRowToSummary = (row: MessageWithUserRow): MessageSummary => ({
  * Fetch recent messages with user data
  */
 const fetchRecentMessages = async (
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   startDate: Date,
   limit: number
 ): Promise<MessageSummary[]> => {
-  const { data, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data, error } = await supabase
     .from('user_messages')
     .select(`
       id,
@@ -211,7 +173,7 @@ const fetchRecentMessages = async (
     throw error;
   }
 
-  return data.map(mapMessageRowToSummary);
+  return (data as MessageWithUserRow[]).map(mapMessageRowToSummary);
 };
 
 /**
@@ -273,7 +235,7 @@ export const getFilteredMessages = async (
   const supabase = createAdminClient();
 
   try {
-    let query = (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    let query = supabase
       .from('user_messages')
       .select(`
         id,
@@ -337,7 +299,7 @@ export const sendAdminReply = async (
 ): Promise<UserMessage | null> => {
   const supabase = createAdminClient();
 
-  const { data, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data, error } = await supabase
     .from('user_messages')
     .insert({
       user_id: params.userId,
@@ -362,7 +324,7 @@ export const sendAdminReply = async (
     content: data.content,
     isFromAdmin: data.is_from_admin,
     readAt: data.read_at,
-    analysis: data.analysis,
+    analysis: data.analysis as MessageAnalysis | null,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };

@@ -24,19 +24,12 @@ mock.module('../posthog-server', () => ({
   getPostHogServer: mockGetPostHogServer,
 }));
 
-// Mock validateAnalyticsEvent
-const mockValidateAnalyticsEvent = mock(() => true);
-mock.module('../events', () => ({
-  validateAnalyticsEvent: mockValidateAnalyticsEvent,
-}));
-
 describe('Analytics Server', () => {
   beforeEach(() => {
     // Reset mocks
     mockPostHogClient.capture.mockClear();
     mockPostHogClient.identify.mockClear();
     mockGetPostHogServer.mockClear();
-    mockValidateAnalyticsEvent.mockClear();
   });
 
   describe('trackServerEvent', () => {
@@ -56,8 +49,6 @@ describe('Analytics Server', () => {
 
       // Should not throw
       expect(() => trackServerEvent(userId, validEvent)).not.toThrow();
-
-      expect(mockValidateAnalyticsEvent).toHaveBeenCalledWith(validEvent);
     });
 
     it('rejects invalid events by Zod schema', () => {
@@ -67,16 +58,12 @@ describe('Analytics Server', () => {
         properties: {},
       } as unknown as Parameters<typeof trackServerEvent>[1];
 
-      // Mock validation failure
-      mockValidateAnalyticsEvent.mockReturnValueOnce(false);
-
       const consoleSpy = mock(() => {});
       const originalConsole = console.warn;
       console.warn = consoleSpy;
 
       trackServerEvent(userId, invalidEvent);
 
-      expect(mockValidateAnalyticsEvent).toHaveBeenCalledWith(invalidEvent);
       expect(consoleSpy).toHaveBeenCalledWith('Invalid analytics event:', invalidEvent);
 
       console.warn = originalConsole;

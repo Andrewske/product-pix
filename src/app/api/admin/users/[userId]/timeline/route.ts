@@ -21,7 +21,7 @@ export async function GET(
     // 2. Parse query params
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 200);
-    const cursor = searchParams.get('cursor');
+    const cursor = searchParams.get('cursor') ?? undefined;
     const typesParam = searchParams.get('types');
     const types = typesParam ? typesParam.split(',').filter(Boolean) as TimelineEvent['type'][] : undefined;
     const startDate = searchParams.get('startDate');

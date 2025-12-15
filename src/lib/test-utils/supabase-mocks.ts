@@ -87,9 +87,9 @@ export function createFromMock<T = unknown>(defaultResponse?: SupabaseMockRespon
   const response = defaultResponse || { data: null, error: null };
 
   return {
-    select: mock((columns?: string) => createSelectMock<T>(response)),
-    insert: mock((values: unknown) => createInsertMock<T>(response)),
-    update: mock((values: unknown) => createUpdateMock<T>(response)),
+    select: mock((_columns?: string) => createSelectMock<T>(response)),
+    insert: mock((_values: unknown) => createInsertMock<T>(response)),
+    update: mock((_values: unknown) => createUpdateMock<T>(response)),
   };
 }
 
@@ -141,8 +141,8 @@ export function createSentimentAnalysisFromMock(
   updateResponse: SupabaseMockResponse
 ): FromMock {
   return {
-    select: mock((columns?: string) => createSelectMock(selectResponse)),
-    insert: mock((values: unknown) => createInsertMock(updateResponse)),
-    update: mock((values: unknown) => createUpdateMock(updateResponse)),
+    select: mock((_columns?: string) => createSelectMock(selectResponse)),
+    insert: mock((_values: unknown) => createInsertMock(updateResponse)),
+    update: mock((_values: unknown) => createUpdateMock(updateResponse)),
   };
 }

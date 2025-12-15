@@ -31,6 +31,19 @@ async function getPostHogClient(): Promise<{
     return posthogClient; // For testing
   }
   const posthog = await import('posthog-js');
+
+  // Initialize PostHog if not already initialized
+  if (!posthog.default.__loaded && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    const { createClientConfig } = await import('./config');
+    // @ts-expect-error - PostHog library typing issue with loaded callback
+    posthog.default.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, createClientConfig());
+
+    // Enable debug mode in development
+    if (process.env.NODE_ENV === 'development') {
+      posthog.default.debug();
+    }
+  }
+
   return posthog.default;
 }
 

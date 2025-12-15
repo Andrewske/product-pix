@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import {
   saveConsentToLocalStorage,
   loadConsentFromLocalStorage,
-  clearLocalStorageConsent,
   saveConsentToDatabase,
 } from '../storage';
 

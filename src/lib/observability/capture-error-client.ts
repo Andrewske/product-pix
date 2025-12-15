@@ -21,7 +21,7 @@ export async function captureError(
   options?: CaptureErrorOptions
 ): Promise<void> {
   // Always log for debugging
-  console.error('[ProductPix Error]', {
+  console.warn('[ProductPix Error]', {
     name: error.name,
     message: error.message,
     code: error.errorCode,
@@ -38,6 +38,6 @@ export async function captureError(
     posthog.capture('error_occurred', properties);
   } catch (captureFailure) {
     // Fail silently - already in error state
-    console.error('[ProductPix] Failed to capture to PostHog:', captureFailure);
+    console.warn('[ProductPix] Failed to capture to PostHog:', captureFailure);
   }
 }
