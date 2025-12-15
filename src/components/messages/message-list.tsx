@@ -22,7 +22,6 @@ export const MessageList = ({ messages, loading }: MessageListProps) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
 
   if (loading) {

@@ -13,9 +13,14 @@ const navItems = [
     active: true,
   },
   {
+    href: '/admin/messages',
+    label: 'Messages',
+    active: true,
+  },
+  {
     href: '/admin/analytics',
     label: 'Analytics',
-    active: false,
+    active: true,
   },
   {
     href: '/admin/users',
