@@ -293,13 +293,12 @@ export default function GeneratePage() {
       </div>
 
       {/* Credits Modal */}
-      {showCreditsModal && (
-        <InsufficientCreditsModal
-          currentBalance={credits}
-          requiredCredits={creditsNeeded}
-          onClose={() => setShowCreditsModal(false)}
-        />
-      )}
+      <InsufficientCreditsModal
+        isOpen={showCreditsModal}
+        currentBalance={credits}
+        requiredCredits={creditsNeeded}
+        onClose={() => setShowCreditsModal(false)}
+      />
     </PageContainer>
   );
 }

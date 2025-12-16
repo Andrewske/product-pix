@@ -2,41 +2,41 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/forms';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { signupSchema, type SignupFormData } from '@/lib/validations/auth';
 
 export function SignupForm(): React.ReactElement {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-    e.preventDefault();
+  const form = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { email: '', password: '', confirmPassword: '' },
+  });
+
+  const onSubmit = async (data: SignupFormData): Promise<void> => {
     setLoading(true);
     setError(null);
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      setLoading(false);
-      return;
-    }
-
     const supabase = createClient();
 
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -49,7 +49,7 @@ export function SignupForm(): React.ReactElement {
     }
 
     // If session exists, user is auto-logged in (confirmations disabled)
-    if (data.session) {
+    if (authData.session) {
       router.push('/dashboard');
       router.refresh();
       return;
@@ -72,62 +72,85 @@ export function SignupForm(): React.ReactElement {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-4">
-        <FormField
-          label="Email address"
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email address</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    disabled={loading}
+                    className="bg-background"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                    disabled={loading}
+                    className="bg-background"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    disabled={loading}
+                    className="bg-background"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {error && (
+          <div className="text-destructive text-sm font-medium">{error}</div>
+        )}
+
+        <Button
+          variant="accent"
+          size="xl"
+          type="submit"
           disabled={loading}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="bg-background"
-        />
-
-        <FormField
-          label="Password"
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          disabled={loading}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="At least 8 characters"
-          className="bg-background"
-        />
-
-        <FormField
-          label="Confirm password"
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          required
-          disabled={loading}
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className="bg-background"
-        />
-      </div>
-
-      {error && (
-        <div className="text-destructive text-sm font-medium">{error}</div>
-      )}
-
-      <Button
-        variant="accent"
-        size="xl"
-        type="submit"
-        disabled={loading}
-        className="w-full"
-      >
-        {loading ? 'Creating account...' : 'Create account'}
-      </Button>
-    </form>
+          className="w-full"
+        >
+          {loading ? 'Creating account...' : 'Create account'}
+        </Button>
+      </form>
+    </Form>
   );
 }
