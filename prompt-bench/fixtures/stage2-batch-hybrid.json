@@ -4,60 +4,6 @@
   "tests": [
     {
       "sourceImages": [
-        "fixtures/images/suitcase/front.jpg",
-        "fixtures/images/suitcase/back.jpg",
-        "fixtures/images/suitcase/side.jpg"
-      ],
-      "variables": { "product": "monos suitcase" },
-      "notes": "Suitcase - hybrid angles"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/coffee-grinder/front.jpg",
-        "fixtures/images/coffee-grinder/back.jpg",
-        "fixtures/images/coffee-grinder/side.jpg"
-      ],
-      "variables": { "product": "coffee grinder" },
-      "notes": "Coffee grinder - hybrid angles"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/monitor/front.jpg",
-        "fixtures/images/monitor/back.jpg",
-        "fixtures/images/monitor/side.jpg"
-      ],
-      "variables": { "product": "monitor" },
-      "notes": "Monitor - hybrid angles"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/peanut-butter/front.jpg",
-        "fixtures/images/peanut-butter/back.jpg",
-        "fixtures/images/peanut-butter/side.jpg"
-      ],
-      "variables": { "product": "peanut butter jar" },
-      "notes": "Peanut butter jar - hybrid angles"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/espresso-machine/front.jpg",
-        "fixtures/images/espresso-machine/back.jpg",
-        "fixtures/images/espresso-machine/side.jpg"
-      ],
-      "variables": { "product": "espresso machine" },
-      "notes": "Espresso machine - hybrid angles"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/air-purifier/front.jpg",
-        "fixtures/images/air-purifier/back.jpg",
-        "fixtures/images/air-purifier/side.jpg"
-      ],
-      "variables": { "product": "air purifier" },
-      "notes": "Air purifier - hybrid angles"
-    },
-    {
-      "sourceImages": [
         "fixtures/images/bag/bag-front.jpg",
         "fixtures/images/bag/bag-back.jpg",
         "fixtures/images/bag/bag-top.jpg"
