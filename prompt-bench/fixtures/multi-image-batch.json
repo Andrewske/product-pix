@@ -1,26 +1,68 @@
 {
   "label": "stage1-multi-input-test",
-  "description": "Test whether multiple input images improve output quality",
+  "description": "Test whether multiple input images improve output quality across diverse product categories",
   "tests": [
     {
       "sourceImages": [
-        "fixtures/images/suitcase-front.jpg",
-        "fixtures/images/suitcase-back.jpg",
-        "fixtures/images/suitcase-side.jpg"
+        "fixtures/images/bag/bag-front.jpg",
+        "fixtures/images/bag/bag-back.jpg",
+        "fixtures/images/bag/bag-top.jpg",
+        "fixtures/images/bag/bag-bottom.jpg",
+        "fixtures/images/bag/bag-front-1.jpg"
       ],
       "variables": {
-        "product": "monos suitcase"
+        "product": "leather messenger bag"
       },
-      "notes": "Suitcase - 3 angles provided"
+      "notes": "Bag - 5 angles provided (front, back, top, bottom, alt front)"
     },
     {
       "sourceImages": [
-        "fixtures/images/suitcase-front.jpg"
+        "fixtures/images/figure/figurine-front.jpg",
+        "fixtures/images/figure/figurine-back.jpg"
       ],
       "variables": {
-        "product": "monos suitcase"
+        "product": "collectible figurine"
       },
-      "notes": "Suitcase - single angle (control)"
+      "notes": "Figurine - 2 angles provided (front, back)"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/guitar/guitar-front.jpg",
+        "fixtures/images/guitar/guitar-back.jpg",
+        "fixtures/images/guitar/guitar-front-1.jpg",
+        "fixtures/images/guitar/guitar-back-1.jpg",
+        "fixtures/images/guitar/__57 (4).jpg"
+      ],
+      "variables": {
+        "product": "acoustic guitar"
+      },
+      "notes": "Guitar - 5 angles provided (multiple front/back angles)"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/mug/mug-1.jpg",
+        "fixtures/images/mug/mug-2.jpg",
+        "fixtures/images/mug/mug-3.jpg",
+        "fixtures/images/mug/mug-4.jpg",
+        "fixtures/images/mug/mug-5.jpg"
+      ],
+      "variables": {
+        "product": "ceramic coffee mug"
+      },
+      "notes": "Mug - 5 angles provided"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/pottery/__57.jpg",
+        "fixtures/images/pottery/__57 (1).jpg",
+        "fixtures/images/pottery/__57 (3).jpg",
+        "fixtures/images/pottery/__57 (4).jpg",
+        "fixtures/images/pottery/__57 (5).jpg"
+      ],
+      "variables": {
+        "product": "handmade ceramic pottery"
+      },
+      "notes": "Pottery - 5 angles provided"
     }
   ]
 }

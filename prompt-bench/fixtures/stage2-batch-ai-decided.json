@@ -55,6 +55,51 @@
       ],
       "variables": { "product": "air purifier" },
       "notes": "Air purifier - AI-decided angles"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/bag/bag-front.jpg",
+        "fixtures/images/bag/bag-back.jpg",
+        "fixtures/images/bag/bag-top.jpg"
+      ],
+      "variables": { "product": "leather messenger bag" },
+      "notes": "Bag - AI-decided angles"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/figure/figurine-front.jpg",
+        "fixtures/images/figure/figurine-back.jpg",
+        "fixtures/images/figure/figurine-front.jpg"
+      ],
+      "variables": { "product": "collectible figurine" },
+      "notes": "Figurine - AI-decided angles"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/guitar/guitar-front.jpg",
+        "fixtures/images/guitar/guitar-back.jpg",
+        "fixtures/images/guitar/__57 (4).jpg"
+      ],
+      "variables": { "product": "acoustic guitar" },
+      "notes": "Guitar - AI-decided angles"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/mug/mug-1.jpg",
+        "fixtures/images/mug/mug-3.jpg",
+        "fixtures/images/mug/mug-5.jpg"
+      ],
+      "variables": { "product": "ceramic coffee mug" },
+      "notes": "Mug - AI-decided angles"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/pottery/__57.jpg",
+        "fixtures/images/pottery/__57 (3).jpg",
+        "fixtures/images/pottery/__57 (5).jpg"
+      ],
+      "variables": { "product": "handmade ceramic pottery" },
+      "notes": "Pottery - AI-decided angles"
     }
   ]
 }

@@ -39,8 +39,8 @@ const serveHTML = (): Response => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prompt Bench UI</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@19/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@19/umd/react-dom.production.min.js"></script>
+   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 </head>
 <body class="bg-gray-50">
   <div id="root"></div>
@@ -295,7 +295,7 @@ const serveHTML = (): Response => {
             if (done) break;
 
             const text = decoder.decode(value);
-            const lines = text.split('\n');
+            const lines = text.split("\\n");
 
             for (const line of lines) {
               if (line.startsWith('data: ')) {
@@ -792,7 +792,7 @@ const handleTemplates = async (req: Request): Promise<Response> => {
 
     const { data: templates, error } = await supabase
       .from('prompt_templates')
-      .select('slug, version, name, type')
+      .select('slug, version, status')
       .order('slug', { ascending: true })
       .order('version', { ascending: false });
 

@@ -36,7 +36,7 @@ const parseCsvHandler = async (request: AuthenticatedRequest): Promise<NextRespo
 
     // Read file content
     const text = await file.text();
-    const lines = text.split('\n').filter((l) => l.trim());
+    const lines = text.split("\n").filter((l) => l.trim());
 
     if (lines.length < 2) {
       return NextResponse.json(

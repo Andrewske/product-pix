@@ -9,8 +9,7 @@ export interface BatchFileMetadata {
 export interface TemplateMetadata {
   slug: string;
   version: number;
-  name?: string;
-  type: 'single' | 'collection';
+  status: 'draft' | 'active' | 'archived';
 }
 
 export interface ProgressEvent {
