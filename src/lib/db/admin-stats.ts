@@ -38,6 +38,18 @@ export interface UserListItem {
   messageCount: number;
 }
 
+interface FilteredUserRpcResult {
+  id: string;
+  email: string;
+  display_name: string | null;
+  credit_balance: number;
+  created_at: string;
+  last_active_at: string | null;
+  job_count: string | number;
+  error_count: string | number;
+  message_count: string | number;
+}
+
 /**
  * Get today's date range for queries
  */
@@ -260,18 +272,18 @@ export const getFilteredUserList = async (
   const supabase = createAdminClient();
 
   try {
-    const { data, error } = await (supabase.rpc as any)('get_filtered_user_list', {
-      p_search: filters.search ?? null,
-      p_has_errors: filters.hasErrors ?? null,
-      p_has_messages: filters.hasMessages ?? null,
-      p_min_credits: filters.minCredits ?? null,
-      p_max_credits: filters.maxCredits ?? null,
-      p_created_after: filters.createdAfter ?? null,
-      p_created_before: filters.createdBefore ?? null,
+     const { data, error } = await supabase.rpc('get_filtered_user_list', {
+      p_search: filters.search ?? undefined,
+      p_has_errors: filters.hasErrors ?? undefined,
+      p_has_messages: filters.hasMessages ?? undefined,
+      p_min_credits: filters.minCredits ?? undefined,
+      p_max_credits: filters.maxCredits ?? undefined,
+      p_created_after: filters.createdAfter ?? undefined,
+      p_created_before: filters.createdBefore ?? undefined,
       p_sort_by: filters.sortBy ?? 'created_at',
       p_sort_order: filters.sortOrder ?? 'desc',
       p_limit: options.limit,
-      p_cursor: options.cursor ?? null
+      p_cursor: options.cursor ?? undefined
     });
 
     if (error) {
@@ -284,7 +296,7 @@ export const getFilteredUserList = async (
     }
 
     // Convert the RPC results to UserListItem format
-    const users: UserListItem[] = data.map((user: any) => ({
+    const users: UserListItem[] = (data as FilteredUserRpcResult[]).map((user) => ({
       id: user.id,
       email: user.email,
       displayName: user.display_name,

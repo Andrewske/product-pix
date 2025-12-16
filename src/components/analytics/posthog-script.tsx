@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import posthog from 'posthog-js';
 import { useCookieConsent } from '@/components/cookie-consent';
 
 export function PostHogScript() {
   const { canUseAnalytics } = useCookieConsent();
   const [initialized, setInitialized] = useState(false);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const _searchParams = useSearchParams();
 
   const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
@@ -25,15 +24,18 @@ export function PostHogScript() {
 
     if (!canUseAnalytics() || initialized) return;
 
-    posthog.init(apiKey, {
-      api_host: apiHost,
-      person_profiles: 'always',  // Track all users with consent (not just identified)
-      capture_pageview: false,    // Manual pageview tracking
-      loaded: (posthog_instance) => {
-        // Track initial pageview after initialization
-        posthog_instance.capture('$pageview');
-        setInitialized(true);
-      }
+    // Dynamic import to avoid SSR issues
+    import('posthog-js').then((posthog) => {
+      posthog.default.init(apiKey, {
+        api_host: apiHost,
+        person_profiles: 'always',  // Track all users with consent (not just identified)
+        capture_pageview: false,    // Manual pageview tracking
+        loaded: (posthog_instance: typeof import('posthog-js').default) => {
+          // Track initial pageview after initialization
+          posthog_instance.capture('$pageview');
+          setInitialized(true);
+        }
+      });
     });
   }, [canUseAnalytics, initialized, apiKey, apiHost]);
 
@@ -41,8 +43,11 @@ export function PostHogScript() {
   useEffect(() => {
     if (!initialized || !canUseAnalytics()) return;
 
-    posthog.capture('$pageview');
-  }, [pathname, searchParams, initialized, canUseAnalytics]);
+    // Dynamic import to avoid SSR issues
+    import('posthog-js').then((posthog) => {
+      posthog.default.capture('$pageview');
+    });
+  }, [pathname, initialized, canUseAnalytics]);
 
   return null;
 }

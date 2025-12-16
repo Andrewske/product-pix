@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import { identifyUser, resetUser } from '@/lib/analytics/client';
-import { logger } from '@/lib/logging';
 import type { User as DbUser } from '@/types';
 
 interface UseUserResult {
@@ -66,7 +64,6 @@ export function useUserProfile(): UseUserProfileResult {
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfileLoading(true);
     const supabase = createClient();
 
@@ -77,9 +74,11 @@ export function useUserProfile(): UseUserProfileResult {
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) {
-          logger.error('Error fetching profile', {
-            error: error.message,
-            userId: user.id,
+          import('@/lib/logging').then(({ logger }) => {
+            logger.error('Error fetching profile', {
+              error: error.message,
+              userId: user.id,
+            });
           });
         }
         setProfile(data);
@@ -89,13 +88,17 @@ export function useUserProfile(): UseUserProfileResult {
 
   useEffect(() => {
     if (!profile) {
-      resetUser();
+      import('@/lib/analytics/client').then(({ resetUser }) => {
+        resetUser();
+      });
       identifiedRef.current = false;
     } else if (!identifiedRef.current) {
-      identifyUser(profile.id, {
-        email: profile.email,
-        tier: profile.tier,
-        created_at: profile.created_at,
+      import('@/lib/analytics/client').then(({ identifyUser }) => {
+        identifyUser(profile.id, {
+          email: profile.email,
+          tier: profile.tier,
+          created_at: profile.created_at,
+        });
       });
       identifiedRef.current = true;
     }

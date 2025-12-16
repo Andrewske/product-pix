@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ImageCard } from '../image-card';
+import Image from 'next/image';
 import type { GeneratedImage, FeedbackType } from '@/types';
 
 type MockUseImageFeedbackReturn = {
@@ -32,11 +33,12 @@ mock.module('next/image', () => ({
     className?: string;
     fill?: boolean;
   }) => (
-    <img
+    <Image
       src={src}
       alt={alt}
       className={className}
-      style={fill ? { position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' } : {}}
+      fill={fill}
+      style={fill ? { objectFit: 'cover' } : {}}
     />
   ),
 }));

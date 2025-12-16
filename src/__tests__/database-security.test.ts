@@ -41,7 +41,7 @@ describe('Database Security Migrations', () => {
       const client = db.getClient();
 
       // Check that the function exists
-      const { data, error } = await client.rpc('get_filtered_user_list');
+      const { data: _data, error } = await client.rpc('get_filtered_user_list');
 
       // Should fail due to auth check, but not due to function not existing
       expect(error).toBeDefined();
@@ -70,7 +70,7 @@ describe('Database Security Migrations', () => {
     });
 
     it('should allow admins to insert activity for any user', async () => {
-      const adminUser = await db.createTestUser({
+      const _adminUser = await db.createTestUser({
         email: 'admin-activity@example.com',
         is_admin: true
       });
@@ -97,7 +97,7 @@ describe('Database Security Migrations', () => {
     it('should verify table exists and is accessible', async () => {
       // Basic check that we can query the table
       const client = db.getClient();
-      const { data, error } = await client
+      const { data: _data, error } = await client
         .from('user_activity')
         .select('id')
         .limit(1);
