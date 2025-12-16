@@ -3,8 +3,8 @@
  */
 
 import { parseArgs } from 'node:util';
- 
- import { runPipeline, generateBatchLabel } from '@bench/core/orchestrator';
+
+ import { runPipeline, generateBatchLabel, type ProgressCallback } from '../core/orchestrator';
  import { createProgressBar, displayPipelineSummary } from './progress';
  import { loadConfig } from './shared';
  import { autoReportForLabel } from './report';
@@ -72,7 +72,10 @@ const parseTestOptions = (args: string[]): TestOptions => {
   };
 };
 
-export const testCommand = async (args: string[]): Promise<void> => {
+export const testCommand = async (
+  args: string[],
+  onProgress?: ProgressCallback
+): Promise<void> => {
   const options = parseTestOptions(args);
   const batchLabel = options.label || generateBatchLabel(options.template);
 
@@ -88,7 +91,7 @@ export const testCommand = async (args: string[]): Promise<void> => {
 
   // Progress tracking
   const bars = new Map<string, ReturnType<typeof createProgressBar>>();
-  const onProgress = options.quiet || options.json
+  const progressCallback = options.quiet || options.json
     ? undefined
     : (phase: string, current: number, total: number, message: string) => {
         if (!bars.has(phase)) {
@@ -103,6 +106,18 @@ export const testCommand = async (args: string[]): Promise<void> => {
         }
       };
 
+  // Combine progress callbacks
+  const combinedProgress: ProgressCallback = (phase, current, total, message) => {
+    // Call CLI progress bar callback
+    if (progressCallback) {
+      progressCallback(phase, current, total, message);
+    }
+    // Call external progress callback (for SSE)
+    if (onProgress) {
+      onProgress(phase, current, total, message);
+    }
+  };
+
   // Run pipeline
   const result = await runPipeline({
     templateSlug: options.template,
@@ -114,7 +129,7 @@ export const testCommand = async (args: string[]): Promise<void> => {
     skipReport: options.skipReport,
     dryRun: options.dryRun,
     evalModel: options.evalModel,
-  }, onProgress);
+  }, combinedProgress);
 
   // Handle result
   if (!result.ok) {
