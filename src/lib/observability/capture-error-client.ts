@@ -31,11 +31,11 @@ export async function captureError(
 
   // Best-effort PostHog capture
   try {
-    const posthog = getPostHog();
-    if (!posthog) return;
+    const posthogModule = await getPostHog();
+    if (!posthogModule) return;
 
     const properties = createPostHogErrorProperties(error, options?.route);
-    posthog.capture('error_occurred', properties);
+    posthogModule.default.capture('error_occurred', properties);
   } catch (captureFailure) {
     // Fail silently - already in error state
     console.warn('[ProductPix] Failed to capture to PostHog:', captureFailure);

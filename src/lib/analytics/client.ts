@@ -51,24 +51,27 @@ async function getPostHogClient(): Promise<{
  * Tracks an analytics event with type-safe validation
  */
 export function trackEvent<T extends AnalyticsEvent>(event: T): void {
-  // Validate event against Zod schemas
-  if (!validateAnalyticsEvent(event)) {
-    console.warn('Invalid analytics event:', event);
-    return;
-  }
+  // Dynamic import to avoid SSR issues
+  import('@/lib/logging').then(({ logger }) => {
+    // Validate event against Zod schemas
+    if (!validateAnalyticsEvent(event)) {
+      logger.warn('Invalid analytics event', { event });
+      return;
+    }
 
-  try {
-    // Dynamic import to avoid SSR issues
-    getPostHogClient().then((posthog) => {
-      if (posthog.__loaded) {
-        posthog.capture(event.event, event.properties);
-      }
-    }).catch((error) => {
-      console.warn('Failed to track analytics event:', error);
-    });
-  } catch (error) {
-    console.warn('Failed to track analytics event:', error);
-  }
+    try {
+      // Dynamic import to avoid SSR issues
+      getPostHogClient().then((posthog) => {
+        if (posthog.__loaded) {
+          posthog.capture(event.event, event.properties);
+        }
+      }).catch((error) => {
+        logger.warn('Failed to track analytics event', { error });
+      });
+    } catch (error) {
+      logger.warn('Failed to track analytics event', { error });
+    }
+  });
 }
 
 let identifiedUserId: string | null = null;
@@ -84,18 +87,21 @@ export function identifyUser(userId: string, properties?: Record<string, unknown
 
   identifiedUserId = userId;
 
-  try {
-    // Dynamic import to avoid SSR issues
-    getPostHogClient().then((posthog) => {
-      if (posthog.__loaded) {
-        posthog.identify(userId, properties);
-      }
-    }).catch((error) => {
-      console.warn('Failed to identify user:', error);
-    });
-  } catch (error) {
-    console.warn('Failed to identify user:', error);
-  }
+  // Dynamic import to avoid SSR issues
+  import('@/lib/logging').then(({ logger }) => {
+    try {
+      // Dynamic import to avoid SSR issues
+      getPostHogClient().then((posthog) => {
+        if (posthog.__loaded) {
+          posthog.identify(userId, properties);
+        }
+      }).catch((error) => {
+        logger.warn('Failed to identify user', { error });
+      });
+    } catch (error) {
+      logger.warn('Failed to identify user', { error });
+    }
+  });
 }
 
 /**
@@ -104,18 +110,21 @@ export function identifyUser(userId: string, properties?: Record<string, unknown
 export function resetUser(): void {
   identifiedUserId = null;
 
-  try {
-    // Dynamic import to avoid SSR issues
-    getPostHogClient().then((posthog) => {
-      if (posthog.__loaded) {
-        posthog.reset();
-      }
-    }).catch((error) => {
-      console.warn('Failed to reset user:', error);
-    });
-  } catch (error) {
-    console.warn('Failed to reset user:', error);
-  }
+  // Dynamic import to avoid SSR issues
+  import('@/lib/logging').then(({ logger }) => {
+    try {
+      // Dynamic import to avoid SSR issues
+      getPostHogClient().then((posthog) => {
+        if (posthog.__loaded) {
+          posthog.reset();
+        }
+      }).catch((error) => {
+        logger.warn('Failed to reset user', { error });
+      });
+    } catch (error) {
+      logger.warn('Failed to reset user', { error });
+    }
+  });
 }
 
 /**

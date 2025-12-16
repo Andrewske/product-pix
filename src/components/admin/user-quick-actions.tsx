@@ -18,17 +18,23 @@ interface UserQuickActionsProps {
 export function UserQuickActions({ userId, onRefresh }: UserQuickActionsProps) {
   const handleViewImages = () => {
     // Navigate to user's images - could use router or window.location
-    window.open(`/admin/users/${userId}/images`, '_blank');
+    if (typeof window !== 'undefined') {
+      window.open(`/admin/users/${userId}/images`, '_blank');
+    }
   };
 
   const handleViewMessages = () => {
     // Navigate to user's messages
-    window.open(`/admin/users/${userId}/messages`, '_blank');
+    if (typeof window !== 'undefined') {
+      window.open(`/admin/users/${userId}/messages`, '_blank');
+    }
   };
 
   const handleAddCredits = () => {
     // Open add credits modal or navigate to credits page
-    window.open(`/admin/users/${userId}/credits`, '_blank');
+    if (typeof window !== 'undefined') {
+      window.open(`/admin/users/${userId}/credits`, '_blank');
+    }
   };
 
   const handleImpersonateUser = () => {

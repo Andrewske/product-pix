@@ -62,7 +62,7 @@ describe('Analytics Client', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(mockPostHog.capture).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith('Invalid analytics event:', invalidEvent);
+      expect(consoleSpy).toHaveBeenCalledWith('Invalid analytics event', { event: invalidEvent });
 
       console.warn = originalConsole;
     });

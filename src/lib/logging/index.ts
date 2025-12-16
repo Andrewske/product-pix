@@ -30,14 +30,14 @@ export interface Logger {
 }
 
 const getCurrentLogLevel = (): LogLevel => {
-  // Browser: default to 'info' (no process.env access)
-  if (typeof window !== 'undefined') {
+  // Read from env (works in both server and browser)
+  try {
+    const envLevel = process.env.LOG_LEVEL?.toLowerCase();
+    const parsed = LOG_LEVEL_SCHEMA.safeParse(envLevel);
+    return parsed.success ? parsed.data : 'info';
+  } catch {
     return 'info';
   }
-  // Server: read from env
-  const envLevel = process.env.LOG_LEVEL?.toLowerCase();
-  const parsed = LOG_LEVEL_SCHEMA.safeParse(envLevel);
-  return parsed.success ? parsed.data : 'info';
 };
 
 const shouldLog = (level: LogLevel, currentLevel: LogLevel): boolean =>
@@ -63,13 +63,13 @@ const createLogEntry = (
 
 const writeLog = (entry: LogEntry): void => {
   // Browser environment: use console
-  if (typeof window !== 'undefined') {
+  if (typeof globalThis !== 'undefined' && typeof globalThis.window !== 'undefined') {
     const { level, message, context } = entry;
     const data = context ? { ...context } : undefined;
 
     switch (level) {
       case 'error':
-        console.warn(message, data); // Fallback logging - structured logger failed
+        console.error(message, data);
         break;
       case 'warn':
         console.warn(message, data);

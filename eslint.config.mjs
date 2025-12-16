@@ -30,6 +30,7 @@ const eslintConfig = defineConfig([
           varsIgnorePattern: "^_",
         }
       ],
+      "@next/next/no-img-element": "off",  // Allow img tags in test mocks
     },
   },
   // Relax rules for shadcn/ui components (library code)
@@ -58,13 +59,20 @@ const eslintConfig = defineConfig([
       ],
     },
    },
-   // Ban console.error in API routes and lib code (allow warn/info for structured logging)
-   {
-     files: ["src/app/api/**/*.ts", "src/lib/**/*.ts"],
-     rules: {
-       "no-console": ["error", { "allow": ["warn", "info"] }]
-     }
-   },
+    // Ban console.error in API routes and lib code (allow warn/info for structured logging)
+    {
+      files: ["src/app/api/**/*.ts", "src/lib/**/*.ts"],
+      rules: {
+        "no-console": ["error", { "allow": ["warn", "info"] }]
+      }
+    },
+    // Allow console.error in logging library (centralized logging system)
+    {
+      files: ["src/lib/logging/index.ts"],
+      rules: {
+        "no-console": ["error", { "allow": ["warn", "info", "error"] }]
+      }
+    },
    globalIgnores([
     ".next/**",
     "out/**",

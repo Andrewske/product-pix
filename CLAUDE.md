@@ -68,6 +68,27 @@ prompt-bench/   # Isolated CLI framework
 - **Pricing**: `prompt-bench.toml` at root (committed)
   - Model matching: exact → prefix → error (never guess provider)
 
+## Logging & Error Handling
+
+**Server-side (API routes, lib code):**
+- Always use `logger` from `@/lib/logging`
+- Never use console methods in production code
+
+**Client-side:**
+- **Application errors (ProductPixError):** Use `captureError` from `@/lib/observability`
+  - Logs to console with `[ProductPix Error]` prefix
+  - Sends error_occurred event to PostHog
+  - Use for user-facing errors, business logic failures
+- **Infrastructure warnings (analytics, telemetry):** Use `logger.warn/error`
+  - Centralized, structured logging
+  - Use for non-user-facing warnings (tracking failures, config issues)
+- **React component errors:** Use `console.error` only for uncaught errors in error boundaries
+  - Prefer captureError for handled errors
+
+**Never:**
+- Bare `console.log` without context in production code
+- Scattered console statements for debugging (remove before commit)
+
 ## Testing
 
 - **Framework**: Pure Bun test (NO Jest, NO @testing-library/jest-dom)

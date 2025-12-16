@@ -1,8 +1,4 @@
-import posthog from 'posthog-js';
-
-export { posthog };
-
-export function getPostHog(): typeof posthog | null {
+export async function getPostHog(): Promise<typeof import('posthog-js') | null> {
   if (typeof window === 'undefined') return null;
-  return posthog;
+  return await import('posthog-js');
 }

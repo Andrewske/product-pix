@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GenerationResult } from '../generation-result';
-import Image from 'next/image';
+
 import type { FeedbackType } from '@/types';
 
 type MockUseImageFeedbackReturn = {
@@ -40,17 +40,15 @@ mock.module('next/image', () => ({
     className?: string;
     onClick?: () => void;
   }) => (
-    <Image
+    <img
       src={src}
       alt={alt}
       className={className}
       onClick={onClick}
       onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
       tabIndex={onClick ? 0 : undefined}
-      fill
-      style={{ objectFit: 'contain' }}
+      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
     />
-
   ),
 }));
 

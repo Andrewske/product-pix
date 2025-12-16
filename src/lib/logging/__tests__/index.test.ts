@@ -1,8 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach, spyOn } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, spyOn, mock } from 'bun:test';
 import { createLogger } from '../index';
-import { requestContext } from '@/lib/request/context';
+
 
 describe('createLogger', () => {
+  // Mock window to undefined to force server-side logging behavior in tests
+  const originalWindow = global.window;
+  beforeEach(() => {
+    (global as any).window = undefined;
+  });
+  afterEach(() => {
+    (global as any).window = originalWindow;
+  });
   let stdoutSpy: ReturnType<typeof spyOn>;
   let stderrSpy: ReturnType<typeof spyOn>;
   let originalEnv: NodeJS.ProcessEnv;
@@ -199,19 +207,22 @@ describe('createLogger', () => {
   });
 
   describe('automatic context injection', () => {
-    let getStoreSpy: ReturnType<typeof spyOn>;
+    const mockGetRequestContext = mock(() => undefined as any);
 
     beforeEach(() => {
-      getStoreSpy = spyOn(requestContext, 'getStore');
-    });
-
-    afterEach(() => {
-      getStoreSpy.mockRestore();
+      mock.module('@/lib/request/context', () => ({
+        requestContext: {
+          run: mock(() => {}),
+          getStore: mock(() => undefined),
+        },
+        getRequestContext: mockGetRequestContext,
+        setUserId: mock(() => {}),
+      }));
     });
 
     it('auto-injects requestId when available', () => {
       process.env.LOG_LEVEL = 'info';
-      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
+      mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
       const logger = createLogger();
 
       logger.info('test message');
@@ -224,7 +235,7 @@ describe('createLogger', () => {
 
     it('auto-injects userId when available', () => {
       process.env.LOG_LEVEL = 'info';
-      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: undefined });
+      mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: undefined });
       const logger = createLogger();
 
       logger.info('test message');
@@ -237,7 +248,7 @@ describe('createLogger', () => {
 
     it('auto-injects route when available', () => {
       process.env.LOG_LEVEL = 'info';
-      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
+      mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
       const logger = createLogger();
 
       logger.info('test message');
@@ -250,7 +261,7 @@ describe('createLogger', () => {
 
     it('does not inject context when AsyncLocalStorage is empty', () => {
       process.env.LOG_LEVEL = 'info';
-      getStoreSpy.mockReturnValue(undefined);
+      mockGetRequestContext.mockReturnValue(undefined);
       const logger = createLogger();
 
       logger.info('test message');
@@ -263,7 +274,7 @@ describe('createLogger', () => {
 
     it('merges manual context with auto-injected context', () => {
       process.env.LOG_LEVEL = 'info';
-      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
+      mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
       const logger = createLogger();
       const manualContext = { action: 'login', status: 'success' };
 
@@ -278,7 +289,7 @@ describe('createLogger', () => {
 
     it('includes requestId from context', () => {
       process.env.LOG_LEVEL = 'info';
-      getStoreSpy.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
+      mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
       const logger = createLogger();
 
       logger.error('test');

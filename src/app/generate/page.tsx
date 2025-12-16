@@ -2,6 +2,8 @@
 // src/app/generate/page.tsx
 
 import { useState } from 'react';
+
+export const dynamic = 'force-dynamic';
 import { Sparkles } from 'lucide-react';
 import { UploadForm } from '@/components/forms/upload-form';
 import { TemplateSelector } from '@/components/forms/template-selector';
@@ -188,11 +190,13 @@ export default function GeneratePage() {
 
       // Clean up object URL
       URL.revokeObjectURL(objectUrl);
-    } catch (error) {
-      console.error('Download failed:', error);
-      // Fallback to opening in new tab if download fails
-      window.open(result.imageUrl, '_blank');
-    }
+     } catch (error) {
+       console.error('Download failed:', error);
+       // Fallback to opening in new tab if download fails
+       if (typeof window !== 'undefined') {
+         window.open(result.imageUrl, '_blank');
+       }
+     }
   };
 
   const handleRegenerate = () => {

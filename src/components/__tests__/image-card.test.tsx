@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ImageCard } from '../image-card';
-import Image from 'next/image';
+
 import type { GeneratedImage, FeedbackType } from '@/types';
 
 type MockUseImageFeedbackReturn = {
@@ -26,6 +26,8 @@ const mockUseImageFeedback = mock((): MockUseImageFeedbackReturn => ({
 }));
 
 // Mock Next.js Image component
+// Next.js Image has complex optimization logic we don't need in tests.
+// We replace it with a simple img tag that maintains the same API.
 mock.module('next/image', () => ({
   default: ({ src, alt, className, fill }: {
     src: string;
@@ -33,12 +35,11 @@ mock.module('next/image', () => ({
     className?: string;
     fill?: boolean;
   }) => (
-    <Image
+    <img
       src={src}
       alt={alt}
       className={className}
-      fill={fill}
-      style={fill ? { objectFit: 'cover' } : {}}
+      style={fill ? { objectFit: 'cover', width: '100%', height: '100%' } : {}}
     />
   ),
 }));

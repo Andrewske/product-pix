@@ -31,18 +31,9 @@ export async function middleware(request: NextRequest) {
   // Get authenticated user
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (user) {
-    // Check if user is deleted
-    const { data: userData } = await supabase
-      .from('users')
-      .select('deleted_at')
-      .eq('id', user.id)
-      .single();
-
-    if (userData?.deleted_at && !request.nextUrl.pathname.startsWith('/account-deleted')) {
-      // Redirect to account deleted page
-      return NextResponse.redirect(new URL('/account-deleted', request.url));
-    }
+  if (user?.user_metadata?.deleted_at && !request.nextUrl.pathname.startsWith('/account-deleted')) {
+    // Redirect to account deleted page
+    return NextResponse.redirect(new URL('/account-deleted', request.url));
   }
 
   return response;

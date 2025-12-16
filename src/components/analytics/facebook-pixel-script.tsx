@@ -2,13 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import ReactPixel from 'react-facebook-pixel';
 import { useCookieConsent } from '@/components/cookie-consent';
 
 export function FacebookPixelScript() {
   const { canUseMarketing } = useCookieConsent();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const _searchParams = useSearchParams();
   const initializedRef = useRef(false);
 
   const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
@@ -24,9 +23,12 @@ export function FacebookPixelScript() {
 
     if (!canUseMarketing() || initializedRef.current) return;
 
-    ReactPixel.init(pixelId);
-    ReactPixel.pageView(); // Initial pageview
-    initializedRef.current = true;
+    // Dynamic import to avoid SSR issues
+    import('react-facebook-pixel').then((ReactPixel) => {
+      ReactPixel.default.init(pixelId);
+      ReactPixel.default.pageView(); // Initial pageview
+      initializedRef.current = true;
+    });
   }, [canUseMarketing, pixelId]);
 
   // Track pageview on route changes
@@ -35,9 +37,12 @@ export function FacebookPixelScript() {
 
     // Use pathname to ensure effect runs on route changes
     if (pathname) {
-      ReactPixel.pageView();
+      // Dynamic import to avoid SSR issues
+      import('react-facebook-pixel').then((ReactPixel) => {
+        ReactPixel.default.pageView();
+      });
     }
-  }, [pathname, searchParams, canUseMarketing]);
+  }, [pathname, canUseMarketing]);
 
   return null;
 }
