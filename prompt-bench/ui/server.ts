@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { resolve, join } from 'node:path';
+import { resolve, join, relative } from 'node:path';
 import { readdirSync, readFileSync } from 'node:fs';
 import { config } from 'dotenv';
 import { createAdminClient } from '../../src/lib/supabase/admin';
@@ -13,6 +13,7 @@ config({ path: resolve(process.cwd(), '.env.local'), override: true });
 
 Bun.serve({
   port: 3001,
+  idleTimeout: 255, // 4.25 minutes max for Bun.serve, for long-running prompt bench operations
   fetch(req: Request) {
     const url = new URL(req.url);
 
@@ -772,7 +773,7 @@ const handleBatches = async (req: Request): Promise<Response> => {
       const parsed = JSON.parse(content);
 
       return {
-        filename,
+        filename: relative(process.cwd(), fullPath),
         label: parsed.label || filename.replace('.json', ''),
         description: parsed.description,
         testCount: parsed.tests?.length || 0,

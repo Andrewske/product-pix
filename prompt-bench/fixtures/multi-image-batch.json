@@ -14,55 +14,6 @@
         "product": "leather messenger bag"
       },
       "notes": "Bag - 5 angles provided (front, back, top, bottom, alt front)"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/figure/figurine-front.jpg",
-        "fixtures/images/figure/figurine-back.jpg"
-      ],
-      "variables": {
-        "product": "collectible figurine"
-      },
-      "notes": "Figurine - 2 angles provided (front, back)"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/guitar/guitar-front.jpg",
-        "fixtures/images/guitar/guitar-back.jpg",
-        "fixtures/images/guitar/guitar-front-1.jpg",
-        "fixtures/images/guitar/guitar-back-1.jpg",
-        "fixtures/images/guitar/__57 (4).jpg"
-      ],
-      "variables": {
-        "product": "acoustic guitar"
-      },
-      "notes": "Guitar - 5 angles provided (multiple front/back angles)"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/mug/mug-1.jpg",
-        "fixtures/images/mug/mug-2.jpg",
-        "fixtures/images/mug/mug-3.jpg",
-        "fixtures/images/mug/mug-4.jpg",
-        "fixtures/images/mug/mug-5.jpg"
-      ],
-      "variables": {
-        "product": "ceramic coffee mug"
-      },
-      "notes": "Mug - 5 angles provided"
-    },
-    {
-      "sourceImages": [
-        "fixtures/images/pottery/__57.jpg",
-        "fixtures/images/pottery/__57 (1).jpg",
-        "fixtures/images/pottery/__57 (3).jpg",
-        "fixtures/images/pottery/__57 (4).jpg",
-        "fixtures/images/pottery/__57 (5).jpg"
-      ],
-      "variables": {
-        "product": "handmade ceramic pottery"
-      },
-      "notes": "Pottery - 5 angles provided"
     }
   ]
 }
