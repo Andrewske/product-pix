@@ -11,17 +11,53 @@ import { parseArgs } from 'node:util';
 
 
 interface TestOptions {
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   template: string;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   version: number | 'latest';
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   batchFile: string;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   label?: string;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   skipSync: boolean;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   skipEval: boolean;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   skipReport: boolean;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   dryRun: boolean;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   quiet: boolean;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   json: boolean;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
   evalModel: string;
+analysisModel?: string;
+  noAnalysis: boolean;
+  noCache: boolean;
 }
 
 const parseTestOptions = (args: string[]): TestOptions => {
@@ -41,6 +77,9 @@ const parseTestOptions = (args: string[]): TestOptions => {
       quiet: { type: 'boolean', short: 'q', default: false },
       json: { type: 'boolean', default: false },
       'eval-model': { type: 'string' },
+'analysis-model': { type: 'string' },
+      'no-analysis': { type: 'boolean', default: false },
+      'no-cache': { type: 'boolean', default: false },
     },
   });
 
@@ -69,6 +108,9 @@ const parseTestOptions = (args: string[]): TestOptions => {
     quiet: values.quiet ?? false,
     json: values.json ?? false,
     evalModel: values['eval-model'] || config?.defaults.evaluation_model || 'claude-sonnet-4-20250514',
+analysisModel: values['analysis-model'],
+    noAnalysis: values['no-analysis'] ?? false,
+    noCache: values['no-cache'] ?? false,
   };
 };
 
@@ -129,6 +171,9 @@ export const testCommand = async (
     skipReport: options.skipReport,
     dryRun: options.dryRun,
     evalModel: options.evalModel,
+analysisModel: options.analysisModel,
+    analysisEnabled: !options.noAnalysis,
+    analysisCacheEnabled: !options.noCache,
   }, combinedProgress);
 
   // Handle result

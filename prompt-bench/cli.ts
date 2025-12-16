@@ -24,11 +24,12 @@ import { evaluateCollectionCommand } from '@bench/commands/evaluate-collection';
 import { compareCommand } from '@bench/commands/compare';
 import { reportCommand } from '@bench/commands/report';
 import { syncCommand } from '@bench/commands/sync';
+import { syncAnalysisCommand } from '@bench/commands/sync-analysis';
 import { testCommand } from '@bench/commands/test';
 import { openLastReportCommand } from '@bench/commands/open-last-report';
 import { improveCommand } from '@bench/commands/improve';
 
-const COMMANDS = ['test', 'run', 'evaluate', 'evaluate-collection', 'compare', 'report', 'sync', 'open-last-report', 'improve'] as const;
+const COMMANDS = ['test', 'run', 'evaluate', 'evaluate-collection', 'compare', 'report', 'sync', 'sync-analysis', 'open-last-report', 'improve'] as const;
 
 type Command = (typeof COMMANDS)[number];
 
@@ -47,12 +48,17 @@ Commands:
    compare             Compare two batch runs (baseline vs candidate)
    report              Generate HTML report for a batch
    sync                Sync local templates to database
+sync-analysis       Sync analysis prompts to database
    open-last-report    Open the most recent HTML report
    improve             AI-powered template improvement
 
 Examples:
    bun bench test --template product-photo --batch ./batches/test.csv
    bun bench run --template product-photo --batch ./batches/test.csv --label v1
+nAnalysis Options:
+    --analysis-model <model>    Override analysis model (default: gemini-2.0-flash)
+    --no-analysis               Disable AI product analysis
+    --no-cache                  Disable analysis cache (force fresh analysis)
    bun bench evaluate --label v1
    bun bench evaluate-collection --label v1
    bun bench compare --baseline v1 --candidate v2

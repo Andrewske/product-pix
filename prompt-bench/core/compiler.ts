@@ -216,7 +216,8 @@ export const compileTemplate = (
   };
 
   // Step 5: Assemble the final prompt
-  const prompt = assemblePrompt(substitutedData);
+  const rawPrompt = assemblePrompt(substitutedData);
+  const prompt = stripEmptyVariables(rawPrompt);
 
   // Step 6: Validate no unresolved variables remain
   if (!options.skipValidation) {
@@ -226,13 +227,26 @@ export const compileTemplate = (
     }
 
     // Also check negative prompt if it exists
+
     if (substitutedData.negative) {
+
+      substitutedData.negative = stripEmptyVariables(substitutedData.negative);
+
       const negativeError = validateCompiledPrompt(substitutedData.negative);
+
       if (negativeError) {
+
         return err({
+
           ...negativeError,
+
           message: `In negative prompt: ${negativeError.message}`,
+
         });
+
+      }
+
+    }
       }
     }
   }

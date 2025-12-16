@@ -7,6 +7,8 @@ import { logger } from '@/lib/logging';
 import { normalizeUsage } from './usage-types';
 import { ok, err, type Result } from '@/lib/result';
 import type { ProductAnalysis } from './types';
+nconst FALLBACK_PRODUCT_ANALYSIS_PROMPT = `Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.`;
+import { fetchAnalysisPromptBySlug } from '@/lib/db/analysis-prompts';
 
 // =============================================================================
 // Product Analyzer
@@ -22,6 +24,21 @@ export const analyzeProductImage = async (
   _mimeType: string
 ): Promise<Result<{ analysis: ProductAnalysis; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }>> => {
   try {
+// Fetch prompt from DB (with fallback to hardcoded)
+    const promptResult = await fetchAnalysisPromptBySlug('product-analysis');
+    const promptText = promptResult && promptResult.promptText
+      ? promptResult.promptText
+      : FALLBACK_PRODUCT_ANALYSIS_PROMPT;
+
+    if (promptResult && promptResult.promptText) {
+      logger.debug('Using analysis prompt from database', {
+        slug: 'product-analysis',
+        version: promptResult.version
+      });
+    } else {
+      logger.debug('Using fallback analysis prompt (DB prompt not found)');
+    }
+
     const model = env.ANALYSIS_MODEL || 'gemini-2.0-flash';
 
     const result = await generateObject({
@@ -32,7 +49,7 @@ export const analyzeProductImage = async (
           content: [
             {
               type: 'text',
-              text: 'Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.',
+              text: promptText,
             },
             {
               type: 'image',

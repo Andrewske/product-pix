@@ -18,6 +18,7 @@ label_prefix = "batch"
 
 # Default model for evaluate command
 evaluation_model = "claude-sonnet-4-20250514"
+analysis_model = "gemini-2.0-flash"
 
 # Default model for AI-powered template improvement
 improvement_model = "claude-sonnet-4-20250514"
@@ -31,6 +32,14 @@ baseline_label = ""
 insights = true
 # Show image URLs in report output
 show_urls = false
+
+[defaults.analysis]
+
+enabled = true
+
+cache_enabled = true
+
+prompt_slug = "product-analysis"
 
 # Default settings for improve command
 [defaults.improve]

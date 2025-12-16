@@ -19,7 +19,8 @@ export type ErrorCode =
   | 'SOURCE_IMAGE_ERROR'  // Source image processing failed
   | 'UPLOAD_ERROR'        // File upload failed
   | 'RUN_PHASE_ERROR'     // Run phase failed
-  | 'NO_DATA_ERROR';      // No data available for operation
+  | 'NO_DATA_ERROR'       // No data available for operation
+  | 'ANALYSIS_ERROR';      // Product analysis failed
 
 // =============================================================================
 // Error Interface

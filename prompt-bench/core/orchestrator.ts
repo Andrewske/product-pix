@@ -41,6 +41,9 @@ export interface PipelineOptions {
   skipReport: boolean;
   dryRun: boolean;
   evalModel: string;
+analysisModel?: string;
+  analysisEnabled?: boolean;
+  analysisCacheEnabled?: boolean;
 }
 
 export type ProgressCallback = (
