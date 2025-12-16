@@ -4,7 +4,7 @@
 
 import { parseArgs } from 'node:util';
 
- import { runPipeline, generateBatchLabel, type ProgressCallback } from '../core/orchestrator';
+ import { runPipeline, generateBatchLabel, type ProgressCallback } from '@bench/core/orchestrator';
  import { createProgressBar, displayPipelineSummary } from './progress';
  import { loadConfig } from './shared';
  import { autoReportForLabel } from './report';

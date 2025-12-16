@@ -299,9 +299,10 @@ const serveHTML = (): Response => {
 
             for (const line of lines) {
               if (line.startsWith('data: ')) {
-                const data = JSON.parse(line.slice(6));
+                try {
+                  const data = JSON.parse(line.slice(6));
 
-                if (data.done) {
+                  if (data.done) {
                   setReader(null);
                   setIsRunning(false);
                   setProgress({ phase: 'complete', current: 100, total: 100, message: 'Run completed successfully!' });
@@ -311,6 +312,9 @@ const serveHTML = (): Response => {
                   setIsRunning(false);
                 } else {
                   setProgress(data);
+                }
+                } catch (parseErr) {
+                  console.error('Failed to parse SSE data:', parseErr);
                 }
               }
             }
@@ -531,10 +535,7 @@ const serveHTML = (): Response => {
             React.createElement('p', { className: 'text-gray-500 text-lg mb-4' }, '📊 No experiment results yet'),
             React.createElement('p', { className: 'text-gray-400 mb-6' }, 'Run your first experiment to see results here'),
             React.createElement(Button, {
-              onClick: () => {
-                window.history.pushState({}, '', '/');
-                setView('runner');
-              }
+              onClick: () => window.location.href = '/'
             }, 'Go to Experiment Runner')
           ) :
           React.createElement('div', { className: 'space-y-4' },
@@ -854,7 +855,14 @@ const handleResults = async (req: Request): Promise<Response> => {
     }
 
     // Group by batch_label and calculate stats
-    const grouped = (tests || []).reduce((acc, test) => {
+    type TestRecord = NonNullable<typeof tests>[number];
+    interface GroupedResult {
+      batchLabel: string;
+      tests: TestRecord[];
+      stats: { count: number; meanScore: number; totalCost: number };
+    }
+
+    const grouped = (tests || []).reduce<Record<string, GroupedResult>>((acc, test) => {
       const label = test.batch_label || 'unlabeled';
 
       if (!acc[label]) {
@@ -875,20 +883,20 @@ const handleResults = async (req: Request): Promise<Response> => {
       }
 
       return acc;
-    }, {} as Record<string, any>);
+    }, {});
 
     // Calculate mean scores
-    Object.values(grouped).forEach((group: any) => {
+    Object.values(grouped).forEach((group) => {
       if (group.stats.count > 0) {
         group.stats.meanScore = group.stats.meanScore / group.stats.count;
       }
     });
 
     // Filter by minScore if provided
-    let results = Object.values(grouped);
+    let results: GroupedResult[] = Object.values(grouped);
     if (minScore) {
       const minScoreNum = parseFloat(minScore);
-      results = results.filter((r: any) => r.stats.meanScore >= minScoreNum);
+      results = results.filter((r) => r.stats.meanScore >= minScoreNum);
     }
 
     return Response.json({ results });
@@ -939,8 +947,14 @@ const createSSERunStream = (template: string, batchFile: string, label?: string)
 };
 
 const handleRun = async (req: Request): Promise<Response> => {
+  let body: { template?: string; batchFile?: string; label?: string };
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+  }
+
+  try {
     const { template, batchFile, label } = body;
 
     // Validate required fields
