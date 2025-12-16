@@ -14,6 +14,7 @@ import { loadConfig } from './shared';
 import type { StructuredAnalysis } from '@bench/core/improvement-types';
 
 const REPORTS_DIR = join(process.cwd(), 'reports');
+const MARKDOWN_REPORTS_DIR = join(process.cwd(), 'reports', 'markdown');
 
 interface ReportOptions {
   label: string;
@@ -866,6 +867,247 @@ const renderCostSummary = (data: ReportData): string => `
   </section>
 `;
 
+const generateMarkdown = (data: ReportData, comparison?: ComparisonData | null, costBreakdown?: TestCostRow[]): string => {
+  const lines: string[] = [];
+
+  // Header
+  if (comparison) {
+    lines.push(`# Comparison Report: ${data.label} vs ${comparison.baseline.label}`);
+  } else {
+    lines.push(`# Batch Report: ${data.label}`);
+  }
+  lines.push('');
+  lines.push(`Generated: ${data.generatedAt}`);
+  lines.push('');
+
+  // AI-Powered Insights
+  if (data.insights) {
+    lines.push('## AI-Powered Insights');
+    lines.push('');
+    lines.push(`Cost: $${data.insights.costUsd.toFixed(4)}`);
+    lines.push('');
+
+    // Key Findings
+    lines.push('### Key Findings');
+    lines.push('');
+    data.insights.keyFindings.forEach(finding => {
+      lines.push(`- ${finding}`);
+    });
+    lines.push('');
+
+    // Recommendations
+    lines.push('### Recommendations');
+    lines.push('');
+    data.insights.recommendations.forEach(rec => {
+      lines.push(`- ${rec}`);
+    });
+    lines.push('');
+
+    // Next Steps
+    lines.push('### Next Steps');
+    lines.push('');
+    data.insights.nextSteps.forEach(step => {
+      lines.push(`- ${step}`);
+    });
+    lines.push('');
+  }
+
+  // Improvement Analysis
+  if (data.improvementAnalysis) {
+    lines.push('## Template Improvement Analysis');
+    lines.push('');
+    lines.push('### Summary');
+    lines.push('');
+    lines.push(data.improvementAnalysis.summary);
+    lines.push('');
+
+    lines.push('### Strengths');
+    lines.push('');
+    data.improvementAnalysis.strengths.forEach(strength => {
+      lines.push(`- ${strength}`);
+    });
+    lines.push('');
+
+    lines.push('### Weaknesses');
+    lines.push('');
+    data.improvementAnalysis.weaknesses.forEach(weakness => {
+      lines.push(`- ${weakness}`);
+    });
+    lines.push('');
+
+    if (data.improvementAnalysis.patterns.length > 0) {
+      lines.push('### Patterns');
+      lines.push('');
+      data.improvementAnalysis.patterns.forEach(pattern => {
+        lines.push(`- **${pattern.type === 'success' ? 'Success' : 'Failure'} Pattern** (${(pattern.frequency * 100).toFixed(0)}% frequency)`);
+        lines.push(`  - ${pattern.description}`);
+        if (pattern.examples.length > 0) {
+          lines.push(`  - Examples: ${pattern.examples.join(', ')}`);
+        }
+        lines.push('');
+      });
+    }
+
+    lines.push('### Prioritized Suggestions');
+    lines.push('');
+    data.improvementAnalysis.prioritizedSuggestions.forEach(suggestion => {
+      lines.push(`- **[${suggestion.priority.toUpperCase()}] ${suggestion.description}**`);
+      lines.push(`  - Category: ${suggestion.category}`);
+      lines.push(`  - Confidence: ${(suggestion.confidence * 100).toFixed(0)}%`);
+      lines.push(`  - Rationale: ${suggestion.rationale}`);
+      lines.push(`  - Expected Impact: ${suggestion.expectedImpact}`);
+      lines.push('');
+    });
+
+    if (data.improvementAnalysis.segmentAnalysis.length > 0) {
+      lines.push('### Segment Analysis');
+      lines.push('');
+      data.improvementAnalysis.segmentAnalysis.forEach(segment => {
+        lines.push(`- **${segment.segment}** (Mean Score: ${segment.meanScore.toFixed(2)}/10)`);
+        if (segment.issues.length > 0) {
+          lines.push(`  - Issues:`);
+          segment.issues.forEach(issue => {
+            lines.push(`    - ${issue}`);
+          });
+        }
+        if (segment.recommendations.length > 0) {
+          lines.push(`  - Recommendations:`);
+          segment.recommendations.forEach(rec => {
+            lines.push(`    - ${rec}`);
+          });
+        }
+        lines.push('');
+      });
+    }
+  }
+
+  // Comparison Summary
+  if (comparison) {
+    lines.push('## Comparison Summary');
+    lines.push('');
+    lines.push(`### Baseline: ${comparison.baseline.label}`);
+    lines.push(`- Mean Score: ${comparison.baseline.stats.mean.toFixed(2)}/10`);
+    lines.push(`- Tests: ${comparison.baseline.stats.n}`);
+    lines.push(`- Std Dev: ${comparison.baseline.stats.stdDev.toFixed(2)}`);
+    lines.push('');
+    lines.push(`### Candidate: ${comparison.candidate.label}`);
+    lines.push(`- Mean Score: ${comparison.candidate.stats.mean.toFixed(2)}/10`);
+    lines.push(`- Tests: ${comparison.candidate.stats.n}`);
+    lines.push(`- Std Dev: ${comparison.candidate.stats.stdDev.toFixed(2)}`);
+    lines.push('');
+    lines.push(`### Analysis`);
+    lines.push(`- Mean Difference: ${comparison.analysis.meanDiff > 0 ? '+' : ''}${comparison.analysis.meanDiff.toFixed(3)}`);
+    lines.push(`- p-value: ${comparison.analysis.pValue.toFixed(4)}`);
+    lines.push(`- Significant: ${comparison.analysis.significant ? 'Yes' : 'No'}`);
+    lines.push(`- Effect Size: ${comparison.analysis.effectSize.toFixed(2)} (${comparison.analysis.effectInterpretation})`);
+    lines.push(`- 95% CI: [${comparison.analysis.confidenceInterval[0].toFixed(3)}, ${comparison.analysis.confidenceInterval[1].toFixed(3)}]`);
+    lines.push('');
+  }
+
+  // Summary Statistics
+  lines.push('## Summary Statistics');
+  lines.push('');
+  lines.push(`- Tests: ${data.stats.n}`);
+  lines.push(`- Mean Score: ${data.stats.mean.toFixed(2)}/10`);
+  lines.push(`- Std Dev: ${data.stats.stdDev.toFixed(2)}`);
+  lines.push(`- Median: ${data.stats.median.toFixed(1)}`);
+  lines.push(`- Min: ${data.stats.min.toFixed(1)}`);
+  lines.push(`- Max: ${data.stats.max.toFixed(1)}`);
+  lines.push('');
+
+  // Score Distribution
+  lines.push('## Score Distribution');
+  lines.push('');
+  Object.entries(data.scoreDistribution).forEach(([range, count]) => {
+    const percentage = data.stats.n > 0 ? Math.round((count / data.stats.n) * 100) : 0;
+    lines.push(`- ${range}: ${count} (${percentage}%)`);
+  });
+  lines.push('');
+
+  // Cost Breakdown Table
+  if (costBreakdown) {
+    lines.push('## Detailed Cost Breakdown (Per Test)');
+    lines.push('');
+    lines.push('| Test # | Score | Generation Model | Input Tokens | Output Tokens | Generation Cost | Evaluation Model | Evaluation Cost | Total |');
+    lines.push('|--------|-------|------------------|--------------|---------------|-----------------|------------------|-----------------|-------|');
+
+    costBreakdown.forEach(row => {
+      lines.push(`| ${row.testNumber} | ${row.score.toFixed(1)}/10 | ${row.genModel || '-'} | ${row.genInputTokens?.toLocaleString() || '-'} | ${row.genOutputTokens?.toLocaleString() || '-'} | $${row.genTotalCost.toFixed(5)} | ${row.evalModel || '-'} | $${row.evalTotalCost > 0 ? row.evalTotalCost.toFixed(5) : '-'} | $${row.totalCost.toFixed(5)} |`);
+    });
+    lines.push('');
+
+    const totalGenCost = costBreakdown.reduce((sum, row) => sum + row.genTotalCost, 0);
+    const totalEvalCost = costBreakdown.reduce((sum, row) => sum + row.evalTotalCost, 0);
+    const grandTotal = totalGenCost + totalEvalCost;
+
+    lines.push(`**Total Generation Cost:** $${totalGenCost.toFixed(5)}`);
+    lines.push(`**Total Evaluation Cost:** $${totalEvalCost.toFixed(5)}`);
+    lines.push(`**Grand Total:** $${grandTotal.toFixed(5)}`);
+    lines.push('');
+  }
+
+  // Test Results
+  if (comparison) {
+    lines.push('## Comparison Results');
+    lines.push('');
+    lines.push(`### Top ${Math.min(6, comparison.baseline.tests.length)} Results from ${comparison.baseline.label}`);
+    lines.push('');
+    comparison.baseline.tests.slice(0, 6).forEach((test, idx) => {
+      lines.push(`#### ${idx + 1}. ${test.score.toFixed(1)}/10`);
+      if (test.imageUrl) {
+        lines.push(`- Image: ${test.imageUrl}`);
+      }
+      if (test.sourceImageUrl) {
+        lines.push(`- Source: ${test.sourceImageUrl}`);
+      }
+      lines.push(`- Prompt: ${test.prompt}`);
+      lines.push('');
+    });
+
+    lines.push(`### Top ${Math.min(6, comparison.candidate.tests.length)} Results from ${comparison.candidate.label}`);
+    lines.push('');
+    comparison.candidate.tests.slice(0, 6).forEach((test, idx) => {
+      lines.push(`#### ${idx + 1}. ${test.score.toFixed(1)}/10`);
+      if (test.imageUrl) {
+        lines.push(`- Image: ${test.imageUrl}`);
+      }
+      if (test.sourceImageUrl) {
+        lines.push(`- Source: ${test.sourceImageUrl}`);
+      }
+      lines.push(`- Prompt: ${test.prompt}`);
+      lines.push('');
+    });
+  } else {
+    lines.push(`## Test Results (${data.tests.length} tests)`);
+    lines.push('');
+    const sortedTests = [...data.tests].sort((a, b) => b.score - a.score);
+    sortedTests.forEach((test, idx) => {
+      lines.push(`### Test ${idx + 1}: ${test.score.toFixed(1)}/10`);
+      if (test.imageUrl) {
+        lines.push(`- Generated: ${test.imageUrl}`);
+      }
+      if (test.sourceImageUrl) {
+        lines.push(`- Source: ${test.sourceImageUrl}`);
+      }
+      lines.push(`- Prompt: ${test.prompt}`);
+      lines.push('');
+    });
+  }
+
+  // Cost Summary
+  lines.push('## Cost Summary');
+  lines.push('');
+  lines.push(`- Generation: $${data.costs.generation.toFixed(4)}`);
+  lines.push(`- Evaluation: $${data.costs.evaluation.toFixed(4)}`);
+  if (data.insights) {
+    lines.push(`- Insights: $${data.insights.costUsd.toFixed(4)}`);
+  }
+  lines.push(`- Total: $${(data.costs.total + (data.insights?.costUsd ?? 0)).toFixed(4)}`);
+  lines.push('');
+
+  return lines.join('\n');
+};
+
 const generateHTML = (data: ReportData, comparison?: ComparisonData | null, costBreakdown?: TestCostRow[]): string => `
 <!DOCTYPE html>
 <html lang="en">
@@ -1150,15 +1392,28 @@ export const runReport = async (
   // Generate HTML
   const html = generateHTML(reportData, comparisonData, costBreakdown);
 
-  // Write to file
+  // Generate Markdown
+  const markdown = generateMarkdown(reportData, comparisonData, costBreakdown);
+
+  // Write HTML to file
   await mkdir(REPORTS_DIR, { recursive: true });
   const fileName = comparisonData
     ? `${options.baseline}-vs-${options.label}.html`
     : `${options.label}.html`;
-  const outputPath = join(REPORTS_DIR, fileName);
-  await writeFile(outputPath, html, 'utf-8');
+  const htmlOutputPath = join(REPORTS_DIR, fileName);
+  await writeFile(htmlOutputPath, html, 'utf-8');
 
-  console.log(`\n✅ Report generated: ${outputPath}`);
+  // Write Markdown to file
+  await mkdir(MARKDOWN_REPORTS_DIR, { recursive: true });
+  const markdownFileName = comparisonData
+    ? `${options.baseline}-vs-${options.label}.md`
+    : `${options.label}.md`;
+  const markdownOutputPath = join(MARKDOWN_REPORTS_DIR, markdownFileName);
+  await writeFile(markdownOutputPath, markdown, 'utf-8');
+
+  console.log(`\n✅ Reports generated:`);
+  console.log(`   HTML: ${htmlOutputPath}`);
+  console.log(`   Markdown: ${markdownOutputPath}`);
 
   // Show URLs if requested
   if (options.showUrls) {
@@ -1172,7 +1427,7 @@ export const runReport = async (
     }
   }
 
-  return outputPath;
+  return htmlOutputPath;
 };
 
 export const reportCommand = async (args: string[]): Promise<void> => {
