@@ -9,6 +9,7 @@ import {
 import { ImageInput } from '@bench/core/evaluator';
 import { downloadBuffer } from '@/lib/r2';
 import { calculateCost } from '@bench/core/cost';
+import { logger } from '@/lib/logging';
 
 // =============================================================================
 // Constants
@@ -130,39 +131,18 @@ const parseCollectionEvaluationResponse = (text: string): Result<{
 // Main Collection Evaluator
 // =============================================================================
 
-
-
 /**
- * Evaluate a collection of generated images using Claude's vision capabilities
+ * Prepare image content for the evaluation API
  *
- * @param imageInputs - Array of image URLs or R2 keys (2-10 images)
- * @param options - Evaluation options
- * @returns Result with collection evaluation scores or error
+ * @param imageInputs - Array of image inputs to prepare
+ * @returns Result with prepared image content or error
  */
-export const evaluateCollection = async (
-  imageInputs: ImageInput[],
-  options: EvaluateCollectionOptions = {}
-): Promise<Result<CollectionEvaluationResult>> => {
-  const { model = 'claude-sonnet-4-20250514', maxRetries = 3 } = options;
-
-  // Validate input constraints
-  if (imageInputs.length < 2) {
-    return err(createError('VALIDATION_ERROR', 'Collection evaluation requires at least 2 images'));
-  }
-
-  if (imageInputs.length > 10) {
-    return err(createError('VALIDATION_ERROR', 'Collection evaluation supports maximum 10 images'));
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return err(createError('VALIDATION_ERROR', 'ANTHROPIC_API_KEY environment variable is required'));
-  }
-
-  const client = new Anthropic({ apiKey });
-  let lastError: PromptTestError = createError('EVALUATION_ERROR', 'Collection evaluation failed after max retries');
-
-  // Prepare image content for Claude API
+export const prepareImageContent = async (
+  imageInputs: ImageInput[]
+): Promise<Result<Array<{
+  type: 'image';
+  source: { type: 'base64'; media_type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'; data: string } | { type: 'url'; url: string };
+}>>> => {
   const imageContent: Array<{
     type: 'image';
     source: { type: 'base64'; media_type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'; data: string } | { type: 'url'; url: string };
@@ -204,6 +184,41 @@ export const evaluateCollection = async (
     }
   }
 
+  return ok(imageContent);
+};
+
+/**
+ * Call the evaluation API with retry logic
+ *
+ * @param imageContent - Prepared image content for the API
+ * @param model - Model to use for evaluation
+ * @param maxRetries - Maximum number of retry attempts
+ * @param apiKey - API key for authentication
+ * @returns Result with evaluation data or error
+ */
+export const callGeminiEvaluationAPI = async (
+  imageContent: Array<{
+    type: 'image';
+    source: { type: 'base64'; media_type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'; data: string } | { type: 'url'; url: string };
+  }>,
+  model: string,
+  maxRetries: number,
+  apiKey: string
+): Promise<Result<{
+  evaluationData: {
+    overall: number;
+    consistency: number;
+    variety: number;
+    physicalPlausibility: number;
+    reasoning: string;
+    suggestions: string[];
+  };
+  tokensUsed: number;
+  costUsd: number;
+}>> => {
+  const client = new Anthropic({ apiKey });
+  let lastError: PromptTestError = createError('EVALUATION_ERROR', 'Evaluation API call failed after max retries');
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await client.messages.create({
@@ -235,7 +250,7 @@ export const evaluateCollection = async (
         // Parsing failed, retry
         lastError = parseResult.error;
         if (attempt < maxRetries - 1) {
-          await sleep(Math.pow(2, attempt) * 1000);
+          await sleep(2 ** attempt * 1000);
           continue;
         }
         return parseResult;
@@ -249,7 +264,7 @@ export const evaluateCollection = async (
       });
 
       if (!costResult.ok) {
-        console.warn(`⚠️  Failed to calculate cost for model ${model}: ${costResult.error.message}`);
+        logger.warn(`⚠️  Failed to calculate cost for model ${model}: ${costResult.error.message}`);
         return err(createError(
           'EVALUATION_ERROR',
           `Cost calculation failed: ${costResult.error.message}`,
@@ -260,15 +275,9 @@ export const evaluateCollection = async (
       const costData = costResult.data;
 
       return ok({
-        overall: evaluationData.overall,
-        consistency: evaluationData.consistency,
-        variety: evaluationData.variety,
-        physicalPlausibility: evaluationData.physicalPlausibility,
-        reasoning: evaluationData.reasoning,
-        suggestions: evaluationData.suggestions,
+        evaluationData,
         tokensUsed,
         costUsd: costData.total,
-        model,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -280,7 +289,7 @@ export const evaluateCollection = async (
       });
 
       if (attempt < maxRetries - 1 && isRetryable) {
-        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
+        const delay = 2 ** attempt * 1000; // Exponential backoff: 1s, 2s, 4s
         await sleep(delay);
         continue;
       }
@@ -288,4 +297,58 @@ export const evaluateCollection = async (
   }
 
   return err(lastError);
+};
+
+/**
+ * Evaluate a collection of generated images using Claude's vision capabilities
+ *
+ * @param imageInputs - Array of image URLs or R2 keys (2-10 images)
+ * @param options - Evaluation options
+ * @returns Result with collection evaluation scores or error
+ */
+export const evaluateCollection = async (
+  imageInputs: ImageInput[],
+  options: EvaluateCollectionOptions = {}
+): Promise<Result<CollectionEvaluationResult>> => {
+  const { model = 'claude-sonnet-4-20250514', maxRetries = 3 } = options;
+
+  // Validate input constraints
+  if (imageInputs.length < 2) {
+    return err(createError('VALIDATION_ERROR', 'Collection evaluation requires at least 2 images'));
+  }
+
+  if (imageInputs.length > 10) {
+    return err(createError('VALIDATION_ERROR', 'Collection evaluation supports maximum 10 images'));
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return err(createError('VALIDATION_ERROR', 'ANTHROPIC_API_KEY environment variable is required'));
+  }
+
+  // Prepare image content
+  const contentResult = await prepareImageContent(imageInputs);
+  if (!contentResult.ok) {
+    return contentResult;
+  }
+
+  // Call the evaluation API
+  const apiResult = await callGeminiEvaluationAPI(contentResult.data, model, maxRetries, apiKey);
+  if (!apiResult.ok) {
+    return apiResult;
+  }
+
+  const { evaluationData, tokensUsed, costUsd } = apiResult.data;
+
+  return ok({
+    overall: evaluationData.overall,
+    consistency: evaluationData.consistency,
+    variety: evaluationData.variety,
+    physicalPlausibility: evaluationData.physicalPlausibility,
+    reasoning: evaluationData.reasoning,
+    suggestions: evaluationData.suggestions,
+    tokensUsed,
+    costUsd,
+    model,
+  });
 };

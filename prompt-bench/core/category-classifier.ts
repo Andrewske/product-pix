@@ -62,9 +62,10 @@ export async function classifyProduct(
     return ok(result.object.category);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown classification error';
+    const imageUrlSnippet = imageUrl.substring(0, 50);
     return err({
       code: 'CLASSIFICATION_FAILED',
-      message: `Product classification failed: ${message}`,
+      message: `category-classifier.ts: Product classification failed - cause: ${message}, state: imageUrl starts with "${imageUrlSnippet}"`,
     });
   }
 }

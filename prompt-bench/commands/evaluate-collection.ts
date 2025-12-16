@@ -7,6 +7,9 @@ import { parseArgs } from 'node:util';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { loadConfig } from './shared';
 import type { Json } from '@/types/database';
+import type { Result } from '@bench/core/errors';
+import type { CollectionEvaluationResult } from '@bench/core/collection-evaluator';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface EvaluateCollectionOptions {
   label: string;
@@ -35,43 +38,73 @@ const parseEvaluateCollectionOptions = (args: string[]): EvaluateCollectionOptio
   };
 };
 
-export const evaluateCollectionCommand = async (args: string[]): Promise<void> => {
-  const options = parseEvaluateCollectionOptions(args);
+interface CollectionData {
+  label: string;
+  images: Array<{ id: string; image_url: string; final_prompt: string }>;
+}
 
-  console.log(`\n🔍 Prompt Bench: Evaluate Collection`);
-  console.log(`─────────────────────────────────────`);
-  console.log(`Label: ${options.label}`);
-  console.log(`Model: ${options.model}`);
-  console.log(`─────────────────────────────────────\n`);
+export const executeCollectionEvaluation = async (
+  supabase: SupabaseClient,
+  validImages: Array<{ id: string; image_url: string; final_prompt: string }>,
+  evaluationResult: CollectionEvaluationResult
+): Promise<Result<void>> => {
+  // Prepare evaluation data
+  const evaluationData = {
+    consistency: evaluationResult.consistency,
+    variety: evaluationResult.variety,
+    physicalPlausibility: evaluationResult.physicalPlausibility,
+    reasoning: evaluationResult.reasoning,
+    suggestions: evaluationResult.suggestions,
+  };
 
-  const supabase = createAdminClient();
+  // Update each test with collection evaluation data
+  for (const image of validImages) {
+    const { error: updateError } = await supabase
+      .from('prompt_evaluations')
+      .update({
+        details: {
+          ...evaluationData,
+          collectionOverall: evaluationResult.overall,
+        } as Json,
+        evaluator_model: evaluationResult.model,
+        cost_usd: (evaluationResult.costUsd / validImages.length),
+        tokens_used: Math.round(evaluationResult.tokensUsed / validImages.length),
+      })
+      .eq('test_id', image.id);
 
-  // Group tests by test/product identifier
-  // For now, we'll group by batch_label and assume all images in a batch are part of the same collection
-  // In the future, this could be enhanced to group by product_id or other criteria
+    if (updateError) {
+      return { ok: false, error: { type: 'database', message: `Failed to update evaluation for test ${image.id}: ${updateError.message}`, location: 'executeCollectionEvaluation.updateEvaluation' } };
+    }
+  }
+
+  return { ok: true, data: undefined };
+};
+
+const evaluateCollections = async (
+  supabase: SupabaseClient,
+  label: string,
+  model: string
+): Promise<Result<{ completed: number; failed: number; testCount: number }>> => {
+  // Fetch tests from database
   const { data: tests, error } = await supabase
     .from('prompt_tests')
     .select('id, image_url, final_prompt, batch_label')
-    .eq('batch_label', options.label)
+    .eq('batch_label', label)
     .eq('status', 'completed')
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error(`Database error: ${error.message}`);
-    process.exit(1);
+    return { ok: false, error: { type: 'database', message: error.message, location: 'evaluateCollections.fetchTests' } };
   }
 
   if (!tests || tests.length === 0) {
-    console.log(`No completed tests found for label "${options.label}"`);
-    return;
+    return { ok: false, error: { type: 'validation', message: `No completed tests found for label "${label}"`, location: 'evaluateCollections.noTests' } };
   }
-
-  console.log(`📋 Found ${tests.length} completed tests for collection evaluation\n`);
 
   // Group images by collection (for now, all images in the batch are one collection)
   const collections = [{
-    label: options.label,
-    images: tests.map(test => ({ id: test.id, url: test.image_url, prompt: test.final_prompt })),
+    label,
+    images: tests.map(test => ({ id: test.id, image_url: test.image_url, final_prompt: test.final_prompt })),
   }];
 
   const { evaluateCollection } = await import('@bench/core/collection-evaluator');
@@ -93,17 +126,15 @@ export const evaluateCollectionCommand = async (args: string[]): Promise<void> =
     }
 
     // Check for missing image URLs
-    const validImages = collection.images.filter(img => img.url);
+    const validImages = collection.images.filter(img => img.image_url);
     if (validImages.length !== collection.images.length) {
       console.log(`  ⏭️  Skipping (${collection.images.length - validImages.length} images missing URLs)`);
       continue;
     }
 
     const result = await evaluateCollection(
-      validImages.map(img => ({ type: 'url' as const, value: img.url! })),
-      {
-        model: options.model,
-      }
+      validImages.map(img => ({ type: 'url' as const, value: img.image_url! })),
+      { model }
     );
 
     if (!result.ok) {
@@ -112,36 +143,13 @@ export const evaluateCollectionCommand = async (args: string[]): Promise<void> =
       continue;
     }
 
-    // Save collection evaluation results
-    // For now, we'll store this as a single record per collection
-    // In the future, we might want a separate collection_evaluations table
-    const evaluationData = {
-      consistency: result.data.consistency,
-      variety: result.data.variety,
-      physicalPlausibility: result.data.physicalPlausibility,
-      reasoning: result.data.reasoning,
-      suggestions: result.data.suggestions,
-    };
+    // Execute database operations
+    const dbResult = await executeCollectionEvaluation(supabase, validImages, result.data);
 
-    // Update each test with collection evaluation data
-    for (const image of validImages) {
-      const { error: updateError } = await supabase
-        .from('prompt_evaluations')
-        .update({
-          // Store collection metrics in the existing details JSONB field
-          details: {
-            ...evaluationData,
-            collectionOverall: result.data.overall,
-          } as Json,
-          evaluator_model: result.data.model,
-          cost_usd: (result.data.costUsd / validImages.length), // Split cost across images
-          tokens_used: Math.round(result.data.tokensUsed / validImages.length), // Split tokens across images
-        })
-        .eq('test_id', image.id);
-
-      if (updateError) {
-        console.log(`  ⚠️  Failed to update evaluation for test ${image.id}: ${updateError.message}`);
-      }
+    if (!dbResult.ok) {
+      console.log(`  ⚠️  Failed to update evaluations: ${dbResult.error.message}`);
+      failed++;
+      continue;
     }
 
     console.log(`  ✅ Collection Score: ${result.data.overall.toFixed(1)}/10`);
@@ -151,11 +159,38 @@ export const evaluateCollectionCommand = async (args: string[]): Promise<void> =
     completed++;
   }
 
+  return { ok: true, data: { completed, failed, testCount: tests.length } };
+};
+
+export const evaluateCollectionCommand = async (args: string[]): Promise<void> => {
+  const options = parseEvaluateCollectionOptions(args);
+
+  console.log(`\n🔍 Prompt Bench: Evaluate Collection`);
+  console.log(`─────────────────────────────────────`);
+  console.log(`Label: ${options.label}`);
+  console.log(`Model: ${options.model}`);
+  console.log(`─────────────────────────────────────\n`);
+
+  const supabase = createAdminClient();
+
+  const result = await evaluateCollections(supabase, options.label, options.model);
+
+  if (!result.ok) {
+    if (result.error.type === 'validation' && result.error.message.includes('No completed tests found')) {
+      console.log(result.error.message);
+      return;
+    }
+    console.error(`Error: ${result.error.message}`);
+    process.exit(1);
+  }
+
+  console.log(`📋 Found ${result.data.testCount} completed tests for collection evaluation\n`);
+
   // Summary
   console.log(`\n─────────────────────────────────────`);
   console.log(`📊 Results:`);
-  console.log(`   Collections Evaluated: ${completed}`);
-  console.log(`   Failed: ${failed}`);
+  console.log(`   Collections Evaluated: ${result.data.completed}`);
+  console.log(`   Failed: ${result.data.failed}`);
   console.log(`─────────────────────────────────────\n`);
 
   console.log(`Next steps:`);
