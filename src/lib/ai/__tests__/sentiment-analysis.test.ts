@@ -1,5 +1,4 @@
-// Set environment variables to avoid browser detection
-process.env.ANTHROPIC_API_KEY = 'test-key';
+// Environment variables are set globally in bun-test-setup.ts
 
 // Mock Anthropic client before importing the module
 const mockCreate = mock((params: any) => {

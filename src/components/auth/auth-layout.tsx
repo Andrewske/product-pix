@@ -23,7 +23,7 @@ export function AuthLayout({
         <div className="absolute inset-0 studio-spotlight pointer-events-none" />
       )}
       <Card
-        variant="control"
+        
         className="w-full max-w-md bg-card/50 backdrop-blur-xl border border-white/10 shadow-xl relative z-10"
       >
         <CardHeader className="space-y-1 text-center">

@@ -28,7 +28,7 @@ export function PricingCard({
 
   return (
     <Card
-      variant="studio"
+      
       className={cn(
         "relative p-8 flex flex-col",
         isFeatured && "bg-foreground text-background border-2 border-success scale-105 shadow-2xl",

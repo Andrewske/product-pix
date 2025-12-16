@@ -19,7 +19,7 @@ export function GenerationLoading({ stage = 0 }: GenerationLoadingProps) {
   const useTeal = stage % 2 === 1; // Alternate between green and teal
 
   return (
-    <Card variant="studio" className="p-8">
+    <Card  className="p-8">
       <div className="flex flex-col items-center justify-center space-y-6">
         <div className="relative">
           <div className={useTeal 

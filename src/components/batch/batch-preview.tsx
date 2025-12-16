@@ -38,7 +38,7 @@ export function BatchPreview({
     <div className="space-y-6">
       {/* Errors */}
       {errors.length > 0 && (
-        <Card variant="studio" className="p-6 border-destructive/20 bg-destructive/5">
+        <Card  className="p-6 border-destructive/20 bg-destructive/5">
           <h4 className="font-semibold text-destructive mb-3">
             Validation Errors ({errors.length})
           </h4>
@@ -67,7 +67,7 @@ export function BatchPreview({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {previewItems.map((item, idx) => (
-              <Card key={idx} variant="studio" className="p-4 hover" hover>
+              <Card key={idx}  className="p-4 hover" hover>
                 <div className="space-y-3">
                   {item.product_name && (
                     <div className="font-medium text-sm truncate">
@@ -118,7 +118,7 @@ export function BatchPreview({
           Cancel
         </Button>
         <Button
-          variant="studio"
+          
           size="xl"
           onClick={onConfirm}
           disabled={loading || items.length === 0 || errors.length > 0}

@@ -172,7 +172,7 @@ export type TestStatus = z.infer<typeof TestStatusSchema>;
  * Schema for a single test case in a batch file
  */
 export const TestCaseSchema = z.object({
-  variables: z.record(z.string(), z.unknown()).optional().default({}),
+  variables: z.record(z.string(), z.unknown()),
   notes: z.string().optional(),
   sourceImage: z.string().optional(),
   sourceImages: z.array(z.string()).optional(),

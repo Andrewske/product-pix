@@ -126,7 +126,7 @@ export default function NewBatchPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
            {step === 'upload' && (
-             <Card variant="control" className="p-6">
+             <Card  className="p-6">
                <h2 className="text-xl font-semibold font-display mb-4">Upload CSV File</h2>
               <CSVUploadForm onParsed={handleParsed} onError={setCreateError} />
                <div className="mt-8 space-y-4">
@@ -168,7 +168,7 @@ export default function NewBatchPage() {
           )}
 
            {step === 'preview' && (
-             <Card variant="control" className="p-6">
+             <Card  className="p-6">
                <h2 className="text-xl font-semibold font-display mb-4">Review & Configure</h2>
               <div className="space-y-6">
                 <div>
@@ -200,7 +200,7 @@ export default function NewBatchPage() {
           <div className="sticky top-8 space-y-6">
              {/* Cost Breakdown Card */}
              {items.length > 0 && (
-               <Card variant="control" className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+               <Card  className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
                  <h3 className="text-lg font-semibold font-display mb-4">Cost Breakdown</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -225,7 +225,7 @@ export default function NewBatchPage() {
             )}
 
              {/* Summary Card */}
-             <Card variant="control" className="p-6">
+             <Card  className="p-6">
                <h3 className="text-lg font-semibold font-display mb-4">Batch Summary</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">

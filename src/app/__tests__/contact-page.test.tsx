@@ -8,11 +8,12 @@ const mockFetch = mock((url, options) => {
   console.log('Mock fetch called with:', url, options);
   return Promise.resolve({
     ok: true,
+    status: 200,
     json: () => Promise.resolve({ success: true, messageId: 'test-id' }),
-  } as Response);
+  });
 })
 
-global.fetch = mockFetch as unknown as typeof fetch
+window.fetch = mockFetch as unknown as typeof fetch
 
 describe('ContactForm', () => {
   beforeEach(() => {

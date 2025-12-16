@@ -59,33 +59,21 @@ describe('Error Cleanup Cron Route', () => {
     });
 
     it('should accept requests with valid authorization header', async () => {
-      process.env.CRON_SECRET = 'valid-secret';
-
       const request = new Request('http://localhost/api/cron/cleanup-errors', {
-        headers: { authorization: 'Bearer valid-secret' },
+        headers: { authorization: 'Bearer test-secret' },
       });
       const response = await GET(request);
       const result = await response.json();
 
       expect(response.status).toBe(200);
       expect(result.success).toBe(true);
-
-      delete process.env.CRON_SECRET;
     });
   });
 
   describe('Successful cleanup', () => {
-    beforeEach(() => {
-      process.env.CRON_SECRET = 'valid-secret';
-    });
-
-    afterEach(() => {
-      delete process.env.CRON_SECRET;
-    });
-
     it('should return success response with deletion counts', async () => {
       const request = new Request('http://localhost/api/cron/cleanup-errors', {
-        headers: { authorization: 'Bearer valid-secret' },
+        headers: { authorization: 'Bearer test-secret' },
       });
       const response = await GET(request);
       const result = await response.json();
@@ -117,15 +105,13 @@ describe('Error Cleanup Cron Route', () => {
 
   describe('Error handling', () => {
     it('should handle unexpected errors', async () => {
-      process.env.CRON_SECRET = 'valid-secret';
-
       // Mock an unexpected error
       mockSupabaseClient.from.mockImplementationOnce(() => {
         throw new Error('Unexpected error');
       });
 
       const request = new Request('http://localhost/api/cron/cleanup-errors', {
-        headers: { authorization: 'Bearer valid-secret' },
+        headers: { authorization: 'Bearer test-secret' },
       });
       const response = await GET(request);
       const result = await response.json();
@@ -135,8 +121,6 @@ describe('Error Cleanup Cron Route', () => {
       expect(mockLogger.error).toHaveBeenCalledWith('Error cleanup cron failed', {
         error: 'Unexpected error',
       });
-
-      delete process.env.CRON_SECRET;
     });
   });
 });

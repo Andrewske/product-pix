@@ -4,9 +4,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Button } from '../button';
 
-describe('Button studio variant', () => {
+describe('Button', () => {
   it('renders as a button element with correct content', () => {
-    render(<Button variant="studio">Click Me</Button>);
+    render(<Button>Click Me</Button>);
 
     const button = screen.getByRole('button', { name: /click me/i });
     expect(button.tagName).toBe('BUTTON');
@@ -14,7 +14,7 @@ describe('Button studio variant', () => {
   });
 
   it('accepts type attribute when specified', () => {
-    render(<Button variant="studio" type="button">Click Me</Button>);
+    render(<Button  type="button">Click Me</Button>);
 
     const button = screen.getByRole('button', { name: /click me/i });
     expect(button.getAttribute('type')).toBe('button');
@@ -24,7 +24,7 @@ describe('Button studio variant', () => {
     const handleClick = mock(() => {});
     const user = userEvent.setup();
 
-    render(<Button variant="studio" onClick={handleClick}>Click Me</Button>);
+    render(<Button  onClick={handleClick}>Click Me</Button>);
 
     const button = screen.getByRole('button', { name: /click me/i });
     await user.click(button);
@@ -37,7 +37,7 @@ describe('Button studio variant', () => {
     const user = userEvent.setup();
 
     render(
-      <Button variant="studio" disabled onClick={handleClick}>
+      <Button  disabled onClick={handleClick}>
         Click Me
       </Button>
     );
@@ -53,7 +53,7 @@ describe('Button studio variant', () => {
     const handleClick = mock(() => {});
     const user = userEvent.setup();
 
-    render(<Button variant="studio" onClick={handleClick}>Click Me</Button>);
+    render(<Button  onClick={handleClick}>Click Me</Button>);
 
     const button = screen.getByRole('button', { name: /click me/i });
 
@@ -76,7 +76,7 @@ describe('Button studio variant', () => {
 
     render(
       <Button
-        variant="studio"
+        
         onClick={onClick}
         disabled
         data-testid="test-button"
@@ -94,7 +94,7 @@ describe('Button studio variant', () => {
 
   it('renders as link when using asChild with anchor element', () => {
     render(
-      <Button variant="studio" asChild>
+      <Button  asChild>
         <a href="/studio">Go to Studio</a>
       </Button>
     );
@@ -107,7 +107,7 @@ describe('Button studio variant', () => {
 
   it('maintains accessibility attributes', () => {
     render(
-      <Button variant="studio" aria-describedby="description">
+      <Button  aria-describedby="description">
         Accessible Button
       </Button>
     );
@@ -129,7 +129,7 @@ describe('Button studio variant', () => {
 
       return (
         <Button
-          variant="studio"
+          
           disabled={loading}
           onClick={handleClick}
         >
@@ -179,7 +179,7 @@ describe('Button studio variant', () => {
 
       return (
         <Button
-          variant="studio"
+          
           disabled={loading}
           onClick={handleClick}
         >
@@ -225,7 +225,7 @@ describe('Button studio variant', () => {
       return (
         <div>
           <Button
-            variant="studio"
+            
             disabled={loading}
             onClick={handleClick}
             className={error ? 'border-destructive' : ''}
@@ -288,7 +288,7 @@ describe('Button studio variant', () => {
 
       return (
         <Button
-          variant="studio"
+          
           disabled={loading || timedOut}
           onClick={handleClick}
         >
@@ -327,7 +327,7 @@ describe('Button studio variant', () => {
 
       return (
         <Button
-          variant="studio"
+          
           size="lg"
           disabled={loading}
           onClick={handleClick}

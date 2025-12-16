@@ -2,9 +2,9 @@ import { describe, it, expect } from 'bun:test';
 import { render } from '@testing-library/react';
 import { Card } from '../card';
 
-describe('Card studio variant', () => {
-  it('renders studio variant with appropriate structure', () => {
-    const { container, getByText } = render(<Card variant="studio">Content</Card>);
+describe('Card', () => {
+  it('renders with appropriate structure', () => {
+    const { container, getByText } = render(<Card>Content</Card>);
     const card = container.firstChild as HTMLElement;
 
     expect(getByText('Content')).toBeDefined();
@@ -17,7 +17,7 @@ describe('Card studio variant', () => {
   });
 
   it('applies hover effect when hover prop is true', () => {
-    const { container, getByText } = render(<Card variant="studio" hover>Content</Card>);
+    const { container, getByText } = render(<Card hover>Content</Card>);
     const card = container.firstChild as HTMLElement;
 
     expect(getByText('Content')).toBeDefined();
@@ -29,7 +29,7 @@ describe('Card studio variant', () => {
   });
 
   it('merges className prop correctly', () => {
-    const { container, getByText } = render(<Card variant="studio" className="custom-class">Content</Card>);
+    const { container, getByText } = render(<Card className="custom-class">Content</Card>);
     const card = container.firstChild as HTMLElement;
 
     expect(getByText('Content')).toBeDefined();

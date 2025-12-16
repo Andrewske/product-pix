@@ -62,7 +62,7 @@ export function CreditsTab(): React.ReactElement {
 
   if (loading) {
     return (
-      <Card variant="studio" className="p-6">
+      <Card  className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Credit History</h3>
@@ -89,7 +89,7 @@ export function CreditsTab(): React.ReactElement {
 
   if (error) {
     return (
-      <Card variant="studio" className="p-6">
+      <Card  className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Credit History</h3>
@@ -104,7 +104,7 @@ export function CreditsTab(): React.ReactElement {
 
   if (transactions.length === 0) {
     return (
-      <Card variant="studio" className="p-6">
+      <Card  className="p-6">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Credit History</h3>
@@ -124,7 +124,7 @@ export function CreditsTab(): React.ReactElement {
   }
 
   return (
-    <Card variant="studio" className="p-6">
+    <Card  className="p-6">
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold">Credit History</h3>

@@ -268,7 +268,7 @@ export default function GeneratePage() {
         {/* Right Column: Result */}
         <div>
           <SectionLabel>RESULT</SectionLabel>
-          <Card variant="hero" className="min-h-[500px] flex flex-col">
+          <Card  className="min-h-[500px] flex flex-col">
             {generating ? (
               <div className="flex items-center justify-center h-full">
                 <GenerationLoading />

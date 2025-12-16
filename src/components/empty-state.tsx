@@ -31,7 +31,7 @@ export function EmptyState({ title, description, actionLabel, actionHref }: Empt
       <p className="mt-3 text-lg text-muted-foreground/80 max-w-md mx-auto leading-relaxed">{description}</p>
       <div className="mt-8">
         <Link href={actionHref}>
-          <Button size="lg" variant="studio" className="px-8">{actionLabel}</Button>
+          <Button size="lg"  className="px-8">{actionLabel}</Button>
         </Link>
       </div>
     </div>

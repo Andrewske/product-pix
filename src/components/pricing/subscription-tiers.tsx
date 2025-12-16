@@ -56,7 +56,7 @@ export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
         {Object.entries(pricingData.subscriptions).map(([tierId, tier]) => (
            <Card
               key={tierId}
-              variant="studio"
+              
               className={`relative p-6 ${tierId === 'business' ? 'bg-foreground text-background scale-105' : ''}`}
               hover={tierId !== 'business'}
             >

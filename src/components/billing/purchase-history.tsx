@@ -19,7 +19,7 @@ export function PurchaseHistory() {
 
   if (loading) {
     return (
-      <Card variant="control">
+      <Card >
         <CardHeader>
           <CardTitle className="font-display">Purchase History</CardTitle>
         </CardHeader>
@@ -32,7 +32,7 @@ export function PurchaseHistory() {
 
   if (error) {
     return (
-      <Card variant="control">
+      <Card >
         <CardHeader>
           <CardTitle className="font-display">Purchase History</CardTitle>
           <CardDescription className="text-destructive">
@@ -45,7 +45,7 @@ export function PurchaseHistory() {
 
   if (purchases.length === 0) {
     return (
-      <Card variant="control">
+      <Card >
         <CardHeader>
           <CardTitle className="font-display">Purchase History</CardTitle>
           <CardDescription>No purchases yet</CardDescription>
@@ -63,7 +63,7 @@ export function PurchaseHistory() {
   }
 
   return (
-    <Card variant="control">
+    <Card >
       <CardHeader>
         <CardTitle className="font-display">Purchase History</CardTitle>
         <CardDescription>Your credit purchases</CardDescription>

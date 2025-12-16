@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { POST } from '../route';
 
-// Mock environment
-process.env.CRON_SECRET = 'test-secret';
+// Environment variables are set globally in bun-test-setup.ts
 
 // Mock sentiment analysis
 const mockAnalyzeSentiment = mock(() =>

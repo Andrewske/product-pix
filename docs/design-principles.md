@@ -75,9 +75,9 @@ We use OKLCH color space in CSS for perceptually uniform colors. This means:
 
 | Role | Font | Rationale |
 |------|------|-----------|
-| **Display** | Space Grotesk | Modern, friendly, slightly playful—matches our brand |
-| **Body** | Inter | Clean, highly readable, professional |
-| **Mono** | System mono | Only for tiny metadata (prices, timestamps)—never UI text |
+| **Display** | Figtree | Modern, friendly, slightly playful—matches our brand |
+| **Body** | Geist | Clean, highly readable, professional |
+| **Mono** | Geist Mono | Only for tiny metadata (prices, timestamps)—never UI text |
 
 ### Hierarchy Principles
 - **H1 (Page titles)**: Big, confident. "Generate Product Photo"

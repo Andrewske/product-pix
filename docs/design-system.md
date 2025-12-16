@@ -24,14 +24,15 @@ Color tokens, typography, and effects are defined in [`src/app/globals.css`](../
 | `--destructive` | Errors/warnings | Red | Red |
 | `--foreground` | Primary text | Dark | Near-white |
 | `--muted-foreground` | Secondary text | Medium gray | Light gray |
+| `--border` | Subtle borders | Light gray | White alpha (oklch(1 0 0 / 10%)) |
 
 ### Typography Classes
 
 | Class | Font | Use For |
 |-------|------|---------|
-| `.font-display` | Space Grotesk | Headings (h1-h6), hero text, card titles |
-| `.font-body` | Inter | Body text, labels, descriptions (default) |
-| `font-mono` | System mono | Tiny metadata only (prices, timestamps) |
+| `.font-display` | Figtree | Headings (h1-h6), hero text, card titles |
+| `.font-body` | Geist | Body text, labels, descriptions (default) |
+| `.font-mono` | Geist Mono | Tiny metadata only (prices, timestamps) |
 
 ### Typography Scale
 
@@ -46,13 +47,23 @@ Color tokens, typography, and effects are defined in [`src/app/globals.css`](../
 | `text-sm` | 0.875rem (14px) | Secondary text, captions |
 | `text-xs` | 0.75rem (12px) | Metadata, timestamps |
 
+### Border Radius System
+
+Base radius: 0.625rem (10px)
+
+| Class | Value | Use For |
+|-------|-------|---------|
+| `rounded-xl` | 0.75rem (12px) | Items, buttons, small components |
+| `rounded-2xl` | 1rem (16px) | Containers, cards, larger elements |
+| `rounded-4xl` | 2rem (32px) | Pills, badges, rounded elements |
+
 ---
 
 ## Component Status
 
 | Component | Status | Variants | Notes |
 |-----------|--------|----------|-------|
-| Card | Stable | `default`, `hero`, `control`, `studio` | 4 variants with distinct purposes |
+| Card | Stable | `default` | Use template defaults |
 | Button | Stable | `accent`, `studio`, `outline`, `ghost`, `destructive` | 5 variants + 4 sizes |
 | Badge | Stable | `teal`, `info`, `success`, `destructive` | 4 semantic variants |
 | Input | Stable | — | With error state support |

@@ -19,72 +19,27 @@ describe('Card', () => {
     expect(card?.classList.contains('flex')).toBe(true)
     expect(card?.classList.contains('flex-col')).toBe(true)
     expect(card?.classList.contains('gap-6')).toBe(true)
-    expect(card?.classList.contains('rounded-xl')).toBe(true)
-    expect(card?.classList.contains('border')).toBe(true)
-    expect(card?.classList.contains('py-6')).toBe(true)
-    expect(card?.classList.contains('shadow-sm')).toBe(true)
-  })
-
-  it('renders hero variant correctly', () => {
-    const { container } = render(
-      <Card variant="hero">
-        <CardHeader>
-          <CardTitle>Hero Card</CardTitle>
-        </CardHeader>
-        <CardContent>Content</CardContent>
-      </Card>
-    )
-
-    const card = container.firstChild as HTMLElement
-    expect(card?.classList.contains('bg-card')).toBe(true)
-    expect(card?.classList.contains('text-card-foreground')).toBe(true)
-    expect(card?.classList.contains('flex')).toBe(true)
-    expect(card?.classList.contains('flex-col')).toBe(true)
-    expect(card?.classList.contains('gap-6')).toBe(true)
-    expect(card?.classList.contains('rounded-xl')).toBe(true)
-    expect(card?.classList.contains('border')).toBe(true)
-    expect(card?.classList.contains('py-6')).toBe(true)
-    expect(card?.classList.contains('shadow-sm')).toBe(true)
-    // Note: dark:bg-[var(--card-hero)] is applied via CSS-in-JS and can't be tested directly in this setup
-  })
-
-  it('renders control variant correctly', () => {
-    const { container } = render(
-      <Card variant="control">
-        <CardHeader>
-          <CardTitle>Control Card</CardTitle>
-        </CardHeader>
-        <CardContent>Content</CardContent>
-      </Card>
-    )
-
-    const card = container.firstChild as HTMLElement
-    expect(card?.classList.contains('bg-card')).toBe(true)
-    expect(card?.classList.contains('text-card-foreground')).toBe(true)
-    expect(card?.classList.contains('flex')).toBe(true)
-    expect(card?.classList.contains('flex-col')).toBe(true)
-    expect(card?.classList.contains('gap-6')).toBe(true)
-    expect(card?.classList.contains('rounded-xl')).toBe(true)
-    expect(card?.classList.contains('border')).toBe(true)
-    expect(card?.classList.contains('py-6')).toBe(true)
-    expect(card?.classList.contains('shadow-sm')).toBe(true)
-    // Note: dark:bg-[var(--card-control)] is applied via CSS-in-JS and can't be tested directly in this setup
-  })
-
-  it('renders studio variant correctly', () => {
-    const { container } = render(
-      <Card variant="studio">
-        <CardHeader>
-          <CardTitle>Studio Card</CardTitle>
-        </CardHeader>
-        <CardContent>Content</CardContent>
-      </Card>
-    )
-
-    const card = container.firstChild as HTMLElement
-    expect(card?.classList.contains('matte-card')).toBe(true)
     expect(card?.classList.contains('rounded-2xl')).toBe(true)
-    expect(card?.classList.contains('overflow-hidden')).toBe(true)
+    expect(card?.classList.contains('border')).toBe(true)
+    expect(card?.classList.contains('ring-1')).toBe(true)
+    expect(card?.classList.contains('ring-foreground/10')).toBe(true)
+    expect(card?.classList.contains('py-6')).toBe(true)
+    expect(card?.classList.contains('shadow-sm')).toBe(true)
+  })
+
+  it('renders sm size correctly', () => {
+    const { container } = render(
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle>Small Card</CardTitle>
+        </CardHeader>
+        <CardContent>Content</CardContent>
+      </Card>
+    )
+
+    const card = container.firstChild as HTMLElement
+    expect(card?.classList.contains('gap-4')).toBe(true)
+    expect(card?.classList.contains('py-4')).toBe(true)
   })
 
   it('applies custom className', () => {

@@ -57,7 +57,7 @@ export default async function DashboardPage() {
 
               return (
                 <Link key={batch.id} href={`/batch/${batch.id}`}>
-                  <Card variant="studio" hover className="p-6 cursor-pointer">
+                  <Card  hover className="p-6 cursor-pointer">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="font-semibold truncate flex-1 pr-4">{batch.name}</h3>
                       <StatusBadge status={batch.status}>

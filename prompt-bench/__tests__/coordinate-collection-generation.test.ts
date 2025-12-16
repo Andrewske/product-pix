@@ -12,7 +12,11 @@ const createMockDependencies = () => ({
         }))
       })),
       update: mock(() => ({
-        eq: mock(() => Promise.resolve({ error: null }))
+        eq: mock(() => ({
+          select: mock(() => ({
+            single: mock(() => Promise.resolve({ data: { id: 'updated-id' }, error: null }))
+          }))
+        }))
       })),
       select: mock(() => ({
         eq: mock(() => ({
@@ -73,7 +77,8 @@ describe('coordinateCollectionGeneration', () => {
       variablesSchema: {},
       outputCount: 2,
       varietyStrategy: 'category-based',
-      id: 'template-id'
+      id: 'template-id',
+      createdAt: new Date()
     };
 
     const batch: BatchFile = {
@@ -135,7 +140,8 @@ describe('coordinateCollectionGeneration', () => {
       variablesSchema: {},
       outputCount: 1,
       varietyStrategy: 'ai-decided',
-      id: 'template-id'
+      id: 'template-id',
+      createdAt: new Date()
     };
 
     const batch: BatchFile = {
@@ -176,9 +182,10 @@ describe('coordinateCollectionGeneration', () => {
       type: 'collection',
       templateData: { subject: 'Test subject' },
       variablesSchema: {},
-      outputCount: 2,
+      outputCount: 1,
       varietyStrategy: 'ai-decided',
-      id: 'template-id'
+      id: 'template-id',
+      createdAt: new Date()
     };
 
     const batch: BatchFile = {
@@ -226,7 +233,8 @@ describe('coordinateCollectionGeneration', () => {
       variablesSchema: {},
       outputCount: 1,
       varietyStrategy: 'ai-decided',
-      id: 'template-id'
+      id: 'template-id',
+      createdAt: new Date()
     };
 
     const batch: BatchFile = {

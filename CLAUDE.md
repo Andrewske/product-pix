@@ -125,7 +125,7 @@ See `docs/design-principles.md` (philosophy) and `docs/design-system.md` (implem
 
 **Brand**: Clean, minimal, inviting, playful — NOT dev-tool/crypto aesthetic
 **Colors**: Green (primary CTA), Teal (secondary/info)
-**Typography**: Space Grotesk (display), Inter (body), mono (meta only)
+**Typography**: Figtree (display), Geist (body), Geist Mono (code)
 **Heuristic**: If it looks like terminal/dashboard → wrong
 
 ## Analytics & Tracking

@@ -76,7 +76,7 @@ export function useUserProfile(): UseUserProfileResult {
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) {
-          console.error('Error fetching profile', {
+          logger.error('Error fetching profile', {
             error: error.message,
             userId: user.id,
           });

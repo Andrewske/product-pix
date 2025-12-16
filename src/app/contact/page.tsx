@@ -19,7 +19,7 @@ export default function ContactPage(): React.ReactElement {
           </p>
         </div>
 
-        <Card variant="control">
+        <Card >
           <CardHeader>
             <CardTitle className="font-display">Send us a message</CardTitle>
             <CardDescription>We typically respond within 24 hours</CardDescription>

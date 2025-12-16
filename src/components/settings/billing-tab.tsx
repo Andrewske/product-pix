@@ -36,7 +36,7 @@ export function BillingTab(): React.ReactElement {
   return (
     <div className="space-y-6">
         {/* Credit packs section - moved to top */}
-        <Card variant="control" className="p-6">
+        <Card  className="p-6">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>

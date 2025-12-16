@@ -37,7 +37,7 @@ export function BatchItemGrid({ items }: BatchItemGridProps) {
         {items.map((item) => (
            <Card
              key={item.id}
-             variant="hero"
+             
              className="overflow-hidden"
              hover
            >

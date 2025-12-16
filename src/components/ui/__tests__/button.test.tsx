@@ -17,7 +17,7 @@ describe('Button', () => {
     const button = container.firstChild as HTMLElement
     expect(button?.classList.contains('bg-accent')).toBe(true)
     expect(button?.classList.contains('text-accent-foreground')).toBe(true)
-    expect(button?.classList.contains('shadow-md')).toBe(true)
+    expect(button?.classList.contains('hover:bg-accent/90')).toBe(true)
   })
 
   it('renders secondary variant correctly', () => {
@@ -53,41 +53,44 @@ describe('Button', () => {
     expect(button?.classList.contains('underline-offset-4')).toBe(true)
   })
 
-  it('renders studio variant correctly', () => {
-    const { container } = render(<Button variant="studio">Studio</Button>)
 
-    const button = container.firstChild as HTMLElement
-    expect(button?.classList.contains('bg-foreground')).toBe(true)
-    expect(button?.classList.contains('text-background')).toBe(true)
-    expect(button?.classList.contains('shadow-xl')).toBe(true)
-    expect(button?.classList.contains('button-studio')).toBe(true)
-  })
 
   it('renders different sizes correctly', () => {
-    const { rerender, container } = render(<Button size="sm">Small</Button>)
+    const { rerender, container } = render(<Button size="xs">Extra Small</Button>)
     let button = container.firstChild as HTMLElement
+    expect(button?.classList.contains('h-6')).toBe(true)
+    expect(button?.classList.contains('rounded-4xl')).toBe(true)
+    expect(button?.classList.contains('gap-1')).toBe(true)
+    expect(button?.classList.contains('px-2.5')).toBe(true)
+
+    rerender(<Button size="sm">Small</Button>)
+    button = container.firstChild as HTMLElement
     expect(button?.classList.contains('h-8')).toBe(true)
-    expect(button?.classList.contains('rounded-md')).toBe(true)
+    expect(button?.classList.contains('rounded-4xl')).toBe(true)
     expect(button?.classList.contains('gap-1.5')).toBe(true)
     expect(button?.classList.contains('px-3')).toBe(true)
 
     rerender(<Button size="lg">Large</Button>)
     button = container.firstChild as HTMLElement
     expect(button?.classList.contains('h-10')).toBe(true)
-    expect(button?.classList.contains('rounded-md')).toBe(true)
+    expect(button?.classList.contains('rounded-4xl')).toBe(true)
     expect(button?.classList.contains('px-6')).toBe(true)
 
     rerender(<Button size="xl">Extra Large</Button>)
     button = container.firstChild as HTMLElement
     expect(button?.classList.contains('h-14')).toBe(true)
-    expect(button?.classList.contains('rounded-md')).toBe(true)
+    expect(button?.classList.contains('rounded-4xl')).toBe(true)
     expect(button?.classList.contains('px-8')).toBe(true)
     expect(button?.classList.contains('text-lg')).toBe(true)
   })
 
   it('renders icon sizes correctly', () => {
-    const { rerender, container } = render(<Button size="icon">Icon</Button>)
+    const { rerender, container } = render(<Button size="icon-xs">Extra Small Icon</Button>)
     let button = container.firstChild as HTMLElement
+    expect(button?.classList.contains('size-6')).toBe(true)
+
+    rerender(<Button size="icon">Icon</Button>)
+    button = container.firstChild as HTMLElement
     expect(button?.classList.contains('size-9')).toBe(true)
 
     rerender(<Button size="icon-sm">Small Icon</Button>)

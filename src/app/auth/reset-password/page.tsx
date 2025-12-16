@@ -61,7 +61,7 @@ export default function ResetPasswordPage(): React.ReactElement {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Card variant="control" className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+          <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-3xl font-bold tracking-tight font-display">ProductPix</CardTitle>
               <CardDescription className="text-lg">
@@ -85,7 +85,7 @@ export default function ResetPasswordPage(): React.ReactElement {
   return (
     <PageContainer>
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Card variant="control" className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+        <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-3xl font-bold tracking-tight font-display">ProductPix</CardTitle>
           <CardDescription className="text-lg">

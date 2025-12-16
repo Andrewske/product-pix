@@ -29,7 +29,7 @@ describe('createLogger', () => {
 
   describe('log level filtering', () => {
     it('logs debug when LOG_LEVEL=debug', () => {
-      process.env.LOG_LEVEL = 'debug';
+      (process.env as any).LOG_LEVEL = 'debug';
       const logger = createLogger();
 
       logger.debug('debug message');
@@ -42,7 +42,7 @@ describe('createLogger', () => {
     });
 
     it('logs info and above when LOG_LEVEL=info', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       const logger = createLogger();
 
       logger.debug('debug message');
@@ -55,7 +55,7 @@ describe('createLogger', () => {
     });
 
     it('logs warn and above when LOG_LEVEL=warn', () => {
-      process.env.LOG_LEVEL = 'warn';
+      (process.env as any).LOG_LEVEL = 'warn';
       const logger = createLogger();
 
       logger.debug('debug message');
@@ -68,7 +68,7 @@ describe('createLogger', () => {
     });
 
     it('logs only error when LOG_LEVEL=error', () => {
-      process.env.LOG_LEVEL = 'error';
+      (process.env as any).LOG_LEVEL = 'error';
       const logger = createLogger();
 
       logger.debug('debug message');
@@ -94,7 +94,7 @@ describe('createLogger', () => {
     });
 
     it('defaults to info level when LOG_LEVEL is invalid', () => {
-      process.env.LOG_LEVEL = 'invalid';
+      (process.env as any).LOG_LEVEL = 'invalid';
       const logger = createLogger();
 
       logger.debug('debug message');
@@ -106,7 +106,7 @@ describe('createLogger', () => {
 
   describe('output format', () => {
     beforeEach(() => {
-      process.env.LOG_LEVEL = 'debug';
+      (process.env as any).LOG_LEVEL = 'debug';
     });
 
     it('outputs JSON with timestamp, level, and message', () => {
@@ -162,7 +162,7 @@ describe('createLogger', () => {
 
   describe('timestamp format', () => {
     it('uses ISO string format for timestamp', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       const logger = createLogger();
 
       const before = new Date();
@@ -180,7 +180,7 @@ describe('createLogger', () => {
 
   describe('context handling', () => {
     it('handles empty context object', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       const logger = createLogger();
 
       logger.info('message', {});
@@ -190,7 +190,7 @@ describe('createLogger', () => {
     });
 
     it('handles complex context objects', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       const logger = createLogger();
 
       const context = {
@@ -221,7 +221,7 @@ describe('createLogger', () => {
     });
 
     it('auto-injects requestId when available', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
       const logger = createLogger();
 
@@ -234,7 +234,7 @@ describe('createLogger', () => {
     });
 
     it('auto-injects userId when available', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: undefined });
       const logger = createLogger();
 
@@ -247,7 +247,7 @@ describe('createLogger', () => {
     });
 
     it('auto-injects route when available', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
       const logger = createLogger();
 
@@ -260,7 +260,7 @@ describe('createLogger', () => {
     });
 
     it('does not inject context when AsyncLocalStorage is empty', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       mockGetRequestContext.mockReturnValue(undefined);
       const logger = createLogger();
 
@@ -273,7 +273,7 @@ describe('createLogger', () => {
     });
 
     it('merges manual context with auto-injected context', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: 'user-456', route: '/api/test' });
       const logger = createLogger();
       const manualContext = { action: 'login', status: 'success' };
@@ -288,7 +288,7 @@ describe('createLogger', () => {
     });
 
     it('includes requestId from context', () => {
-      process.env.LOG_LEVEL = 'info';
+      (process.env as any).LOG_LEVEL = 'info';
       mockGetRequestContext.mockReturnValue({ requestId: 'req-123', userId: undefined, route: undefined });
       const logger = createLogger();
 

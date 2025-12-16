@@ -66,6 +66,74 @@ export type Database = {
           },
         ]
       }
+      analysis_cache: {
+        Row: {
+          created_at: string
+          images_hash: string
+          individual_results: Json
+          merged_result: Json
+          prompt_slug: string
+          prompt_version: number
+        }
+        Insert: {
+          created_at?: string
+          images_hash: string
+          individual_results: Json
+          merged_result: Json
+          prompt_slug: string
+          prompt_version: number
+        }
+        Update: {
+          created_at?: string
+          images_hash?: string
+          individual_results?: Json
+          merged_result?: Json
+          prompt_slug?: string
+          prompt_version?: number
+        }
+        Relationships: []
+      }
+      analysis_prompts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          prompt_text: string
+          response_schema: Json
+          slug: string
+          status: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          prompt_text: string
+          response_schema: Json
+          slug: string
+          status?: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          prompt_text?: string
+          response_schema?: Json
+          slug?: string
+          status?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_prompts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       batch_feedback: {
         Row: {
           batch_id: string

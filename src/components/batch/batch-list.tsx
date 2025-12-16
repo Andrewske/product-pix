@@ -100,7 +100,7 @@ export function BatchList({
           <Spinner size="lg" centered />
         </div>
          ) : filteredBatches.length === 0 ? (
-           <Card variant="control" className="p-12 text-center">
+           <Card  className="p-12 text-center">
              <h3 className="text-xl font-semibold font-display mb-2">No batches found</h3>
              <p className="text-muted-foreground mb-6">
                Create your first batch to get started with AI-powered product photography.
@@ -121,7 +121,7 @@ export function BatchList({
             return (
                <Card
                  key={batch.id}
-                 variant="control"
+                 
                  hover
                  className="p-6 cursor-pointer"
                  onClick={() => router.push(`/batch/${batch.id}`)}

@@ -34,7 +34,7 @@ export function ImageCard({ image, onFavorite, onDelete, onDownload }: ImageCard
 
   return (
     <Card
-      variant="hero"
+      
       hover
       className="relative group shadow-2xl"
       onMouseEnter={() => setShowActions(true)}

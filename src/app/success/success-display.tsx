@@ -37,7 +37,7 @@ export function SuccessDisplay() {
   return (
     <PageContainer>
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Card variant="control" className="p-8 text-center max-w-md w-full">
+        <Card  className="p-8 text-center max-w-md w-full">
           <div aria-live="polite" aria-atomic="true">
             {status === 'success' && (
               <div className="flex flex-col items-center space-y-6">
