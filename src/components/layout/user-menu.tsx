@@ -60,9 +60,11 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {profile.credit_balance} credits
-            </p>
+            <Link href="/settings?tab=billing" className="hover:text-primary transition-colors">
+              <p className="text-sm font-medium leading-none cursor-pointer">
+                {profile.credit_balance} credits
+              </p>
+            </Link>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

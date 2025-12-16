@@ -13,7 +13,7 @@ export const ECOMMERCE_BASE: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdA
     "lighting": "{lighting_style} lighting with soft fill, anti-glare positioning, minimal reflections on glossy surfaces, even illumination eliminating harsh shadows",
     "camera": "shot on DSLR with 85mm lens, optimal aperture for product depth, focus stacking if needed",
     "style": "{style} photography, color-accurate",
-    "quality": "4K resolution, tack sharp focus, product centered filling 85% of frame, subtle drop shadow for dimensionality",
+    "quality": "4K resolution, tack sharp focus, product centered filling 85% of frame, subtle drop shadow for dimensionality, single product view only, no collages or grids",
     "negative": "worst quality, blurry, watermark, text overlay, logo overlay, harsh shadows, color cast, reflections, glare, damaged product"
   },
   variablesSchema: {

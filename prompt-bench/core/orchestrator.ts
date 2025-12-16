@@ -336,54 +336,68 @@ const runPhase = async (
     onProgress?.('run', i, total, `Processing test ${i + 1}/${total}...`);
 
     try {
-      // Step: Resolve source image if specified
+      // Step: Resolve source images if specified
       let resolvedSourceImage: ResolvedSourceImage | undefined;
-      const sourceImagePath = testCase.sourceImage || batch.sourceImage;
-      if (sourceImagePath) {
+      const resolvedSourceImages: ResolvedSourceImage[] = [];
+
+      // Get source images - prefer sourceImages array, fallback to single sourceImage
+      const sourceImagePaths = testCase.sourceImages ||
+        (testCase.sourceImage ? [testCase.sourceImage] :
+        (batch.sourceImage ? [batch.sourceImage] : []));
+
+      if (sourceImagePaths.length > 0) {
         logger.debug('Step started', {
           batchLabel,
           phase: 'run',
-          step: 'resolve_source_image',
-          testIndex: i
+          step: 'resolve_source_images',
+          testIndex: i,
+          imageCount: sourceImagePaths.length
         });
         const resolveStart = Date.now();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const resolveResult = await resolveSourceImage(sourceImagePath as any, {
-          batchFilePath: batchFilePath,
-          skipUpload: false,
+        for (const sourceImagePath of sourceImagePaths) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
-        if (!isOk(resolveResult)) {
-          return err(createError(
-            'SOURCE_IMAGE_ERROR',
-            `Test ${i + 1}/${total} failed to resolve source image: ${resolveResult.error.message}`,
-            { testId: `test-${i}` }
-          ));
+          const resolveResult = await resolveSourceImage(sourceImagePath as any, {
+            batchFilePath: batchFilePath,
+            skipUpload: false,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any);
+          if (!isOk(resolveResult)) {
+            return err(createError(
+              'SOURCE_IMAGE_ERROR',
+              `Test ${i + 1}/${total} failed to resolve source image: ${resolveResult.error.message}`,
+              { testId: `test-${i}` }
+            ));
+          }
+          resolvedSourceImages.push(resolveResult.data as ResolvedSourceImage);
         }
-        resolvedSourceImage = resolveResult.data as ResolvedSourceImage;
+
+        // Use first image for generation (single template)
+        resolvedSourceImage = resolvedSourceImages[0];
 
         logger.debug('Step completed', {
           batchLabel,
           phase: 'run',
-          step: 'resolve_source_image',
+          step: 'resolve_source_images',
           testIndex: i,
-          duration: `${Date.now() - resolveStart}ms`
+          duration: `${Date.now() - resolveStart}ms`,
+          imageCount: resolvedSourceImages.length
         });
       }
 
-      // Step: Analyze product if enabled and source image exists
-      if (analysisEnabled && resolvedSourceImage) {
+      // Step: Analyze product if enabled (use ALL images for better consensus)
+      if (analysisEnabled && resolvedSourceImages.length > 0) {
         logger.debug('Step started', {
           batchLabel,
           phase: 'run',
           step: 'analyze_product',
-          testIndex: i
+          testIndex: i,
+          imageCount: resolvedSourceImages.length
         });
         const analysisStart = Date.now();
 
         const analysisResult = await analyzeProductImages(
-          [{ buffer: resolvedSourceImage.buffer, mimeType: resolvedSourceImage.mimeType }],
+          resolvedSourceImages.map(img => ({ buffer: img.buffer, mimeType: img.mimeType })),
           {
             model: analysisModel,
             cacheEnabled: analysisCacheEnabled
@@ -393,7 +407,7 @@ const runPhase = async (
         if (!isOk(analysisResult)) {
           return err(createError(
             'ANALYSIS_ERROR',
-            `Test ${i + 1}/${total}, image 1 failed analysis: ${analysisResult.error.message}`,
+            `Test ${i + 1}/${total} failed analysis (${resolvedSourceImages.length} images): ${analysisResult.error.message}`,
             { testId: `test-${i}` }
           ));
         }
@@ -682,35 +696,38 @@ export const coordinateCollectionGeneration = async (
     const needsCategoryDetection = template.varietyStrategy === 'category-based' || template.varietyStrategy === 'hybrid';
     const needsAnalysis = analysisEnabled && sourceImages.length > 0;
 
-    // Resolve first source image if needed for analysis or category detection
-    let resolvedSourceImage: ResolvedSourceImage | undefined;
+    // Resolve ALL source images if needed for analysis or category detection
+    const resolvedSourceImagesForAnalysis: ResolvedSourceImage[] = [];
     if ((needsAnalysis || needsCategoryDetection) && sourceImages.length > 0) {
-      const resolveResult = await resolveSourceImage(sourceImages[0], {
-        batchFilePath: batchFilePath,
-        skipUpload: false,
-      });
-      if (!isOk(resolveResult)) {
-        return err(createError(
-          'SOURCE_IMAGE_ERROR',
-          `Test ${i + 1}/${batch.tests.length} failed to resolve source image: ${resolveResult.error.message}`,
-          { testId: `test-${i}` }
-        ));
+      for (const sourceImagePath of sourceImages) {
+        const resolveResult = await resolveSourceImage(sourceImagePath, {
+          batchFilePath: batchFilePath,
+          skipUpload: false,
+        });
+        if (!isOk(resolveResult)) {
+          return err(createError(
+            'SOURCE_IMAGE_ERROR',
+            `Test ${i + 1}/${batch.tests.length} failed to resolve source image: ${resolveResult.error.message}`,
+            { testId: `test-${i}` }
+          ));
+        }
+        resolvedSourceImagesForAnalysis.push(resolveResult.data);
       }
-      resolvedSourceImage = resolveResult.data as ResolvedSourceImage;
     }
 
-    // Run product analysis if enabled
-    if (needsAnalysis && resolvedSourceImage) {
+    // Run product analysis if enabled (use ALL images for better consensus)
+    if (needsAnalysis && resolvedSourceImagesForAnalysis.length > 0) {
       logger.debug('Step started', {
         batchLabel,
         phase: 'run',
         step: 'analyze_product',
-        testIndex: i
+        testIndex: i,
+        imageCount: resolvedSourceImagesForAnalysis.length
       });
       const analysisStart = Date.now();
 
       const analysisResult = await analyzeProductImages(
-        [{ buffer: resolvedSourceImage.buffer, mimeType: resolvedSourceImage.mimeType }],
+        resolvedSourceImagesForAnalysis.map(img => ({ buffer: img.buffer, mimeType: img.mimeType })),
         {
           model: analysisModel,
           cacheEnabled: analysisCacheEnabled
@@ -741,11 +758,11 @@ export const coordinateCollectionGeneration = async (
       });
     }
 
-    // Detect product category if needed
+    // Detect product category if needed (use first image)
     let category: ProductCategory = 'generic';
     let angles: string[] = [];
     if (needsCategoryDetection) {
-      if (!resolvedSourceImage) {
+      if (resolvedSourceImagesForAnalysis.length === 0) {
         return err(createError(
           'VALIDATION_ERROR',
           `Collection test ${i + 1}/${batch.tests.length} requires at least one source image for category detection`,
@@ -753,7 +770,7 @@ export const coordinateCollectionGeneration = async (
         ));
       }
 
-      const categoryResult = await classifyProduct(resolvedSourceImage.r2Url);
+      const categoryResult = await classifyProduct(resolvedSourceImagesForAnalysis[0].r2Url);
       if (isOk(categoryResult)) {
         category = categoryResult.data;
       }
@@ -810,6 +827,7 @@ export const coordinateCollectionGeneration = async (
       }
 
       // Generate idempotency key
+      const sourceIndex = j % resolvedSourceImages.length;
       const idempotencyKey = generateIdempotencyKey(
         template.slug,
         template.version,
@@ -820,7 +838,7 @@ export const coordinateCollectionGeneration = async (
           detectedCategory: category,
         },
         batchLabel,
-        resolvedSourceImages.length > 0 ? resolvedSourceImages[0].hash : undefined
+        resolvedSourceImages.length > 0 ? resolvedSourceImages[sourceIndex].hash : undefined
       );
 
       // Check for existing test
@@ -861,11 +879,12 @@ export const coordinateCollectionGeneration = async (
             outputIndex: j,
             detectedCategory: category,
             anglesUsed: angles,
+            sourceImageIndex: sourceIndex,
           } as any,
           final_prompt: compileResult.data.prompt,
           batch_label: batchLabel,
-          source_image_url: resolvedSourceImages.length > 0 ? resolvedSourceImages[0].r2Url : null,
-          source_image_key: resolvedSourceImages.length > 0 ? resolvedSourceImages[0].r2Key : null,
+          source_image_url: resolvedSourceImages.length > 0 ? resolvedSourceImages[sourceIndex].r2Url : null,
+          source_image_key: resolvedSourceImages.length > 0 ? resolvedSourceImages[sourceIndex].r2Key : null,
         })
         .select()
         .single() as any);
@@ -883,9 +902,11 @@ export const coordinateCollectionGeneration = async (
       let generationResult;
 
       if (resolvedSourceImages.length > 0) {
+        // Use different source image for each output (cycle through if fewer images than outputs)
+        const sourceIndex = j % resolvedSourceImages.length;
         generationResult = await gemini.generateFromImage(
-          resolvedSourceImages[0].buffer,
-          resolvedSourceImages[0].mimeType,
+          resolvedSourceImages[sourceIndex].buffer,
+          resolvedSourceImages[sourceIndex].mimeType,
           compileResult.data.prompt,
           {
             rawPrompt: true,

@@ -2,14 +2,12 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase environment variables');
@@ -21,14 +19,21 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
+        cookiesToSet.forEach(({ name, value, options }) => {
+          request.cookies.set(name, value, options);
+        });
+        supabaseResponse = NextResponse.next({
+          request,
+        });
+        cookiesToSet.forEach(({ name, value, options }) => {
+          supabaseResponse.cookies.set(name, value, options);
+        });
       },
     },
   });
 
-  // Get authenticated user
+  // IMPORTANT: Refresh session if expired - required for SSR
+  // This triggers setAll and properly updates cookies
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user?.user_metadata?.deleted_at && !request.nextUrl.pathname.startsWith('/account-deleted')) {
@@ -36,7 +41,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/account-deleted', request.url));
   }
 
-  return response;
+  return supabaseResponse;
 }
 
 export const config = {

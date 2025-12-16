@@ -102,7 +102,9 @@ output = 2.0
 input = 1.25
 output = 5.0
 
+# Image generation model - output tokens represent generated images
+# 1K/2K images: ~1120 tokens = $0.134, 4K images: ~2000 tokens = $0.24
 [pricing.google.gemini-3-pro-image-preview]
-input = 0.075
-output = 0.3
+input = 1.0
+output = 120.0
 

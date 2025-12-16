@@ -13,7 +13,7 @@ export const ECOMMERCE_BASE: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdA
     lighting: 'soft diffused studio lighting with soft fill',
     camera: 'shot on DSLR with 85mm lens f/8',
     style: 'commercial catalog photography, color-accurate',
-    quality: '4K resolution, sharp focus, product centered filling 85% of frame',
+    quality: '4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids',
     negative: 'worst quality, blurry, watermark, text, logo',
     icon: '📦',
   },

@@ -13,7 +13,7 @@ export const ECOMMERCE_BASE: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdA
     "lighting": "{lighting_style} lighting with soft fill{material === 'glass' || material === 'metal' ? ', polarized to reduce reflections' : ''}{material === 'fabric' || material === 'leather' ? ', enhanced contrast for texture detail' : ''}",
     "camera": "shot on DSLR with 85mm lens f/8, {framing_guide}",
     "style": "{style} photography, color-accurate",
-    "quality": "4K resolution, sharp focus, even lighting, optimal exposure",
+    "quality": "4K resolution, sharp focus, even lighting, optimal exposure, single product view only, no collages or grids",
     "negative": "worst quality, blurry, watermark, text, logo, harsh shadows, color cast, uneven lighting, cluttered composition, overexposed highlights, muddy shadows"
   },
   variablesSchema: {

@@ -13,7 +13,7 @@ export const LIFESTYLE_PRODUCT: Omit<PromptTemplate, 'id' | 'createdBy' | 'creat
     lighting: 'natural {time_of_day} lighting',
     camera: 'shot on mirrorless camera, {focal_length}mm lens',
     style: 'lifestyle photography, warm tones, {mood} atmosphere',
-    quality: 'high resolution, cinematic depth of field',
+    quality: 'high resolution, cinematic depth of field, single product view only, no collages or grids',
     negative: 'artificial, sterile, harsh shadows, overexposed',
     icon: '🏠',
   },

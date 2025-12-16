@@ -17,16 +17,22 @@ export async function GET(request: Request): Promise<NextResponse> {
       throw new Error('Missing Supabase environment variables');
     }
 
-    // Create Supabase client with proper cookie handling for route handlers
+    // Create redirect response that we'll attach cookies to
+    const redirectResponse = NextResponse.redirect(`${origin}${next}`);
+
+    // Create Supabase client with cookie handling that sets on both cookieStore and response
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         getAll() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          for (const { name, value, options } of cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // Set on cookie store for subsequent requests in this handler
             cookieStore.set(name, value, options);
-          }
+            // Set on redirect response so browser receives the cookies
+            redirectResponse.cookies.set(name, value, options);
+          });
         },
       },
     });
@@ -39,8 +45,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       // Track login event
       await trackActivity(data.user.id, 'login');
 
-      // Redirect after cookies are set
-      return NextResponse.redirect(`${origin}${next}`);
+      // Return response with cookies attached
+      return redirectResponse;
     }
 
     console.error('Auth callback error:', error?.message);
