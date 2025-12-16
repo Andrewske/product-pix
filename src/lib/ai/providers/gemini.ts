@@ -2,7 +2,7 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import { env } from '@/lib/env';
-import type { ImageProvider, ImageConfig, GenerationResponse } from '../types';
+import type { ImageProvider, ImageConfig, GenerationResponse, ConversationMessage, ImageConversationSession } from '../types';
 import { normalizeUsage } from '../usage-types';
 
 // =============================================================================
@@ -142,6 +142,86 @@ const handleError = (error: unknown): GenerationResponse => {
     code: 'PROVIDER_ERROR',
     retryable: true,
   };
+};
+
+export class GeminiConversationSession implements ImageConversationSession {
+  private messages: ConversationMessage[] = [];
+  private model: ReturnType<typeof google>;
+
+  constructor() {
+    this.model = google(env.GEMINI_MODEL);
+  }
+
+  async initialize(
+    referenceImages: Array<{ buffer: Buffer; mimeType: string; label?: string }>,
+    systemContext: string
+  ): Promise<void> {
+    // First message: all reference images with labels + context
+    // Labels help AI understand what each image shows without hard-coupling
+    const imageContents = referenceImages.flatMap((img, i) => {
+      const parts: Array<{ type: 'text'; text: string } | { type: 'image'; image: Buffer }> = [];
+      if (img.label) {
+        parts.push({ type: 'text' as const, text: `Reference image ${i + 1}: ${img.label}` });
+      }
+      parts.push({ type: 'image' as const, image: img.buffer });
+      return parts;
+    });
+
+    this.messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: systemContext },
+        ...imageContents,
+      ],
+    }];
+  }
+
+  async generateNext(prompt: string, config: ImageConfig): Promise<GenerationResponse> {
+    // Build user message (don't mutate state yet)
+    const userMessage: ConversationMessage = {
+      role: 'user',
+      content: [{ type: 'text', text: prompt }],
+    };
+
+    // Call API with current messages + new user message
+    // Type assertion needed because ConversationMessage is compatible with AI SDK messages
+    // but has slightly different typing constraints
+    const result = await generateText({
+      model: this.model,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: [...this.messages, userMessage] as any,
+      providerOptions: {
+        google: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: { aspectRatio: aspectRatioMap[config.aspectRatio] },
+        },
+      },
+    });
+
+    const response = extractImageFromResponse(result, config);
+
+    // Only persist to history on success (immutable until committed)
+    if (response.success) {
+      const imageBuffer = Buffer.from(response.imageData, 'base64');
+      this.messages.push(userMessage);
+      this.messages.push({
+        role: 'assistant',
+        content: [{ type: 'image', image: imageBuffer }],
+      });
+    }
+    // On failure: state unchanged, conversation remains valid
+
+    return response;
+  }
+
+  getMessageCount(): number {
+    return this.messages.length;
+  }
+}
+
+// Separate export - does not pollute ImageProvider interface
+export const createConversationSession = (): ImageConversationSession => {
+  return new GeminiConversationSession();
 };
 
 export const createGeminiProvider = (): ImageProvider => {

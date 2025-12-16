@@ -44,6 +44,22 @@ export interface GenerationError {
 
 export type GenerationResponse = GenerationResult | GenerationError;
 
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: Array<
+    | { type: 'text'; text: string }
+    | { type: 'image'; image: Buffer }  // For user messages
+    | { type: 'file'; data: Buffer; mediaType: string }  // For assistant file responses
+  >;
+}
+
+export interface ImageConversationSession {
+  /** Initialize with reference images. Labels (e.g., "front view", "side angle") help AI understand each image without hard-coupling to specific outputs. */
+  initialize(referenceImages: Array<{ buffer: Buffer; mimeType: string; label?: string }>, systemContext: string): Promise<void>;
+  generateNext(prompt: string, config: ImageConfig): Promise<GenerationResponse>;
+  getMessageCount(): number;
+}
+
 export interface ImageProvider {
   name: string;
 

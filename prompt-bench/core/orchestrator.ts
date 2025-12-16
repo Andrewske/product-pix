@@ -25,6 +25,8 @@ import { resolveSourceImage, type ResolvedSourceImage } from '@bench/core/source
 import { calculateCost } from '@bench/core/cost';
 import { classifyProduct } from '@bench/core/category-classifier';
 import { getAnglesForCategory } from '@bench/core/category-angles';
+import { detectSourceAngles } from '@bench/core/angle-detector';
+import { planCollection } from '@bench/core/angle-planner';
 import type { CollectionTemplate, ProductCategory } from '@bench/core/types';
 import { logger } from '@bench/core/logger';
 import { analyzeProductImages } from '@bench/core/product-analyzer';
@@ -471,9 +473,14 @@ const runPhase = async (
       const idempotencyKey = generateIdempotencyKey(
         template.slug,
         template.version,
-        testCase.variables,
+        {
+          ...testCase.variables,
+          angle,
+          outputIndex: j,
+          detectedCategory: category,
+        },
         batchLabel,
-        resolvedSourceImage?.hash
+        sourceImage?.hash
       );
 
       // Check for existing test
@@ -691,14 +698,13 @@ export const coordinateCollectionGeneration = async (
     const testCase = batch.tests[i];
     onProgress?.('run', i, batch.tests.length, `Processing collection test ${i + 1}/${batch.tests.length}...`);
 
-    // Get source images for analysis and category detection
+    // Get source images for analysis and angle detection
     const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
-    const needsCategoryDetection = template.varietyStrategy === 'category-based' || template.varietyStrategy === 'hybrid';
     const needsAnalysis = analysisEnabled && sourceImages.length > 0;
 
-    // Resolve ALL source images if needed for analysis or category detection
+    // Resolve ALL source images if needed for analysis or angle detection
     const resolvedSourceImagesForAnalysis: ResolvedSourceImage[] = [];
-    if ((needsAnalysis || needsCategoryDetection) && sourceImages.length > 0) {
+    if ((needsAnalysis || sourceImages.length > 0) && sourceImages.length > 0) {
       for (const sourceImagePath of sourceImages) {
         const resolveResult = await resolveSourceImage(sourceImagePath, {
           batchFilePath: batchFilePath,
@@ -758,33 +764,83 @@ export const coordinateCollectionGeneration = async (
       });
     }
 
-    // Detect product category if needed (use first image)
+    // Detect product category (use first image for fallback planning)
     let category: ProductCategory = 'generic';
-    let angles: string[] = [];
-    if (needsCategoryDetection) {
-      if (resolvedSourceImagesForAnalysis.length === 0) {
-        return err(createError(
-          'VALIDATION_ERROR',
-          `Collection test ${i + 1}/${batch.tests.length} requires at least one source image for category detection`,
-          { testId: `test-${i}` }
-        ));
-      }
-
+    if (resolvedSourceImagesForAnalysis.length > 0) {
       const categoryResult = await classifyProduct(resolvedSourceImagesForAnalysis[0].r2Url);
       if (isOk(categoryResult)) {
         category = categoryResult.data;
       }
-      angles = getAnglesForCategory(category);
     }
 
-    // Generate each image in the collection
-    for (let j = 0; j < template.outputCount; j++) {
-      // Select angle based on strategy
-      let angle: string | undefined;
-      if (template.varietyStrategy === 'category-based') {
-        angle = angles[j] || angles[angles.length - 1];
-      } else if (template.varietyStrategy === 'hybrid') {
-        angle = j < 2 ? (angles[j] || angles[angles.length - 1]) : undefined;
+    // Step 1: Detect angles from source images (only if we have images)
+    let detectedAngles;
+    if (resolvedSourceImagesForAnalysis.length > 0) {
+      const detected = await detectSourceAngles(resolvedSourceImagesForAnalysis, {
+        cacheEnabled: analysisCacheEnabled
+      });
+
+      if (!isOk(detected)) {
+        logger.warn('Angle detection failed completely, will use category fallbacks in planner', {
+          error: detected.error.message,
+          category,
+          sourceImageCount: resolvedSourceImagesForAnalysis.length
+        });
+        // Create minimal fallback - planner will handle category fallbacks
+        detectedAngles = {
+          sourceAngles: resolvedSourceImagesForAnalysis.map((_, index) => ({
+            imageIndex: index,
+            detectedAngle: 'unknown',
+            isPrimaryReference: index === 0
+          }))
+        };
+      } else {
+        detectedAngles = detected.data;
+      }
+    } else {
+      // No source images - planner will use only category defaults
+      detectedAngles = { sourceAngles: [] };
+    }
+
+    // Step 2: Plan the collection or use category fallback for text-to-image
+    let plan;
+    if (resolvedSourceImagesForAnalysis.length > 0) {
+      plan = planCollection(detectedAngles, category, template.outputCount);
+    } else {
+      // No source images - use category defaults directly
+      const categoryAngles = getAnglesForCategory(category);
+      plan = {
+        assignments: categoryAngles.slice(0, template.outputCount).map((angle, index) => ({
+          targetAngle: angle,
+          sourceImageIndex: 0, // Won't be used
+          matchType: 'primary-fallback' as const
+        }))
+      };
+    }
+
+    // Step 3: Generate each image using plan assignments
+    for (let j = 0; j < plan.assignments.length; j++) {
+      const assignment = plan.assignments[j];
+      const angle = assignment.targetAngle;
+
+      // Use source image from plan assignment (may be undefined for text-to-image)
+      const sourceImage = resolvedSourceImagesForAnalysis.length > 0 ? resolvedSourceImagesForAnalysis[assignment.sourceImageIndex] : undefined;
+
+      // Log match type for debugging (only if we have source images)
+      if (resolvedSourceImagesForAnalysis.length > 0) {
+        logger.debug('Generating angle', {
+          batchLabel,
+          testIndex: i,
+          angle,
+          sourceIndex: assignment.sourceImageIndex,
+          matchType: assignment.matchType
+        });
+      } else {
+        logger.debug('Generating angle (text-to-image)', {
+          batchLabel,
+          testIndex: i,
+          angle
+        });
       }
 
       // Compile prompt
@@ -806,28 +862,6 @@ export const coordinateCollectionGeneration = async (
           { testId: `test-${i}-${j}` }
         ));
       }
-
-      // Resolve source images
-      const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
-      const resolvedSourceImages: ResolvedSourceImage[] = [];
-
-      for (const sourceImagePath of sourceImages) {
-        const resolveResult = await resolveSourceImage(sourceImagePath, {
-          batchFilePath: batchFilePath,
-          skipUpload: false,
-        });
-        if (!isOk(resolveResult)) {
-          return err(createError(
-            'SOURCE_IMAGE_ERROR',
-            `Test ${i + 1}/${batch.tests.length}, image ${j + 1} failed to resolve source image: ${resolveResult.error.message}`,
-            { testId: `test-${i}-${j}` }
-          ));
-        }
-        resolvedSourceImages.push(resolveResult.data);
-      }
-
-      // Generate idempotency key
-      const sourceIndex = j % resolvedSourceImages.length;
       const idempotencyKey = generateIdempotencyKey(
         template.slug,
         template.version,
@@ -838,7 +872,7 @@ export const coordinateCollectionGeneration = async (
           detectedCategory: category,
         },
         batchLabel,
-        resolvedSourceImages.length > 0 ? resolvedSourceImages[sourceIndex].hash : undefined
+        sourceImage?.hash
       );
 
       // Check for existing test
@@ -878,13 +912,15 @@ export const coordinateCollectionGeneration = async (
             angle,
             outputIndex: j,
             detectedCategory: category,
-            anglesUsed: angles,
-            sourceImageIndex: sourceIndex,
+            ...(resolvedSourceImagesForAnalysis.length > 0 ? {
+              sourceImageIndex: assignment.sourceImageIndex,
+              matchType: assignment.matchType
+            } : {}),
           } as any,
           final_prompt: compileResult.data.prompt,
           batch_label: batchLabel,
-          source_image_url: resolvedSourceImages.length > 0 ? resolvedSourceImages[sourceIndex].r2Url : null,
-          source_image_key: resolvedSourceImages.length > 0 ? resolvedSourceImages[sourceIndex].r2Key : null,
+          source_image_url: sourceImage?.r2Url || null,
+          source_image_key: sourceImage?.r2Key || null,
         })
         .select()
         .single() as any);
@@ -901,12 +937,10 @@ export const coordinateCollectionGeneration = async (
       const generationStart = Date.now();
       let generationResult;
 
-      if (resolvedSourceImages.length > 0) {
-        // Use different source image for each output (cycle through if fewer images than outputs)
-        const sourceIndex = j % resolvedSourceImages.length;
+      if (sourceImage) {
         generationResult = await gemini.generateFromImage(
-          resolvedSourceImages[sourceIndex].buffer,
-          resolvedSourceImages[sourceIndex].mimeType,
+          sourceImage.buffer,
+          sourceImage.mimeType,
           compileResult.data.prompt,
           {
             rawPrompt: true,
