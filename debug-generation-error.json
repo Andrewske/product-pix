@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-12-16T03:16:24.883Z",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Generate a professional product photo of a red coffee mug on a white background",
+  "error": {
+    "message": "undefined is not an object (evaluating 'costResult.data.input.toFixed')",
+    "stack": "TypeError: undefined is not an object (evaluating 'costResult.data.input.toFixed')\n    at <anonymous> (/home/kevin/coding/product-pix/debug-generation-cost.ts:146:57)\n    at processTicksAndRejections (native:7:39)",
+    "raw": {}
+  }
+}

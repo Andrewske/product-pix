@@ -119,6 +119,20 @@ export const assemblePrompt = (templateData: TemplateData): string => {
   return parts.join(', ');
 };
 
+/**
+ * Remove empty variable placeholders from a compiled prompt
+ *
+ * @param prompt - The compiled prompt string
+ * @returns Prompt with empty segments removed
+ */
+export const stripEmptyVariables = (prompt: string): string => {
+  return prompt
+    .split(',')
+    .map(part => part.trim())
+    .filter(part => part.length > 0)
+    .join(', ');
+};
+
 // =============================================================================
 // Variable Usage Analysis
 // =============================================================================
@@ -246,8 +260,6 @@ export const compileTemplate = (
 
       }
 
-    }
-      }
     }
   }
 

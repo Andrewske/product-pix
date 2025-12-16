@@ -1,0 +1,10 @@
+{
+  "label": "cost-fix-test",
+  "tests": [
+    {
+      "variables": {
+        "product": "red coffee mug"
+      }
+    }
+  ]
+}
