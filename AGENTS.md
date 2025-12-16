@@ -9,6 +9,7 @@
 **Imports**: Absolute paths preferred via `@/*` (src) and `@bench/*` (prompt-bench)
 **Logging**: Centralized only - no scattered console logs
 **Markdown**: Never create .md files unless explicitly requested
+**Dev server**: NEVER run `bun dev` or start development servers - they run indefinitely
 
 ## Code Patterns
 

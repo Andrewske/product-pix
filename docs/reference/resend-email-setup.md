@@ -51,7 +51,7 @@ Configure in Supabase Dashboard (not config.toml):
 
 ### Local Development
 - Set `EMAIL_ENABLED=false` in `.env.local`
-- Use Inbucket at http://127.0.0.1:54324 for auth emails
+- Use Inbucket at http://localhost:54324 for auth emails
 - Contact form stores in DB but doesn't send emails
 
 ### Test Environment

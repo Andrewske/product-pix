@@ -46,7 +46,7 @@ export function UserMenu() {
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-56 bg-popover" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
@@ -58,15 +58,11 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <Link href="/settings?tab=billing" className="hover:text-primary transition-colors">
-              <p className="text-sm font-medium leading-none cursor-pointer">
-                {profile.credit_balance} credits
-              </p>
-            </Link>
-          </div>
-        </DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link href="/settings?tab=billing">
+            <span className="text-sm font-medium">{profile.credit_balance} credits</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/settings">Settings</Link>

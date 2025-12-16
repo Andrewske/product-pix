@@ -37,9 +37,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       },
     });
 
-    console.log("Exchanging code for session, code:", code?.substring(0, 10) + "...");
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    console.log("Exchange result:", { user: data.user?.id, session: !!data.session, error: error?.message });
 
     if (!error && data.user) {
       // Track login event

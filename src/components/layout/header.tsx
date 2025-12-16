@@ -46,9 +46,11 @@ export function Header() {
               </Link>
 
               {/* Credits badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-accent/30 bg-accent/5 backdrop-blur-sm text-sm font-medium text-accent shadow-sm">
-                {profile?.credit_balance ?? 0} credits
-              </div>
+              <Link href="/settings?tab=billing">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-accent/30 bg-accent/5 backdrop-blur-sm text-sm font-medium text-accent shadow-sm hover:bg-accent/10 transition-colors cursor-pointer">
+                  {profile?.credit_balance ?? 0} credits
+                </div>
+              </Link>
 
               {/* User menu */}
               <UserMenu />
