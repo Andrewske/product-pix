@@ -68,6 +68,7 @@ const parseTemplateRow = (data: Record<string, unknown>): Result<PromptTemplate>
 
 /**
  * Fetch a template from the database by slug and version
+ * Auto-syncs from registry if not found
  */
 export const fetchTemplate = async (
   slug: string,
@@ -88,15 +89,29 @@ export const fetchTemplate = async (
 
   const { data, error } = await query.single();
 
+  // If not found (PGRST116 = no rows returned), try auto-sync from registry
+  if (error?.code === 'PGRST116' || !data) {
+    const syncResult = await syncTemplate(slug);
+    if (!syncResult.ok) {
+      return err(
+        createError('DATABASE_ERROR', `Template not found and sync failed: ${syncResult.error.message}`)
+      );
+    }
+
+    // Retry fetch after sync
+    const { data: retryData, error: retryError } = await query.single();
+    if (retryError || !retryData) {
+      return err(
+        createError('DATABASE_ERROR', `Template synced but fetch failed: ${retryError?.message || 'No data'}`)
+      );
+    }
+
+    return parseTemplateRow(retryData as Record<string, unknown>);
+  }
+
   if (error) {
     return err(
       createError('DATABASE_ERROR', `Failed to fetch template: ${error.message}`)
-    );
-  }
-
-  if (!data) {
-    return err(
-      createError('DATABASE_ERROR', `Template not found: ${slug} v${version}`)
     );
   }
 

@@ -24,13 +24,12 @@ import { evaluateCollectionCommand } from '@bench/commands/evaluate-collection';
 import { compareCommand } from '@bench/commands/compare';
 import { reportCommand } from '@bench/commands/report';
 import { syncCommand } from '@bench/commands/sync';
-import { syncAnalysisCommand } from '@bench/commands/sync-analysis';
 import { testCommand } from '@bench/commands/test';
 import { openLastReportCommand } from '@bench/commands/open-last-report';
 import { improveCommand } from '@bench/commands/improve';
 import { setLogLevel } from '@bench/core/logger';
 
-const COMMANDS = ['test', 'run', 'evaluate', 'evaluate-collection', 'compare', 'report', 'sync', 'sync-analysis', 'open-last-report', 'improve'] as const;
+const COMMANDS = ['test', 'run', 'evaluate', 'evaluate-collection', 'compare', 'report', 'sync', 'open-last-report', 'improve'] as const;
 
 type Command = (typeof COMMANDS)[number];
 
@@ -48,8 +47,7 @@ Commands:
    evaluate-collection Score image collections with AI evaluator
    compare             Compare two batch runs (baseline vs candidate)
    report              Generate HTML report for a batch
-   sync                Sync local templates to database
-sync-analysis       Sync analysis prompts to database
+   sync                Sync local templates and analysis prompts to database
    open-last-report    Open the most recent HTML report
    improve             AI-powered template improvement
 

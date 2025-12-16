@@ -91,8 +91,33 @@ export async function fetchAnalysisPrompt(
 
   const { data, error } = await query.single();
 
-  if (error || !data) {
-    return err(createError('NOT_FOUND', `Analysis prompt "${slug}" not found`));
+  // If not found (PGRST116 = no rows returned), try auto-sync from registry
+  if (error?.code === 'PGRST116' || !data) {
+    const syncResult = await syncAnalysisPrompt(slug);
+    if (!syncResult.ok) {
+      return err(createError('NOT_FOUND', `Analysis prompt not found and sync failed: ${syncResult.error.message}`));
+    }
+
+    // Retry fetch after sync
+    const { data: retryData, error: retryError } = await query.single();
+    if (retryError || !retryData) {
+      return err(createError('NOT_FOUND', `Analysis prompt synced but fetch failed: ${retryError?.message || 'No data'}`));
+    }
+
+    return ok({
+      id: retryData.id,
+      slug: retryData.slug,
+      version: retryData.version,
+      status: retryData.status,
+      promptText: retryData.prompt_text,
+      responseSchema: retryData.response_schema,
+      createdBy: retryData.created_by,
+      createdAt: new Date(retryData.created_at)
+    });
+  }
+
+  if (error) {
+    return err(createError('NOT_FOUND', `Failed to fetch analysis prompt: ${error.message}`));
   }
 
   return ok({
