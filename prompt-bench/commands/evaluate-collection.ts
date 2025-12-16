@@ -69,6 +69,8 @@ export const executeCollectionEvaluation = async (
         evaluator_model: evaluationResult.model,
         cost_usd: (evaluationResult.costUsd / validImages.length),
         tokens_used: Math.round(evaluationResult.tokensUsed / validImages.length),
+        input_tokens: Math.round(evaluationResult.inputTokens / validImages.length),
+        output_tokens: Math.round(evaluationResult.outputTokens / validImages.length),
       })
       .eq('test_id', image.id);
 

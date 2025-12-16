@@ -904,6 +904,8 @@ export type Database = {
           evaluator_model: string | null
           evaluator_type: string
           id: string
+          input_tokens: number | null
+          output_tokens: number | null
           score_overall: number | null
           test_id: string | null
           tokens_used: number | null
@@ -915,6 +917,8 @@ export type Database = {
           evaluator_model?: string | null
           evaluator_type: string
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
           score_overall?: number | null
           test_id?: string | null
           tokens_used?: number | null
@@ -926,6 +930,8 @@ export type Database = {
           evaluator_model?: string | null
           evaluator_type?: string
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
           score_overall?: number | null
           test_id?: string | null
           tokens_used?: number | null

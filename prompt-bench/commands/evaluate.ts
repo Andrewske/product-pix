@@ -103,6 +103,8 @@ export const evaluateCommand = async (args: string[]): Promise<void> => {
       evaluator_type: 'llm',
       cost_usd: result.data.costUsd,
       tokens_used: result.data.tokensUsed,
+      input_tokens: result.data.usage?.input_tokens,
+      output_tokens: result.data.usage?.output_tokens,
     });
 
     if (insertError) {

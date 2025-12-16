@@ -415,13 +415,17 @@ const runPhase = async (
         updateData.output_tokens = generationResult.usage.completionTokens;
       }
 
-      await supabase
+      const { data: updatedTest } = await supabase
         .from('prompt_tests')
         .update(updateData)
-        .eq('id', testRecord.id);
+        .eq('id', testRecord.id)
+        .select()
+        .single();
 
       completed++;
-      tests.push(testRecord);
+      // Use updated test record with fresh cost_usd from database
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tests.push((updatedTest || testRecord) as any);
 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -696,13 +700,17 @@ export const coordinateCollectionGeneration = async (
         output_tokens: generationResult.usage?.completionTokens,
       };
 
-      await supabase
+      const { data: updatedTest } = await supabase
         .from('prompt_tests')
         .update(updateData)
-        .eq('id', testRecord.id);
+        .eq('id', testRecord.id)
+        .select()
+        .single();
 
       completed++;
-      tests.push(testRecord);
+      // Use updated test record with fresh cost_usd from database
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tests.push((updatedTest || testRecord) as any);
     }
   }
 

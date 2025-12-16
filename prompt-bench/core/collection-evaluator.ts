@@ -53,6 +53,8 @@ export interface CollectionEvaluationResult {
   suggestions: string[];
   costUsd: number;
   tokensUsed: number;
+  inputTokens: number;
+  outputTokens: number;
   model: string;
 }
 
@@ -277,6 +279,8 @@ export const callGeminiEvaluationAPI = async (
       return ok({
         evaluationData,
         tokensUsed,
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens,
         costUsd: costData.total,
       });
     } catch (error) {
@@ -338,7 +342,7 @@ export const evaluateCollection = async (
     return apiResult;
   }
 
-  const { evaluationData, tokensUsed, costUsd } = apiResult.data;
+  const { evaluationData, tokensUsed, inputTokens, outputTokens, costUsd } = apiResult.data;
 
   return ok({
     overall: evaluationData.overall,
@@ -348,6 +352,8 @@ export const evaluateCollection = async (
     reasoning: evaluationData.reasoning,
     suggestions: evaluationData.suggestions,
     tokensUsed,
+    inputTokens,
+    outputTokens,
     costUsd,
     model,
   });

@@ -8,6 +8,7 @@ import { join } from 'node:path';
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { summarize } from '@bench/core/statistics';
+import { calculateCost } from '@bench/core/cost';
 import { generateInsights, BatchSummary, InsightResult } from './insights';
 import { loadConfig } from './shared';
 import type { StructuredAnalysis } from '@bench/core/improvement-types';
@@ -70,6 +71,28 @@ interface ComparisonData {
     effectInterpretation: string;
     confidenceInterval: [number, number];
   };
+}
+
+interface TestCostRow {
+  testId: string;
+  testNumber: number;
+  score: number;
+  // Generation
+  genModel: string | null;
+  genInputTokens: number | null;
+  genOutputTokens: number | null;
+  genInputCost: number;
+  genOutputCost: number;
+  genTotalCost: number;
+  // Evaluation
+  evalModel: string | null;
+  evalInputTokens: number | null;
+  evalOutputTokens: number | null;
+  evalInputCost: number;
+  evalOutputCost: number;
+  evalTotalCost: number;
+  // Total
+  totalCost: number;
 }
 
 const parseReportOptions = (args: string[]): ReportOptions => {
@@ -137,6 +160,73 @@ const processTests = (
     .filter((t): t is { id: string; prompt: string; imageUrl: string | null; sourceImageUrl: string | null; status: string; score: number; durationMs: number | null; costUsd: number | null } =>
       t.score !== null
     );
+};
+
+export const prepareTestCostData = (
+  tests: Array<{
+    id: string;
+    cost_usd: number | null;
+    input_tokens: number | null;
+    output_tokens: number | null;
+    prompt_evaluations: Array<{
+      score_overall: number | null;
+      cost_usd: number | null;
+      input_tokens: number | null;
+      output_tokens: number | null;
+      evaluator_model: string | null;
+    }> | null;
+  }>
+): TestCostRow[] => {
+  return tests.map((test, idx) => {
+    // Collection evaluations: Each test has 1 evaluation (may be updated with collection data)
+    // See evaluate-collection.ts which uses .update() not .insert()
+    const evaluation = test.prompt_evaluations?.[0];
+
+    // Generation costs - only calculate if we have tokens (model not stored, so use fallback)
+    let genInputCost = 0;
+    let genOutputCost = 0;
+    let genTotalCost = test.cost_usd || 0;
+
+    // For now, we can't calculate detailed generation costs without model
+    // If missing model or tokens, leave costs at 0 (will show as "N/A" in UI)
+
+    // Evaluation costs - only calculate if we have tokens and model
+    let evalInputCost = 0;
+    let evalOutputCost = 0;
+    let evalTotalCost = evaluation?.cost_usd || 0;
+
+    if (evaluation?.input_tokens && evaluation?.output_tokens && evaluation?.evaluator_model) {
+      const costResult = calculateCost(evaluation.evaluator_model, {
+        input: evaluation.input_tokens,
+        output: evaluation.output_tokens,
+      });
+      if (costResult.ok) {
+        evalInputCost = costResult.data.inputCost;
+        evalOutputCost = costResult.data.outputCost;
+        evalTotalCost = costResult.data.total;
+      }
+    }
+    // If missing model or tokens, leave costs at 0 (will show as "-" in UI)
+
+    return {
+      testId: test.id,
+      testNumber: idx + 1,
+      score: evaluation?.score_overall ?? 0,
+      genModel: null, // Model not stored in database
+      genInputTokens: test.input_tokens,
+      genOutputTokens: test.output_tokens,
+      genInputCost,
+      genOutputCost,
+      genTotalCost,
+      evalModel: evaluation?.evaluator_model || null,
+      evalInputTokens: evaluation?.input_tokens || null,
+      evalOutputTokens: evaluation?.output_tokens || null,
+      evalInputCost,
+      evalOutputCost,
+      evalTotalCost,
+      totalCost: genTotalCost + evalTotalCost,
+    };
+  });
 };
 
 const escapeHtml = (str: string): string =>
@@ -332,6 +422,76 @@ const getDistributionColor = (range: string): string => {
   if (range.includes('Average')) return 'bg-yellow-500';
   if (range.includes('Good')) return 'bg-green-500';
   return 'bg-green-500'; // Excellent
+};
+
+const renderCostBreakdownTable = (costData: TestCostRow[]): string => {
+  const totalGenCost = costData.reduce((sum, row) => sum + row.genTotalCost, 0);
+  const totalEvalCost = costData.reduce((sum, row) => sum + row.evalTotalCost, 0);
+  const grandTotal = totalGenCost + totalEvalCost;
+
+  const rows = costData.map(row => `
+    <tr>
+      <td class="px-4 py-2 text-gray-700">${row.testNumber}</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">${row.score.toFixed(1)}/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">${row.genModel ? escapeHtml(row.genModel) : '-'}</td>
+      <td class="px-4 py-2 text-right text-gray-600">${row.genInputTokens?.toLocaleString() || '-'}</td>
+      <td class="px-4 py-2 text-right text-gray-600">${row.genOutputTokens?.toLocaleString() || '-'}</td>
+      <td class="px-4 py-2 text-right text-gray-600">$${row.genInputCost.toFixed(5)}</td>
+      <td class="px-4 py-2 text-right text-gray-600">$${row.genOutputCost.toFixed(5)}</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$${row.genTotalCost.toFixed(5)}</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">${row.evalModel ? escapeHtml(row.evalModel) : '-'}</td>
+      <td class="px-4 py-2 text-right text-gray-600">${row.evalInputTokens?.toLocaleString() || '-'}</td>
+      <td class="px-4 py-2 text-right text-gray-600">${row.evalOutputTokens?.toLocaleString() || '-'}</td>
+      <td class="px-4 py-2 text-right text-gray-600">${row.evalInputCost > 0 ? '$' + row.evalInputCost.toFixed(5) : '-'}</td>
+      <td class="px-4 py-2 text-right text-gray-600">${row.evalOutputCost > 0 ? '$' + row.evalOutputCost.toFixed(5) : '-'}</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">${row.evalTotalCost > 0 ? '$' + row.evalTotalCost.toFixed(5) : '-'}</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$${row.totalCost.toFixed(5)}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <section class="bg-white rounded-lg shadow p-6 mb-8 overflow-x-auto">
+      <h2 class="text-lg font-semibold mb-4">Detailed Cost Breakdown (Per Test)</h2>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="border-b-2 border-gray-300">
+            <th rowspan="2" class="px-4 py-3 text-left text-gray-700 font-semibold">Test #</th>
+            <th rowspan="2" class="px-4 py-3 text-left text-gray-700 font-semibold">Score</th>
+            <th colspan="6" class="px-4 py-2 text-center text-gray-700 font-semibold bg-blue-50 border-b border-gray-200">Generation</th>
+            <th colspan="6" class="px-4 py-2 text-center text-gray-700 font-semibold bg-purple-50 border-b border-gray-200">Evaluation</th>
+            <th rowspan="2" class="px-4 py-3 text-right text-gray-700 font-semibold">Total</th>
+          </tr>
+          <tr class="border-b border-gray-200 text-xs">
+            <th class="px-4 py-2 text-left text-gray-600 bg-blue-50">Model</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Input Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Output Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Input Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Output Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Total</th>
+            <th class="px-4 py-2 text-left text-gray-600 bg-purple-50">Model</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Input Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Output Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Input Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Output Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-gray-300 font-bold">
+            <td colspan="2" class="px-4 py-3 text-gray-900">TOTAL</td>
+            <td colspan="5" class="px-4 py-3 text-right text-gray-900 bg-blue-50">$${totalGenCost.toFixed(5)}</td>
+            <td class="px-4 py-3 text-right text-gray-900 bg-blue-50">$${totalGenCost.toFixed(5)}</td>
+            <td colspan="5" class="px-4 py-3 text-right text-gray-900 bg-purple-50">$${totalEvalCost.toFixed(5)}</td>
+            <td class="px-4 py-3 text-right text-gray-900 bg-purple-50">$${totalEvalCost.toFixed(5)}</td>
+            <td class="px-4 py-3 text-right text-gray-900">$${grandTotal.toFixed(5)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  `;
 };
 
 const renderImageSection = (
@@ -706,7 +866,7 @@ const renderCostSummary = (data: ReportData): string => `
   </section>
 `;
 
-const generateHTML = (data: ReportData, comparison?: ComparisonData | null): string => `
+const generateHTML = (data: ReportData, comparison?: ComparisonData | null, costBreakdown?: TestCostRow[]): string => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -723,6 +883,7 @@ const generateHTML = (data: ReportData, comparison?: ComparisonData | null): str
      ${data.insights ? renderInsights(data.insights) : ''}
      ${renderSummaryStats(data)}
      ${renderScoreDistribution(data)}
+     ${costBreakdown ? renderCostBreakdownTable(costBreakdown) : ''}
      ${comparison ? renderComparisonGrid(comparison) : renderTestGrid(data)}
      ${renderCostSummary(data)}
    </div>
@@ -755,9 +916,15 @@ export const runReport = async (
       status,
       duration_ms,
       cost_usd,
+      input_tokens,
+      output_tokens,
       prompt_evaluations (
         score_overall,
-        details
+        details,
+        cost_usd,
+        input_tokens,
+        output_tokens,
+        evaluator_model
       )
     `)
     .eq('batch_label', options.label)
@@ -805,9 +972,15 @@ export const runReport = async (
         status,
         duration_ms,
         cost_usd,
+        input_tokens,
+        output_tokens,
         prompt_evaluations (
           score_overall,
-          details
+          details,
+          cost_usd,
+          input_tokens,
+          output_tokens,
+          evaluator_model
         )
       `)
       .eq('batch_label', options.baseline)
@@ -971,8 +1144,11 @@ export const runReport = async (
     improvementAnalysis: improvementAnalysis ?? undefined,
   };
 
+  // Prepare cost breakdown table data
+  const costBreakdown = prepareTestCostData(tests);
+
   // Generate HTML
-  const html = generateHTML(reportData, comparisonData);
+  const html = generateHTML(reportData, comparisonData, costBreakdown);
 
   // Write to file
   await mkdir(REPORTS_DIR, { recursive: true });

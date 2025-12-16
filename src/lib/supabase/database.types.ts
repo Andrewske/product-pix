@@ -904,6 +904,8 @@ export type Database = {
           evaluator_model: string | null
           evaluator_type: string
           id: string
+          input_tokens: number | null
+          output_tokens: number | null
           score_overall: number | null
           test_id: string | null
           tokens_used: number | null
@@ -915,6 +917,8 @@ export type Database = {
           evaluator_model?: string | null
           evaluator_type: string
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
           score_overall?: number | null
           test_id?: string | null
           tokens_used?: number | null
@@ -926,6 +930,8 @@ export type Database = {
           evaluator_model?: string | null
           evaluator_type?: string
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
           score_overall?: number | null
           test_id?: string | null
           tokens_used?: number | null
@@ -945,30 +951,39 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          output_count: number | null
           slug: string
           status: string
           template_data: Json
+          type: string
           variables_schema: Json
+          variety_strategy: string | null
           version: number
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           id?: string
+          output_count?: number | null
           slug: string
           status?: string
           template_data: Json
+          type?: string
           variables_schema: Json
+          variety_strategy?: string | null
           version: number
         }
         Update: {
           created_at?: string
           created_by?: string | null
           id?: string
+          output_count?: number | null
           slug?: string
           status?: string
           template_data?: Json
+          type?: string
           variables_schema?: Json
+          variety_strategy?: string | null
           version?: number
         }
         Relationships: [
