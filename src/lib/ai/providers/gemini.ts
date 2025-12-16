@@ -22,7 +22,26 @@ interface GenerateTextResult {
     candidatesTokenCount?: number;
     totalTokenCount?: number;
   };
-}
+};
+
+// Convert ConversationMessage to AI SDK ModelMessage format
+export const convertConversationToModelMessages = (messages: ConversationMessage[]) => {
+  return messages.map(msg => ({
+    role: msg.role,
+    content: msg.content.map(part => {
+      if (part.type === 'text') {
+        return { type: 'text', text: part.text };
+      } else if (part.type === 'image') {
+        return { type: 'image', image: part.image };
+      } else if (part.type === 'file') {
+        // For assistant file responses, convert to image
+        return { type: 'image', image: part.data };
+      }
+      throw new Error(`Unsupported content type: ${part.type}`);
+    }),
+  }));
+};
+
 
 // Map our config to Gemini's expected values
 const aspectRatioMap: Record<ImageConfig['aspectRatio'], string> = {
@@ -143,8 +162,8 @@ const handleError = (error: unknown): GenerationResponse => {
     retryable: true,
   };
 };
-
 export class GeminiConversationSession implements ImageConversationSession {
+
   private messages: ConversationMessage[] = [];
   private model: ReturnType<typeof google>;
 
@@ -183,13 +202,13 @@ export class GeminiConversationSession implements ImageConversationSession {
       content: [{ type: 'text', text: prompt }],
     };
 
-    // Call API with current messages + new user message
-    // Type assertion needed because ConversationMessage is compatible with AI SDK messages
-    // but has slightly different typing constraints
+    // Convert conversation messages to AI SDK format
+    const modelMessages = convertConversationToModelMessages([...this.messages, userMessage]);
+
+    // Call API with converted messages
     const result = await generateText({
       model: this.model,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      messages: [...this.messages, userMessage] as any,
+      messages: modelMessages,
       providerOptions: {
         google: {
           responseModalities: ['TEXT', 'IMAGE'],
