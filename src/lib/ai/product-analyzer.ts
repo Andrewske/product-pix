@@ -7,8 +7,9 @@ import { logger } from '@/lib/logging';
 import { normalizeUsage } from './usage-types';
 import { ok, err, type Result } from '@/lib/result';
 import type { ProductAnalysis } from './types';
-nconst FALLBACK_PRODUCT_ANALYSIS_PROMPT = `Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.`;
 import { fetchAnalysisPromptBySlug } from '@/lib/db/analysis-prompts';
+
+const FALLBACK_PRODUCT_ANALYSIS_PROMPT = `Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.`;
 
 // =============================================================================
 // Product Analyzer

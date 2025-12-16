@@ -1,8 +1,9 @@
-import { Button } from "@/components/ui/button"
-import { ArrowRight, ImageIcon, Sparkles, ArrowUpRight } from "lucide-react"
-import { Metadata } from "next"
-import Image from "next/image"
-import { PricingSection } from "../components/pricing-section"
+ import { Button } from "@/components/ui/button"
+ import { ArrowRight, ImageIcon, Sparkles, ArrowUpRight } from "lucide-react"
+ import { Metadata } from "next"
+ import Image from "next/image"
+ import { PricingSection } from "../components/pricing-section"
+ import { GetStartedButton } from "@/components/get-started-button"
 
 export const metadata: Metadata = {
   title: "ProductPix - Professional Product Photos in Seconds",
@@ -31,9 +32,12 @@ export default function Home() {
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-accent transition-colors">
               Pricing
             </a>
-            <Button className="bg-foreground text-background hover:bg-foreground/90 transition-all shadow-lg hover:shadow-xl">
-              Get Started
-            </Button>
+             <GetStartedButton
+               variant="default"
+               className="bg-foreground text-background hover:bg-foreground/90 transition-all shadow-lg hover:shadow-xl"
+             >
+               Get Started
+             </GetStartedButton>
           </nav>
         </div>
       </header>
@@ -68,13 +72,14 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-              <Button
-                size="lg"
-                variant="accent"
-                className="h-14 px-8 text-lg shadow-xl hover:shadow-2xl transition-all"
-              >
-                Start Creating Free <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+               <GetStartedButton
+                 size="lg"
+                 variant="accent"
+                 className="h-14 px-8 text-lg shadow-xl hover:shadow-2xl transition-all"
+                 showArrow
+               >
+                 Start Creating Free
+               </GetStartedButton>
               <Button
                 size="lg"
                 variant="outline"
@@ -207,13 +212,13 @@ export default function Home() {
             Join thousands of e-commerce sellers transforming product photos in seconds.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              variant="accent"
-              className="h-14 px-10 text-lg shadow-xl"
-            >
-              Get Started Free
-            </Button>
+             <GetStartedButton
+               size="lg"
+               variant="accent"
+               className="h-14 px-10 text-lg shadow-xl"
+             >
+               Get Started Free
+             </GetStartedButton>
             <p className="text-sm text-muted-foreground sm:absolute sm:bottom-0 sm:translate-y-12">
               No credit card required • 5 free credits
             </p>

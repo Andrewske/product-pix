@@ -27,6 +27,7 @@ import { classifyProduct } from '@bench/core/category-classifier';
 import { getAnglesForCategory } from '@bench/core/category-angles';
 import type { CollectionTemplate, ProductCategory } from '@bench/core/types';
 import { logger } from '@bench/core/logger';
+import { analyzeProductImages } from '@bench/core/product-analyzer';
 
 // =============================================================================
 // Types
@@ -162,7 +163,17 @@ export const runPipeline = async (
     });
     const runPhaseStart = Date.now();
 
-    const runResult = await runPhase(template, batch, batchLabel, options.dryRun, options.batchFile, onProgress);
+    const runResult = await runPhase(
+      template,
+      batch,
+      batchLabel,
+      options.dryRun,
+      options.batchFile,
+      options.analysisEnabled,
+      options.analysisModel,
+      options.analysisCacheEnabled,
+      onProgress
+    );
     if (!isOk(runResult)) {
       logger.error('Phase failed', {
         batchLabel,
@@ -290,11 +301,24 @@ const runPhase = async (
   batchLabel: string,
   dryRun: boolean,
   batchFilePath: string,
+  analysisEnabled: boolean | undefined,
+  analysisModel: string | undefined,
+  analysisCacheEnabled: boolean | undefined,
   onProgress?: ProgressCallback
 ): Promise<Result<RunPhaseResult>> => {
   // Handle collection templates differently
   if ('type' in template && template.type === 'collection') {
-    return runCollectionPhase(template as CollectionTemplate, batch, batchLabel, dryRun, batchFilePath, onProgress);
+    return runCollectionPhase(
+      template as CollectionTemplate,
+      batch,
+      batchLabel,
+      dryRun,
+      batchFilePath,
+      analysisEnabled,
+      analysisModel,
+      analysisCacheEnabled,
+      onProgress
+    );
   }
 
   const supabase = createAdminClient();
@@ -312,6 +336,84 @@ const runPhase = async (
     onProgress?.('run', i, total, `Processing test ${i + 1}/${total}...`);
 
     try {
+      // Step: Resolve source image if specified
+      let resolvedSourceImage: ResolvedSourceImage | undefined;
+      const sourceImagePath = testCase.sourceImage || batch.sourceImage;
+      if (sourceImagePath) {
+        logger.debug('Step started', {
+          batchLabel,
+          phase: 'run',
+          step: 'resolve_source_image',
+          testIndex: i
+        });
+        const resolveStart = Date.now();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const resolveResult = await resolveSourceImage(sourceImagePath as any, {
+          batchFilePath: batchFilePath,
+          skipUpload: false,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+        if (!isOk(resolveResult)) {
+          return err(createError(
+            'SOURCE_IMAGE_ERROR',
+            `Test ${i + 1}/${total} failed to resolve source image: ${resolveResult.error.message}`,
+            { testId: `test-${i}` }
+          ));
+        }
+        resolvedSourceImage = resolveResult.data as ResolvedSourceImage;
+
+        logger.debug('Step completed', {
+          batchLabel,
+          phase: 'run',
+          step: 'resolve_source_image',
+          testIndex: i,
+          duration: `${Date.now() - resolveStart}ms`
+        });
+      }
+
+      // Step: Analyze product if enabled and source image exists
+      if (analysisEnabled && resolvedSourceImage) {
+        logger.debug('Step started', {
+          batchLabel,
+          phase: 'run',
+          step: 'analyze_product',
+          testIndex: i
+        });
+        const analysisStart = Date.now();
+
+        const analysisResult = await analyzeProductImages(
+          [{ buffer: resolvedSourceImage.buffer, mimeType: resolvedSourceImage.mimeType }],
+          {
+            model: analysisModel,
+            cacheEnabled: analysisCacheEnabled
+          }
+        );
+
+        if (!isOk(analysisResult)) {
+          return err(createError(
+            'ANALYSIS_ERROR',
+            `Test ${i + 1}/${total}, image 1 failed analysis: ${analysisResult.error.message}`,
+            { testId: `test-${i}` }
+          ));
+        }
+
+        // Merge analysis results into variables (manual values take precedence)
+        testCase.variables = {
+          ...analysisResult.data,  // Analysis results as defaults
+          ...testCase.variables     // Manual overrides
+        };
+
+        logger.debug('Step completed', {
+          batchLabel,
+          phase: 'run',
+          step: 'analyze_product',
+          testIndex: i,
+          duration: `${Date.now() - analysisStart}ms`,
+          analysis: analysisResult.data
+        });
+      }
+
       // Step: Compile template
       logger.debug('Step started', {
         batchLabel,
@@ -350,26 +452,6 @@ const runPhase = async (
         testIndex: i,
         duration: `${Date.now() - compileStart}ms`
       });
-
-      // Resolve source image if specified
-      let resolvedSourceImage: ResolvedSourceImage | undefined;
-      const sourceImagePath = testCase.sourceImage || batch.sourceImage;
-      if (sourceImagePath) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const resolveResult = await resolveSourceImage(sourceImagePath as any, {
-          batchFilePath: batchFilePath,
-          skipUpload: false,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
-        if (!isOk(resolveResult)) {
-          return err(createError(
-            'SOURCE_IMAGE_ERROR',
-            `Test ${i + 1}/${total} failed to resolve source image: ${resolveResult.error.message}`,
-            { testId: `test-${i}` }
-          ));
-        }
-        resolvedSourceImage = resolveResult.data as ResolvedSourceImage;
-      }
 
       // Generate idempotency key
       const idempotencyKey = generateIdempotencyKey(
@@ -578,7 +660,10 @@ export const coordinateCollectionGeneration = async (
   dryRun: boolean,
   batchFilePath: string,
   dependencies: GenerationDependencies,
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  analysisEnabled?: boolean,
+  analysisModel?: string,
+  analysisCacheEnabled?: boolean
 ): Promise<Result<{ completed: number; failed: number; skipped: number; tests: PromptTest[] }>> => {
   const { supabase, gemini } = dependencies;
 
@@ -592,20 +677,14 @@ export const coordinateCollectionGeneration = async (
     const testCase = batch.tests[i];
     onProgress?.('run', i, batch.tests.length, `Processing collection test ${i + 1}/${batch.tests.length}...`);
 
-    // Detect product category if needed
-    let category: ProductCategory = 'generic';
-    let angles: string[] = [];
+    // Get source images for analysis and category detection
+    const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
+    const needsCategoryDetection = template.varietyStrategy === 'category-based' || template.varietyStrategy === 'hybrid';
+    const needsAnalysis = analysisEnabled && sourceImages.length > 0;
 
-    if (template.varietyStrategy === 'category-based' || template.varietyStrategy === 'hybrid') {
-      const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
-      if (sourceImages.length === 0) {
-        return err(createError(
-          'VALIDATION_ERROR',
-          `Collection test ${i + 1}/${batch.tests.length} requires at least one source image for category detection`,
-          { testId: `test-${i}` }
-        ));
-      }
-
+    // Resolve first source image if needed for analysis or category detection
+    let resolvedSourceImage: ResolvedSourceImage | undefined;
+    if ((needsAnalysis || needsCategoryDetection) && sourceImages.length > 0) {
       const resolveResult = await resolveSourceImage(sourceImages[0], {
         batchFilePath: batchFilePath,
         skipUpload: false,
@@ -613,12 +692,68 @@ export const coordinateCollectionGeneration = async (
       if (!isOk(resolveResult)) {
         return err(createError(
           'SOURCE_IMAGE_ERROR',
-          `Test ${i + 1}/${batch.tests.length} failed to resolve source image for category detection: ${resolveResult.error.message}`,
+          `Test ${i + 1}/${batch.tests.length} failed to resolve source image: ${resolveResult.error.message}`,
+          { testId: `test-${i}` }
+        ));
+      }
+      resolvedSourceImage = resolveResult.data as ResolvedSourceImage;
+    }
+
+    // Run product analysis if enabled
+    if (needsAnalysis && resolvedSourceImage) {
+      logger.debug('Step started', {
+        batchLabel,
+        phase: 'run',
+        step: 'analyze_product',
+        testIndex: i
+      });
+      const analysisStart = Date.now();
+
+      const analysisResult = await analyzeProductImages(
+        [{ buffer: resolvedSourceImage.buffer, mimeType: resolvedSourceImage.mimeType }],
+        {
+          model: analysisModel,
+          cacheEnabled: analysisCacheEnabled
+        }
+      );
+
+      if (!isOk(analysisResult)) {
+        return err(createError(
+          'ANALYSIS_ERROR',
+          `Test ${i + 1}/${batch.tests.length} failed analysis: ${analysisResult.error.message}`,
           { testId: `test-${i}` }
         ));
       }
 
-      const categoryResult = await classifyProduct(resolveResult.data.r2Url);
+      // Merge analysis results into variables (manual values take precedence)
+      testCase.variables = {
+        ...analysisResult.data,
+        ...testCase.variables
+      };
+
+      logger.debug('Step completed', {
+        batchLabel,
+        phase: 'run',
+        step: 'analyze_product',
+        testIndex: i,
+        duration: `${Date.now() - analysisStart}ms`,
+        analysis: analysisResult.data
+      });
+    }
+
+    // Detect product category if needed
+    let category: ProductCategory = 'generic';
+    let angles: string[] = [];
+    if (needsCategoryDetection) {
+      if (!resolvedSourceImage) {
+        return err(createError(
+          'VALIDATION_ERROR',
+          `Collection test ${i + 1}/${batch.tests.length} requires at least one source image for category detection`,
+          { testId: `test-${i}` }
+        ));
+      }
+
+      const categoryResult = await classifyProduct(resolvedSourceImage.r2Url);
       if (isOk(categoryResult)) {
         category = categoryResult.data;
       }
@@ -843,6 +978,9 @@ const runCollectionPhase = async (
   batchLabel: string,
   dryRun: boolean,
   batchFilePath: string,
+  analysisEnabled: boolean | undefined,
+  analysisModel: string | undefined,
+  analysisCacheEnabled: boolean | undefined,
   onProgress?: ProgressCallback
 ): Promise<Result<RunPhaseResult>> => {
   const supabase = createAdminClient();
@@ -855,7 +993,10 @@ const runCollectionPhase = async (
     dryRun,
     batchFilePath,
     { supabase, gemini },
-    onProgress
+    onProgress,
+    analysisEnabled,
+    analysisModel,
+    analysisCacheEnabled
   );
 
   if (!isOk(result)) return result;

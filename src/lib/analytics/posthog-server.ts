@@ -4,7 +4,8 @@ import { createServerConfig } from './config';
 
 let client: PostHog | null = null;
 
-if (env.POSTHOG_API_KEY) {
+// Only initialize PostHog if observability is enabled and API key is present
+if (env.OBSERVABILITY_ENABLED === 'true' && env.POSTHOG_API_KEY) {
   client = new PostHog(env.POSTHOG_API_KEY, createServerConfig());
 
   process.on('SIGTERM', () => client?.shutdown());

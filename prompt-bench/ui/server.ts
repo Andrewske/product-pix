@@ -13,7 +13,7 @@ config({ path: resolve(process.cwd(), '.env') });
 config({ path: resolve(process.cwd(), '.env.local'), override: true });
 
 Bun.serve({
-  port: 3001,
+  port: 8181,
   idleTimeout: 255, // 4.25 minutes max for Bun.serve, for long-running prompt bench operations
   fetch(req: Request) {
     const url = new URL(req.url);
@@ -30,7 +30,7 @@ Bun.serve({
   }
 });
 
-console.log('🚀 Prompt Bench UI running at http://localhost:3001');
+console.log('🚀 Prompt Bench UI running at http://localhost:8181');
 
 const serveHTML = (): Response => {
   const html = `

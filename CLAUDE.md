@@ -68,6 +68,20 @@ prompt-bench/   # Isolated CLI framework
 - **Pricing**: `prompt-bench.toml` at root (committed)
   - Model matching: exact → prefix → error (never guess provider)
 
+## Environment Variables
+
+**Client code (marked with `'use client'`):**
+- Use `process.env.NEXT_PUBLIC_*` directly (Next.js inlines these at build time)
+- TypeScript autocomplete provided by `src/types/env.d.ts`
+- Example: `const url = process.env.NEXT_PUBLIC_SUPABASE_URL`
+
+**Server code (API routes, lib modules):**
+- Import `env` from `@/lib/env` for validated, typed access
+- Example: `import { env } from '@/lib/env'; const key = env.GOOGLE_GENERATIVE_AI_API_KEY`
+- Zod validation ensures all required vars are present at runtime
+
+**Rule**: Never import `@/lib/env` in client code - it triggers server-only validation in the browser.
+
 ## Logging & Error Handling
 
 **Server-side (API routes, lib code):**

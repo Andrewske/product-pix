@@ -9,11 +9,40 @@
         "images/bag/bag-top.jpg",
         "images/bag/bag-bottom.jpg",
         "images/bag/bag-front-1.jpg"
-      ],
-      "variables": {
-        "product": "leather messenger bag"
-      },
-      "notes": "Bag - 5 angles provided (front, back, top, bottom, alt front)"
+      ]
+    },
+    {
+      "sourceImages": [
+        "images/figure/figurine-front.jpg",
+        "images/figure/figurine-back.jpg"
+      ]
+    },
+    {
+      "sourceImages": [
+        "images/guitar/guitar-front.jpg",
+        "images/guitar/guitar-back.jpg",
+        "images/guitar/guitar-front-1.jpg",
+        "images/guitar/guitar-back-1.jpg",
+        "images/guitar/__57 (4).jpg"
+      ]
+    },
+    {
+      "sourceImages": [
+        "images/mug/mug-1.jpg",
+        "images/mug/mug-2.jpg",
+        "images/mug/mug-3.jpg",
+        "images/mug/mug-4.jpg",
+        "images/mug/mug-5.jpg"
+      ]
+    },
+    {
+      "sourceImages": [
+        "images/pottery/__57.jpg",
+        "images/pottery/__57 (1).jpg",
+        "images/pottery/__57 (3).jpg",
+        "images/pottery/__57 (4).jpg",
+        "images/pottery/__57 (5).jpg"
+      ]
     }
   ]
 }

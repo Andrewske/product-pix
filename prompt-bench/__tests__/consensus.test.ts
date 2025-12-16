@@ -71,13 +71,14 @@ describe('hashImageBatch', () => {
     expect(result1).not.toBe(result2);
   });
 
-  it('produces different hash when order changes', () => {
+  it('produces same hash regardless of order (sorted for consistency)', () => {
     const hashes1 = ['hash1', 'hash2', 'hash3'];
     const hashes2 = ['hash3', 'hash2', 'hash1'];
 
     const result1 = hashImageBatch(hashes1);
     const result2 = hashImageBatch(hashes2);
 
-    expect(result1).not.toBe(result2);
+    // Order doesn't matter - same set of images = same hash
+    expect(result1).toBe(result2);
   });
 });

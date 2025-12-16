@@ -1,5 +1,3 @@
-import { env } from '@/lib/env';
-
 /**
  * Creates PostHog browser configuration object with privacy-first settings
  */
@@ -19,7 +17,7 @@ export function createClientConfig(): {
   };
 } {
   return {
-    api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.posthog.com',
     loaded: (posthog: { __autocapture?: boolean }) => {
       // Disable autocapture after manual setup
       posthog.__autocapture = false;
@@ -46,7 +44,7 @@ export function createServerConfig(): {
   flushInterval: number;
 } {
   return {
-    host: env.NEXT_PUBLIC_POSTHOG_HOST,
+    host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.posthog.com',
     flushAt: 20,
     flushInterval: 10000,
   };

@@ -15,10 +15,12 @@ export function PostHogScript() {
 
   // Initialize PostHog when consent granted
   useEffect(() => {
+    // Disable PostHog in development environment
+    if (process.env.NODE_ENV === 'development') {
+      return;
+    }
+
     if (!apiKey) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('PostHog API key not configured (NEXT_PUBLIC_POSTHOG_KEY)');
-      }
       return;
     }
 

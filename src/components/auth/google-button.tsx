@@ -18,6 +18,9 @@ export function GoogleButton({ redirectTo, mode = 'signin' }: GoogleButtonProps)
     const supabase = createClient();
     const redirectUrl = `${window.location.origin}/auth/callback${redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ''}`;
 
+    console.log('[GoogleButton] Redirect URL being sent:', redirectUrl);
+    console.log('[GoogleButton] Window origin:', window.location.origin);
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -28,6 +31,8 @@ export function GoogleButton({ redirectTo, mode = 'signin' }: GoogleButtonProps)
         },
       },
     });
+
+    console.log('[GoogleButton] OAuth response:', { error: error?.message });
 
     if (error) {
       console.error('Google sign in error:', error.message);
