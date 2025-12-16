@@ -2,7 +2,7 @@
 
 > The "why" behind our design decisions. For implementation details (tokens, components, code), see [Design System](./design-system.md).
 
-**Last updated:** 2025-12-12
+**Last updated:** 2025-12-16
 
 ---
 
@@ -18,9 +18,9 @@ This document is for anyone designing or implementing UI—it explains the *why*
 Ecommerce sellers, resellers, and dropshippers who need professional product photos without professional photography skills or budgets.
 
 ### Our Vibe
-**Clean, minimal, inviting, and slightly playful.**
+**Clean, minimal, and inviting.**
 
-We are a friendly tool that makes sellers feel capable, not intimidated. Our interface should feel like a helpful assistant, not a complex dashboard.
+We are a professional tool that makes sellers feel capable and confident. Our interface should feel like a modern, reliable design system, not a complex dashboard.
 
 ### Brand Promise
 *"Studio-quality photos that help your listings sell more."*
@@ -33,9 +33,10 @@ We are a friendly tool that makes sellers feel capable, not intimidated. Our int
 | **Crypto/DeFi** | Harsh neon colors, blockchain aesthetics, aggressive marketing feel untrustworthy |
 | **Enterprise SaaS** | Complex navigation, feature-heavy interfaces overwhelm small sellers |
 | **Video Game UI** | Flashy animations, gamification elements distract from the product photos |
+| **Custom Studio Effects** | Overly designed gradients, glows, and animations that compete with product photos |
 
 ### Core Heuristic
-> **"If it looks like a terminal, analytics dashboard, or video game UI, it's wrong."**
+> **"If it looks like a terminal, analytics dashboard, video game UI, or overly designed studio interface, it's wrong."**
 
 ---
 
@@ -56,10 +57,12 @@ We use green as the primary accent with gray neutrals:
 | **Gray** | Neutral, secondary information | Subtle backgrounds, borders, secondary text |
 ### Accent Rules
 ### Accent Rules
+
 1. **Green is the primary action color**
 2. **Green = "do / commit / spend a credit"**
 3. **Gray neutrals for secondary elements**
 4. **No full-screen bright backgrounds**—backgrounds are quiet; photos and CTAs supply the color
+5. **No custom color accents**—stick to the established green + gray palette
 ### Why OKLCH?
 We use OKLCH color space in CSS for perceptually uniform colors. This means:
 - Colors look consistently bright/saturated across the spectrum
@@ -69,6 +72,12 @@ We use OKLCH color space in CSS for perceptually uniform colors. This means:
 ---
 
 ## Design System Principles
+
+### shadcn/ui Foundation
+- Built on [shadcn/ui](https://ui.shadcn.com/) design system
+- Uses `@theme inline` configuration with radius utilities
+- Standard green primary color with gray neutral base
+- OKLCH color space for perceptually uniform colors
 
 ### Semantic Tokens First
 - Always use CSS custom properties (e.g., `var(--primary)`)

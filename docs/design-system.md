@@ -2,7 +2,7 @@
 
 > Implementation reference for developers. For principles and rationale, see [Design Principles](./design-principles.md).
 
-**Last updated:** 2025-12-12
+**Last updated:** 2025-12-16
 
 ---
 
@@ -70,8 +70,8 @@ Base radius: 0.625rem (10px)
 
 | Component | Status | Variants | Notes |
 |-----------|--------|----------|-------|
-| Card | Stable | `default` | Use template defaults |
-| Button | Stable | `accent`, `outline`, `ghost`, `default`, `secondary`, `destructive`, `outline` | 5 variants + 4 sizes |
+| Card | Stable | `default` | Clean card with rounded corners and subtle shadow |
+| Button | Stable | `default`, `accent`, `outline`, `secondary`, `ghost`, `destructive` | 6 variants + 5 sizes |
 | Badge | Stable | `default`, `secondary`, `destructive`, `outline` | 4 semantic variants |
 | Input | Stable | — | With error state support |
 | Label | Stable | — | Standard form labels |
@@ -87,52 +87,25 @@ Base radius: 0.625rem (10px)
 
 Cards provide the foundation for content layout with semantic variants.
 
-#### Variants
+#### Usage Guidelines
+
+Cards provide the foundation for content layout with consistent styling across the application.
+
+#### Usage
 
 ```tsx
-<Card variant="default">   {/* Standard card */}
-<Card variant="hero">      {/* Result panels, galleries - lighter in dark mode */}
-<Card variant="control">   {/* Forms, settings - standard dark */}
-<Card variant="studio">    {/* Matte effect with hover animation */}
-```
-
-#### Usage Rules
-
-| Context | Variant | Example |
-|---------|---------|---------|
-| Generate page (left) | `control` | Upload forms, settings |
-| Generate page (right) | `hero` | Result images, previews |
-| Dashboard gallery | `studio` | Interactive image cards |
-| Settings panels | `control` | Account, preferences |
-
-#### DO / DON'T
-
-```tsx
-// DO: Use hero variant for primary content
-<Card variant="hero">
-  <CardContent>
-    <img src={generatedImage} alt="Result" />
-  </CardContent>
-</Card>
-
-// DON'T: Use default for result panels (lacks visual hierarchy)
 <Card>
-  <CardContent>
-    <img src={generatedImage} alt="Result" />
-  </CardContent>
-</Card>
-
-// DO: Use control variant for form sections
-<Card variant="control">
   <CardHeader>
-    <CardTitle>Upload Settings</CardTitle>
+    <CardTitle>Card Title</CardTitle>
+    <CardDescription>Description</CardDescription>
   </CardHeader>
   <CardContent>
-    <form>...</form>
+    {/* Main content */}
   </CardContent>
+  <CardFooter>
+    {/* Actions */}
+  </CardFooter>
 </Card>
-
-// DON'T: Mix card types inconsistently on the same page
 ```
 
 #### Anatomy
@@ -161,9 +134,10 @@ Buttons provide clear action hierarchy with variants for different contexts.
 #### Variants
 
 ```tsx
+<Button variant="default">     {/* Primary actions */}
 <Button variant="accent">      {/* Green CTAs - primary actions */}
-<Button variant="studio">      {/* Inverted with shine effect */}
 <Button variant="outline">     {/* Secondary actions */}
+<Button variant="secondary">   {/* Alternative actions */}
 <Button variant="ghost">       {/* Minimal/tertiary actions */}
 <Button variant="destructive"> {/* Delete, cancel actions */}
 ```
@@ -177,28 +151,17 @@ Buttons provide clear action hierarchy with variants for different contexts.
 <Button size="xl">       {/* Hero CTAs - main page actions */}
 ```
 
-#### DO / DON'T
+#### Usage Guidelines
 
 ```tsx
-// DO: Use accent for primary CTAs
+// Primary CTAs - use accent or default
 <Button variant="accent" size="xl">Generate Photo</Button>
 
-// DON'T: Use accent for secondary actions
-<Button variant="accent">Cancel</Button>  // Should be outline or ghost
-
-// DO: Use outline for secondary actions
+// Secondary actions - use outline or ghost
 <Button variant="outline">Save Draft</Button>
 
-// DON'T: Use multiple accent buttons in the same area
-<div>
-  <Button variant="accent">Save</Button>
-  <Button variant="accent">Generate</Button>  // One should be outline
-</div>
-
-// DO: Use size="xl" for hero sections
-<section className="text-center py-12">
-  <Button size="xl" variant="accent">Get Started</Button>
-</section>
+// Destructive actions - use destructive variant
+<Button variant="destructive">Delete</Button>
 ```
 
 ---
@@ -247,14 +210,14 @@ Badges provide visual status and categorization.
 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
   {/* Left Column - Controls */}
   <div className="space-y-6">
-    <Card variant="control">
+    <Card>
       {/* Upload form, settings, controls */}
     </Card>
   </div>
 
   {/* Right Column - Content */}
   <div className="space-y-6">
-    <Card variant="hero">
+    <Card>
       {/* Results, previews, generated content */}
     </Card>
   </div>
@@ -275,7 +238,7 @@ Badges provide visual status and categorization.
 
 ```tsx
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  <Card variant="studio" hover>
+  <Card>
     {/* Gallery item */}
   </Card>
 </div>
@@ -330,10 +293,10 @@ Badges provide visual status and categorization.
 ### Success Message
 
 ```tsx
-<div className="flex items-center gap-3 p-4 bg-success/10 border border-success/20 rounded-lg">
-  <CheckCircle className="h-5 w-5 text-success" />
+<div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+  <CheckCircle className="h-5 w-5 text-primary" />
   <div>
-    <p className="font-medium">Success message</p>
+    <p className="font-medium text-primary">Success message</p>
     <p className="text-sm text-muted-foreground">Additional details</p>
   </div>
 </div>
