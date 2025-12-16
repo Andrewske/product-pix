@@ -1,6 +1,24 @@
 import { z } from 'zod';
 
 // =============================================================================
+// Product Category Types
+// =============================================================================
+
+/**
+ * Product categories for angle-based collection generation
+ */
+export type ProductCategory =
+  | 'apparel'
+  | 'footwear'
+  | 'electronics'
+  | 'furniture'
+  | 'beauty'
+  | 'food'
+  | 'tools'
+  | 'jewelry'
+  | 'generic';
+
+// =============================================================================
 // Variable Definition Schemas
 // =============================================================================
 
@@ -87,6 +105,42 @@ export const PromptTemplateSchema = z.object({
 export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
 
 // =============================================================================
+// Collection Template Types
+// =============================================================================
+
+/**
+ * Base template interface for all template types
+ */
+interface BaseTemplate {
+  slug: string;
+  version: number;
+  status: 'draft' | 'active' | 'archived';
+  templateData: TemplateData;
+  variablesSchema: VariablesSchema;
+}
+
+/**
+ * Single image generation template
+ */
+interface SingleTemplate extends BaseTemplate {
+  type: 'single';
+}
+
+/**
+ * Collection template for generating multiple images with variety strategies
+ */
+export interface CollectionTemplate extends BaseTemplate {
+  type: 'collection';
+  outputCount: number;
+  varietyStrategy: 'category-based' | 'ai-decided' | 'hybrid';
+}
+
+/**
+ * Union type for all template definitions
+ */
+export type TemplateDefinition = SingleTemplate | CollectionTemplate;
+
+// =============================================================================
 // Test Schemas
 // =============================================================================
 
@@ -100,6 +154,7 @@ export const TestCaseSchema = z.object({
   variables: z.record(z.string(), z.unknown()),
   notes: z.string().optional(),
   sourceImage: z.string().optional(),
+  sourceImages: z.array(z.string()).optional(),
 });
 
 export type TestCase = z.infer<typeof TestCaseSchema>;

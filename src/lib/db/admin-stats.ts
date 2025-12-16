@@ -4,6 +4,18 @@ import { logger } from '@/lib/logging';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/database.types';
 
+// Type for the return value of get_filtered_user_list RPC
+interface FilteredUserRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  credit_balance: number;
+  created_at: string;
+  last_active_at: string | null;
+  job_count: number;
+  error_count: number;
+  message_count: number;
+}
 export interface AdminDashboardStats {
   usersToday: number;
   usersThisWeek: number;
@@ -37,19 +49,6 @@ export interface UserListItem {
   errorCount: number;           // Errors in last 7 days
   messageCount: number;
 }
-
-interface FilteredUserRpcResult {
-  id: string;
-  email: string;
-  display_name: string | null;
-  credit_balance: number;
-  created_at: string;
-  last_active_at: string | null;
-  job_count: string | number;
-  error_count: string | number;
-  message_count: string | number;
-}
-
 /**
  * Get today's date range for queries
  */
@@ -296,7 +295,7 @@ export const getFilteredUserList = async (
     }
 
     // Convert the RPC results to UserListItem format
-    const users: UserListItem[] = (data as FilteredUserRpcResult[]).map((user) => ({
+    const users: UserListItem[] = (data as FilteredUserRow[]).map((user) => ({
       id: user.id,
       email: user.email,
       displayName: user.display_name,

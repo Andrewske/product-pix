@@ -47,7 +47,7 @@ export function PostHogScript() {
     import('posthog-js').then((posthog) => {
       posthog.default.capture('$pageview');
     });
-  }, [pathname, initialized, canUseAnalytics]);
+  }, [initialized, canUseAnalytics]);
 
   return null;
 }

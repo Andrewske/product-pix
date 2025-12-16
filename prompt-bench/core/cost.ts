@@ -4,7 +4,8 @@
  * Wraps the src/lib/pricing/calculator to return Result type
  * consistent with prompt-bench error handling patterns.
  */
-import { calculateCost as calculateCostRaw, type CostResult, type TokenUsage } from '@/lib/pricing';
+import { calculateCost as calculateCostRaw } from '@/lib/pricing/calculator';
+import type { CostResult, TokenUsage } from '@/lib/pricing';
 import { ok, err, createError, type Result } from './errors';
 
 /**

@@ -129,7 +129,11 @@ describe('PostHog Integration', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(mockPostHogBrowser.capture).not.toHaveBeenCalled();
+<<<<<<< HEAD
       expect(consoleSpy).toHaveBeenCalledWith('Invalid analytics event', { event: invalidEvent });
+=======
+      expect(consoleSpy).toHaveBeenCalledWith('Invalid analytics event:', invalidEvent);
+>>>>>>> prompt-bench
 
       console.warn = originalWarn;
     });

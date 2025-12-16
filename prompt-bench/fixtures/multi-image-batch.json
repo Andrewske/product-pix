@@ -1,0 +1,26 @@
+{
+  "label": "stage1-multi-input-test",
+  "description": "Test whether multiple input images improve output quality",
+  "tests": [
+    {
+      "sourceImages": [
+        "fixtures/images/suitcase-front.jpg",
+        "fixtures/images/suitcase-back.jpg",
+        "fixtures/images/suitcase-side.jpg"
+      ],
+      "variables": {
+        "product": "monos suitcase"
+      },
+      "notes": "Suitcase - 3 angles provided"
+    },
+    {
+      "sourceImages": [
+        "fixtures/images/suitcase-front.jpg"
+      ],
+      "variables": {
+        "product": "monos suitcase"
+      },
+      "notes": "Suitcase - single angle (control)"
+    }
+  ]
+}
