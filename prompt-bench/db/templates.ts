@@ -30,7 +30,7 @@ const parseTemplateRow = (data: Record<string, unknown>): Result<PromptTemplate>
       ? z.string().uuid().parse(data.created_by)
       : undefined;
 
-    return ok({
+    const baseTemplate = {
       id,
       slug,
       version,
@@ -39,6 +39,26 @@ const parseTemplateRow = (data: Record<string, unknown>): Result<PromptTemplate>
       variablesSchema,
       createdBy,
       createdAt: new Date(createdAtStr),
+    };
+
+    // Check if it's a collection template
+    if (data.type === 'collection') {
+      const outputCount = z.number().int().positive().parse(data.output_count);
+      const varietyStrategy = z.enum(['category-based', 'ai-decided', 'hybrid'])
+        .parse(data.variety_strategy);
+
+      return ok({
+        ...baseTemplate,
+        type: 'collection' as const,
+        outputCount,
+        varietyStrategy
+      });
+    }
+
+    // Default: single template
+    return ok({
+      ...baseTemplate,
+      type: 'single' as const,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid template data';
@@ -133,6 +153,10 @@ export const syncTemplate = async (
       template_data: registered.templateData,
       variables_schema: registered.variablesSchema,
       created_by: userId,
+      // ADD: Collection-specific fields with conditional logic
+      type: 'type' in registered ? registered.type : 'single',
+      output_count: 'outputCount' in registered ? registered.outputCount : 1,
+      variety_strategy: 'varietyStrategy' in registered ? registered.varietyStrategy : null,
     })
     .select()
     .single();
@@ -211,6 +235,10 @@ export const insertTemplate = async (
       template_data: template.templateData,
       variables_schema: template.variablesSchema,
       created_by: userId,
+      // ADD: Collection-specific fields with conditional logic
+      type: 'type' in template ? template.type : 'single',
+      output_count: 'outputCount' in template ? template.outputCount : 1,
+      variety_strategy: 'varietyStrategy' in template ? template.varietyStrategy : null,
     })
     .select()
     .single();

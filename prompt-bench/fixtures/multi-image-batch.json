@@ -4,11 +4,11 @@
   "tests": [
     {
       "sourceImages": [
-        "fixtures/images/bag/bag-front.jpg",
-        "fixtures/images/bag/bag-back.jpg",
-        "fixtures/images/bag/bag-top.jpg",
-        "fixtures/images/bag/bag-bottom.jpg",
-        "fixtures/images/bag/bag-front-1.jpg"
+        "images/bag/bag-front.jpg",
+        "images/bag/bag-back.jpg",
+        "images/bag/bag-top.jpg",
+        "images/bag/bag-bottom.jpg",
+        "images/bag/bag-front-1.jpg"
       ],
       "variables": {
         "product": "leather messenger bag"

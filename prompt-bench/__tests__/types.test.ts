@@ -371,19 +371,39 @@ describe('types schemas', () => {
   });
 
   describe('PromptTemplateSchema', () => {
-    it('validates minimal template', () => {
+    it('validates minimal single template', () => {
       const template = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
         slug: 'product-photo',
         version: 1,
         status: 'draft',
         templateData: { subject: 'A {product}' },
         variablesSchema: { product: { type: 'string', required: true } },
+        createdAt: new Date(),
+        type: 'single',
       };
 
       expect(() => PromptTemplateSchema.parse(template)).not.toThrow();
     });
 
-    it('validates template with UUID', () => {
+    it('validates collection template', () => {
+      const template = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        slug: 'multi-angle-collection',
+        version: 1,
+        status: 'active',
+        templateData: { subject: 'A {product}' },
+        variablesSchema: { product: { type: 'string', required: true } },
+        createdAt: new Date(),
+        type: 'collection',
+        outputCount: 5,
+        varietyStrategy: 'hybrid',
+      };
+
+      expect(() => PromptTemplateSchema.parse(template)).not.toThrow();
+    });
+
+    it('validates template with createdBy', () => {
       const template = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         slug: 'test-template',
@@ -392,6 +412,8 @@ describe('types schemas', () => {
         templateData: { subject: 'Test' },
         variablesSchema: {},
         createdBy: '123e4567-e89b-12d3-a456-426614174001',
+        createdAt: new Date(),
+        type: 'single',
       };
 
       expect(() => PromptTemplateSchema.parse(template)).not.toThrow();
@@ -399,11 +421,14 @@ describe('types schemas', () => {
 
     it('rejects invalid slug format', () => {
       const template = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
         slug: 'Invalid Slug',
         version: 1,
         status: 'draft',
         templateData: { subject: 'Test' },
         variablesSchema: {},
+        createdAt: new Date(),
+        type: 'single',
       };
 
       expect(() => PromptTemplateSchema.parse(template)).toThrow();
@@ -411,11 +436,14 @@ describe('types schemas', () => {
 
     it('rejects non-positive version', () => {
       const template = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
         slug: 'test',
         version: 0,
         status: 'draft',
         templateData: { subject: 'Test' },
         variablesSchema: {},
+        createdAt: new Date(),
+        type: 'single',
       };
 
       expect(() => PromptTemplateSchema.parse(template)).toThrow();
@@ -429,6 +457,24 @@ describe('types schemas', () => {
         status: 'draft',
         templateData: { subject: 'Test' },
         variablesSchema: {},
+        createdAt: new Date(),
+        type: 'single',
+      };
+
+      expect(() => PromptTemplateSchema.parse(template)).toThrow();
+    });
+
+    it('rejects collection template without required fields', () => {
+      const template = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        slug: 'test',
+        version: 1,
+        status: 'draft',
+        templateData: { subject: 'Test' },
+        variablesSchema: {},
+        createdAt: new Date(),
+        type: 'collection',
+        // missing outputCount and varietyStrategy
       };
 
       expect(() => PromptTemplateSchema.parse(template)).toThrow();

@@ -89,18 +89,34 @@ export const TemplateStatusSchema = z.enum(['draft', 'active', 'archived']);
 export type TemplateStatus = z.infer<typeof TemplateStatusSchema>;
 
 /**
- * Schema for a complete prompt template
+ * Schema for a complete prompt template (discriminated union)
  */
-export const PromptTemplateSchema = z.object({
-  id: z.string().uuid().optional(),
-  slug: z.string().min(1).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
-  version: z.number().int().positive(),
-  status: TemplateStatusSchema,
-  templateData: TemplateDataSchema,
-  variablesSchema: VariablesSchemaSchema,
-  createdBy: z.string().uuid().optional(),
-  createdAt: z.date().optional(),
-});
+export const PromptTemplateSchema = z.discriminatedUnion('type', [
+  z.object({
+    id: z.string().uuid(),
+    slug: z.string().min(1).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+    version: z.number().int().positive(),
+    status: TemplateStatusSchema,
+    templateData: TemplateDataSchema,
+    variablesSchema: VariablesSchemaSchema,
+    createdBy: z.string().uuid().optional(),
+    createdAt: z.date(),
+    type: z.literal('single'),
+  }),
+  z.object({
+    id: z.string().uuid(),
+    slug: z.string().min(1).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+    version: z.number().int().positive(),
+    status: TemplateStatusSchema,
+    templateData: TemplateDataSchema,
+    variablesSchema: VariablesSchemaSchema,
+    createdBy: z.string().uuid().optional(),
+    createdAt: z.date(),
+    type: z.literal('collection'),
+    outputCount: z.number().int().positive(),
+    varietyStrategy: z.enum(['category-based', 'ai-decided', 'hybrid']),
+  }),
+]);
 
 export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
 
@@ -112,11 +128,14 @@ export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
  * Base template interface for all template types
  */
 interface BaseTemplate {
+  id: string;
   slug: string;
   version: number;
   status: 'draft' | 'active' | 'archived';
   templateData: TemplateData;
   variablesSchema: VariablesSchema;
+  createdBy?: string;
+  createdAt: Date;
 }
 
 /**
@@ -139,6 +158,8 @@ export interface CollectionTemplate extends BaseTemplate {
  * Union type for all template definitions
  */
 export type TemplateDefinition = SingleTemplate | CollectionTemplate;
+
+
 
 // =============================================================================
 // Test Schemas
