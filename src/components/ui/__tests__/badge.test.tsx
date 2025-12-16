@@ -12,14 +12,7 @@ describe('Badge', () => {
     expect(badge?.classList.contains('text-primary-foreground')).toBe(true)
   })
 
-  it('renders teal variant correctly', () => {
-    const { container } = render(<Badge variant="teal">Teal Badge</Badge>)
 
-    const badge = container.firstChild as HTMLElement
-    expect(badge?.classList.contains('border-transparent')).toBe(true)
-    expect(badge?.classList.contains('bg-teal')).toBe(true)
-    expect(badge?.classList.contains('text-teal-foreground')).toBe(true)
-  })
 
   it('renders secondary variant correctly', () => {
     const { container } = render(<Badge variant="secondary">Secondary</Badge>)

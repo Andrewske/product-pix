@@ -69,9 +69,9 @@ export function BatchStatus({ batchId, initialBatch }: BatchStatusProps) {
       : 0;
 
   const statusVariants = {
-    pending: 'info' as const,
+    pending: 'secondary' as const,
     processing: 'default' as const,
-    completed: 'success' as const,
+    completed: 'default' as const,
     failed: 'destructive' as const,
     cancelled: 'outline' as const,
   };

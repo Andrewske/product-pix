@@ -48,25 +48,49 @@ We are a friendly tool that makes sellers feel capable, not intimidated. Our int
 
 ### Two-Accent Strategy
 
-We use exactly two accent colors with distinct semantic meanings:
+We use green as the primary accent with gray neutrals:
 
 | Accent | Meaning | Use Cases |
 |--------|---------|-----------|
 | **Green** | Action, commitment, spending credits | Primary CTAs, "Generate" button, selected options, confirmations |
-| **Teal** | Information, context, support | Badges, helper text, status indicators, tips |
-
+| **Gray** | Neutral, secondary information | Subtle backgrounds, borders, secondary text |
 ### Accent Rules
-1. **One strong accent per component**—usually green, with small teal details allowed
+### Accent Rules
+1. **Green is the primary action color**
 2. **Green = "do / commit / spend a credit"**
-3. **Teal = "info / context / support"**
+3. **Gray neutrals for secondary elements**
 4. **No full-screen bright backgrounds**—backgrounds are quiet; photos and CTAs supply the color
-
 ### Why OKLCH?
 We use OKLCH color space in CSS for perceptually uniform colors. This means:
 - Colors look consistently bright/saturated across the spectrum
 - Dark mode adjustments are predictable
 - Accessibility calculations are more accurate
 
+---
+
+## Design System Principles
+
+### Semantic Tokens First
+- Always use CSS custom properties (e.g., `var(--primary)`)
+- Never hardcode color values or use Tailwind arbitrary values for colors
+- Ensures theme switching works correctly
+
+### Component Composition
+- Build with shadcn/ui primitives
+- Prefer composition over custom styling
+- Keep components accessible and semantic
+
+### Minimal Custom CSS
+- Rely on Tailwind utilities
+- Custom CSS only when necessary
+- No custom animations or effects that bypass theme system
+
+### Responsive by Default
+- Mobile-first approach
+- Use Tailwind breakpoints (sm, md, lg, xl)
+- Test on multiple viewport sizes
+
+---
 ---
 
 ## 3. Typography Philosophy
@@ -182,7 +206,7 @@ Users should always clearly see three layers:
 - Page background → Card → Image area
 
 ### Accent Behavior in Dark Mode
-- Same meanings as light mode (green = action, teal = info)
+- Same meanings as light mode (green = action)
 - **Smaller accent areas** preferred—dark backgrounds make colors pop more
 - No extra neon glows; keep the matte, controlled feel
 
@@ -195,7 +219,7 @@ Users should always clearly see three layers:
 - [ ] Does the page immediately communicate *product photos* and *selling more*?
 - [ ] Do products sit on clear, defined surfaces?
 - [ ] Is green reserved for the most important actions/selections?
-- [ ] Is teal used only for secondary info and small highlights?
+- [ ] Are gray neutrals used for secondary elements and backgrounds?
 - [ ] Are headings in a modern sans (not mono) with obvious hierarchy?
 - [ ] Does the layout feel simple enough that a non-technical seller won't be intimidated?
 
@@ -204,7 +228,7 @@ Users should always clearly see three layers:
 - [ ] Is there almost no pure black (`#000`) on screen?
 - [ ] Can you clearly see layers: background vs cards vs image area?
 - [ ] Does the result/photo card read as the most important surface?
-- [ ] Are green/teal still the only bright colors (no neon additions)?
+- [ ] Is green the only bright color (no neon additions)?
 
 ---
 

@@ -35,7 +35,7 @@ export default async function PricingPage() {
   }
 
   return (
-    <PageContainer spotlight>
+    <PageContainer>
       <SectionHeader
         title="Choose Your Plan"
         description="Get high-quality AI product photos with flexible credit packs. Credits never expire and can be used anytime."

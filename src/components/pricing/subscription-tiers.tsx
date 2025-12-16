@@ -95,7 +95,7 @@ export function SubscriptionTiers({ pricingData }: SubscriptionTiersProps) {
              <CardFooter className="pt-4">
                 <Button
                   className="w-full"
-                  variant={tierId === 'business' ? 'outline' : 'studio'}
+                  variant={tierId === 'business' ? 'outline' : 'default'}
                   size="xl"
                    onClick={() => handleSubscribe(tierId as 'pro' | 'business')}
                   disabled={loading === tierId}

@@ -219,7 +219,7 @@ export default function GeneratePage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <h1 className="text-2xl font-bold font-display">Generate Product Photo</h1>
-        <Badge variant="teal">
+        <Badge variant="outline">
           AI studio for ecommerce sellers
         </Badge>
       </div>
@@ -256,7 +256,13 @@ export default function GeneratePage() {
           )}
 
           {/* Generate Button */}
-          <Button onClick={handleGenerate} disabled={generating || credits < 1} variant="accent" className="w-full border-none shadow-2xl !text-black bg-green-600 opacity-90 hover:opacity-100 hover:scale-105 transition-all" size="lg">
+          <Button
+            onClick={handleGenerate}
+            variant="default"
+            size="lg"
+            className="w-full"
+            disabled={generating || credits < 1}
+          >
             {generating ? 'Generating...' : 'Generate (1 credit)'}
           </Button>
 

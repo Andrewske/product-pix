@@ -31,7 +31,7 @@ export function PositiveFeedbackToast({
               onPressedChange={() => onReasonToggle(reason)}
               variant="outline"
               size="sm"
-              className="text-xs transition-colors data-[state=on]:bg-green-600 data-[state=on]:text-white data-[state=on]:hover:bg-green-700 data-[state=off]:hover:bg-green-50"
+              className="text-xs transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=off]:hover:bg-primary/10"
             >
               {POSITIVE_REASON_LABELS[reason]}
             </Toggle>

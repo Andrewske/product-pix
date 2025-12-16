@@ -47,7 +47,7 @@ export function SuccessDisplay() {
                 </div>
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold font-display">
-                    Payment <span className="gradient-text-studio">Successful</span>
+                    Payment <span className="text-primary">Successful</span>
                   </h1>
                   <p className="text-muted-foreground">
                     Your credits have been added to your account

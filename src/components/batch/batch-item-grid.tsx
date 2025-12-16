@@ -19,7 +19,7 @@ export function BatchItemGrid({ items }: BatchItemGridProps) {
   const statusVariants = {
     pending: 'secondary' as const,
     processing: 'secondary' as const,
-    completed: 'teal' as const,
+    completed: 'default' as const,
     failed: 'destructive' as const,
   };
 

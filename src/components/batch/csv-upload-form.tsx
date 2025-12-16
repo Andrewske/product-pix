@@ -98,7 +98,7 @@ export function CSVUploadForm({ onParsed, onError }: CSVUploadFormProps) {
       onDrop={handleDrop}
       className={`
         relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer
-        transition-all duration-300 overflow-hidden matte-card
+        transition-all duration-300 overflow-hidden
         ${isDragging
           ? 'border-primary bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-2xl scale-[1.02]'
           : 'border-border hover:border-primary/50 hover:shadow-xl'

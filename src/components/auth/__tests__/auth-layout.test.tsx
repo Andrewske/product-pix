@@ -58,7 +58,7 @@ describe('AuthLayout', () => {
       </AuthLayout>
     );
 
-    const spotlight = document.querySelector('.studio-spotlight');
+    const spotlight = document.querySelector('.bg-gradient-to-b');
     expect(spotlight).not.toBeNull();
   });
 
@@ -69,8 +69,8 @@ describe('AuthLayout', () => {
       </AuthLayout>
     );
 
-    const spotlight = document.querySelector('.studio-spotlight');
-    expect(spotlight).not.not.toBeNull();
+    const spotlight = document.querySelector('.bg-gradient-to-b');
+    expect(spotlight).toBeNull();
   });
 
   it('renders footer slot content', () => {
@@ -98,6 +98,6 @@ describe('AuthLayout', () => {
 
     // Should not have error, spotlight, or footer
     expect(screen.queryByRole('alert')).not.not.toBeNull();
-    expect(document.querySelector('.studio-spotlight')).not.not.toBeNull();
+    expect(document.querySelector('.bg-gradient-to-b')).not.toBeNull();
   });
 });

@@ -7,6 +7,16 @@
 ---
 
 ## Quick Reference
+## Design System Source
+
+This project uses [shadcn/ui](https://ui.shadcn.com/) design system with:
+- **Base color**: Gray (nearly neutral, low chroma)
+- **Theme color**: Green (primary accent)
+- **Structure**: @theme inline with radius utilities
+- **Imports**: Requires `@import "shadcn/tailwind.css"`
+
+---
+
 
 ### Source of Truth
 Color tokens, typography, and effects are defined in [`src/app/globals.css`](../src/app/globals.css). This document references those values—always check globals.css for the actual implementation.
@@ -17,10 +27,7 @@ Color tokens, typography, and effects are defined in [`src/app/globals.css`](../
 |-------|---------|------------|-----------|
 | `--background` | Page background | Near-white | Deep charcoal |
 | `--card` | Standard cards | White | Charcoal |
-| `--card-hero` | Result panels | White | Lighter charcoal |
-| `--card-control` | Form panels | White | Standard charcoal |
-| `--accent` | Primary actions (green) | Medium green | Softer green |
-| `--teal` | Secondary info | Medium teal | Softer teal |
+| `--primary` | Primary actions (green) | Medium green | Softer green |
 | `--destructive` | Errors/warnings | Red | Red |
 | `--foreground` | Primary text | Dark | Near-white |
 | `--muted-foreground` | Secondary text | Medium gray | Light gray |
@@ -64,8 +71,8 @@ Base radius: 0.625rem (10px)
 | Component | Status | Variants | Notes |
 |-----------|--------|----------|-------|
 | Card | Stable | `default` | Use template defaults |
-| Button | Stable | `accent`, `studio`, `outline`, `ghost`, `destructive` | 5 variants + 4 sizes |
-| Badge | Stable | `teal`, `info`, `success`, `destructive` | 4 semantic variants |
+| Button | Stable | `accent`, `outline`, `ghost`, `default`, `secondary`, `destructive`, `outline` | 5 variants + 4 sizes |
+| Badge | Stable | `default`, `secondary`, `destructive`, `outline` | 4 semantic variants |
 | Input | Stable | — | With error state support |
 | Label | Stable | — | Standard form labels |
 | Dialog | Stable | — | Modal dialogs |
@@ -203,29 +210,31 @@ Badges provide visual status and categorization.
 #### Variants
 
 ```tsx
-<Badge variant="teal">        {/* Status, feature tags */}
-<Badge variant="info">        {/* Informational (same as teal visually) */}
-<Badge variant="success">     {/* Positive states */}
+<Badge variant="default">     {/* Primary (green) */}
+<Badge variant="secondary">  {/* Secondary */}
+<Badge variant="outline">    {/* Subtle */}
 <Badge variant="destructive"> {/* Errors, warnings */}
 ```
 
-#### DO / DON'T
+#### Usage Guidelines
 
 ```tsx
-// DO: Use teal for feature tags and categories
-<Badge variant="teal">AI-Powered</Badge>
-<Badge variant="teal">New</Badge>
+// DO: Use default for positive states and primary information
+<Badge variant="default">Completed</Badge>
+<Badge variant="default">Verified</Badge>
 
-// DON'T: Use success for non-state information
-<Badge variant="success">Premium Feature</Badge>  // Should be teal
+// DO: Use secondary for neutral information
+<Badge variant="secondary">Draft</Badge>
+<Badge variant="secondary">Pending</Badge>
 
-// DO: Use success for confirmed states
-<Badge variant="success">Completed</Badge>
-<Badge variant="success">Verified</Badge>
+// DO: Use outline for subtle tags and categories
+<Badge variant="outline">AI-Powered</Badge>
+<Badge variant="outline">New</Badge>
 
 // DO: Use destructive for warnings and errors
 <Badge variant="destructive">Failed</Badge>
 <Badge variant="destructive">Expired</Badge>
+```
 ```
 
 ---
@@ -341,16 +350,6 @@ Badges provide visual status and categorization.
 | Fast | 100-150ms | Hover states, micro-interactions |
 | Standard | 150-250ms | State changes, toggles |
 | Slow | 300-500ms | Page transitions, major changes |
-
-### Studio Effects (from globals.css)
-
-| Class | Effect |
-|-------|--------|
-| `.studio-spotlight` | Radial gradient spotlight |
-| `.matte-card` | Deep card with subtle shine |
-| `.matte-card-hover` | Hover elevation with accent glow |
-| `.button-studio` | Button with shine animation |
-| `.hover-lift` | 4px elevation on hover |
 
 ---
 

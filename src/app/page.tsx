@@ -1,4 +1,5 @@
  import { Button } from "@/components/ui/button"
+ import { Card } from "@/components/ui/card"
  import { ArrowRight, ImageIcon, Sparkles, ArrowUpRight } from "lucide-react"
  import { Metadata } from "next"
  import Image from "next/image"
@@ -32,23 +33,17 @@ export default function Home() {
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-accent transition-colors">
               Pricing
             </a>
-             <GetStartedButton
-               variant="default"
-               className="bg-foreground text-background hover:bg-foreground/90 transition-all shadow-lg hover:shadow-xl"
-             >
-               Get Started
-             </GetStartedButton>
+              <GetStartedButton variant="default">
+                Get Started
+              </GetStartedButton>
           </nav>
         </div>
       </header>
 
-      {/* Hero Section - Studio Stage */}
-      <section className="w-full relative overflow-hidden py-32 bg-background">
-        {/* Studio Lighting Effects */}
-        <div className="absolute inset-0 studio-spotlight pointer-events-none" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[600px] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute top-20 left-10 w-96 h-96 ambient-wash ambient-wash-green opacity-20" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 ambient-wash ambient-wash-green opacity-15" />
+       {/* Hero Section - Studio Stage */}
+       <section className="w-full relative overflow-hidden py-32 bg-background">
+         {/* Subtle background gradient - shadcn approach */}
+         <div className="absolute inset-0 bg-gradient-to-b from-muted/50 to-background pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="text-center space-y-8">
@@ -58,11 +53,11 @@ export default function Home() {
                 <span>AI-Powered Studio Photography</span>
               </div>
               
-              <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-none text-balance font-display">
-                Professional Photos
-                <br />
-                <span className="gradient-text-studio">in Seconds</span>
-              </h1>
+               <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-none text-balance font-display">
+                 Professional Photos
+                 <br />
+                 <span className="text-primary">in Seconds</span>
+               </h1>
               
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light">
                 Transform ordinary snapshots into high-end studio photography.
@@ -74,19 +69,17 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
                <GetStartedButton
                  size="lg"
-                 variant="accent"
-                 className="h-14 px-8 text-lg shadow-xl hover:shadow-2xl transition-all"
+                 variant="default"
                  showArrow
                >
                  Start Creating Free
                </GetStartedButton>
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-14 px-8 text-lg border-accent/30 text-accent hover:bg-accent/5 hover:border-accent/50 transition-all"
-              >
-                View Gallery
-              </Button>
+               <Button
+                 size="lg"
+                 variant="outline"
+               >
+                 View Gallery
+               </Button>
             </div>
 
            {/* Hero Image Showcase */}
@@ -121,20 +114,20 @@ export default function Home() {
               { title: "Ceramic Mug", desc: "Home • Soft Morning", accent: "teal" },
               { title: "Leather Wallet", desc: "Fashion • High Contrast", accent: "green" },
             ].map((item) => (
-              <div key={item.title} className="group cursor-pointer">
-                <div className="matte-card rounded-2xl overflow-hidden mb-6 aspect-[4/5] flex items-center justify-center relative matte-card-hover">
+               <div key={item.title} className="group cursor-pointer">
+                 <Card className="rounded-2xl overflow-hidden mb-6 aspect-[4/5] flex items-center justify-center relative hover:border-primary/50 transition-colors">
                   <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="bg-background/80 backdrop-blur text-xs font-medium px-3 py-1 rounded-full border border-border flex items-center gap-1">
                       After <ArrowUpRight className="w-3 h-3" />
                     </div>
                   </div>
 
-                  <div className="text-center">
-                    <div className="w-32 h-32 bg-muted/20 rounded-lg flex items-center justify-center mb-2">
-                       <ImageIcon className="w-12 h-12 text-muted-foreground/20" />
-                    </div>
-                  </div>
-                </div>
+                   <div className="text-center">
+                     <div className="w-32 h-32 bg-muted/20 rounded-lg flex items-center justify-center mb-2">
+                        <ImageIcon className="w-12 h-12 text-muted-foreground/20" />
+                     </div>
+                   </div>
+                 </Card>
                 <h3 className="text-lg font-semibold mb-1 group-hover:text-accent transition-colors">{item.title}</h3>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
               </div>
@@ -214,8 +207,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
              <GetStartedButton
                size="lg"
-               variant="accent"
-               className="h-14 px-10 text-lg shadow-xl"
+               variant="default"
              >
                Get Started Free
              </GetStartedButton>
@@ -250,9 +242,9 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-sm mb-6 uppercase tracking-wider text-foreground/80">Legal</h4>
               <ul className="space-y-4 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-teal transition-colors">Terms</a></li>
-                <li><a href="#" className="hover:text-teal transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-teal transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-accent transition-colors">Terms</a></li>
+                <li><a href="#" className="hover:text-accent transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-accent transition-colors">Contact</a></li>
               </ul>
             </div>
           </div>

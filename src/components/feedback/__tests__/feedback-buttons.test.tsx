@@ -29,7 +29,7 @@ describe('FeedbackButtons', () => {
     );
 
     const thumbsUpButton = screen.getByLabelText('Like this image');
-    expect(thumbsUpButton.className).toContain('bg-green-600');
+    expect(thumbsUpButton.className).toContain('bg-primary');
   });
 
   it('shows negative feedback as selected when currentFeedback is negative', () => {

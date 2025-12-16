@@ -225,7 +225,7 @@ describe('ImageCard', () => {
     const thumbsDownButton = screen.getByLabelText('Dislike this image');
 
     // Thumbs up should have active styling (green background)
-    expect(thumbsUpButton?.classList.contains('bg-green-600')).toBe(true);
+    expect(thumbsUpButton?.classList.contains('bg-primary')).toBe(true);
     // Thumbs down should be outline
     expect(thumbsDownButton?.getAttribute('class')).toContain('outline');
   });
@@ -474,6 +474,6 @@ describe('ImageCard', () => {
     fireEvent.mouseEnter(card!);
 
     const thumbsUpButton = screen.getByLabelText('Like this image');
-    expect(thumbsUpButton?.classList.contains('bg-green-600')).toBe(true);
+    expect(thumbsUpButton?.classList.contains('bg-primary')).toBe(true);
   });
 });

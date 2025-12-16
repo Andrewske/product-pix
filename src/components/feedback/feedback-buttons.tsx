@@ -33,7 +33,7 @@ export function FeedbackButtons({
         aria-label="Like this image"
         className={cn(
           'transition-colors',
-          currentFeedback === 'positive' && 'bg-green-600 hover:bg-green-700'
+          currentFeedback === 'positive' && 'bg-primary hover:bg-primary/90'
         )}
       >
         <ThumbsUp className={cn('h-4 w-4', size === 'sm' && 'h-3 w-3')} />

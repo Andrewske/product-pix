@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   const recentBatches = await getUserBatches(user.id, { limit: 3 });
 
   return (
-    <PageContainer spotlight>
+    <PageContainer>
       <SectionHeader
         title="Your Images"
         className="text-left mb-8"
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold font-display">Recent Batches</h2>
             <Link href="/batch">
-              <Button variant="ghost" size="sm" className="text-teal hover:text-teal/80">View All</Button>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-accent">View All</Button>
             </Link>
           </div>
           <div className="grid gap-6 md:grid-cols-3">

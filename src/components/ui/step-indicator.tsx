@@ -28,7 +28,7 @@ export function StepIndicator({ currentStep, className }: StepIndicatorProps) {
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors",
                 isCompleted && "bg-accent border-accent text-accent-foreground",
-                isCurrent && "border-teal text-teal",
+                isCurrent                 isCurrent && "border-teal text-teal",                isCurrent && "border-teal text-teal", "border-primary text-primary",
                 isUpcoming && "border-muted-foreground/30 text-muted-foreground/50"
               )}
             >
@@ -42,7 +42,7 @@ export function StepIndicator({ currentStep, className }: StepIndicatorProps) {
               className={cn(
                 "text-sm font-medium transition-colors",
                 isCompleted && "text-accent",
-                isCurrent && "text-teal",
+                isCurrent                 isCurrent && "text-teal",                isCurrent && "text-teal", "text-primary",
                 isUpcoming && "text-muted-foreground"
               )}
             >

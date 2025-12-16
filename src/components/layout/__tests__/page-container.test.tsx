@@ -32,27 +32,7 @@ describe('PageContainer', () => {
     });
   });
 
-  describe('Conditional Features', () => {
-    it('should add spotlight effect when spotlight prop is true', () => {
-      const { container, getByText } = render(<PageContainer spotlight>Content</PageContainer>);
-      const pageContainer = container.firstChild as HTMLElement;
 
-      expect(getByText('Content')).toBeDefined();
-
-      // Test that spotlight element is present when enabled
-      const spotlight = pageContainer.querySelector('.studio-spotlight');
-      expect(spotlight).toBeDefined();
-      expect(spotlight?.tagName).toBe('DIV');
-    });
-
-    it('should not add spotlight when spotlight prop is false', () => {
-      const { container } = render(<PageContainer spotlight={false}>Content</PageContainer>);
-
-      // Test that spotlight element is not present when disabled
-      const spotlight = container.querySelector('.studio-spotlight');
-      expect(spotlight).toBeNull();
-    });
-  });
 
   it('should merge className prop correctly', () => {
     const { container, getByText } = render(<PageContainer className="custom-class">Content</PageContainer>);

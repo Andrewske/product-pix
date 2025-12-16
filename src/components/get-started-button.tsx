@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 
 interface GetStartedButtonProps {
   variant?: "default" | "accent" | "outline"
-  size?: "default" | "sm" | "lg"
+  size?: "default" | "sm" | "lg" | "xl"
   className?: string
   children?: React.ReactNode
   showArrow?: boolean

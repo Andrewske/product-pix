@@ -127,7 +127,7 @@ function ErrorActions({
   if (isResolved) {
     return (
       <div className="flex items-center gap-2">
-        <Badge variant="success" className="text-xs">
+        <Badge variant="default" className="text-xs">
           <CheckCircle size={10} className="mr-1" />
           Resolved
         </Badge>
@@ -185,7 +185,7 @@ function JobEventDetails({ event }: { event: TimelineEvent }) {
           <Settings size={12} />
           <span>{metadata.template_slug || 'Unknown'}</span>
         </div>
-        <Badge variant={metadata.status === 'completed' ? 'success' : 'secondary'}>
+        <Badge variant={metadata.status === 'completed' ? 'default' : 'secondary'}>
           {metadata.status || 'Unknown'}
         </Badge>
         <div className="flex items-center gap-1">
@@ -239,7 +239,7 @@ function MessageEventDetails({ event }: { event: TimelineEvent }) {
           {metadata.is_from_admin ? 'Admin' : 'User'}
         </Badge>
         {metadata.read_at && (
-          <Badge variant="success" className="text-xs">
+          <Badge variant="default" className="text-xs">
             <CheckCircle size={10} className="mr-1" />
             Read
           </Badge>
@@ -270,7 +270,7 @@ function ImageEventDetails({ event }: { event: TimelineEvent }) {
           />
         )}
         {metadata.is_favorite && (
-          <Badge variant="success" className="text-xs">
+          <Badge variant="default" className="text-xs">
             <ThumbsUp size={10} className="mr-1" />
             Favorite
           </Badge>
@@ -290,7 +290,7 @@ function FeedbackEventDetails({ event }: { event: TimelineEvent }) {
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2">
-        <Badge variant={metadata.feedback_type === 'thumbs_up' ? 'success' : 'destructive'}>
+        <Badge variant={metadata.feedback_type === 'thumbs_up' ? 'default' : 'destructive'}>
           {metadata.feedback_type === 'thumbs_up' ? (
             <ThumbsUp size={12} className="mr-1" />
           ) : (

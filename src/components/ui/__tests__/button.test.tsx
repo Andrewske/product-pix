@@ -15,9 +15,9 @@ describe('Button', () => {
     const { container } = render(<Button variant="accent">Accent</Button>)
 
     const button = container.firstChild as HTMLElement
-    expect(button?.classList.contains('bg-accent')).toBe(true)
-    expect(button?.classList.contains('text-accent-foreground')).toBe(true)
-    expect(button?.classList.contains('hover:bg-accent/90')).toBe(true)
+    expect(button?.classList.contains('bg-primary')).toBe(true)
+    expect(button?.classList.contains('text-primary-foreground')).toBe(true)
+    expect(button?.classList.contains('hover:bg-primary/80')).toBe(true)
   })
 
   it('renders secondary variant correctly', () => {
@@ -34,15 +34,14 @@ describe('Button', () => {
     const button = container.firstChild as HTMLElement
     expect(button?.classList.contains('border')).toBe(true)
     expect(button?.classList.contains('border-border')).toBe(true)
-    expect(button?.classList.contains('bg-background')).toBe(true)
   })
 
   it('renders ghost variant correctly', () => {
     const { container } = render(<Button variant="ghost">Ghost</Button>)
 
     const button = container.firstChild as HTMLElement
-    expect(button?.classList.contains('hover:bg-accent')).toBe(true)
-    expect(button?.classList.contains('hover:text-accent-foreground')).toBe(true)
+    expect(button?.classList.contains('hover:bg-muted')).toBe(true)
+    expect(button?.classList.contains('hover:text-foreground')).toBe(true)
   })
 
   it('renders link variant correctly', () => {

@@ -57,10 +57,10 @@ export function GenerationResult({
       </div>
 
       <div className="flex gap-3 mt-4">
-        <Button onClick={onDownload} variant="accent" className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+        <Button onClick={onDownload} variant="default" className="flex-1">
           Download
         </Button>
-        <Button onClick={onRegenerate} variant="outline" className="flex-1 border-teal-600 text-teal-600 hover:bg-teal-50 hover:border-teal-700">
+        <Button onClick={onRegenerate} variant="outline" className="flex-1">
           Regenerate
         </Button>
       </div>

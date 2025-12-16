@@ -52,7 +52,7 @@ export const TimelineEventCard = memo(function TimelineEventCard({ event, onReso
         {event.source === 'database' && (
           event.resolvedAt ? (
             <div className="flex gap-2 items-center">
-              <Badge variant="success">✓ Resolved</Badge>
+              <Badge variant="default">✓ Resolved</Badge>
               <Button size="sm" variant="ghost" onClick={onUnresolve}>
                 Unresolve
               </Button>

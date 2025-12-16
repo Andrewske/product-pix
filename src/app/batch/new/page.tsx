@@ -108,7 +108,7 @@ export default function NewBatchPage() {
    };
 
    return (
-    <PageContainer spotlight>
+    <PageContainer>
       <div className="mb-8">
         <Link href="/batch" className="text-muted-foreground hover:text-foreground text-sm">
           ← Back to Batches
