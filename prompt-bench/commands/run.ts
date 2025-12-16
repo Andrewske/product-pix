@@ -7,6 +7,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { BatchFileSchema, type BatchFile, type TestCase } from '@bench/core/types';
+import { logger } from '@bench/core/logger';
 import { Result, ok, err, createError, formatError, isOk } from '@bench/core/errors';
 import { compileTemplate, generateIdempotencyKey } from '@bench/core/compiler';
 import { fetchTemplate } from '@bench/db/templates';
@@ -42,13 +43,13 @@ const parseRunOptions = (args: string[]): RunOptions => {
 
   const template = values.template || config?.defaults.template;
   if (!template) {
-    console.error('--template is required (or set template in prompt-bench.toml)');
+    logger.error('Template is required (or set template in prompt-bench.toml)');
     process.exit(1);
   }
 
   const batch = values.batch || config?.defaults.batch_file;
   if (!batch) {
-    console.error('--batch is required (or set batch_file in prompt-bench.toml)');
+    logger.error('Batch file is required (or set batch_file in prompt-bench.toml)');
     process.exit(1);
   }
 
@@ -90,19 +91,21 @@ const getEffectiveSourceImage = (test: TestCase, batchDefault?: string): string 
 export const runCommand = async (args: string[]): Promise<void> => {
   const options = parseRunOptions(args);
 
-  console.log(`\n📋 Prompt Bench: Run`);
-  console.log(`─────────────────────────────────`);
-  console.log(`Template: ${options.template}`);
-  console.log(`Version: ${options.version}`);
-  console.log(`Batch: ${options.batchFile}`);
-  console.log(`Label: ${options.label || '(none)'}`);
-  console.log(`Dry Run: ${options.dryRun}`);
-  console.log(`─────────────────────────────────\n`);
+  logger.info('Run command started', {
+    template: options.template,
+    version: options.version,
+    batchFile: options.batchFile,
+    label: options.label,
+    dryRun: options.dryRun
+  });
 
   // 1. Load batch file
   const batchResult = loadBatchFile(options.batchFile);
   if (!isOk(batchResult)) {
-    console.error(formatError(batchResult.error));
+    logger.error('Failed to load batch file', {
+      batchFile: options.batchFile,
+      error: formatError(batchResult.error)
+    });
     process.exit(1);
   }
   const batch = batchResult.data;
@@ -110,21 +113,34 @@ export const runCommand = async (args: string[]): Promise<void> => {
   const defaultLabelPrefix = config?.defaults.label_prefix || 'batch';
   const batchLabel = options.label || batch.label || `${defaultLabelPrefix}-${Date.now()}`;
 
-  console.log(`📦 Loaded ${batch.tests.length} tests from batch file`);
+  logger.info('Batch file loaded', {
+    batchLabel,
+    testCount: batch.tests.length,
+    batchFile: options.batchFile
+  });
 
   // 2. Fetch template
   const templateResult = await fetchTemplate(options.template, options.version);
   if (!isOk(templateResult)) {
-    console.error(formatError(templateResult.error));
+    logger.error('Failed to fetch template', {
+      batchLabel,
+      template: options.template,
+      version: options.version,
+      error: formatError(templateResult.error)
+    });
     process.exit(1);
   }
   const template = templateResult.data;
 
-  console.log(`📝 Using template: ${template.slug} v${template.version}`);
+  logger.info('Template loaded', {
+    batchLabel,
+    template: template.slug,
+    version: template.version
+  });
 
   // 3. Dry run - validate only
   if (options.dryRun) {
-    console.log(`\n🔍 Dry Run - Validating inputs...\n`);
+    logger.info('Starting dry run validation', { batchLabel });
 
     let valid = 0;
     let invalid = 0;
@@ -140,20 +156,28 @@ export const runCommand = async (args: string[]): Promise<void> => {
       );
 
       if (isOk(result)) {
-        console.log(`✅ Test ${i + 1}: Valid`);
-        console.log(`   Prompt: ${result.data.prompt.slice(0, 80)}...`);
-        if (sourceImageRef) {
-          console.log(`   Source: ${sourceImageRef}`);
-        }
+        logger.info(`Test ${i + 1}: Valid`, {
+          batchLabel,
+          testIndex: i + 1,
+          promptPreview: result.data.prompt.slice(0, 80),
+          sourceImage: sourceImageRef
+        });
         valid++;
       } else {
-        console.log(`❌ Test ${i + 1}: Invalid`);
-        console.log(`   Error: ${result.error.message}`);
+        logger.error(`Test ${i + 1}: Invalid`, {
+          batchLabel,
+          testIndex: i + 1,
+          error: result.error.message
+        });
         invalid++;
       }
     }
 
-    console.log(`\n📊 Validation Summary: ${valid} valid, ${invalid} invalid`);
+    logger.info('Dry run validation completed', {
+      batchLabel,
+      valid,
+      invalid
+    });
     return;
   }
 
@@ -165,7 +189,10 @@ export const runCommand = async (args: string[]): Promise<void> => {
   const sourceImageCache = new Map<string, ResolvedSourceImage>();
 
   // 5. Run tests
-  console.log(`\n🚀 Running ${batch.tests.length} tests...\n`);
+  logger.info('Starting test execution', {
+    batchLabel,
+    testCount: batch.tests.length
+  });
 
   let completed = 0;
   let failed = 0;
@@ -174,7 +201,10 @@ export const runCommand = async (args: string[]): Promise<void> => {
     const test = batch.tests[i];
     const testNum = i + 1;
 
-    console.log(`[${testNum}/${batch.tests.length}] Processing...`);
+    logger.info(`Processing test ${testNum}/${batch.tests.length}`, {
+      batchLabel,
+      testIndex: testNum
+    });
 
     // Resolve source image if present
     const sourceImageRef = getEffectiveSourceImage(test, batch.sourceImage);
@@ -186,26 +216,44 @@ export const runCommand = async (args: string[]): Promise<void> => {
         const cachedSource = sourceImageCache.get(sourceImageRef);
         if (cachedSource) {
           resolvedSource = cachedSource;
-          console.log(`  📷 Using cached source image`);
+          logger.info('Using cached source image', {
+            batchLabel,
+            testIndex: testNum,
+            sourceImage: sourceImageRef
+          });
         }
       }
 
       if (!resolvedSource) {
-        console.log(`  📷 Loading source image: ${sourceImageRef}`);
+        logger.info('Loading source image', {
+          batchLabel,
+          testIndex: testNum,
+          sourceImage: sourceImageRef
+        });
         const sourceResult = await resolveSourceImage(sourceImageRef, {
           batchFilePath: options.batchFile,
           skipUpload: false,
         });
 
         if (!isOk(sourceResult)) {
-          console.log(`  ❌ Source image error: ${sourceResult.error.message}`);
+          logger.error('Source image loading failed', {
+            batchLabel,
+            testIndex: testNum,
+            sourceImage: sourceImageRef,
+            error: sourceResult.error.message
+          });
           failed++;
           continue;
         }
 
         resolvedSource = sourceResult.data;
         sourceImageCache.set(sourceImageRef, resolvedSource);
-        console.log(`  ✅ Source image loaded (hash: ${resolvedSource.hash.slice(0, 16)}...)`);
+        logger.info('Source image loaded', {
+          batchLabel,
+          testIndex: testNum,
+          sourceImage: sourceImageRef,
+          hash: resolvedSource.hash.slice(0, 16)
+        });
       }
     }
 
@@ -218,7 +266,11 @@ export const runCommand = async (args: string[]): Promise<void> => {
     );
 
     if (!isOk(compileResult)) {
-      console.log(`  ❌ Compilation failed: ${compileResult.error.message}`);
+      logger.error('Template compilation failed', {
+        batchLabel,
+        testIndex: testNum,
+        error: compileResult.error.message
+      });
       failed++;
       continue;
     }
@@ -242,21 +294,34 @@ export const runCommand = async (args: string[]): Promise<void> => {
     if (existing) {
       if (existing.status === 'failed') {
         // Failed tests should be retried - delete old record and proceed
-        console.log(`  🔄 Retrying failed test`);
+        logger.info('Retrying failed test', {
+          batchLabel,
+          testIndex: testNum,
+          existingId: existing.id
+        });
         const { error: deleteError } = await supabase
           .from('prompt_tests')
           .delete()
           .eq('id', existing.id);
 
         if (deleteError) {
-          console.log(`  ❌ Failed to delete old test: ${deleteError.message}`);
+          logger.error('Failed to delete old test record', {
+            batchLabel,
+            testIndex: testNum,
+            existingId: existing.id,
+            error: deleteError.message
+          });
           failed++;
           continue;
         }
         // Fall through to create new test record below
       } else {
         // Completed, evaluating, generating - skip these
-        console.log(`  ⏭️  Skipping (already exists: ${existing.status})`);
+        logger.info('Skipping existing test', {
+          batchLabel,
+          testIndex: testNum,
+          status: existing.status
+        });
         if (existing.status === 'completed') completed++;
         continue;
       }
@@ -280,7 +345,11 @@ export const runCommand = async (args: string[]): Promise<void> => {
       .single();
 
     if (insertError || !testRecord) {
-      console.log(`  ❌ Database error: ${insertError?.message}`);
+      logger.error('Database insert failed', {
+        batchLabel,
+        testIndex: testNum,
+        error: insertError?.message
+      });
       failed++;
       continue;
     }
@@ -290,7 +359,10 @@ export const runCommand = async (args: string[]): Promise<void> => {
 
     if (resolvedSource) {
       // Image-to-image transformation
-      console.log(`  🖼️  Generating (image-to-image)...`);
+      logger.info('Starting image-to-image generation', {
+        batchLabel,
+        testIndex: testNum
+      });
       generationResult = await gemini.generateFromImage(
         resolvedSource.buffer,
         resolvedSource.mimeType,
@@ -303,7 +375,10 @@ export const runCommand = async (args: string[]): Promise<void> => {
       );
     } else {
       // Text-to-image generation
-      console.log(`  🖼️  Generating (text-to-image)...`);
+      logger.info('Starting text-to-image generation', {
+        batchLabel,
+        testIndex: testNum
+      });
       generationResult = await gemini.generateFromText(compiled.prompt, {
         aspectRatio: '1:1',
         resolution: '2k',
@@ -319,9 +394,20 @@ export const runCommand = async (args: string[]): Promise<void> => {
         p_error_code: generationResult.code,
       });
       if (rpcError) {
-        console.error(`  ⚠️  Failed to update status: ${rpcError.message}`);
+        logger.warn('Failed to update test status', {
+          batchLabel,
+          testIndex: testNum,
+          testId: testRecord.id,
+          error: rpcError.message
+        });
       }
-      console.log(`  ❌ Generation failed: ${generationResult.error}`);
+      logger.error('Generation failed', {
+        batchLabel,
+        testIndex: testNum,
+        testId: testRecord.id,
+        error: generationResult.error,
+        code: generationResult.code
+      });
       failed++;
       continue;
     }
@@ -341,9 +427,19 @@ export const runCommand = async (args: string[]): Promise<void> => {
         p_error_code: 'STORAGE_ERROR',
       });
       if (rpcError) {
-        console.error(`  ⚠️  Failed to update status: ${rpcError.message}`);
+        logger.warn('Failed to update test status after upload failure', {
+          batchLabel,
+          testIndex: testNum,
+          testId: testRecord.id,
+          error: rpcError.message
+        });
       }
-      console.log(`  ❌ Upload failed: ${message}`);
+      logger.error('Image upload failed', {
+        batchLabel,
+        testIndex: testNum,
+        testId: testRecord.id,
+        error: message
+      });
       failed++;
       continue;
     }
@@ -386,10 +482,21 @@ export const runCommand = async (args: string[]): Promise<void> => {
       .eq('id', testRecord.id);
 
     if (updateError) {
-      console.error(`  ⚠️  Failed to update test record: ${updateError.message}`);
+      logger.warn('Failed to update test record', {
+        batchLabel,
+        testIndex: testNum,
+        testId: testRecord.id,
+        error: updateError.message
+      });
     }
 
-    console.log(`  ✅ Generated in ${durationMs}ms`);
+    logger.info('Test completed successfully', {
+      batchLabel,
+      testIndex: testNum,
+      testId: testRecord.id,
+      durationMs,
+      costUsd
+    });
     completed++;
 
     // Rate limiting: wait between requests
@@ -399,13 +506,15 @@ export const runCommand = async (args: string[]): Promise<void> => {
   }
 
   // Summary
-  console.log(`\n─────────────────────────────────`);
-  console.log(`📊 Results:`);
-  console.log(`   Completed: ${completed}`);
-  console.log(`   Failed: ${failed}`);
-  console.log(`   Batch Label: ${batchLabel}`);
-  console.log(`─────────────────────────────────\n`);
+  logger.success('Run command completed', {
+    batchLabel,
+    completed,
+    failed,
+    total: batch.tests.length
+  });
 
-  console.log(`Next steps:`);
-  console.log(`  npm run bench evaluate --label "${batchLabel}"`);
+  logger.info('Next steps', {
+    batchLabel,
+    nextCommand: `bun bench evaluate --label "${batchLabel}"`
+  });
 };

@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { config } from 'dotenv';
 import { createAdminClient } from '../../src/lib/supabase/admin';
 import { testCommand } from '../commands/test';
+import { logger } from '../core/logger';
 import type { ProgressCallback } from '../core/orchestrator';
 import type { BatchFileMetadata, TemplateMetadata } from './types';
 
@@ -298,27 +299,27 @@ const serveHTML = (): Response => {
             const text = decoder.decode(value);
             const lines = text.split("\\n");
 
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
+             for (const line of lines) {
+               if (line.startsWith('data: ')) {
+                 try {
+                   const data = JSON.parse(line.slice(6));
 
-                  if (data.done) {
-                  setReader(null);
-                  setIsRunning(false);
-                  setProgress({ phase: 'complete', current: 100, total: 100, message: 'Run completed successfully!' });
-                } else if (data.error) {
-                  setReader(null);
-                  setError(data.error);
-                  setIsRunning(false);
-                } else {
-                  setProgress(data);
-                }
-                } catch (parseErr) {
-                  console.error('Failed to parse SSE data:', parseErr);
-                }
-              }
-            }
+                   if (data.done) {
+                   setReader(null);
+                   setIsRunning(false);
+                   setProgress({ phase: 'complete', current: 100, total: 100, message: 'Run completed successfully!' });
+                 } else if (data.error) {
+                   setReader(null);
+                   setError(data.error);
+                   setIsRunning(false);
+                 } else {
+                   setProgress(data);
+                 }
+                 } catch (parseErr) {
+                   console.error('Failed to parse SSE data:', parseErr);
+                 }
+               }
+             }
           }
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';
@@ -907,9 +908,17 @@ const handleResults = async (req: Request): Promise<Response> => {
   }
 };
 
-const createSSERunStream = (template: string, batchFile: string, label?: string): ReadableStream => {
+const createSSERunStream = (template: string, batchFile: string, batchLabel?: string): ReadableStream => {
   return new ReadableStream({
     async start(controller) {
+      const connectionStart = Date.now();
+
+      // Log connection established
+      logger.debug('SSE connection established', {
+        batchLabel,
+        connectionDuration: '0s'
+      });
+
       // Progress callback that writes to SSE stream
       const onProgress: ProgressCallback = (
         phase: string,
@@ -925,21 +934,45 @@ const createSSERunStream = (template: string, batchFile: string, label?: string)
           timestamp: Date.now(),
         });
         controller.enqueue(`data: ${data}\n\n`);
+
+        // Log SSE event sent
+        logger.debug('SSE event sent', {
+          batchLabel,
+          event: 'progress',
+          phase,
+          progress: `${current}/${total}`
+        });
       };
 
       try {
         // Build CLI args
         const args = ['--template', template, '--batch', batchFile];
-        if (label) args.push('--label', label);
+        if (batchLabel) args.push('--label', batchLabel);
 
         // Execute test command with progress callback
         await testCommand(args, onProgress);
 
         // Send completion event
         controller.enqueue(`data: ${JSON.stringify({ done: true })}\n\n`);
+
+        // Log completion
+        const totalDuration = Math.round((Date.now() - connectionStart) / 1000);
+        logger.info('SSE connection closed', {
+          batchLabel,
+          duration: `${totalDuration}s`,
+          reason: 'complete'
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         controller.enqueue(`data: ${JSON.stringify({ error: message })}\n\n`);
+
+        // Log connection error
+        const elapsed = Math.round((Date.now() - connectionStart) / 1000);
+        logger.error('SSE connection error', {
+          batchLabel,
+          connectionDuration: `${elapsed}s`,
+          error: message
+        });
       } finally {
         controller.close();
       }
@@ -951,12 +984,19 @@ const handleRun = async (req: Request): Promise<Response> => {
   let body: { template?: string; batchFile?: string; label?: string };
   try {
     body = await req.json();
-  } catch {
+  } catch (parseError) {
+    const message = parseError instanceof Error ? parseError.message : 'Unknown parse error';
+    logger.error('SSE request JSON parse error', {
+      rawMessage: 'request body',
+      phase: 'request',
+      position: 'handleRun',
+      error: message
+    });
     return Response.json({ error: 'Invalid JSON in request body' }, { status: 400 });
   }
 
   try {
-    const { template, batchFile, label } = body;
+    const { template, batchFile, label: batchLabel } = body;
 
     // Validate required fields
     if (!template || !batchFile) {
@@ -966,7 +1006,7 @@ const handleRun = async (req: Request): Promise<Response> => {
       );
     }
 
-    const stream = createSSERunStream(template, batchFile, label);
+    const stream = createSSERunStream(template, batchFile, batchLabel);
 
     return new Response(stream, {
       headers: {
@@ -977,6 +1017,10 @@ const handleRun = async (req: Request): Promise<Response> => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('SSE run handler error', {
+      batchLabel: body.label,
+      error: message
+    });
     return Response.json({ error: `Failed to start run: ${message}` }, { status: 500 });
   }
 };

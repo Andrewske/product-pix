@@ -8,54 +8,22 @@ import { parseArgs } from 'node:util';
  import { createProgressBar, displayPipelineSummary } from './progress';
  import { loadConfig } from './shared';
  import { autoReportForLabel } from './report';
+ import { logger } from '@bench/core/logger';
 
 
 interface TestOptions {
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   template: string;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   version: number | 'latest';
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   batchFile: string;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   label?: string;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   skipSync: boolean;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   skipEval: boolean;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   skipReport: boolean;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   dryRun: boolean;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   quiet: boolean;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   json: boolean;
-analysisModel?: string;
-  noAnalysis: boolean;
-  noCache: boolean;
   evalModel: string;
-analysisModel?: string;
+  analysisModel?: string;
   noAnalysis: boolean;
   noCache: boolean;
 }
@@ -77,22 +45,54 @@ const parseTestOptions = (args: string[]): TestOptions => {
       quiet: { type: 'boolean', short: 'q', default: false },
       json: { type: 'boolean', default: false },
       'eval-model': { type: 'string' },
-'analysis-model': { type: 'string' },
+      'analysis-model': { type: 'string' },
       'no-analysis': { type: 'boolean', default: false },
       'no-cache': { type: 'boolean', default: false },
+      help: { type: 'boolean', short: 'h', default: false },
     },
   });
+
+  if (values.help) {
+    console.log(`
+Test Command - Unified CLI for running the complete prompt testing pipeline
+
+Usage:
+  bun bench test [options]
+
+Options:
+  -t, --template <slug>           Template slug (required)
+  -v, --version <version>         Template version (default: latest)
+  -b, --batch <file>              Batch file path (required)
+  -l, --label <label>             Custom batch label
+      --no-sync                   Skip template sync
+      --no-eval                   Skip evaluation
+      --no-report                 Skip report generation
+      --dry-run                   Validate inputs only
+  -q, --quiet                     Suppress progress output
+      --json                      Output JSON instead of formatted text
+      --eval-model <model>        Evaluation model
+      --analysis-model <model>    Analysis model
+      --no-analysis               Disable AI product analysis
+      --no-cache                  Disable analysis cache
+  -h, --help                      Show this help
+
+Examples:
+  bun bench test --template product-photo --batch ./batches/test.csv
+  bun bench test -t product-photo -b ./batches/test.csv --label v1
+    `);
+    process.exit(0);
+  }
 
   // Validation
   const template = values.template || config?.defaults.template;
   if (!template) {
-    console.error('Error: --template is required (or set template in prompt-bench.toml)');
+    logger.error('Template is required (or set template in prompt-bench.toml)');
     process.exit(1);
   }
 
   const batch = values.batch || config?.defaults.batch_file;
   if (!batch) {
-    console.error('Error: --batch is required (or set batch_file in prompt-bench.toml)');
+    logger.error('Batch file is required (or set batch_file in prompt-bench.toml)');
     process.exit(1);
   }
 
@@ -123,12 +123,11 @@ export const testCommand = async (
 
   // Header (unless quiet/json)
   if (!options.quiet && !options.json) {
-    console.log(`\n🧪 Prompt Bench: Test Pipeline`);
-    console.log(`─────────────────────────────────`);
-    console.log(`Template: ${options.template}`);
-    console.log(`Batch: ${options.batchFile}`);
-    console.log(`Label: ${batchLabel}`);
-    console.log(`─────────────────────────────────\n`);
+    logger.info('Pipeline started', {
+      batchLabel,
+      template: options.template,
+      batchFile: options.batchFile
+    });
   }
 
   // Progress tracking
@@ -181,7 +180,10 @@ analysisModel: options.analysisModel,
     if (options.json) {
       console.log(JSON.stringify({ error: result.error }, null, 2));
     } else {
-      console.error(`\n❌ Pipeline failed: ${result.error.message}`);
+      logger.error('Pipeline failed', {
+        batchLabel,
+        error: result.error.message
+      });
     }
     process.exit(1);
   }
@@ -197,5 +199,10 @@ analysisModel: options.analysisModel,
     if (!options.skipReport) {
       await autoReportForLabel(batchLabel);
     }
+
+    logger.success('Pipeline completed', {
+      batchLabel,
+      success: true
+    });
   }
 };

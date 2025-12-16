@@ -26,6 +26,7 @@ import { calculateCost } from '@bench/core/cost';
 import { classifyProduct } from '@bench/core/category-classifier';
 import { getAnglesForCategory } from '@bench/core/category-angles';
 import type { CollectionTemplate, ProductCategory } from '@bench/core/types';
+import { logger } from '@bench/core/logger';
 
 // =============================================================================
 // Types
@@ -115,8 +116,30 @@ export const runPipeline = async (
   try {
     // Phase 1: Sync (optional)
     if (!options.skipSync) {
+      logger.info('Phase started', {
+        batchLabel,
+        phase: 'sync',
+        totalPhases: 4
+      });
+      const phaseStart = Date.now();
+
       const syncResult = await syncPhase(options.templateSlug, onProgress);
-      if (!isOk(syncResult)) return syncResult;
+      if (!isOk(syncResult)) {
+        logger.error('Phase failed', {
+          batchLabel,
+          phase: 'sync',
+          duration: `${Date.now() - phaseStart}ms`,
+          error: syncResult.error.message
+        });
+        return syncResult;
+      }
+
+      logger.info('Phase completed', {
+        batchLabel,
+        phase: 'sync',
+        duration: `${Date.now() - phaseStart}ms`,
+        success: true
+      });
 
       result.phases.sync = syncResult.data;
     }
@@ -132,10 +155,34 @@ export const runPipeline = async (
     const template = templateResult.data;
 
     // Phase 2: Run (fail fast)
+    logger.info('Phase started', {
+      batchLabel,
+      phase: 'run',
+      totalPhases: 4
+    });
+    const runPhaseStart = Date.now();
+
     const runResult = await runPhase(template, batch, batchLabel, options.dryRun, options.batchFile, onProgress);
-    if (!isOk(runResult)) return runResult;
+    if (!isOk(runResult)) {
+      logger.error('Phase failed', {
+        batchLabel,
+        phase: 'run',
+        duration: `${Date.now() - runPhaseStart}ms`,
+        error: runResult.error.message
+      });
+      return runResult;
+    }
 
     const runPhaseResult = runResult.data;
+    const runDuration = Date.now() - runPhaseStart;
+    logger.info('Phase completed', {
+      batchLabel,
+      phase: 'run',
+      duration: `${runDuration}ms`,
+      success: true,
+      generated: `${runPhaseResult.completed}/${runPhaseResult.completed + runPhaseResult.failed + runPhaseResult.skipped}`
+    });
+
     result.phases.run = {
       completed: runPhaseResult.completed,
       failed: runPhaseResult.failed,
@@ -147,8 +194,32 @@ export const runPipeline = async (
 
     // Phase 3: Evaluate (optional)
     if (!options.skipEval) {
+      logger.info('Phase started', {
+        batchLabel,
+        phase: 'evaluate',
+        totalPhases: 4
+      });
+      const evalPhaseStart = Date.now();
+
       const evalResult = await evaluatePhase(batchLabel, options.evalModel, onProgress);
-      if (!isOk(evalResult)) return evalResult;
+      if (!isOk(evalResult)) {
+        logger.error('Phase failed', {
+          batchLabel,
+          phase: 'evaluate',
+          duration: `${Date.now() - evalPhaseStart}ms`,
+          error: evalResult.error.message
+        });
+        return evalResult;
+      }
+
+      const evalDuration = Date.now() - evalPhaseStart;
+      logger.info('Phase completed', {
+        batchLabel,
+        phase: 'evaluate',
+        duration: `${evalDuration}ms`,
+        success: true,
+        evaluated: `${evalResult.data.completed}/${evalResult.data.completed + evalResult.data.failed}`
+      });
 
       result.phases.evaluate = evalResult.data;
       evaluationCost = evalResult.data.totalCost;
@@ -156,8 +227,30 @@ export const runPipeline = async (
 
     // Phase 4: Report (optional)
     if (!options.skipReport) {
+      logger.info('Phase started', {
+        batchLabel,
+        phase: 'report',
+        totalPhases: 4
+      });
+      const reportPhaseStart = Date.now();
+
       const reportResult = await reportPhase(batchLabel, onProgress);
-      if (!isOk(reportResult)) return reportResult;
+      if (!isOk(reportResult)) {
+        logger.error('Phase failed', {
+          batchLabel,
+          phase: 'report',
+          duration: `${Date.now() - reportPhaseStart}ms`,
+          error: reportResult.error.message
+        });
+        return reportResult;
+      }
+
+      logger.info('Phase completed', {
+        batchLabel,
+        phase: 'report',
+        duration: `${Date.now() - reportPhaseStart}ms`,
+        success: true
+      });
 
       result.phases.report = reportResult.data;
     }
@@ -219,13 +312,29 @@ const runPhase = async (
     onProgress?.('run', i, total, `Processing test ${i + 1}/${total}...`);
 
     try {
-      // Compile template
+      // Step: Compile template
+      logger.debug('Step started', {
+        batchLabel,
+        phase: 'run',
+        step: 'compile_template',
+        testIndex: i
+      });
+      const compileStart = Date.now();
+
       const compileResult = compileTemplate(
         template.templateData,
         template.variablesSchema,
         testCase.variables
       );
       if (!isOk(compileResult)) {
+        logger.debug('Step failed', {
+          batchLabel,
+          phase: 'run',
+          step: 'compile_template',
+          testIndex: i,
+          duration: `${Date.now() - compileStart}ms`,
+          error: compileResult.error.message
+        });
         return err(createError(
           'COMPILATION_ERROR',
           `Test ${i + 1}/${total} failed to compile: ${compileResult.error.message}`,
@@ -233,6 +342,14 @@ const runPhase = async (
         ));
       }
       const compiled = compileResult.data;
+
+      logger.debug('Step completed', {
+        batchLabel,
+        phase: 'run',
+        step: 'compile_template',
+        testIndex: i,
+        duration: `${Date.now() - compileStart}ms`
+      });
 
       // Resolve source image if specified
       let resolvedSourceImage: ResolvedSourceImage | undefined;

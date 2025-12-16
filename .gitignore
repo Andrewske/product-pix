@@ -53,3 +53,5 @@ notes.md
 .eslintcache
 
 docs/archive/*
+# Prompt Bench Logs
+prompt-bench/logs/*.log

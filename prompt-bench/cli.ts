@@ -28,6 +28,7 @@ import { syncAnalysisCommand } from '@bench/commands/sync-analysis';
 import { testCommand } from '@bench/commands/test';
 import { openLastReportCommand } from '@bench/commands/open-last-report';
 import { improveCommand } from '@bench/commands/improve';
+import { setLogLevel } from '@bench/core/logger';
 
 const COMMANDS = ['test', 'run', 'evaluate', 'evaluate-collection', 'compare', 'report', 'sync', 'sync-analysis', 'open-last-report', 'improve'] as const;
 
@@ -73,9 +74,24 @@ Run 'bun bench <command> --help' for command-specific options.
 `);
 };
 
-const parseCommand = (): { command: Command; args: string[] } | null => {
+const parseCommand = (): { command: Command; args: string[]; logLevel?: string } | null => {
   const args = process.argv.slice(2);
-  const command = args[0];
+
+  // Parse global flags first
+  let logLevel: string | undefined;
+  const filteredArgs: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--log-level' && i + 1 < args.length) {
+      logLevel = args[i + 1];
+      i++; // Skip the next arg as it's the value
+    } else {
+      filteredArgs.push(arg);
+    }
+  }
+
+  const command = filteredArgs[0];
 
   if (!command || command === '--help' || command === '-h') {
     showHelp();
@@ -89,14 +105,19 @@ const parseCommand = (): { command: Command; args: string[] } | null => {
     process.exit(1);
   }
 
-  return { command: command as Command, args: args.slice(1) };
+  return { command: command as Command, args: filteredArgs.slice(1), logLevel };
 };
 
 const main = async (): Promise<void> => {
   const parsed = parseCommand();
   if (!parsed) return;
 
-  const { command, args } = parsed;
+  const { command, args, logLevel } = parsed;
+
+  // Set log level if provided
+  if (logLevel) {
+    setLogLevel(logLevel as 'debug' | 'info' | 'warn' | 'error');
+  }
 
   switch (command) {
     case 'run':
