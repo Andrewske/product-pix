@@ -18,7 +18,7 @@ import { compileTemplate, generateIdempotencyKey } from '@bench/core/compiler';
 import { fetchTemplate, syncTemplate } from '@bench/db/templates';
 import { evaluateBatch, type EvaluateOptions } from '@bench/core/evaluator';
 import { summarize, type BatchReport } from '@bench/core/statistics';
-import { createGeminiProvider } from '@/lib/ai/providers/gemini';
+import { createGeminiProvider, createConversationSession } from '@/lib/ai/providers/gemini';
 import { uploadBuffer, getPublicUrl } from '@/lib/r2';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { resolveSourceImage, type ResolvedSourceImage } from '@bench/core/source-image';
@@ -819,31 +819,34 @@ export const coordinateCollectionGeneration = async (
     }
 
     // Step 3: Generate each image using plan assignments
-    for (let j = 0; j < plan.assignments.length; j++) {
-      const assignment = plan.assignments[j];
-      const angle = assignment.targetAngle;
+    // Create conversation session for this collection (separate factory, not on provider)
+    const session = createConversationSession();
 
-      // Use source image from plan assignment (may be undefined for text-to-image)
-      const sourceImage = resolvedSourceImagesForAnalysis.length > 0 ? resolvedSourceImagesForAnalysis[assignment.sourceImageIndex] : undefined;
+    // Use angle detection to label source images (soft hints, not hard coupling)
+    // This helps AI understand what each reference shows without prescribing usage
+    const labeledImages = resolvedSourceImagesForAnalysis.map((img, i) => ({
+      buffer: img.buffer,
+      mimeType: img.mimeType,
+      label: detectedAngles.sourceAngles[i]?.detectedAngle || `reference ${i + 1}`
+    }));
 
-      // Log match type for debugging (only if we have source images)
-      if (resolvedSourceImagesForAnalysis.length > 0) {
-        logger.debug('Generating angle', {
-          batchLabel,
-          testIndex: i,
-          angle,
-          sourceIndex: assignment.sourceImageIndex,
-          matchType: assignment.matchType
-        });
-      } else {
-        logger.debug('Generating angle (text-to-image)', {
-          batchLabel,
-          testIndex: i,
-          angle
-        });
-      }
+    // Initialize with labeled reference images
+    await session.initialize(
+      labeledImages,
+      `Product: ${testCase.variables?.product || 'product'}
+Category: ${category}
+You have ${labeledImages.length} reference images of this product from different angles.
+Generate ${template.outputCount} distinct professional e-commerce photos.
+Each generation must be visually unique from previous outputs.`
+    );
 
-      // Compile prompt
+    // Generate each angle - AI chooses best reference naturally
+    const targetAngles = getAnglesForCategory(category).slice(0, template.outputCount);
+
+    for (let j = 0; j < targetAngles.length; j++) {
+      const angle = targetAngles[j];
+
+      // Compile prompt as before
       const compileResult = compileTemplate(
         template.templateData,
         template.variablesSchema,
@@ -862,6 +865,12 @@ export const coordinateCollectionGeneration = async (
           { testId: `test-${i}-${j}` }
         ));
       }
+
+      // Build angle-specific prompt with diversity instruction
+      const prompt = `Generate image ${j + 1}/${targetAngles.length}: ${angle} view.
+This must be distinctly different from any previous images.
+${compileResult.data.prompt}`;
+
       const idempotencyKey = generateIdempotencyKey(
         template.slug,
         template.version,
@@ -872,7 +881,7 @@ export const coordinateCollectionGeneration = async (
           detectedCategory: category,
         },
         batchLabel,
-        sourceImage?.hash
+        null // No specific source image hash for session-based generation
       );
 
       // Check for existing test
@@ -912,15 +921,11 @@ export const coordinateCollectionGeneration = async (
             angle,
             outputIndex: j,
             detectedCategory: category,
-            ...(resolvedSourceImagesForAnalysis.length > 0 ? {
-              sourceImageIndex: assignment.sourceImageIndex,
-              matchType: assignment.matchType
-            } : {}),
           } as any,
-          final_prompt: compileResult.data.prompt,
+          final_prompt: prompt,
           batch_label: batchLabel,
-          source_image_url: sourceImage?.r2Url || null,
-          source_image_key: sourceImage?.r2Key || null,
+          source_image_url: null, // Session-based, no specific source
+          source_image_key: null,
         })
         .select()
         .single() as any);
@@ -933,28 +938,13 @@ export const coordinateCollectionGeneration = async (
         ));
       }
 
-      // Generate image
+      // Generate image using session
       const generationStart = Date.now();
-      let generationResult;
-
-      if (sourceImage) {
-        generationResult = await gemini.generateFromImage(
-          sourceImage.buffer,
-          sourceImage.mimeType,
-          compileResult.data.prompt,
-          {
-            rawPrompt: true,
-            aspectRatio: '1:1' as const,
-            resolution: '1k' as const
-          }
-        );
-      } else {
-        generationResult = await gemini.generateFromText(compileResult.data.prompt, {
-          rawPrompt: true,
-          aspectRatio: '1:1' as const,
-          resolution: '1k' as const
-        });
-      }
+      const generationResult = await session.generateNext(prompt, {
+        rawPrompt: true,
+        aspectRatio: '1:1' as const,
+        resolution: '1k' as const
+      });
 
       if (!generationResult.success) {
         await supabase
