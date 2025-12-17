@@ -1,9 +1,11 @@
 // src/lib/ai/providers/gemini.ts
 import { google } from '@ai-sdk/google';
 import { generateText, convertToModelMessages } from 'ai';
+import { GoogleGenAI, type Chat, type Part, type GenerateContentResponse } from '@google/genai';
 import { env } from '@/lib/env';
 import type { ImageProvider, ImageConfig, GenerationResponse, ConversationMessage, ImageConversationSession } from '../types';
 import { normalizeUsage } from '../usage-types';
+import { logger } from '@bench/core/logger';
 
 // =============================================================================
 // Types
@@ -146,6 +148,15 @@ const handleError = (error: unknown): GenerationResponse => {
     retryable: true,
   };
 };
+/**
+ * @deprecated Use GoogleConversationSession for multi-turn conversations.
+ *
+ * This class remains for reference but is not used in production due to
+ * AI SDK v6 beta limitation with thought signatures for image parts.
+ *
+ * @see https://github.com/vercel/ai/issues/10441
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export class GeminiConversationSession implements ImageConversationSession {
 
   private messages: ConversationMessage[] = [];
@@ -180,6 +191,10 @@ export class GeminiConversationSession implements ImageConversationSession {
   }
 
   async generateNext(prompt: string, config: ImageConfig): Promise<GenerationResponse> {
+    // Note: This implementation attempts to preserve providerMetadata but
+    // AI SDK v6 beta does not return thought signatures for image parts.
+    // See GoogleConversationSession for working implementation.
+
     // Build user message (don't mutate state yet)
     const userMessage: ConversationMessage = {
       role: 'user',
@@ -235,49 +250,10 @@ export class GeminiConversationSession implements ImageConversationSession {
       },
     });
 
-    // DEBUG: Log response structure
-    console.log('[DEBUG] Result keys:', Object.keys(result));
-    console.log('[DEBUG] Result.steps length:', result.steps?.length);
-    if (result.steps && result.steps.length > 0) {
-      const lastStep = result.steps[result.steps.length - 1];
-      console.log('[DEBUG] Last step keys:', Object.keys(lastStep));
-      console.log('[DEBUG] Last step providerMetadata:', JSON.stringify(lastStep.providerMetadata, null, 2));
-      console.log('[DEBUG] Last step content:', JSON.stringify(lastStep.content, null, 2));
-    }
-
     const response = extractImageFromResponse(result, config);
 
     // Only persist to history on success (immutable until committed)
-    if (response.success && result.messages && result.messages.length > 0) {
-      // Store user message
-      this.messages.push(userMessage);
-
-      // Store the complete assistant message from AI SDK response
-      // This preserves thought signatures and other provider metadata
-      const assistantMessage = result.messages[result.messages.length - 1];
-      if (assistantMessage && assistantMessage.role === 'assistant') {
-        // Convert AI SDK message format to our internal format
-        // while preserving all metadata including thought signatures
-        this.messages.push({
-          role: 'assistant',
-          // Store raw AI SDK parts to preserve thought signatures
-          content: assistantMessage.content.map((part: any) => {
-            if (part.type === 'text') {
-              return { type: 'text', text: part.text };
-            } else if (part.type === 'image' || part.type === 'file') {
-              // Store image with metadata if available
-              return {
-                type: 'image',
-                image: Buffer.from(response.imageData, 'base64'),
-                // Preserve provider metadata (including thought signature)
-                providerMetadata: part.providerMetadata,
-              };
-            }
-            return part;
-          }),
-        } as any);
-      }
-    } else if (response.success) {
+    if (response.success) {
       // Fallback if no messages in result (shouldn't happen)
       const imageBuffer = Buffer.from(response.imageData, 'base64');
       this.messages.push(userMessage);
@@ -295,10 +271,216 @@ export class GeminiConversationSession implements ImageConversationSession {
     return this.messages.length;
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
-// Separate export - does not pollute ImageProvider interface
+export class GoogleConversationSession implements ImageConversationSession {
+  private client: GoogleGenAI;
+  private chat: Chat | null = null;
+  private messageCount = 0;
+
+  constructor() {
+    this.client = new GoogleGenAI({ apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY });
+  }
+
+  async initialize(
+    referenceImages: Array<{ buffer: Buffer; mimeType: string; label?: string }>,
+    systemContext: string
+  ): Promise<void> {
+    const imageParts = referenceImages.flatMap((img, i): Part[] => {
+      const parts: Part[] = [];
+      if (img.label) {
+        parts.push({ text: `Reference image ${i + 1}: ${img.label}` });
+      }
+      parts.push({
+        inlineData: {
+          data: img.buffer.toString('base64'),
+          mimeType: img.mimeType,
+        },
+      });
+      return parts;
+    });
+
+    this.chat = this.client.chats.create({
+      model: env.GEMINI_MODEL,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
+      history: [
+        {
+          role: 'user',
+          parts: [{ text: systemContext }, ...imageParts],
+        },
+      ],
+    });
+
+    this.messageCount = 1;
+
+    logger.debug('GoogleConversationSession initialized', {
+      referenceImageCount: referenceImages.length,
+      model: env.GEMINI_MODEL,
+    });
+  }
+
+  async generateNext(prompt: string, config: ImageConfig): Promise<GenerationResponse> {
+    if (!this.chat) {
+      return {
+        success: false,
+        error: 'Session not initialized. Call initialize() first.',
+        code: 'INVALID_INPUT',
+        retryable: false,
+      };
+    }
+
+    const supportedRatios = ['1:1', '3:4', '4:3', '9:16', '16:9'];
+    if (!supportedRatios.includes(config.aspectRatio)) {
+      return {
+        success: false,
+        error: `Unsupported aspect ratio: ${config.aspectRatio}. Supported: ${supportedRatios.join(', ')}`,
+        code: 'INVALID_INPUT',
+        retryable: false,
+      };
+    }
+
+    try {
+      const response = await this.chat.sendMessage({
+        message: prompt,
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: {
+            aspectRatio: config.aspectRatio,
+          },
+        },
+      });
+
+      const imageData = this.extractImageFromResponse(response);
+      if (!imageData) {
+        return {
+          success: false,
+          error: 'No image generated in response',
+          code: 'PROVIDER_ERROR',
+          retryable: true,
+        };
+      }
+
+      const usage = this.extractUsage(response);
+
+      this.messageCount++;
+
+      const dimensions = getResolutionDimensions(config.aspectRatio, config.resolution);
+
+      logger.debug('GoogleConversationSession generated image', {
+        messageCount: this.messageCount,
+        aspectRatio: config.aspectRatio,
+        hasUsage: !!usage,
+      });
+
+      return {
+        success: true,
+        imageData: imageData.base64,
+        mimeType: imageData.mimeType,
+        width: dimensions.width,
+        height: dimensions.height,
+        usage,
+      };
+    } catch (error) {
+      logger.debug('GoogleConversationSession generation failed', {
+        messageCount: this.messageCount,
+        errorCode: (error as { status?: number }).status,
+      });
+      return this.handleError(error);
+    }
+  }
+
+  getMessageCount(): number {
+    return this.messageCount;
+  }
+
+  private extractImageFromResponse(response: GenerateContentResponse): {
+    base64: string;
+    mimeType: string;
+  } | null {
+    for (const candidate of response.candidates || []) {
+      if (!candidate.content?.parts) continue;
+      for (const part of candidate.content.parts) {
+        if (part.inlineData?.data) {
+          return {
+            base64: part.inlineData.data,
+            mimeType: part.inlineData.mimeType || 'image/png',
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  private extractUsage(response: GenerateContentResponse): {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  } | undefined {
+    const m = response.usageMetadata;
+    if (!m) return undefined;
+
+    return normalizeUsage({
+      promptTokenCount: m.promptTokenCount,
+      candidatesTokenCount: m.candidatesTokenCount,
+      totalTokenCount: m.totalTokenCount,
+      thoughtsTokenCount: m.thoughtsTokenCount,
+    });
+  }
+
+  private handleError(error: unknown): GenerationResponse {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    const status = (error as { status?: number }).status;
+
+    if (status === 429 || message.includes('rate')) {
+      return {
+        success: false,
+        error: 'Rate limit exceeded. Please try again later.',
+        code: 'RATE_LIMITED',
+        retryable: true,
+      };
+    }
+
+    if (message.includes('safety') || message.includes('blocked') || message.includes('policy')) {
+      return {
+        success: false,
+        error: 'Content was filtered by safety policies.',
+        code: 'CONTENT_FILTERED',
+        retryable: false,
+      };
+    }
+
+    if (message.includes('invalid') || message.includes('unsupported')) {
+      return {
+        success: false,
+        error: 'Invalid input provided.',
+        code: 'INVALID_INPUT',
+        retryable: false,
+      };
+    }
+
+    return {
+      success: false,
+      error: message,
+      code: 'PROVIDER_ERROR',
+      retryable: true,
+    };
+  }
+}
+
+/**
+ * Creates a conversation session for multi-turn image generation.
+ *
+ * Uses Google Gen AI SDK for automatic thought signature handling.
+ * AI SDK v6 beta does not properly preserve thought signatures for
+ * multi-turn image generation.
+ *
+ * @see https://github.com/vercel/ai/issues/10441
+ */
 export const createConversationSession = (): ImageConversationSession => {
-  return new GeminiConversationSession();
+  return new GoogleConversationSession();
 };
 
 export const createGeminiProvider = (): ImageProvider => {

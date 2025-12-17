@@ -68,8 +68,8 @@ export const multiAngleAiDecided: CollectionTemplate = {
 export const multiAngleHybrid: CollectionTemplate = {
   slug: 'multi-angle-hybrid',
   type: 'collection',
-  outputCount: 5,
-  version: 3,
+  outputCount: 2,
+  version: 4,
   status: 'active',
   templateData: {
     subject: 'Professional photo of {product} from {angle}',

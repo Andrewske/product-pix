@@ -836,8 +836,8 @@ export const coordinateCollectionGeneration = async (
       `Product: ${testCase.variables?.product || 'product'}
 Category: ${category}
 You have ${labeledImages.length} reference images of this product from different angles.
-Generate ${template.outputCount} distinct professional e-commerce photos.
-Each generation must be visually unique from previous outputs.`
+You will be asked to generate ${template.outputCount} professional e-commerce photos, one at a time.
+Each photo must be visually unique from previous outputs.`
     );
 
     // Generate each angle - AI chooses best reference naturally

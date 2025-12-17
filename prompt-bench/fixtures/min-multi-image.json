@@ -4,8 +4,8 @@
     "tests": [
         {
             "sourceImages": [
-                "images/figure/figurine-front.jpg",
-                "images/figure/figurine-back.jpg"
+                "images/bag/bag-front.jpg",
+                "images/bag/bag-back.jpg"
             ]
         }
     ]

@@ -44,6 +44,13 @@ prompt-bench/   # Isolated CLI framework
   commands/     # run, evaluate, compare, report, test, sync, improve
   templates/    # registry + definitions
 ```
+**Gemini Integration**:
+- **AI SDK** (`ai`, `@ai-sdk/google`): Single-shot generation (`generateFromText`, `generateFromImage`)
+- **Google Gen AI SDK** (`@google/genai`): Multi-turn conversations (`createConversationSession`)
+- This is intentional separation—each SDK for its strength, not a workaround
+- Google SDK handles thought signatures automatically via `ai.chats` API
+- Reference: [GitHub Issue #10441](https://github.com/vercel/ai/issues/10441)
+
 
 **Key RPC**: `create_generation_job`, `add_credits`, `consume_credits`, `refund_credits`
 
@@ -173,6 +180,9 @@ See `docs/legal-policy-decisions.md`
 **Key**: US-only, 18+, lifetime credits, self-service refunds, user owns images, opt-in cookies
 
 ## Gotchas
+- **Gemini SDKs**: AI SDK for single-shot, Google SDK for conversations (thought signatures handled automatically)
+- **Conversation aspect ratios**: Google SDK supports only `1:1`, `3:4`, `4:3`, `9:16`, `16:9`
+
 
 - **R2 uploads**: Browser → presigned URL → R2 → confirm (NOT through server)
 - **Source images**: Resolved relative to batch file, hash-deduplicated in R2
