@@ -1,25 +1,21 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { render, screen } from '@testing-library/react';
+import type { User } from '@supabase/supabase-js';
 import { SiteHeader } from '../site-header';
 
 // Mock the useIsMobile hook
 const mockUseIsMobile = mock(() => false);
 
-// Mock the GetStartedButton component
-mock.module('@/components/get-started-button', () => ({
-  GetStartedButton: ({ children, variant, className, ...props }: {
-    children: React.ReactNode;
-    variant?: string;
-    className?: string;
-    [key: string]: unknown;
-  }) => (
-    <button
-      className={`get-started-button ${variant || 'default'} ${className || ''}`}
-      {...props}
-    >
-      {children}
-    </button>
-  ),
+// Mock external dependencies for GetStartedButton
+const mockUseUser = mock(() => ({ user: null as User | null, loading: false }));
+const mockPush = mock();
+
+mock.module('@/lib/auth/hooks', () => ({
+  useUser: mockUseUser,
+}));
+
+mock.module('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
 }));
 
 // Mock the hook
@@ -52,7 +48,7 @@ describe('SiteHeader', () => {
     // Check Get Started button is present
     const getStartedButton = screen.getByText('Get Started');
     expect(getStartedButton).not.toBeNull();
-    expect(getStartedButton?.classList.contains('get-started-button')).toBe(true);
+    expect(getStartedButton?.tagName).toBe('BUTTON');
   });
 
   // Test mobile navigation rendering - ensures hamburger menu appears on mobile
@@ -194,5 +190,93 @@ describe('SiteHeader', () => {
     const header = screen.getByRole('banner');
     expect(header?.classList.contains('border-b')).toBe(true);
     expect(header?.classList.contains('border-border/40')).toBe(true);
+  });
+});
+
+describe('SiteHeader Integration', () => {
+  beforeEach(() => {
+    // Reset mocks before each test
+    mockUseIsMobile.mockClear();
+    mockUseUser.mockClear();
+    mockPush.mockClear();
+  });
+
+  it('renders with real GetStartedButton component', () => {
+    mockUseIsMobile.mockReturnValue(false);
+    mockUseUser.mockReturnValue({ user: null, loading: false });
+
+    render(<SiteHeader />);
+
+    // Check Get Started button is present and is a real Button component
+    const getStartedButton = screen.getByText('Get Started');
+    expect(getStartedButton).not.toBeNull();
+    expect(getStartedButton?.tagName).toBe('BUTTON');
+
+    // Verify it has the expected Button classes (from shadcn/ui Button)
+    expect(getStartedButton?.classList.contains('inline-flex')).toBe(true);
+    expect(getStartedButton?.classList.contains('items-center')).toBe(true);
+  });
+
+  it('GetStartedButton navigates to signup when user is not logged in', async () => {
+    mockUseIsMobile.mockReturnValue(false);
+    mockUseUser.mockReturnValue({ user: null, loading: false });
+
+    render(<SiteHeader />);
+
+    const getStartedButton = screen.getByText('Get Started');
+    expect(getStartedButton).not.toBeNull();
+
+    // Click the button
+    getStartedButton.click();
+
+    // Should navigate to signup
+    expect(mockPush).toHaveBeenCalledWith('/signup');
+  });
+
+  it('GetStartedButton navigates to dashboard when user is logged in', async () => {
+    mockUseIsMobile.mockReturnValue(false);
+    mockUseUser.mockReturnValue({
+      user: { id: 'test-user', email: 'test@example.com' } as User,
+      loading: false
+    });
+
+    render(<SiteHeader />);
+
+    const getStartedButton = screen.getByText('Get Started');
+    expect(getStartedButton).not.toBeNull();
+
+    // Click the button
+    getStartedButton.click();
+
+    // Should navigate to dashboard
+    expect(mockPush).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('GetStartedButton is disabled while loading', () => {
+    mockUseIsMobile.mockReturnValue(false);
+    mockUseUser.mockReturnValue({ user: null, loading: true });
+
+    render(<SiteHeader />);
+
+    const getStartedButton = screen.getByText('Get Started');
+    expect(getStartedButton).not.toBeNull();
+    expect(getStartedButton?.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('responsive behavior is covered by visual testing', () => {
+    // This test documents that responsive behavior testing is handled
+    // through visual regression testing rather than unit tests
+    // The useIsMobile hook mock allows us to test both mobile and desktop states
+    mockUseIsMobile.mockReturnValue(false);
+
+    render(<SiteHeader />);
+
+    // Verify desktop navigation is rendered
+    expect(screen.getByText('Features')).not.toBeNull();
+    expect(screen.getByText('How It Works')).not.toBeNull();
+    expect(screen.getByText('Pricing')).not.toBeNull();
+
+    // Verify mobile navigation is not rendered
+    expect(screen.queryByRole('button', { name: /open menu/i })).toBeNull();
   });
 });
