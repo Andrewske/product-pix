@@ -10,8 +10,7 @@ export const multiAngleCategoryBased: CollectionTemplate = {
   slug: 'multi-angle-category-based',
   type: 'collection',
   outputCount: 5,
-  varietyStrategy: 'category-based',
-  version: 1,
+  version: 2,
   status: 'active',
   templateData: {
     subject: 'Professional e-commerce photo of {product} from {angle} view',
@@ -43,8 +42,7 @@ export const multiAngleAiDecided: CollectionTemplate = {
   slug: 'multi-angle-ai-decided',
   type: 'collection',
   outputCount: 5,
-  varietyStrategy: 'ai-decided',
-  version: 1,
+  version: 2,
   status: 'active',
   templateData: {
     subject: 'Generate a unique angle of {product} for e-commerce. Create diverse, professional angles showing the product from different perspectives.',
@@ -71,11 +69,10 @@ export const multiAngleHybrid: CollectionTemplate = {
   slug: 'multi-angle-hybrid',
   type: 'collection',
   outputCount: 5,
-  varietyStrategy: 'hybrid',
-  version: 1,
+  version: 3,
   status: 'active',
   templateData: {
-    subject: 'Professional photo of {product}. Required: {angle}. For remaining images, choose creative angles appropriate for this product type.',
+    subject: 'Professional photo of {product} from {angle}',
     background: 'on pure white seamless background',
     lighting: 'soft diffused studio lighting with soft fill',
     camera: 'shot on DSLR with 85mm lens f/8',

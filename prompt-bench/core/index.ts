@@ -11,6 +11,8 @@ export * from './source-image';
 export * from './orchestrator';
 export * from './category-classifier';
 export * from './category-angles';
+export * from './angle-detector';
+export * from './angle-planner';
 
 // Refinement system exports
 export * from './refinement-types';

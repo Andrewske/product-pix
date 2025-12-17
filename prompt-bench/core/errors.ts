@@ -20,7 +20,8 @@ export type ErrorCode =
   | 'UPLOAD_ERROR'        // File upload failed
   | 'RUN_PHASE_ERROR'     // Run phase failed
   | 'NO_DATA_ERROR'       // No data available for operation
-  | 'ANALYSIS_ERROR';      // Product analysis failed
+  | 'ANALYSIS_ERROR'       // Product analysis failed
+  | 'ANGLE_PLANNING_ERROR'; // Angle planning failed
 
 // =============================================================================
 // Error Interface

@@ -95,7 +95,7 @@ Add email service architecture:
 ```markdown
 **Email Service:**
 - Provider: Resend (SMTP for auth, SDK for contact form)
-- Local dev: Inbucket (http://127.0.0.1:54324)
+- Local dev: Inbucket (http://localhost:54324)
 - Production: Configured via env vars (`RESEND_API_KEY`, `EMAIL_ENABLED`)
 - Contact emails: Admin notification + user acknowledgment
 - Error handling: Failures logged but don't block submissions
@@ -139,7 +139,7 @@ When ready to deploy to production:
 ## Local Development Notes
 
 - Keep `EMAIL_ENABLED=false` in `.env.local`
-- Supabase auth emails go to Inbucket: http://127.0.0.1:54324
+- Supabase auth emails go to Inbucket: http://localhost:54324
 - Contact form stores in DB but doesn't send emails
 - Check logs for "Email sending disabled (dev mode)" messages
 

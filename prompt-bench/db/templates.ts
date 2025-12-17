@@ -44,14 +44,11 @@ const parseTemplateRow = (data: Record<string, unknown>): Result<PromptTemplate>
     // Check if it's a collection template
     if (data.type === 'collection') {
       const outputCount = z.number().int().positive().parse(data.output_count);
-      const varietyStrategy = z.enum(['category-based', 'ai-decided', 'hybrid'])
-        .parse(data.variety_strategy);
 
       return ok({
         ...baseTemplate,
         type: 'collection' as const,
-        outputCount,
-        varietyStrategy
+        outputCount
       });
     }
 
@@ -158,23 +155,22 @@ export const syncTemplate = async (
     return fetchTemplate(slug, registered.version);
   }
 
-  // Insert new template
-  const { data, error } = await supabase
-    .from('prompt_templates')
-    .insert({
-      slug: registered.slug,
-      version: registered.version,
-      status: registered.status,
-      template_data: registered.templateData,
-      variables_schema: registered.variablesSchema,
-      created_by: userId,
-      // ADD: Collection-specific fields with conditional logic
-      type: 'type' in registered ? registered.type : 'single',
-      output_count: 'outputCount' in registered ? registered.outputCount : 1,
-      variety_strategy: 'varietyStrategy' in registered ? registered.varietyStrategy : null,
-    })
-    .select()
-    .single();
+   // Insert new template
+   const { data, error } = await supabase
+     .from('prompt_templates')
+     .insert({
+       slug: registered.slug,
+       version: registered.version,
+       status: registered.status,
+       template_data: registered.templateData,
+       variables_schema: registered.variablesSchema,
+       created_by: userId,
+       // ADD: Collection-specific fields with conditional logic
+       type: 'type' in registered ? registered.type : 'single',
+       output_count: 'outputCount' in registered ? registered.outputCount : 1,
+     })
+     .select()
+     .single();
 
   if (error) {
     return err(
@@ -240,23 +236,22 @@ export const insertTemplate = async (
     return fetchTemplate(template.slug, template.version);
   }
 
-  // Insert new template
-  const { data, error } = await supabase
-    .from('prompt_templates')
-    .insert({
-      slug: template.slug,
-      version: template.version,
-      status: template.status,
-      template_data: template.templateData,
-      variables_schema: template.variablesSchema,
-      created_by: userId,
-      // ADD: Collection-specific fields with conditional logic
-      type: 'type' in template ? template.type : 'single',
-      output_count: 'outputCount' in template ? template.outputCount : 1,
-      variety_strategy: 'varietyStrategy' in template ? template.varietyStrategy : null,
-    })
-    .select()
-    .single();
+   // Insert new template
+   const { data, error } = await supabase
+     .from('prompt_templates')
+     .insert({
+       slug: template.slug,
+       version: template.version,
+       status: template.status,
+       template_data: template.templateData,
+       variables_schema: template.variablesSchema,
+       created_by: userId,
+       // ADD: Collection-specific fields with conditional logic
+       type: 'type' in template ? template.type : 'single',
+       output_count: 'outputCount' in template ? template.outputCount : 1,
+     })
+     .select()
+     .single();
 
   if (error) {
     return err(

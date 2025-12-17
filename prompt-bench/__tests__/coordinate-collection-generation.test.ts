@@ -12,7 +12,11 @@ const createMockDependencies = () => ({
         }))
       })),
       update: mock(() => ({
-        eq: mock(() => Promise.resolve({ error: null }))
+        eq: mock(() => ({
+          select: mock(() => ({
+            single: mock(() => Promise.resolve({ data: { id: 'test-id', status: 'completed' }, error: null }))
+          }))
+        }))
       })),
       select: mock(() => ({
         eq: mock(() => ({
@@ -49,6 +53,36 @@ mock.module('@bench/core/category-classifier', () => ({
   classifyProduct: mock(() => Promise.resolve({ ok: true, data: 'generic' }))
 }));
 
+mock.module('@bench/core/angle-detector', () => ({
+  detectSourceAngles: mock(() => Promise.resolve({
+    ok: true,
+    data: {
+      sourceAngles: [{
+        imageIndex: 0,
+        detectedAngle: 'front view',
+        isPrimaryReference: true
+      }]
+    }
+  }))
+}));
+
+mock.module('@bench/core/angle-planner', () => ({
+  planCollection: mock(() => ({
+    assignments: [
+      {
+        targetAngle: 'front view',
+        sourceImageIndex: 0,
+        matchType: 'exact'
+      },
+      {
+        targetAngle: 'side view',
+        sourceImageIndex: 0,
+        matchType: 'similar'
+      }
+    ]
+  }))
+}));
+
 mock.module('@bench/core/category-angles', () => ({
   getAnglesForCategory: mock(() => ['front', 'side', 'back'])
 }));
@@ -73,7 +107,8 @@ describe('coordinateCollectionGeneration', () => {
       variablesSchema: {},
       outputCount: 2,
       varietyStrategy: 'category-based',
-      id: 'template-id'
+      id: 'template-id',
+      createdAt: new Date()
     };
 
     const batch: BatchFile = {
@@ -176,9 +211,10 @@ describe('coordinateCollectionGeneration', () => {
       type: 'collection',
       templateData: { subject: 'Test subject' },
       variablesSchema: {},
-      outputCount: 2,
+      outputCount: 1,
       varietyStrategy: 'ai-decided',
-      id: 'template-id'
+      id: 'template-id',
+      createdAt: new Date()
     };
 
     const batch: BatchFile = {
@@ -202,7 +238,7 @@ describe('coordinateCollectionGeneration', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.completed).toBe(2);
+      expect(result.data.completed).toBe(1);
       expect(result.data.failed).toBe(0);
       expect(result.data.skipped).toBe(0);
       expect(result.data.tests).toHaveLength(0); // No actual tests created in dry run

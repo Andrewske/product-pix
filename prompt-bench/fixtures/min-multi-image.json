@@ -1,0 +1,12 @@
+{
+    "label": "min-multi-image",
+    "description": "Test whether multiple input images improve output quality across diverse product categories",
+    "tests": [
+        {
+            "sourceImages": [
+                "images/figure/figurine-front.jpg",
+                "images/figure/figurine-back.jpg"
+            ]
+        }
+    ]
+}

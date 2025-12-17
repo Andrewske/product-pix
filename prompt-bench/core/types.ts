@@ -114,7 +114,6 @@ export const PromptTemplateSchema = z.discriminatedUnion('type', [
     createdAt: z.date(),
     type: z.literal('collection'),
     outputCount: z.number().int().positive(),
-    varietyStrategy: z.enum(['category-based', 'ai-decided', 'hybrid']),
   }),
 ]);
 
@@ -151,7 +150,6 @@ interface SingleTemplate extends BaseTemplate {
 export interface CollectionTemplate extends BaseTemplate {
   type: 'collection';
   outputCount: number;
-  varietyStrategy: 'category-based' | 'ai-decided' | 'hybrid';
 }
 
 /**
@@ -159,7 +157,31 @@ export interface CollectionTemplate extends BaseTemplate {
  */
 export type TemplateDefinition = SingleTemplate | CollectionTemplate;
 
+// =============================================================================
+// Angle Planning Types
+// =============================================================================
 
+/**
+ * Result from Gemini angle detection (cached)
+ */
+export interface DetectedAngles {
+  sourceAngles: Array<{
+    imageIndex: number;
+    detectedAngle: string; // Free-form description of what angle this shows
+    isPrimaryReference: boolean; // Best source for unmatched angles
+  }>;
+}
+
+/**
+ * Result from algorithmic collection planning (not cached)
+ */
+export interface AnglePlan {
+  assignments: Array<{
+    targetAngle: string; // Prefer category vocabulary
+    sourceImageIndex: number;
+    matchType: 'exact' | 'similar' | 'primary-fallback';
+  }>;
+}
 
 // =============================================================================
 // Test Schemas

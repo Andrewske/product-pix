@@ -1,0 +1,1716 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Report: multi-angle-hybrid-20251216-02q6u2</title>
+  <style>
+  /* Reset */
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.5; }
+
+  /* Layout */
+  .max-w-6xl { max-width: 72rem; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .p-8 { padding: 2rem; }
+  .p-4 { padding: 1rem; }
+  .p-2 { padding: 0.5rem; }
+  .mb-8 { margin-bottom: 2rem; }
+  .mb-4 { margin-bottom: 1rem; }
+  .gap-4 { gap: 1rem; }
+  .gap-2 { gap: 0.5rem; }
+
+  /* Grid */
+  .grid { display: grid; }
+  .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+  .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  /* Flexbox */
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+
+  /* Colors */
+  .bg-gray-50 { background-color: #f9fafb; }
+  .bg-white { background-color: #fff; }
+  .bg-gray-200 { background-color: #e5e7eb; }
+  .bg-green-500 { background-color: #22c55e; }
+  .bg-yellow-500 { background-color: #eab308; }
+  .bg-red-500 { background-color: #ef4444; }
+  .text-gray-500 { color: #6b7280; }
+  .text-gray-700 { color: #374151; }
+  .text-gray-900 { color: #111827; }
+
+  /* Typography */
+  .text-sm { font-size: 0.875rem; }
+  .text-lg { font-size: 1.125rem; }
+  .text-2xl { font-size: 1.5rem; }
+  .text-3xl { font-size: 1.875rem; }
+  .font-semibold { font-weight: 600; }
+  .font-bold { font-weight: 700; }
+
+  /* Borders & Shadows */
+  .rounded { border-radius: 0.25rem; }
+  .rounded-lg { border-radius: 0.5rem; }
+  .shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .shadow-md { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  .border { border: 1px solid #e5e7eb; }
+
+  /* Images */
+  .aspect-square { aspect-ratio: 1; }
+  .object-cover { object-fit: cover; }
+  .w-full { width: 100%; }
+  .h-4 { height: 1rem; }
+  .min-h-screen { min-height: 100vh; }
+
+  /* Score bar */
+  .score-bar { height: 1rem; border-radius: 0.25rem; transition: width 0.3s; }
+
+  /* Print styles */
+  @media print {
+    body { background: white; }
+    .no-print { display: none; }
+  }
+
+  /* Comparison specific */
+  .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .delta-positive { color: #22c55e; }
+  .delta-negative { color: #ef4444; }
+  .significance-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  .significant { background-color: #dcfce7; color: #166534; }
+  .not-significant { background-color: #f3f4f6; color: #6b7280; }
+  .diff-added { background-color: #dcfce7; }
+  .diff-removed { background-color: #fee2e2; }
+
+  /* Insights section */
+  .from-purple-50 { --tw-gradient-from: #faf5ff; }
+  .to-blue-50 { --tw-gradient-to: #eff6ff; }
+  .bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to)); }
+  .border-purple-100 { border-color: #f3e8ff; }
+  .text-purple-500 { color: #a855f7; }
+  .text-blue-500 { color: #3b82f6; }
+  .text-green-500 { color: #22c55e; }
+  .space-y-2 > * + * { margin-top: 0.5rem; }
+  .mt-1 { margin-top: 0.25rem; }
+  .ml-auto { margin-left: auto; }
+
+  /* Image pair (source + generated side-by-side) */
+  .image-pair { display: flex; gap: 0.25rem; }
+  .image-pair .source-image { flex: 0 0 40%; }
+  .image-pair .generated-image { flex: 0 0 60%; }
+  .image-pair img { width: 100%; height: 100%; object-fit: cover; }
+  .image-label {
+    position: absolute;
+    bottom: 0.25rem;
+    left: 0.25rem;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+  }
+  .image-wrapper { position: relative; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .grid-cols-3, .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+    .comparison-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .image-pair { flex-direction: column; }
+    .image-pair .source-image, .image-pair .generated-image { flex: 1; }
+  }
+</style>
+</head>
+  <body class="bg-gray-50 min-h-screen">
+   <div class="max-w-6xl mx-auto p-8">
+     
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Comparison Report: multi-angle-hybrid-20251216-62w9gn vs multi-angle-hybrid-20251216-02q6u2</h1>
+    <p class="text-sm text-gray-500">Generated: 2025-12-16T20:11:30.877Z</p>
+  </header>
+  
+     
+    <section class="bg-white rounded-lg shadow p-6 mb-8">
+      <h2 class="text-lg font-semibold mb-4">Comparison: multi-angle-hybrid-20251216-62w9gn → multi-angle-hybrid-20251216-02q6u2</h2>
+
+      <div class="grid grid-cols-2 gap-8 mb-6">
+        <!-- Baseline -->
+        <div class="p-4 bg-gray-50 rounded-lg">
+          <h3 class="font-semibold text-gray-700 mb-2">Baseline: multi-angle-hybrid-20251216-62w9gn</h3>
+          <p class="text-3xl font-bold">7.74<span class="text-lg text-gray-500">/10</span></p>
+          <p class="text-sm text-gray-500">n=5, σ=1.98</p>
+        </div>
+
+        <!-- Candidate -->
+        <div class="p-4 bg-gray-50 rounded-lg">
+          <h3 class="font-semibold text-gray-700 mb-2">Candidate: multi-angle-hybrid-20251216-02q6u2</h3>
+          <p class="text-3xl font-bold">7.24<span class="text-lg text-gray-500">/10</span></p>
+          <p class="text-sm text-gray-500">n=25, σ=1.61</p>
+        </div>
+      </div>
+
+      <!-- Analysis -->
+      <div class="border-t pt-4">
+        <div class="flex items-center gap-4 mb-2">
+          <span class="text-2xl font-bold delta-negative">-0.500</span>
+          <span class="significance-badge not-significant">Not Significant</span>
+        </div>
+        <p class="text-sm text-gray-500">
+          p-value: 0.5961 |
+          Effect size: 0.30 (small) |
+          95% CI: [-2.349, 1.349]
+        </p>
+      </div>
+    </section>
+  
+     
+     
+  <section class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow p-6 mb-8 border border-purple-100">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">🤖</span>
+      <h2 class="text-lg font-semibold">AI-Powered Insights</h2>
+      <span class="text-xs text-gray-500 ml-auto">Cost: $0.0108</span>
+    </div>
+
+    <!-- Key Findings -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">📊 Key Findings</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">The 45-degree angle requirement shows catastrophic failure (3.2/10) compared to front angles (8.7/10), suggesting AI struggles with specific geometric angle instructions</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">Product-specific angle requirements perform inconsistently - &#039;front-on-model&#039; for tote bags works well (8.7/10) while &#039;front&#039; for electric guitars fails (4.2/10)</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">Undefined angle requirements produce polarized results, scoring both highest (8.7/10) and lowest (4.2/10), indicating high variance when AI has creative freedom</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">Strong clustering around good scores (14/25 tests in 8-9 range) suggests the base prompt template is solid but specific angle/product combinations cause failures</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-purple-500 mt-1">•</span>
+            <span class="text-gray-700">Performance degraded vs baseline (-0.5 points) but not significantly, indicating the multi-angle approach needs refinement rather than abandonment</span>
+          </li>
+        
+      </ul>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="mb-6">
+      <h3 class="font-semibold text-gray-700 mb-2">💡 Recommendations</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Replace precise geometric angles like &#039;45-degree&#039; with descriptive alternatives like &#039;diagonal view&#039; or &#039;three-quarter angle&#039; that are more intuitive for AI interpretation</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Implement product-specific angle mappings - avoid &#039;front&#039; angles for electric guitars, prefer &#039;front-on-model&#039; for wearable accessories like tote bags</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Add fallback instructions when using &#039;undefined&#039; requirements, such as &#039;choose the most visually appealing primary angle for this product category&#039;</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Include product orientation context in prompts, especially for complex shapes like guitars that may need &#039;upright front view&#039; rather than just &#039;front&#039;</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-blue-500 mt-1">•</span>
+            <span class="text-gray-700">Test intermediate angle descriptors like &#039;slight angle&#039; or &#039;subtle rotation&#039; instead of specific degree measurements</span>
+          </li>
+        
+      </ul>
+    </div>
+
+    <!-- Next Steps -->
+    <div>
+      <h3 class="font-semibold text-gray-700 mb-2">🎯 Next Steps</h3>
+      <ul class="space-y-2">
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Run targeted A/B test comparing geometric angle terms (&#039;45-degree&#039;, &#039;90-degree&#039;) vs descriptive terms (&#039;diagonal&#039;, &#039;side profile&#039;, &#039;three-quarter&#039;) across the same product set</span>
+          </li>
+        
+          <li class="flex items-start gap-2">
+            <span class="text-green-500 mt-1">•</span>
+            <span class="text-gray-700">Create product category-specific angle preference matrix by testing 5-10 angles per product type to identify optimal defaults for each category</span>
+          </li>
+        
+      </ul>
+    </div>
+  </section>
+
+     
+  <section class="bg-white rounded-lg shadow p-4 mb-8">
+    <h2 class="text-lg font-semibold mb-4">Summary Statistics</h2>
+    <div class="grid grid-cols-3 gap-4">
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Tests</p>
+    <p class="text-2xl font-bold text-gray-900">25</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Mean Score</p>
+    <p class="text-2xl font-bold text-gray-900">7.24/10</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Std Dev</p>
+    <p class="text-2xl font-bold text-gray-900">1.61</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Median</p>
+    <p class="text-2xl font-bold text-gray-900">8.2</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Min</p>
+    <p class="text-2xl font-bold text-gray-900">3.2</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Max</p>
+    <p class="text-2xl font-bold text-gray-900">8.7</p>
+  </div>
+
+    </div>
+  </section>
+
+     
+    <section class="bg-white rounded-lg shadow p-4 mb-8">
+      <h2 class="text-lg font-semibold mb-4">Score Distribution</h2>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">1-3 (Poor)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-red-500" style="width: 0%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">0</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">4-5 (Below Avg)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-yellow-500" style="width: 21.428571428571427%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">3</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">6-7 (Average)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-yellow-500" style="width: 57.14285714285714%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">8</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">8-9 (Good)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-green-500" style="width: 100%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">14</span>
+        </div>
+      
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm text-gray-700 w-32">10 (Excellent)</span>
+          <div class="flex-1 bg-gray-200 rounded h-4">
+            <div class="score-bar bg-green-500" style="width: 0%"></div>
+          </div>
+          <span class="text-sm text-gray-500 w-8">0</span>
+        </div>
+      
+    </section>
+  
+     
+    <section class="bg-white rounded-lg shadow p-6 mb-8 overflow-x-auto">
+      <h2 class="text-lg font-semibold mb-4">Detailed Cost Breakdown (Per Test)</h2>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="border-b-2 border-gray-300">
+            <th rowspan="2" class="px-4 py-3 text-left text-gray-700 font-semibold">Test #</th>
+            <th rowspan="2" class="px-4 py-3 text-left text-gray-700 font-semibold">Score</th>
+            <th colspan="6" class="px-4 py-2 text-center text-gray-700 font-semibold bg-blue-50 border-b border-gray-200">Generation</th>
+            <th colspan="6" class="px-4 py-2 text-center text-gray-700 font-semibold bg-purple-50 border-b border-gray-200">Evaluation</th>
+            <th rowspan="2" class="px-4 py-3 text-right text-gray-700 font-semibold">Total</th>
+          </tr>
+          <tr class="border-b border-gray-200 text-xs">
+            <th class="px-4 py-2 text-left text-gray-600 bg-blue-50">Model</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Input Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Output Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Input Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Output Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-blue-50">Total</th>
+            <th class="px-4 py-2 text-left text-gray-600 bg-purple-50">Model</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Input Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Output Tokens</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Input Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Output Cost</th>
+            <th class="px-4 py-2 text-right text-gray-600 bg-purple-50">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+    <tr>
+      <td class="px-4 py-2 text-gray-700">1</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.7/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">349</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,274</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15323</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00859</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16182</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">2</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.3/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">349</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,286</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15467</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00870</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16337</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">3</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.4/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,287</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15479</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00877</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16356</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">4</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">4.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,362</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.16379</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00875</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.17254</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">5</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.6/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,266</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15227</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00911</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16138</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">6</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.7/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">347</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,287</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15479</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00895</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16374</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">7</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">3.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">351</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,399</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.16823</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00932</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.17755</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">8</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.7/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">347</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,270</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15275</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00908</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16183</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">9</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.7/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">347</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,289</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15503</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00853</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16356</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">10</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.7/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">347</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,266</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15227</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00874</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16101</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">11</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">4.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,375</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.16535</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00873</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.17408</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">12</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">349</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,293</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15551</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00825</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16376</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">13</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,361</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.16367</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00860</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.17227</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">14</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,329</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15983</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00873</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16856</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">15</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,273</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15311</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00854</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16165</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">16</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.8/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">344</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,289</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15502</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00886</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16388</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">17</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.8/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">348</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,278</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15371</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00864</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16235</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">18</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.3/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">344</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,279</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15382</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00829</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16211</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">19</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.1/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">344</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,294</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15562</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00898</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16460</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">20</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.2/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">344</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,320</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15874</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00889</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16763</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">21</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.3/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,264</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15203</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00848</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16051</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">22</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">7.8/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">349</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,272</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15299</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00860</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16159</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">23</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.4/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,282</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15419</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00866</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16285</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">24</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">8.3/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,264</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.15203</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00886</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.16089</td>
+    </tr>
+  
+    <tr>
+      <td class="px-4 py-2 text-gray-700">25</td>
+      <td class="px-4 py-2 text-gray-500 text-sm">6.8/10</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">345</td>
+      <td class="px-4 py-2 text-right text-gray-600">1,366</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right text-gray-600">$0.00000</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.16427</td>
+      <td class="px-4 py-2 text-gray-500 text-xs">claude-sonnet-4-20250514</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right text-gray-600">-</td>
+      <td class="px-4 py-2 text-right font-semibold text-gray-900">$0.00853</td>
+      <td class="px-4 py-2 text-right font-bold text-gray-900">$0.17280</td>
+    </tr>
+  
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-gray-300 font-bold">
+            <td colspan="2" class="px-4 py-3 text-gray-900">TOTAL</td>
+            <td colspan="5" class="px-4 py-3 text-right text-gray-900 bg-blue-50">$3.91171</td>
+            <td class="px-4 py-3 text-right text-gray-900 bg-blue-50">$3.91171</td>
+            <td colspan="5" class="px-4 py-3 text-right text-gray-900 bg-purple-50">$0.21818</td>
+            <td class="px-4 py-3 text-right text-gray-900 bg-purple-50">$0.21818</td>
+            <td class="px-4 py-3 text-right text-gray-900">$4.12989</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  
+     
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">Top Results Comparison</h2>
+      <div class="comparison-grid">
+        <!-- Baseline Column -->
+        <div>
+          <h3 class="font-semibold text-gray-700 mb-4">multi-angle-hybrid-20251216-62w9gn (Top 6)</h3>
+          <div class="grid grid-cols-1 gap-4">
+            
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/a41bd6ab3ed366a7a9471fd07c2046e21be51d407d76cf1748f42892fad7a852.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/6c1321f8-ba38-4686-ba5c-100412f9e65b.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/07e6aff8-8ba2-4846-a57a-7a1ae35da765.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/f2d62430-6a88-446f-8c0c-aa75b9e19923.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/a41bd6ab3ed366a7a9471fd07c2046e21be51d407d76cf1748f42892fad7a852.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/076a7595-a692-43a8-ab07-38fa8758e244.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.4/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/6f163efe-5932-44a7-a3c5-5e13799d9070.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">4.2/10</span>
+      <span class="text-xs text-white bg-red-500 rounded px-2 py-1">Low</span>
+    </div>
+  </div>
+
+          </div>
+        </div>
+
+        <!-- Candidate Column -->
+        <div>
+          <h3 class="font-semibold text-gray-700 mb-4">multi-angle-hybrid-20251216-02q6u2 (Top 6)</h3>
+          <div class="grid grid-cols-1 gap-4">
+            
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/831a44672345021b911d96c14ab7daa2eb8b3d22c4f7dce5f7eeb2b9fc44eb22.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/817d28a6-ed54-4343-b2bf-93c662bcd7bb.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/5687ae76-0ecb-438b-86a8-bfd427b6aa26.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/2dea4848-f953-4d32-9595-56c1a64b3642.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/a41bd6ab3ed366a7a9471fd07c2046e21be51d407d76cf1748f42892fad7a852.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/8b7ab2cf-c4a4-473e-a3e7-adcec87d9ae3.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/0ba0e2dc-664f-44ee-ae42-cc31e5768392.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.7/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/84df826845c4d38c5fe60a2f2bdf4b4659ff1a5cb72a504ee50892d0cd3e6c22.jpg" alt="Source image" loading="lazy">
+          
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/be5f9ab9-3565-4b6a-81a3-2cd84c9a7e1c.png" alt="Generated image" loading="lazy">
+          
+        </div>
+      </div>
+    
+    <div class="p-2">
+      <span class="font-semibold">8.6/10</span>
+      <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+    </div>
+  </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Full results for candidate (current batch) -->
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">All multi-angle-hybrid-20251216-02q6u2 Results (25 tests)</h2>
+      <div class="grid grid-cols-2 gap-4">
+        
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/831a44672345021b911d96c14ab7daa2eb8b3d22c4f7dce5f7eeb2b9fc44eb22.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/817d28a6-ed54-4343-b2bf-93c662bcd7bb.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.7/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Tote bag. Required: front-on-model. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Tote bag. Required: front-on-model. Fo...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/5687ae76-0ecb-438b-86a8-bfd427b6aa26.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.7/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Lego Minifigure. Required: front. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Lego Minifigure. Required: front. For ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/2dea4848-f953-4d32-9595-56c1a64b3642.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.7/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Lego Minifigure. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Lego Minifigure. Required: undefined. ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/a41bd6ab3ed366a7a9471fd07c2046e21be51d407d76cf1748f42892fad7a852.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/8b7ab2cf-c4a4-473e-a3e7-adcec87d9ae3.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.7/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Lego Minifigure. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Lego Minifigure. Required: undefined. ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/601b513287e9a8a935e5eb3b9c3713a697aa763faa4cde55c330cc979e527fcc.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/0ba0e2dc-664f-44ee-ae42-cc31e5768392.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.7/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Lego Minifigure. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Lego Minifigure. Required: undefined. ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/84df826845c4d38c5fe60a2f2bdf4b4659ff1a5cb72a504ee50892d0cd3e6c22.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/be5f9ab9-3565-4b6a-81a3-2cd84c9a7e1c.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.6/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Tote bag. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Tote bag. Required: undefined. For rem...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/91db72364f0818bbe40d4c188d2b5fa01a775c732feea598556e491de0cf90a0.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/7cc96e95-a59f-4cef-9c18-79cd62150522.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.4/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Tote bag. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Tote bag. Required: undefined. For rem...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/72aaf6d62365a1ccd51aabce893ed480f06a35b7cc73026cf6ef6cba8354a673.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/c2812ec1-c21f-45f4-ba5d-bfd6352381d2.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.4/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Sake bottle. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Sake bottle. Required: undefined. For ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/4f4de77236822a48a54767fe5aec686e262d723549b66eb2f49782d0aab528a1.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/dde45187-99ce-4a82-8c63-7e0b3d6e8563.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.3/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Tote bag. Required: 45-degree. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Tote bag. Required: 45-degree. For rem...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/e2c55e7be16371363678fa48cb249c210ab3040be8df0e175579e7efa5c7da7c.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/18828f94-e68b-4381-b0da-01c222934962.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.3/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Mug. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Mug. Required: undefined. For remainin...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/6f5b6250ba88ffe361ccd27831a2d9d9b36b80d505954b781029838b3d94a7ea.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/aaa87098-94a0-439a-a366-d0936481134b.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.3/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Sake bottle. Required: front. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Sake bottle. Required: front. For rema...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/ab74d13c3cba5cf630f9df1673a17711cdc00ee98e42bb7650977f966fcf6c75.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/792f50d9-6a85-47de-ba96-845e54e267f3.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.3/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Sake bottle. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Sake bottle. Required: undefined. For ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/3a379c5fa57a478663407b8a0d58752aee513849cdd3ed8f04fdc449d727c351.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/4421b94f-e6a0-48f5-9a27-8cf7c0a92b80.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">8.2/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Electric Guitar. Required: 45-degree. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Electric Guitar. Required: 45-degree. ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/b837783914a9f679fdb07fe883d07be738d4292a10622630115e27f4b76967af.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/ac624f8a-9cde-4ad6-95af-1324be2564e6.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">7.8/10</span>
+        <span class="text-xs text-white bg-green-500 rounded px-2 py-1">Good</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Sake bottle. Required: 45-degree. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Sake bottle. Required: 45-degree. For ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/87bdf21fa45e9d8d1d4403c55aa0e7c3214eca8b5df6f3561e891c66251c546f.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/2ce427eb-4786-4663-9ec2-d7675ae106da.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.8/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Mug. Required: front. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Mug. Required: front. For remaining im...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/874fce9e70a017338550a00a4b5a8c92e2af5b12df75af19693308b5ed903dd0.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/337fa83a-083d-46ac-905c-50dbed7e024b.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.8/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Mug. Required: 45-degree. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Mug. Required: 45-degree. For remainin...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/292de3d9a225d31d448819328001aba6a490d102657fb4a1b9eb6c28b5ccb04d.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/ef2bbae3-2a53-4535-92ec-9548489bdee3.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.8/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Sake bottle. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Sake bottle. Required: undefined. For ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/c8b17a38679db05121fb1a791530d7b8bd9f4fdc64370a6ee1c507efc19221a5.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/dce2410d-110f-4e6f-9a71-c04f8a171129.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.2/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Electric Guitar. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Electric Guitar. Required: undefined. ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/90f63034af7fcd8e691d004de575450745f5c88b06c11ad3d1316ef37b67c9d5.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/8e37b4e1-e7bf-4c72-9fb9-03b11fdf0e7b.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.2/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Electric Guitar. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Electric Guitar. Required: undefined. ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/adb267a9dec7d6ef641b183ea4f23e05a65a6db11f63be9a79250465bd26e93c.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/e4debb83-92ca-4e55-a174-fb687415ea16.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.2/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Electric Guitar. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Electric Guitar. Required: undefined. ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/33378283a33a10de21808909e02236138c917c727ee68a0ce017cf7fd3121dcc.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/3734f796-3878-430c-906a-eb87d59d69ff.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.2/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Mug. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Mug. Required: undefined. For remainin...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/9c873af2573e83381042dd503a08914eeff0a616d08f0e4a3eb088a49baf7680.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/e807d4ec-2b20-49a9-8630-30f4bcbf03a0.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">6.1/10</span>
+        <span class="text-xs text-white bg-yellow-500 rounded px-2 py-1">Avg</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Mug. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Mug. Required: undefined. For remainin...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/fe8b199e810ade4d3c3fb3aa99f43da0f7372867f8b61c59a6a5ac65fe402816.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/c7932448-7373-4dcc-9fda-2cfe3ea8295b.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">4.2/10</span>
+        <span class="text-xs text-white bg-red-500 rounded px-2 py-1">Low</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Tote bag. Required: undefined. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Tote bag. Required: undefined. For rem...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/18b2505adc1d9bc96f84a5aaf4ea2724df0aa62bd09aeca42864c8ae8bb971c3.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/a0491e26-c565-4456-b580-20982ac3c5de.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">4.2/10</span>
+        <span class="text-xs text-white bg-red-500 rounded px-2 py-1">Low</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Electric Guitar. Required: front. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Electric Guitar. Required: front. For ...
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    
+      <div class="image-pair aspect-square">
+        <div class="source-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/sources/a41bd6ab3ed366a7a9471fd07c2046e21be51d407d76cf1748f42892fad7a852.jpg" alt="Source image" loading="lazy">
+          <span class="image-label">Source</span>
+        </div>
+        <div class="generated-image image-wrapper">
+          <img src="https://pub-76304578acde4439afba93b377f6b24c.r2.dev/prompt-tests/717c3374-2075-48fc-afe4-57a4a6d9cc1d.png" alt="Generated image" loading="lazy">
+          <span class="image-label">Generated</span>
+        </div>
+      </div>
+    
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-semibold">3.2/10</span>
+        <span class="text-xs text-white bg-red-500 rounded px-2 py-1">Low</span>
+      </div>
+      <p class="text-sm text-gray-500 truncate" title="Professional photo of Lego Minifigure. Required: 45-degree. For remaining images, choose creative angles appropriate for this product type., on pure white seamless background, soft diffused studio lighting with soft fill, shot on DSLR with 85mm lens f/8, commercial catalog photography, color-accurate, 4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids">
+        Professional photo of Lego Minifigure. Required: 45-degree. ...
+      </p>
+    </div>
+  </div>
+
+      </div>
+    </section>
+  
+     
+  <section class="bg-white rounded-lg shadow p-4">
+    <h2 class="text-lg font-semibold mb-4">Cost Summary</h2>
+    <div class="grid grid-cols-4 gap-4">
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Generation</p>
+    <p class="text-2xl font-bold text-gray-900">$3.9117</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Evaluation</p>
+    <p class="text-2xl font-bold text-gray-900">$0.2182</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Insights</p>
+    <p class="text-2xl font-bold text-gray-900">$0.0108</p>
+  </div>
+
+      
+  <div class="p-4 bg-gray-50 rounded">
+    <p class="text-sm text-gray-500">Total</p>
+    <p class="text-2xl font-bold text-gray-900">$4.1407</p>
+  </div>
+
+    </div>
+  </section>
+
+   </div>
+  </body>
+</html>

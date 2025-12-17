@@ -49,7 +49,7 @@ prompt-bench/   # Isolated CLI framework
 
 **Email Service:**
 - Provider: Resend (SMTP for auth, SDK for contact form)
-- Local dev: Inbucket (http://127.0.0.1:54324)
+- Local dev: Inbucket (http://localhost:54324)
 - Production: Configured via env vars (`RESEND_API_KEY`, `EMAIL_ENABLED`)
 - Contact emails: Admin notification + user acknowledgment
 - Error handling: Failures logged but don't block submissions

@@ -1,6 +1,6 @@
 // src/lib/ai/providers/gemini.ts
 import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
+import { generateText, convertToModelMessages } from 'ai';
 import { env } from '@/lib/env';
 import type { ImageProvider, ImageConfig, GenerationResponse, ConversationMessage, ImageConversationSession } from '../types';
 import { normalizeUsage } from '../usage-types';
@@ -24,23 +24,7 @@ interface GenerateTextResult {
   };
 };
 
-// Convert ConversationMessage to AI SDK ModelMessage format
-export const convertConversationToModelMessages = (messages: ConversationMessage[]) => {
-  return messages.map(msg => ({
-    role: msg.role,
-    content: msg.content.map(part => {
-      if (part.type === 'text') {
-        return { type: 'text', text: part.text };
-      } else if (part.type === 'image') {
-        return { type: 'image', image: part.image };
-      } else if (part.type === 'file') {
-        // For assistant file responses, convert to image
-        return { type: 'image', image: part.data };
-      }
-      throw new Error(`Unsupported content type: ${part.type}`);
-    }),
-  }));
-};
+
 
 
 // Map our config to Gemini's expected values
@@ -202,8 +186,42 @@ export class GeminiConversationSession implements ImageConversationSession {
       content: [{ type: 'text', text: prompt }],
     };
 
-    // Convert conversation messages to AI SDK format
-    const modelMessages = convertConversationToModelMessages([...this.messages, userMessage]);
+    // Convert conversation messages to UIMessage format for AI SDK
+    const uiMessages: any = [...this.messages, userMessage].map((msg, index) => ({
+      id: `msg-${index}`,
+      role: msg.role,
+      parts: msg.content.map((part: any) => {
+        if (part.type === 'text') {
+          return { type: 'text', text: part.text };
+        } else if (part.type === 'image') {
+          const filePart: any = {
+            type: 'file',
+            mediaType: 'image/png',
+            url: `data:image/png;base64,${part.image.toString('base64')}`,
+          };
+          // Preserve provider metadata (thought signatures) if present
+          if (part.providerMetadata) {
+            filePart.providerMetadata = part.providerMetadata;
+          }
+          return filePart;
+        } else if (part.type === 'file') {
+          const filePart: any = {
+            type: 'file',
+            mediaType: part.mediaType,
+            url: `data:${part.mediaType};base64,${part.data.toString('base64')}`,
+          };
+          // Preserve provider metadata if present
+          if (part.providerMetadata) {
+            filePart.providerMetadata = part.providerMetadata;
+          }
+          return filePart;
+        }
+        throw new Error(`Unsupported content type: ${part.type}`);
+      }),
+    }));
+
+    // Use AI SDK's convertToModelMessages (async in v6)
+    const modelMessages = await convertToModelMessages(uiMessages);
 
     // Call API with converted messages
     const result = await generateText({
@@ -217,10 +235,50 @@ export class GeminiConversationSession implements ImageConversationSession {
       },
     });
 
+    // DEBUG: Log response structure
+    console.log('[DEBUG] Result keys:', Object.keys(result));
+    console.log('[DEBUG] Result.steps length:', result.steps?.length);
+    if (result.steps && result.steps.length > 0) {
+      const lastStep = result.steps[result.steps.length - 1];
+      console.log('[DEBUG] Last step keys:', Object.keys(lastStep));
+      console.log('[DEBUG] Last step providerMetadata:', JSON.stringify(lastStep.providerMetadata, null, 2));
+      console.log('[DEBUG] Last step content:', JSON.stringify(lastStep.content, null, 2));
+    }
+
     const response = extractImageFromResponse(result, config);
 
     // Only persist to history on success (immutable until committed)
-    if (response.success) {
+    if (response.success && result.messages && result.messages.length > 0) {
+      // Store user message
+      this.messages.push(userMessage);
+
+      // Store the complete assistant message from AI SDK response
+      // This preserves thought signatures and other provider metadata
+      const assistantMessage = result.messages[result.messages.length - 1];
+      if (assistantMessage && assistantMessage.role === 'assistant') {
+        // Convert AI SDK message format to our internal format
+        // while preserving all metadata including thought signatures
+        this.messages.push({
+          role: 'assistant',
+          // Store raw AI SDK parts to preserve thought signatures
+          content: assistantMessage.content.map((part: any) => {
+            if (part.type === 'text') {
+              return { type: 'text', text: part.text };
+            } else if (part.type === 'image' || part.type === 'file') {
+              // Store image with metadata if available
+              return {
+                type: 'image',
+                image: Buffer.from(response.imageData, 'base64'),
+                // Preserve provider metadata (including thought signature)
+                providerMetadata: part.providerMetadata,
+              };
+            }
+            return part;
+          }),
+        } as any);
+      }
+    } else if (response.success) {
+      // Fallback if no messages in result (shouldn't happen)
       const imageBuffer = Buffer.from(response.imageData, 'base64');
       this.messages.push(userMessage);
       this.messages.push({

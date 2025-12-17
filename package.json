@@ -14,7 +14,7 @@
     "test:coverage": "bun test --coverage"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.44",
+    "@ai-sdk/google": "3.0.0-beta.78",
     "@anthropic-ai/sdk": "^0.71.2",
     "@aws-sdk/client-s3": "^3.940.0",
     "@aws-sdk/s3-request-presigner": "^3.940.0",
@@ -56,7 +56,7 @@
     "@tanstack/react-query": "^5.90.12",
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.35.7",
-    "ai": "^5.0.104",
+    "ai": "6.0.0-beta.157",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
