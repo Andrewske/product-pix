@@ -92,14 +92,14 @@ function FeaturesSection() {
           description="From raw phone photos to commercial-grade assets instantly."
         />
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature) => (
-            <FeatureCard
-              key={feature.title}
-              {...feature}
-            />
-          ))}
-        </div>
+         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+           {features.map((feature) => (
+             <FeatureCard
+               key={feature.title}
+               {...feature}
+             />
+           ))}
+         </div>
       </div>
     </section>
   )
@@ -115,7 +115,7 @@ function HowItWorksSection() {
   return (
     <section id="how-it-works" className="w-full py-32 border-t border-border/40 relative">
       <div className="max-w-6xl mx-auto px-4 relative">
-        <div className="grid md:grid-cols-2 gap-16 items-center">
+         <div className="grid md:grid-cols-2 gap-16 items-center max-w-5xl mx-auto">
           <div className="space-y-8">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight font-display">
               The Virtual
@@ -155,7 +155,7 @@ function HowItWorksSection() {
 function CTASection() {
   return (
     <section className="w-full py-32 text-center relative overflow-hidden">
-      <div className="max-w-4xl mx-auto px-4 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 relative z-10">
         <h2 className="text-5xl md:text-6xl font-bold mb-8 tracking-tight text-balance font-display">
           Ready to upgrade your listings?
         </h2>

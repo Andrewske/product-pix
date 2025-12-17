@@ -23,12 +23,14 @@ export function useCookieConsentAuth() {
   useEffect(() => {
     async function handleAuthStateChange() {
       setLoading(true);
-      try {
-        if (user) {
-          // User logged in - sync localStorage → DB
-          const localConsent = loadConsentFromLocalStorage();
 
-          // Load consent from database via API
+      if (user) {
+        // User logged in - immediately set from localStorage to prevent flashing
+        const localConsent = loadConsentFromLocalStorage();
+        setConsent(localConsent || getDefaultConsent());
+
+        // Then sync with database in background
+        try {
           const response = await fetch('/api/cookie-consent');
           if (!response.ok) {
             throw new Error('Failed to load consent from database');
@@ -37,19 +39,17 @@ export function useCookieConsentAuth() {
 
           const merged = await syncConsentOnLogin(user.id, localConsent, dbConsent);
           setConsent(merged);
-        } else {
-          // User logged out - load from localStorage
-          const localConsent = loadConsentFromLocalStorage();
-          setConsent(localConsent || getDefaultConsent());
+        } catch (error) {
+          console.error('Failed to sync cookie consent with database:', error);
+          // Keep localStorage consent on error - already set above
         }
-      } catch (error) {
-        console.error('Failed to initialize cookie consent:', error);
-        // Fallback: use localStorage if available, otherwise default
+      } else {
+        // User logged out - load from localStorage only
         const localConsent = loadConsentFromLocalStorage();
         setConsent(localConsent || getDefaultConsent());
-      } finally {
-        setLoading(false);
       }
+
+      setLoading(false);
     }
 
     handleAuthStateChange();

@@ -1,5 +1,6 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/client';
 import type { CookieConsent } from './types';
+import type { Json } from '@/types/database';
 import { logger } from '@/lib/logging';
 
 const STORAGE_KEY = 'productpix_cookie_consent';
@@ -42,13 +43,11 @@ export async function saveConsentToDatabase(
   preferences: { cookies: CookieConsent }
 ): Promise<void> {
   try {
-    const supabase = createAdminClient();
-    // Type assertion needed until RPC function is added to generated types
-    const result = await (supabase as unknown as { rpc: (name: string, params: Record<string, unknown>) => Promise<{ error: Error | null }> }).rpc('update_user_preferences', {
+    const supabase = createClient();
+    const { error } = await supabase.rpc('update_user_preferences', {
       user_id: userId,
-      prefs: preferences
+      prefs: preferences as unknown as Json
     });
-    const { error } = result;
 
     if (error) throw error;
   } catch (error) {

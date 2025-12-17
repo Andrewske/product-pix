@@ -80,6 +80,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "prompt-bench/**",
     "scripts/**",
+    ".worktrees/**",
   ]),
 ]);
 

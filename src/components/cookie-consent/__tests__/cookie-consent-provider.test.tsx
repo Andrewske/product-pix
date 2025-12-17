@@ -1,4 +1,4 @@
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
 import { renderHook, waitFor } from '@testing-library/react';
 import { CookieConsentProvider } from '../cookie-consent-provider';
 import { useCookieConsent } from '../use-cookie-consent';
@@ -29,6 +29,16 @@ mock.module('@/lib/cookie-consent/sync', () => ({
 }));
 
 describe('CookieConsentProvider', () => {
+  beforeEach(() => {
+    mockUseUser.mockClear();
+    mockSaveToLocalStorage.mockClear();
+    mockLoadFromLocalStorage.mockClear();
+    mockSaveToDatabase.mockClear();
+    mockLoadFromDatabase.mockClear();
+    mockSyncOnLogin.mockClear();
+    mockGetDefaultConsent.mockClear();
+  });
+
   it('provides context value to children', async () => {
     mockUseUser.mockReturnValue({ user: null });
     mockLoadFromLocalStorage.mockReturnValue(null);
