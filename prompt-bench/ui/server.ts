@@ -1666,50 +1666,66 @@ const serveNotebookHTML = (): Response => {
 
       const [evaluationRuns, setEvaluationRuns] = useState([]);
 
+      const [imageCache, setImageCache] = useState([]);
+
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const urlSessionId = params.get('session');
 
         if (urlSessionId) {
           setSessionId(urlSessionId);
-          loadSession(urlSessionId);
 
-          // Restore session state from SessionStorage
-          const saved = sessionStorage.getItem(\`notebook-\${urlSessionId}\`);
-          if (saved) {
-            try {
-              const { selectedAnalysisId, selectedGenerationId } = JSON.parse(saved);
-              setSelectedAnalysisId(selectedAnalysisId);
-              setSelectedGenerationId(selectedGenerationId);
-            } catch (e) {
-              console.warn('Failed to restore session state:', e);
-              // Continue without restored state - no error shown to user
-            }
+          // Try SessionStorage first
+          const cached = loadNotebookSession(urlSessionId);
+          if (cached) {
+            console.log('Restored session from SessionStorage cache');
+            setSelectedFixtureIds(cached.selectedFixtureIds || []);
+            setAnalysisRuns(cached.analysisRuns || []);
+            setSelectedAnalysisId(cached.selectedAnalysisId);
+            setGenerationRuns(cached.generationRuns || []);
+            setSelectedGenerationId(cached.selectedGenerationId);
+            setEvaluationRuns(cached.evaluationRuns || []);
+            setImageCache(cached.imageCache || []);
+          } else {
+            // Fallback to database
+            console.log('SessionStorage miss, loading from database');
+            loadSession(urlSessionId);
           }
         } else {
           setShowFixtureSelector(true);
         }
 
+        // Load fixtures for selector
         fetch('/api/notebook/fixtures')
           .then(res => res.json())
-          .then(data => {
-            if (!data.fixtures || Object.keys(data.fixtures).length === 0) {
-              setError('No fixture images found. Run "bun bench sync" to upload fixture images.');
-            }
-            setFixtureImages(data.fixtures);
-          })
-          .catch(err => setError('Failed to load fixtures: ' + err.message));
+          .then(data => setFixtureImages(data.fixtures))
+          .catch(err => console.error('Failed to load fixtures:', err));
       }, []);
 
-      // Save session state to SessionStorage
+      // Save complete session state to SessionStorage
       useEffect(() => {
         if (sessionId) {
-          sessionStorage.setItem(\`notebook-\${sessionId}\`, JSON.stringify({
+          saveNotebookSession({
+            sessionId,
+            selectedFixtureIds,
             selectedAnalysisId,
-            selectedGenerationId
-          }));
+            selectedGenerationId,
+            analysisRuns,
+            generationRuns,
+            evaluationRuns,
+            imageCache
+          });
         }
-      }, [sessionId, selectedAnalysisId, selectedGenerationId]);
+      }, [
+        sessionId,
+        selectedFixtureIds,
+        selectedAnalysisId,
+        selectedGenerationId,
+        analysisRuns,
+        generationRuns,
+        evaluationRuns,
+        imageCache
+      ]);
 
       const loadSession = async (sessionId) => {
         try {
