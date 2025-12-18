@@ -7,7 +7,8 @@ import { testCommand } from '../commands/test';
 import { logger } from '../core/logger';
 import { runAnalysisPhase, runGenerationPhase, runEvaluationPhase } from '../core/notebook-orchestrator';
 import { isOk } from '../core/errors';
-import type { AnalysisResult, GenerationResult, EvaluationResult } from '../core/notebook-orchestrator';
+import { EVALUATION_PROMPT } from '../core/evaluator';
+import type { AnalysisResult, GenerationResult, EvaluationPhaseResult } from '../core/notebook-orchestrator';
 import type { ProgressCallback } from '../core/orchestrator';
 import type { BatchFileMetadata, TemplateMetadata } from './types';
 
@@ -59,7 +60,7 @@ const serveHTML = (): Response => {
     const { useState, useEffect } = React;
     const { createRoot } = ReactDOM;
 
-    const DEFAULT_EVALUATION_PROMPT = 'You are evaluating an AI-generated product photo for e-commerce use.\n\nScore each criterion from 1-10 (1 = poor, 10 = excellent):\n\n1. **Composition** (1-10): Product placement, visual balance, appropriate fill percentage (product should fill 60-90% of frame)\n\n2. **Lighting** (1-10): Even illumination, no harsh shadows, appropriate highlights, professional studio quality\n\n3. **Product Visibility** (1-10): Sharp focus on product, all features clearly visible, no obscured details\n\n4. **Background Quality** (1-10): Clean, distraction-free background, appropriate for e-commerce\n\n5. **Professional Quality** (1-10): Overall marketplace-ready appearance, color accuracy, no artifacts\n\n6. **Prompt Adherence** (1-10): How well the image matches the original prompt request\n\nCalculate an overall score as the weighted average:\n- Composition: 15%\n- Lighting: 20%\n- Product Visibility: 25%\n- Background Quality: 15%\n- Professional Quality: 15%\n- Prompt Adherence: 10%\n\nReturn ONLY valid JSON in this exact format:\n{\n  "overall": 8.5,\n  "composition": 8,\n  "lighting": 9,\n  "productVisibility": 8,\n  "backgroundQuality": 9,\n  "professionalQuality": 8,\n  "promptAdherence": 9,\n  "reasoning": "Brief explanation of scores...",\n  "suggestions": ["Suggestion 1", "Suggestion 2"]\n}';
+    const DEFAULT_EVALUATION_PROMPT = ${JSON.stringify(EVALUATION_PROMPT)};
 
     // ============================================================================
     // Notebook Components
@@ -800,7 +801,7 @@ const serveNotebookHTML = (): Response => {
     const { useState, useEffect } = React;
     const { createRoot } = ReactDOM;
 
-    const DEFAULT_EVALUATION_PROMPT = 'You are evaluating an AI-generated product photo for e-commerce use.\\n\\nScore each criterion from 1-10 (1 = poor, 10 = excellent):\\n\\n1. **Composition** (1-10): Product placement, visual balance, appropriate fill percentage (product should fill 60-90% of frame)\\n\\n2. **Lighting** (1-10): Even illumination, no harsh shadows, appropriate highlights, professional studio quality\\n\\n3. **Product Visibility** (1-10): Sharp focus on product, all features clearly visible, no obscured details\\n\\n4. **Background Quality** (1-10): Clean, distraction-free background, appropriate for e-commerce\\n\\n5. **Professional Quality** (1-10): Overall marketplace-ready appearance, color accuracy, no artifacts\\n\\n6. **Prompt Adherence** (1-10): How well the image matches the original prompt request\\n\\nCalculate an overall score as the weighted average:\\n- Composition: 15%\\n- Lighting: 20%\\n- Product Visibility: 25%\\n- Background Quality: 15%\\n- Professional Quality: 15%\\n- Prompt Adherence: 10%\\n\\nReturn ONLY valid JSON in this exact format:\\n{\\n  "overall": 8.5,\\n  "composition": 8,\\n  "lighting": 9,\\n  "productVisibility": 8,\\n  "backgroundQuality": 9,\\n  "professionalQuality": 8,\\n  "promptAdherence": 9,\\n  "reasoning": "Brief explanation of scores...",\\n  "suggestions": ["Suggestion 1", "Suggestion 2"]\\n}';
+    const DEFAULT_EVALUATION_PROMPT = ${JSON.stringify(EVALUATION_PROMPT)};
 
     // ============================================================================
     // Notebook Components
@@ -1542,73 +1543,81 @@ const serveNotebookHTML = (): Response => {
             onClick: () => setShowComparison(true),
             className: 'mt-2 px-4 py-2 border rounded hover:bg-gray-50'
           }, \`Compare All \${runs.length} Runs\`),
-          runs.map(run => {
-            const evaluation = run.prompt_evaluations?.[0];
-            const details = evaluation?.details || {};
-            const scoreOverall = evaluation?.score_overall;
-
-            return React.createElement('div', { key: run.id, className: 'border rounded p-3 border-gray-200' },
-              React.createElement('div', { className: 'flex justify-between items-center mb-2' },
-                React.createElement('div', { className: 'flex items-center gap-3' },
-                  React.createElement('span', { className: 'font-medium' }, \`Run \${run.phase_run_number}\`),
-                  scoreOverall && React.createElement('span', { className: 'font-bold text-green-600' }, scoreOverall.toFixed(1) + '/10'),
-                  React.createElement('span', { className: 'text-xs text-gray-500' },
-                    (run.debug_metadata?.tokens?.input || 0) + ' tokens'
-                  )
-                ),
-                React.createElement('button', {
-                  onClick: () => setExpandedRunId(expandedRunId === run.id ? null : run.id),
-                  className: 'text-sm text-blue-600'
-                }, expandedRunId === run.id ? 'Collapse' : 'Expand')
-              ),
-              React.createElement('div', { className: 'grid grid-cols-3 gap-2' },
-                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
-                  React.createElement('div', { className: 'font-medium' }, 'Composition'),
-                  React.createElement('div', {}, details.composition || 'N/A')
-                ),
-                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
-                  React.createElement('div', { className: 'font-medium' }, 'Lighting'),
-                  React.createElement('div', {}, details.lighting || 'N/A')
-                ),
-                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
-                  React.createElement('div', { className: 'font-medium' }, 'Product Visibility'),
-                  React.createElement('div', {}, details.productVisibility || 'N/A')
-                ),
-                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
-                  React.createElement('div', { className: 'font-medium' }, 'Background Quality'),
-                  React.createElement('div', {}, details.backgroundQuality || 'N/A')
-                ),
-                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
-                  React.createElement('div', { className: 'font-medium' }, 'Professional Quality'),
-                  React.createElement('div', {}, details.professionalQuality || 'N/A')
-                ),
-                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
-                  React.createElement('div', { className: 'font-medium' }, 'Prompt Adherence'),
-                  React.createElement('div', {}, details.promptAdherence || 'N/A')
-                )
-              ),
-              expandedRunId === run.id && React.createElement('div', { className: 'mt-3 pt-3 border-t space-y-2' },
-                details.reasoning && React.createElement('div', {},
-                  React.createElement('h4', { className: 'text-sm font-semibold mb-1' }, 'Reasoning:'),
-                  React.createElement('p', { className: 'text-sm text-gray-700 whitespace-pre-wrap' }, details.reasoning)
-                ),
-                details.suggestions && details.suggestions.length > 0 && React.createElement('div', {},
-                  React.createElement('h4', { className: 'text-sm font-semibold mb-1' }, 'Suggestions:'),
-                  React.createElement('ul', { className: 'text-sm text-gray-700 list-disc list-inside' },
-                    details.suggestions.map((suggestion, idx) =>
-                      React.createElement('li', { key: idx }, suggestion)
-                    )
-                  )
-                )
-              )
-            );
-          })
+          runs.map(run =>
+            React.createElement(EvaluationRunCard, {
+              key: run.id,
+              run,
+              isExpanded: expandedRunId === run.id,
+              onToggleExpand: (id) => setExpandedRunId(expandedRunId === id ? null : id)
+            })
+          )
         ),
         showComparison && React.createElement(RunComparisonModal, {
           phase: 'evaluation',
           runs: runs,
           onClose: () => setShowComparison(false)
         })
+      );
+    };
+
+    const EvaluationRunCard = ({ run, isExpanded, onToggleExpand }) => {
+      const evaluation = run.prompt_evaluations?.[0];
+      const details = evaluation?.details || {};
+      const scoreOverall = evaluation?.score_overall;
+
+      return React.createElement('div', { key: run.id, className: 'border rounded p-3 border-gray-200' },
+        React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+          React.createElement('div', { className: 'flex items-center gap-3' },
+            React.createElement('span', { className: 'font-medium' }, 'Run ' + run.phase_run_number),
+            scoreOverall && React.createElement('span', { className: 'font-bold text-green-600' }, scoreOverall.toFixed(1) + '/10'),
+            React.createElement('span', { className: 'text-xs text-gray-500' },
+              (run.debug_metadata?.tokens?.input || 0) + ' tokens'
+            )
+          ),
+          React.createElement('button', {
+            onClick: () => onToggleExpand(run.id),
+            className: 'text-sm text-blue-600'
+          }, isExpanded ? 'Collapse' : 'Expand')
+        ),
+        React.createElement(EvaluationScoreGrid, { details }),
+        isExpanded && React.createElement(EvaluationDetails, { details })
+      );
+    };
+
+    const EvaluationScoreGrid = ({ details }) => {
+      const criteria = [
+        { key: 'composition', label: 'Composition' },
+        { key: 'lighting', label: 'Lighting' },
+        { key: 'productVisibility', label: 'Product Visibility' },
+        { key: 'backgroundQuality', label: 'Background Quality' },
+        { key: 'professionalQuality', label: 'Professional Quality' },
+        { key: 'promptAdherence', label: 'Prompt Adherence' }
+      ];
+
+      return React.createElement('div', { className: 'grid grid-cols-3 gap-2' },
+        criteria.map(c =>
+          React.createElement('div', { key: c.key, className: 'bg-gray-50 p-2 rounded text-xs' },
+            React.createElement('div', { className: 'font-medium' }, c.label),
+            React.createElement('div', {}, details[c.key] || 'N/A')
+          )
+        )
+      );
+    };
+
+    const EvaluationDetails = ({ details }) => {
+      return React.createElement('div', { className: 'mt-3 pt-3 border-t space-y-2' },
+        details.reasoning && React.createElement('div', {},
+          React.createElement('h4', { className: 'text-sm font-semibold mb-1' }, 'Reasoning:'),
+          React.createElement('p', { className: 'text-sm text-gray-700 whitespace-pre-wrap' }, details.reasoning)
+        ),
+        details.suggestions && details.suggestions.length > 0 && React.createElement('div', {},
+          React.createElement('h4', { className: 'text-sm font-semibold mb-1' }, 'Suggestions:'),
+          React.createElement('ul', { className: 'text-sm text-gray-700 list-disc list-inside' },
+            details.suggestions.map((suggestion, idx) =>
+              React.createElement('li', { key: idx }, suggestion)
+            )
+          )
+        )
       );
     };
 
@@ -2223,6 +2232,20 @@ const handleNotebookGenerate = async (req: Request): Promise<Response> => {
   }
 };
 
+const formatEvaluationResponse = (result: EvaluationPhaseResult): Response => {
+  logger.info('Notebook evaluation succeeded', {
+    sessionId: result.runId,
+    runId: result.runId,
+    scoreOverall: result.scoreOverall
+  });
+  return Response.json(result);
+};
+
+const formatEvaluationError = (error: string, status: number = 500): Response => {
+  logger.error('Notebook evaluation failed', { error });
+  return Response.json({ error }, { status });
+};
+
 const handleNotebookEvaluate = async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
@@ -2230,13 +2253,10 @@ const handleNotebookEvaluate = async (req: Request): Promise<Response> => {
 
     // Validate required fields
     if (!sessionId || !parentRunId) {
-      return Response.json(
-        { error: 'Missing required fields: sessionId, parentRunId' },
-        { status: 400 }
-      );
+      return formatEvaluationError('Missing required fields: sessionId, parentRunId', 400);
     }
 
-    // Call orchestrator function
+    // Call orchestrator
     const result = await runEvaluationPhase({
       sessionId,
       parentRunId,
@@ -2244,28 +2264,15 @@ const handleNotebookEvaluate = async (req: Request): Promise<Response> => {
       model: model || 'claude-sonnet-4-20250514'
     });
 
-    // Handle errors
+    // Handle result
     if (!isOk(result)) {
-      logger.error('Notebook evaluation failed', {
-        sessionId,
-        parentRunId,
-        error: result.error.message
-      });
-      return Response.json({ error: result.error.message }, { status: 500 });
+      return formatEvaluationError(result.error.message);
     }
 
-    // Success
-    logger.info('Notebook evaluation succeeded', {
-      sessionId,
-      runId: (result.data as EvaluationResult).runId,
-      scoreOverall: (result.data as EvaluationResult).scoreOverall
-    });
-
-    return Response.json(result.data as EvaluationResult);
+    return formatEvaluationResponse(result.data as EvaluationPhaseResult);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Notebook evaluate endpoint error', { error: message });
-    return Response.json({ error: 'Evaluation failed: ' + message }, { status: 500 });
+    return formatEvaluationError('Evaluation failed: ' + message);
   }
 };
 

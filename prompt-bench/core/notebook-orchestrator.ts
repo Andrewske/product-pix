@@ -14,6 +14,16 @@ import type { EvaluationDetails } from '@bench/core/types';
 // Types
 // =============================================================================
 
+interface FixtureImage {
+  id: string;
+  product: string;
+  filename: string;
+  filepath: string;
+  r2_url: string;
+  r2_key: string;
+  created_at: string;
+}
+
 export interface AnalysisRequest {
   sessionId: string;
   fixtureImageIds: string[];
@@ -56,7 +66,14 @@ export interface EvaluationRequest {
   model?: string;             // Default: claude-sonnet-4-20250514
 }
 
-export interface EvaluationResult {
+interface AnalysisResultData {
+  data: {
+    usage: { input: number; output: number };
+    raw: unknown;
+  };
+}
+
+export interface EvaluationPhaseResult {
   runId: string;              // prompt_tests.id
   phaseRunNumber: number;
   evaluationId: string;       // prompt_evaluations.id
@@ -72,7 +89,7 @@ export interface EvaluationResult {
 const fetchFixtureImages = async (
   supabase: ReturnType<typeof createAdminClient>,
   fixtureImageIds: string[]
-): Promise<Result<any[]>> => {
+): Promise<Result<FixtureImage[]>> => {
   const { data: fixtures, error: fetchError } = await supabase
     .from('fixture_images')
     .select('*')
@@ -89,7 +106,7 @@ const fetchFixtureImages = async (
   return ok(fixtures);
 };
 
-const downloadImagesFromR2 = async (fixtures: any[]): Promise<Result<any[]>> => {
+const downloadImagesFromR2 = async (fixtures: FixtureImage[]): Promise<Result<{ buffer: Buffer; mimeType: string }[]>> => {
   try {
     const images = await Promise.all(
       fixtures.map(async (fixture) => {
@@ -110,20 +127,105 @@ const downloadImagesFromR2 = async (fixtures: any[]): Promise<Result<any[]>> => 
   }
 };
 
+/**
+ * Get the next phase run number for a session
+ */
 const getNextPhaseRunNumber = async (
   supabase: ReturnType<typeof createAdminClient>,
-  sessionId: string
+  sessionId: string,
+  phase: 'analysis' | 'generation' | 'evaluation',
+  parentRunId?: string
 ): Promise<Result<number>> => {
-  const { data: existingRuns } = await supabase
+  let query = supabase
     .from('prompt_tests')
     .select('phase_run_number')
     .eq('session_id', sessionId)
-    .eq('phase', 'analysis')
+    .eq('phase', phase);
+
+  // Add parent filter for child phases
+  if (parentRunId) {
+    query = query.eq('parent_run_id', parentRunId);
+  }
+
+  const { data: existingRuns, error } = await query
     .order('phase_run_number', { ascending: false })
     .limit(1);
 
+  if (error) {
+    return err(createError('DATABASE_ERROR', `Failed to query phase runs: ${error.message}`));
+  }
+
   const phaseRunNumber = (existingRuns?.[0]?.phase_run_number || 0) + 1;
   return ok(phaseRunNumber);
+};
+
+/**
+ * Store evaluation results in database
+ */
+const storeEvaluationResult = async (
+  supabase: ReturnType<typeof createAdminClient>,
+  sessionId: string,
+  phaseRunNumber: number,
+  parentRunId: string,
+  evaluationPrompt: string | undefined,
+  overall: number,
+  details: EvaluationDetails,
+  tokensUsed: number,
+  costUsd: number,
+  evaluatorModel: string
+): Promise<Result<{ testId: string; evaluationId: string }>> => {
+  // 1. Insert prompt_tests record
+  const { data: testRecord, error: insertError } = await supabase
+    .from('prompt_tests')
+    .insert({
+      session_id: sessionId,
+      phase: 'evaluation',
+      phase_run_number: phaseRunNumber,
+      parent_run_id: parentRunId,
+      status: 'completed',
+      inputs: { evaluation_prompt: evaluationPrompt || 'default' },
+      final_prompt: '',
+      input_tokens: tokensUsed,
+      output_tokens: 0,
+      debug_metadata: {
+        thinking: null,
+        tokens: { input: tokensUsed, output: 0 },
+        raw_prompt: evaluationPrompt || 'default',
+        raw_response: { overall, details }
+      }
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    return err(createError('DATABASE_ERROR', `Failed to save evaluation: ${insertError.message}`));
+  }
+
+  // 2. Insert prompt_evaluations record
+  const { data: evalRecord, error: evalInsertError } = await supabase
+    .from('prompt_evaluations')
+    .insert({
+      test_id: testRecord.id,
+      score_overall: overall,
+      details: details,
+      evaluator_model: evaluatorModel,
+      evaluator_type: 'llm',
+      cost_usd: costUsd,
+      tokens_used: tokensUsed,
+      input_tokens: tokensUsed,
+      output_tokens: 0
+    })
+    .select()
+    .single();
+
+  if (evalInsertError) {
+    return err(createError('DATABASE_ERROR', `Failed to save evaluation details: ${evalInsertError.message}`));
+  }
+
+  return ok({
+    testId: testRecord.id,
+    evaluationId: evalRecord.id
+  });
 };
 
 const storeAnalysisResult = async (
@@ -132,9 +234,9 @@ const storeAnalysisResult = async (
   phaseRunNumber: number,
   merged: Record<string, unknown>,
   variables: Record<string, unknown> | undefined,
-  analysisResult: any,
+  analysisResult: AnalysisResultData,
   sourceImageUrl?: string
-): Promise<Result<any>> => {
+): Promise<Result<unknown>> => {
   const { data: testRecord, error: insertError } = await supabase
     .from('prompt_tests')
     .insert({
@@ -204,7 +306,11 @@ export const runAnalysisPhase = async (
   const { merged } = analysisResult.data;
 
   // 4. Get next phase run number
-  const phaseRunNumberResult = await getNextPhaseRunNumber(supabase, request.sessionId);
+  const phaseRunNumberResult = await getNextPhaseRunNumber(
+    supabase,
+    request.sessionId,
+    'analysis'
+  );
   if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
 
   // 5. Store in database
@@ -357,16 +463,14 @@ export const runGenerationPhase = async (
   const imageKey = uploadResult.fileKey;
 
   // 6. Get next phase run number
-  const { data: existingRuns } = await supabase
-    .from('prompt_tests')
-    .select('phase_run_number')
-    .eq('session_id', request.sessionId)
-    .eq('phase', 'generation')
-    .eq('parent_run_id', request.parentRunId)
-    .order('phase_run_number', { ascending: false })
-    .limit(1);
-
-  const phaseRunNumber = (existingRuns?.[0]?.phase_run_number || 0) + 1;
+  const phaseRunNumberResult = await getNextPhaseRunNumber(
+    supabase,
+    request.sessionId,
+    'generation',
+    request.parentRunId
+  );
+  if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
+  const phaseRunNumber = phaseRunNumberResult.data;
 
   // 7. Store in database
   const { data: testRecord, error: insertError } = await supabase
@@ -425,7 +529,7 @@ export const runGenerationPhase = async (
 
 export const runEvaluationPhase = async (
   request: EvaluationRequest
-): Promise<Result<EvaluationResult>> => {
+): Promise<Result<EvaluationPhaseResult>> => {
   const supabase = createAdminClient();
 
   logger.info('Starting evaluation phase', {
@@ -470,76 +574,46 @@ export const runEvaluationPhase = async (
 
   const { overall, details, tokensUsed, costUsd, model: evaluatorModel } = evaluationResult.data;
 
-  // 3. Get next phase_run_number
-  const { data: existingRuns } = await supabase
-    .from('prompt_tests')
-    .select('phase_run_number')
-    .eq('session_id', request.sessionId)
-    .eq('phase', 'evaluation')
-    .eq('parent_run_id', request.parentRunId)
-    .order('phase_run_number', { ascending: false })
-    .limit(1);
+  // 3. Get next phase run number
+  const phaseRunNumberResult = await getNextPhaseRunNumber(
+    supabase,
+    request.sessionId,
+    'evaluation',
+    request.parentRunId
+  );
+  if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
+  const phaseRunNumber = phaseRunNumberResult.data;
 
-  const phaseRunNumber = (existingRuns?.[0]?.phase_run_number || 0) + 1;
+  // 4. Store evaluation results
+  const storeResult = await storeEvaluationResult(
+    supabase,
+    request.sessionId,
+    phaseRunNumber,
+    request.parentRunId,
+    request.evaluationPrompt,
+    overall,
+    details,
+    tokensUsed,
+    costUsd,
+    evaluatorModel
+  );
 
-  // 4. Insert into prompt_tests
-  const { data: testRecord, error: insertError } = await supabase
-    .from('prompt_tests')
-    .insert({
-      session_id: request.sessionId,
-      phase: 'evaluation',
-      phase_run_number: phaseRunNumber,
-      parent_run_id: request.parentRunId,
-      status: 'completed',
-      inputs: { evaluation_prompt: request.evaluationPrompt || 'default' },
-      final_prompt: '', // Not applicable
-      debug_metadata: {
-        thinking: null,
-        tokens: { input: tokensUsed, output: 0 },
-        raw_prompt: request.evaluationPrompt || 'default',
-        raw_response: { overall, details }
-      }
-    })
-    .select()
-    .single();
+  if (!isOk(storeResult)) return storeResult;
 
-  if (insertError) {
-    return err(createError('DATABASE_ERROR', `Failed to save evaluation: ${insertError.message}`));
-  }
+  const { testId, evaluationId } = storeResult.data;
 
-  // 5. Insert into prompt_evaluations
-  const { data: evalRecord, error: evalInsertError } = await supabase
-    .from('prompt_evaluations')
-    .insert({
-      test_id: testRecord.id,
-      score_overall: overall,
-      details: details,
-      evaluator_model: evaluatorModel,
-      evaluator_type: 'llm',
-      cost_usd: costUsd,
-      tokens_used: tokensUsed,
-      input_tokens: tokensUsed,
-      output_tokens: 0 // Evaluation only consumes input
-    })
-    .select()
-    .single();
-
-  if (evalInsertError) {
-    return err(createError('DATABASE_ERROR', `Failed to save evaluation details: ${evalInsertError.message}`));
-  }
-
-  // 6. Return result
+  // Return success
   logger.info('Evaluation phase complete', {
     sessionId: request.sessionId,
-    runId: testRecord.id,
+    runId: testId,
     phaseRunNumber,
     scoreOverall: overall
   });
 
   return ok({
-    runId: testRecord.id,
+    runId: testId,
     phaseRunNumber,
-    evaluationId: evalRecord.id,
+    evaluationId,
     scoreOverall: overall,
     details,
     tokens: { input: tokensUsed, output: 0 }

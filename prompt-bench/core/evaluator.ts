@@ -14,7 +14,7 @@ import { calculateCost } from '@bench/core/cost';
 // Constants
 // =============================================================================
 
-const EVALUATION_PROMPT = `You are evaluating an AI-generated product photo for e-commerce use.
+export const EVALUATION_PROMPT = `You are evaluating an AI-generated product photo for e-commerce use.
 
 Score each criterion from 1-10 (1 = poor, 10 = excellent):
 
