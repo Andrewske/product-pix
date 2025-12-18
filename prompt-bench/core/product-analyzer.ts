@@ -60,8 +60,10 @@ export interface AnalysisOptions {
 }
 
 export interface AnalysisResult {
-  merged: MergedAnalysis;
+  merged: Record<string, unknown>;
   individual: ProductAnalysis[];
+  usage?: { input: number; output: number };
+  raw?: unknown;
 }
 
 /**
@@ -126,7 +128,20 @@ export async function analyzeProductImages(
     }
   }
 
-  const successfulResults = analysisResults.map(r => r.data as ProductAnalysis);
+  const successfulResults = analysisResults.map(r => (r.data as { analysis: ProductAnalysis; usage?: { input: number; output: number }; raw?: unknown }).analysis);
+
+  // Collect usage information
+  const usage = analysisResults.reduce((acc, result) => {
+    const data = result.data as { analysis: ProductAnalysis; usage?: { input: number; output: number }; raw?: unknown };
+    if (data.usage) {
+      acc.input += data.usage.input;
+      acc.output += data.usage.output;
+    }
+    return acc;
+  }, { input: 0, output: 0 });
+
+  // Collect raw responses
+  const raw = analysisResults.map(r => (r.data as { analysis: ProductAnalysis; usage?: { input: number; output: number }; raw?: unknown }).raw);
 
   // 5. Merge results with consensus
   const merged = mergeAnalysisResults(successfulResults);
@@ -148,7 +163,9 @@ export async function analyzeProductImages(
 
   return ok({
     merged,
-    individual: successfulResults
+    individual: successfulResults,
+    usage: usage.input > 0 || usage.output > 0 ? usage : undefined,
+    raw
   });
 }
 
@@ -165,7 +182,7 @@ async function analyzeSingleImage(
   promptText: string,
   model: string,
   customSchema?: Record<string, any>
-): Promise<Result<ProductAnalysis>> {
+): Promise<Result<{ analysis: ProductAnalysis; usage?: { input: number; output: number }; raw?: unknown }>> {
   try {
     // Use custom schema if provided, otherwise default
     const schema = customSchema
@@ -202,7 +219,16 @@ async function analyzeSingleImage(
       schema
     });
 
-    return ok(result.object);
+    const usage = result.usage ? {
+      input: result.usage.inputTokens || 0,
+      output: result.usage.outputTokens || 0
+    } : undefined;
+
+    return ok({
+      analysis: result.object,
+      usage,
+      raw: result
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown analysis error';
     return err(createError(

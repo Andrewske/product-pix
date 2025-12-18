@@ -20,6 +20,10 @@ export interface ImageConfig {
   resolution: '1k' | '2k' | '4k';
   quality?: 'standard' | 'hd';
   /**
+   * Number of images to generate (1-4)
+   */
+  numberOfImages?: number;
+  /**
    * If true, use the prompt as-is without any prefixes.
    * Used by the prompt testing framework for controlled experiments.
    */

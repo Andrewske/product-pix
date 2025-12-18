@@ -1,14 +1,15 @@
 import { Result, ok, err, createError, isOk } from '@bench/core/errors';
+import { Result, err, ok, createError, isOk } from '@bench/core/errors';
 import { analyzeProductImages } from '@bench/core/product-analyzer';
 import { compileTemplate } from '@bench/core/compiler';
 import { createGeminiProvider } from '@/lib/ai/providers/gemini';
 import type { ImageConfig } from '@/lib/ai/types';
 import { uploadBase64Image } from '@/lib/r2';
-
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@bench/core/logger';
 import { evaluateImage } from '@bench/core/evaluator';
-import type { EvaluationDetails } from '@bench/core/types';
+import type { EvaluationDetails, TemplateData } from '@bench/core/types';
+import { calculateCost } from '@bench/core/cost';
 
 // =============================================================================
 // Types
@@ -50,13 +51,15 @@ export interface GenerationRequest {
   templateSlug: string;
   templateData: Record<string, unknown>;
   variables?: Record<string, unknown>;
+  model?: string;
   config?: ImageConfig;
 }
 
 export interface GenerationResult {
   runId: string;
+  parentRunId: string;
   phaseRunNumber: number;
-  imageUrl: string;
+  imageUrls: string[];
   finalPrompt: string;
   thinking: string | null;
   tokens: { input: number; output: number };
@@ -238,7 +241,9 @@ const storeAnalysisResult = async (
   merged: Record<string, unknown>,
   variables: Record<string, unknown> | undefined,
   analysisResult: AnalysisResultData,
-  sourceImageUrl?: string
+  sourceImageUrl?: string,
+  model?: string,
+  durationMs?: number
 ): Promise<Result<unknown>> => {
   const { data: testRecord, error: insertError } = await supabase
     .from('prompt_tests')
@@ -251,12 +256,19 @@ const storeAnalysisResult = async (
       inputs: { ...merged, ...variables },
       source_image_url: sourceImageUrl,
       final_prompt: '', // Analysis doesn't generate prompts
-      debug_metadata: {
-        thinking: null,
-        tokens: analysisResult.data.usage || { input: 0, output: 0 },
-        raw_prompt: '',
-        raw_response: analysisResult.data.raw
-      }
+       debug_metadata: {
+         thinking: null,
+         tokens: analysisResult.data.usage || { input: 0, output: 0 },
+         model: model || 'unknown',
+          cost: (() => {
+            const tokens = analysisResult.data.usage || { input: 0, output: 0 };
+            const costResult = calculateCost(model || 'gemini-2.0-flash', { input: tokens.input, output: tokens.output });
+            return costResult.ok ? costResult.data.total : 0;
+          })(),
+         duration_ms: durationMs || 0,
+         raw_prompt: '',
+         raw_response: analysisResult.data.raw
+       }
     })
     .select()
     .single();
@@ -293,12 +305,18 @@ export const runAnalysisPhase = async (
   if (!isOk(imagesResult)) return imagesResult;
 
   // 3. Run product analysis
+  const model = request.model || 'gemini-2.0-flash';
+  const startTime = Date.now();
+
   const analysisResult = await analyzeProductImages(imagesResult.data, {
-    model: request.model || 'gemini-2.0-flash',
+    model,
     cacheEnabled: request.cacheEnabled ?? true,
     customPrompt: request.customPrompt,
     customSchema: request.customSchema
   });
+
+  const endTime = Date.now();
+  const durationMs = endTime - startTime;
 
   if (!isOk(analysisResult)) {
     logger.error('Analysis failed', {
@@ -327,7 +345,9 @@ export const runAnalysisPhase = async (
     merged,
     request.variables,
     analysisResult,
-    sourceImageUrl
+    sourceImageUrl,
+    model,
+    durationMs
   );
   if (!isOk(storeResult)) return storeResult;
 
@@ -406,7 +426,7 @@ export const runGenerationPhase = async (
 
   // 4. Compile template
   const compileResult = compileTemplate(
-    request.templateData,
+    template.template_data as TemplateData,
     template.variables_schema,
     mergedVariables
   );
@@ -426,10 +446,12 @@ export const runGenerationPhase = async (
 
   // Get source image if parent has one
   let sourceImageBuffer: Buffer | undefined;
+  let sourceMimeType: string | undefined;
   if (parentRun.source_image_url) {
     const response = await fetch(parentRun.source_image_url);
     const arrayBuffer = await response.arrayBuffer();
     sourceImageBuffer = Buffer.from(arrayBuffer);
+    sourceMimeType = response.headers.get('content-type') || 'image/jpeg'; // Fallback to jpeg
   }
 
   if (!sourceImageBuffer) {
@@ -438,36 +460,57 @@ export const runGenerationPhase = async (
 
   const config: ImageConfig = request.config || {
     aspectRatio: '1:1',
-    resolution: '2k',
+    resolution: '1k',
     rawPrompt: true,
+    numberOfImages: 1,
   };
 
-  const genResult = await gemini.generateFromImage(
-    sourceImageBuffer,
-    'image/jpeg',
-    prompt,
-    config
-  );
+  const numberOfImages = config.numberOfImages || 1;
+  const imageUrls: string[] = [];
+  const imageKeys: string[] = [];
+  let totalTokens = { input: 0, output: 0 };
+  let totalDurationMs = 0;
 
-  if (!genResult.success) {
-    logger.error('Image generation failed', {
-      sessionId: request.sessionId,
-      error: genResult.error
-    });
-    return err(createError('GENERATION_ERROR', genResult.error));
+  // Generate multiple images
+  for (let i = 0; i < numberOfImages; i++) {
+    const genStartTime = Date.now();
+    const genResult = await gemini.generateFromImage(
+      sourceImageBuffer,
+      sourceMimeType,
+      prompt,
+      config
+    );
+    const genEndTime = Date.now();
+    const genDurationMs = genEndTime - genStartTime;
+    totalDurationMs += genDurationMs;
+
+    if (!genResult.success) {
+      logger.error('Image generation failed', {
+        sessionId: request.sessionId,
+        imageIndex: i,
+        error: genResult.error
+      });
+      return err(createError('GENERATION_ERROR', genResult.error));
+    }
+
+    // Upload image to R2
+    const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
+    const uploadResult = await uploadBase64Image(
+      genResult.imageData,
+      'notebook-user', // Use a test user ID for notebook
+      request.sessionId,
+      format
+    );
+
+    imageUrls.push(uploadResult.publicUrl);
+    imageKeys.push(uploadResult.fileKey);
+
+    // Accumulate tokens
+    if (genResult.usage) {
+      totalTokens.input += genResult.usage.promptTokens;
+      totalTokens.output += genResult.usage.completionTokens;
+    }
   }
-
-  // Upload image to R2
-  const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
-  const uploadResult = await uploadBase64Image(
-    genResult.imageData,
-    'notebook-user', // Use a test user ID for notebook
-    request.sessionId,
-    format
-  );
-
-  const imageUrl = uploadResult.publicUrl;
-  const imageKey = uploadResult.fileKey;
 
   // 6. Get next phase run number
   const phaseRunNumberResult = await getNextPhaseRunNumber(
@@ -491,17 +534,21 @@ export const runGenerationPhase = async (
       status: 'completed',
       inputs: mergedVariables,
       final_prompt: prompt,
-      image_url: imageUrl,
-      image_key: imageKey,
-       debug_metadata: {
-         thinking: null,
-         tokens: genResult.usage ? {
-           input: genResult.usage.promptTokens,
-           output: genResult.usage.completionTokens
-         } : { input: 0, output: 0 },
-         raw_prompt: prompt,
-         raw_response: genResult
-       }
+      image_url: JSON.stringify(imageUrls),
+      image_key: JSON.stringify(imageKeys),
+        debug_metadata: {
+          thinking: null,
+          tokens: totalTokens,
+          model: request.model || 'gemini-3-pro-image-preview',
+          cost: (() => {
+            const costResult = calculateCost(request.model || 'gemini-3-pro-image-preview', totalTokens);
+            return costResult.ok ? costResult.data.total : 0;
+          })(),
+          duration_ms: totalDurationMs,
+          image_urls: imageUrls,
+          raw_prompt: prompt,
+          raw_response: null // TODO: store all responses
+        }
     })
     .select()
     .single();
@@ -514,19 +561,17 @@ export const runGenerationPhase = async (
     sessionId: request.sessionId,
     runId: testRecord.id,
     phaseRunNumber,
-    imageUrl
+    imageCount: imageUrls.length
   });
 
   return ok({
     runId: testRecord.id,
+    parentRunId: request.parentRunId,
     phaseRunNumber,
-    imageUrl,
+    imageUrls,
     finalPrompt: prompt,
     thinking: null, // Gemini doesn't provide thinking for image generation
-    tokens: genResult.usage ? {
-      input: genResult.usage.promptTokens,
-      output: genResult.usage.completionTokens
-    } : { input: 0, output: 0 }
+    tokens: totalTokens
   });
 };
 
@@ -563,10 +608,24 @@ export const runEvaluationPhase = async (
     return err(createError('VALIDATION_ERROR', 'Parent run must have an image_key'));
   }
 
-  // 2. Call evaluator
+  // 2. Parse image key (notebooks store as JSON array, regular tests as string)
+  let imageKey: string;
+  try {
+    const parsed = JSON.parse(parentRun.image_key);
+    if (Array.isArray(parsed)) {
+      imageKey = parsed[0]; // Use first image for evaluation
+    } else {
+      imageKey = parsed;
+    }
+  } catch {
+    // Not JSON, treat as direct key string
+    imageKey = parentRun.image_key;
+  }
+
+  // 3. Call evaluator
   const model = request.model || 'claude-sonnet-4-20250514';
   const evaluationResult = await evaluateImage(
-    { type: 'key', value: parentRun.image_key },
+    { type: 'key', value: imageKey },
     parentRun.final_prompt,
     { model }
   );
