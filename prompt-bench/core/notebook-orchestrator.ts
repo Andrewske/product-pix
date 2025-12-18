@@ -2,7 +2,9 @@ import { Result, ok, err, createError, isOk } from '@bench/core/errors';
 import { analyzeProductImages } from '@bench/core/product-analyzer';
 import { compileTemplate } from '@bench/core/compiler';
 import { createGeminiProvider } from '@/lib/ai/providers/gemini';
-import { generateFromImage } from '@/lib/ai/generate-image';
+import type { ImageConfig } from '@/lib/ai/types';
+import { uploadBase64Image } from '@/lib/r2';
+
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@bench/core/logger';
 
@@ -33,6 +35,7 @@ export interface GenerationRequest {
   templateSlug: string;
   templateData: Record<string, unknown>;
   variables?: Record<string, unknown>;
+  config?: ImageConfig;
 }
 
 export interface GenerationResult {
@@ -294,21 +297,42 @@ export const runGenerationPhase = async (
     sourceImageBuffer = Buffer.from(arrayBuffer);
   }
 
-  const genResult = await generateFromImage(
-    gemini,
-    prompt,
-    sourceImageBuffer
-  );
-
-  if (!isOk(genResult)) {
-    logger.error('Image generation failed', {
-      sessionId: request.sessionId,
-      error: genResult.error.message
-    });
-    return genResult;
+  if (!sourceImageBuffer) {
+    return err(createError('VALIDATION_ERROR', 'Source image required for generation phase'));
   }
 
-  const { imageUrl, imageKey, thinking, usage, raw } = genResult.data;
+  const config: ImageConfig = request.config || {
+    aspectRatio: '1:1',
+    resolution: '2k',
+    rawPrompt: true,
+  };
+
+  const genResult = await gemini.generateFromImage(
+    sourceImageBuffer,
+    'image/jpeg',
+    prompt,
+    config
+  );
+
+  if (!genResult.success) {
+    logger.error('Image generation failed', {
+      sessionId: request.sessionId,
+      error: genResult.error
+    });
+    return err(createError('GENERATION_ERROR', genResult.error));
+  }
+
+  // Upload image to R2
+  const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
+  const uploadResult = await uploadBase64Image(
+    genResult.imageData,
+    'notebook-user', // Use a test user ID for notebook
+    request.sessionId,
+    format
+  );
+
+  const imageUrl = uploadResult.publicUrl;
+  const imageKey = uploadResult.fileKey;
 
   // 6. Get next phase run number
   const { data: existingRuns } = await supabase
@@ -336,12 +360,15 @@ export const runGenerationPhase = async (
       final_prompt: prompt,
       image_url: imageUrl,
       image_key: imageKey,
-      debug_metadata: {
-        thinking,
-        tokens: usage || { input: 0, output: 0 },
-        raw_prompt: prompt,
-        raw_response: raw
-      }
+       debug_metadata: {
+         thinking: null,
+         tokens: genResult.usage ? {
+           input: genResult.usage.promptTokens,
+           output: genResult.usage.completionTokens
+         } : { input: 0, output: 0 },
+         raw_prompt: prompt,
+         raw_response: genResult
+       }
     })
     .select()
     .single();
@@ -362,7 +389,10 @@ export const runGenerationPhase = async (
     phaseRunNumber,
     imageUrl,
     finalPrompt: prompt,
-    thinking: thinking || null,
-    tokens: usage || { input: 0, output: 0 }
+    thinking: null, // Gemini doesn't provide thinking for image generation
+    tokens: genResult.usage ? {
+      input: genResult.usage.promptTokens,
+      output: genResult.usage.completionTokens
+    } : { input: 0, output: 0 }
   });
 };
