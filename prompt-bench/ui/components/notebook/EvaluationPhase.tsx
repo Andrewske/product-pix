@@ -1,6 +1,30 @@
-import { useState } from 'react';
-import { Button, Card } from '../primitives';
-import { ErrorMessage } from '../shared/ErrorMessage';
+import * as React from 'react';
+import {
+  Button,
+  Select,
+  Label,
+  Textarea,
+  Badge,
+  Progress,
+  ShadcnCard,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Separator,
+  Alert,
+  AlertDescription,
+  cn,
+} from '../primitives';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../../shadcn';
+import { ChevronDown, X, Loader2, ClipboardCheck, Lock, RotateCcw } from 'lucide-react';
 import type { EvaluationRun } from '../../types/index';
 
 interface EvaluationPhaseProps {
@@ -9,6 +33,7 @@ interface EvaluationPhaseProps {
   runs: EvaluationRun[];
   disabled: boolean;
   onRunComplete: (run: EvaluationRun) => void;
+  onRemoveRun: (id: string) => void;
 }
 
 const DEFAULT_EVALUATION_PROMPT = `You are an expert product photographer evaluating generated images. Score each image on a scale of 1-10 (10 being best) across these criteria:
@@ -45,81 +70,52 @@ Format your response as valid JSON with this structure:
   ]
 }`;
 
-function EvaluationRunCard({ run, isExpanded, onToggleExpand }: {
-  run: EvaluationRun;
-  isExpanded: boolean;
-  onToggleExpand: (id: string) => void;
-}) {
-  const evaluation = run.prompt_evaluations?.[0];
-  const details = evaluation?.details || {};
-  const scoreOverall = evaluation?.score_overall;
-
-  return (
-    <div className="border rounded p-3 border-gray-200">
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-3">
-          <span className="font-medium">Run {run.phase_run_number}</span>
-          {scoreOverall && (
-            <span className="font-bold text-green-600">{scoreOverall.toFixed(1)}/10</span>
-          )}
-          <span className="text-xs text-gray-500">
-            {(run.debug_metadata?.tokens?.input || 0)} tokens
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => onToggleExpand(run.id)}
-          className="text-sm text-blue-600"
-        >
-          {isExpanded ? 'Collapse' : 'Expand'}
-        </button>
-      </div>
-      <EvaluationScoreGrid details={details} />
-      {isExpanded && <EvaluationDetails details={details} />}
-    </div>
-  );
-}
-
-function EvaluationScoreGrid({ details }: { details: Record<string, unknown> }) {
+function EvaluationScoreGrid({ details }: { details: Record<string, unknown> }): React.ReactElement {
   const criteria = [
     { key: 'composition', label: 'Composition' },
     { key: 'lighting', label: 'Lighting' },
     { key: 'productVisibility', label: 'Product Visibility' },
-    { key: 'backgroundQuality', label: 'Background Quality' },
-    { key: 'professionalQuality', label: 'Professional Quality' },
-    { key: 'promptAdherence', label: 'Prompt Adherence' }
+    { key: 'backgroundQuality', label: 'Background' },
+    { key: 'professionalQuality', label: 'Professional' },
+    { key: 'promptAdherence', label: 'Adherence' },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {criteria.map(c => (
-        <div key={c.key} className="bg-gray-50 p-2 rounded text-xs">
-          <div className="font-medium">{c.label}</div>
-          <div>{(details[c.key] as { score?: number })?.score || 'N/A'}</div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      {criteria.map((c) => {
+        const score = (details[c.key] as { score?: number })?.score || 0;
+        return (
+          <div key={c.key} className="space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">{c.label}</span>
+              <span className="font-medium">{score}/10</span>
+            </div>
+            <Progress value={score * 10} className="h-2" />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function EvaluationDetails({ details }: { details: Record<string, unknown> }) {
+function EvaluationDetails({ details }: { details: Record<string, unknown> }): React.ReactElement {
   const reasoning = details.reasoning as string;
   const suggestions = details.suggestions as string[];
 
   return (
-    <div className="mt-3 pt-3 border-t space-y-2">
+    <div className="space-y-3">
       {reasoning && (
         <div>
-          <h4 className="text-sm font-semibold mb-1">Reasoning:</h4>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{reasoning}</p>
+          <h4 className="text-sm font-medium mb-1">Reasoning:</h4>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{reasoning}</p>
         </div>
       )}
       {suggestions?.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold mb-1">Suggestions:</h4>
-          <ul className="text-sm text-gray-700 list-disc list-inside">
-            {suggestions.map((suggestion) => (
-              <li key={suggestion}>{suggestion}</li>
+          <h4 className="text-sm font-medium mb-1">Suggestions:</h4>
+          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+            {suggestions.map((suggestion, idx) => (
+              <li key={idx}>{suggestion}</li>
             ))}
           </ul>
         </div>
@@ -128,39 +124,64 @@ function EvaluationDetails({ details }: { details: Record<string, unknown> }) {
   );
 }
 
-function RunComparisonModal({ phase, runs, onClose }: { phase: string; runs: EvaluationRun[]; onClose: () => void }) {
-  if (runs.length < 2) return null;
+function EvaluationRunCard({
+  run,
+  isExpanded,
+  onToggleExpand,
+  onRemoveRun,
+}: {
+  run: EvaluationRun;
+  isExpanded: boolean;
+  onToggleExpand: (id: string) => void;
+  onRemoveRun: (id: string) => void;
+}): React.ReactElement {
+  const evaluation = run.prompt_evaluations?.[0];
+  const details = (evaluation?.details || {}) as Record<string, unknown>;
+  const scoreOverall = evaluation?.score_overall;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-6xl w-full max-h-[90vh] overflow-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Compare {phase.charAt(0).toUpperCase() + phase.slice(1)} Runs</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+    <Collapsible open={isExpanded} onOpenChange={() => onToggleExpand(run.id)}>
+      <div className="rounded-lg border p-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <span className="font-medium">Run {run.phase_run_number}</span>
+            {scoreOverall !== undefined && (
+              <Badge variant={scoreOverall >= 7 ? 'success' : 'warning'}>
+                {scoreOverall.toFixed(1)}/10
+              </Badge>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {run.debug_metadata?.tokens?.input || 0} tokens
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <ChevronDown
+                  className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemoveRun(run.id);
+              }}
+              className="text-destructive hover:text-destructive"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <div className={`grid gap-6 ${runs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-          {runs.map(run => {
-            const evaluation = run.prompt_evaluations?.[0];
-            return (
-              <div key={run.id} className="border rounded p-4">
-                <h3 className="font-bold mb-3">Run {run.phase_run_number}</h3>
-                <div className="text-sm text-gray-600 mb-3">
-                  Tokens: {run.debug_metadata?.tokens?.input || 0} in / {run.debug_metadata?.tokens?.output || 0} out
-                </div>
-                {evaluation && (
-                  <div>
-                    <div className="text-sm font-semibold mb-2">Score: {evaluation.score_overall}/10</div>
-                    <pre className="bg-gray-50 p-2 rounded text-xs overflow-auto max-h-64">
-                      {JSON.stringify(evaluation.details, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <EvaluationScoreGrid details={details} />
+        <CollapsibleContent>
+          <Separator className="my-3" />
+          <EvaluationDetails details={details} />
+        </CollapsibleContent>
       </div>
-    </div>
+    </Collapsible>
   );
 }
 
@@ -169,14 +190,16 @@ export function EvaluationPhase({
   parentRunId,
   runs,
   disabled,
-  onRunComplete
-}: EvaluationPhaseProps) {
-   const [error, setError] = useState<string | null>(null);
-   const [isRunning, setIsRunning] = useState(false);
-   const [evaluationPrompt, setEvaluationPrompt] = useState(DEFAULT_EVALUATION_PROMPT);
-   const [showPromptEditor, setShowPromptEditor] = useState(true);
-   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-   const [showComparison, setShowComparison] = useState(false);
+  onRunComplete,
+  onRemoveRun,
+}: EvaluationPhaseProps): React.ReactElement {
+  const [error, setError] = React.useState<string | null>(null);
+  const [isRunning, setIsRunning] = React.useState(false);
+  const [evaluationPrompt, setEvaluationPrompt] = React.useState(DEFAULT_EVALUATION_PROMPT);
+  const [showPromptEditor, setShowPromptEditor] = React.useState(false);
+  const [expandedRunId, setExpandedRunId] = React.useState<string | null>(null);
+  const [showComparison, setShowComparison] = React.useState(false);
+  const [model, setModel] = React.useState('claude-sonnet-4-20250514');
 
   const handleRun = async () => {
     setError(null);
@@ -190,8 +213,8 @@ export function EvaluationPhase({
           sessionId,
           parentRunId,
           evaluationPrompt: showPromptEditor ? evaluationPrompt : undefined,
-          model: 'claude-sonnet-4-20250514'
-        })
+          model,
+        }),
       });
 
       const result = await res.json();
@@ -211,77 +234,134 @@ export function EvaluationPhase({
 
   if (disabled) {
     return (
-      <Card className="border rounded-lg p-6 bg-gray-50">
-        <h2 className="text-xl font-bold mb-4 text-gray-400">Evaluation Phase</h2>
-        <p className="text-gray-500">Select a generation run to unlock evaluation</p>
-      </Card>
+      <ShadcnCard className="opacity-60">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-muted-foreground">
+            <Lock className="h-5 w-5" />
+            Evaluation Phase
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Select a generation run to unlock evaluation
+          </p>
+        </CardContent>
+      </ShadcnCard>
     );
   }
 
   return (
-    <Card className="border rounded-lg p-6 bg-white">
-      <ErrorMessage message={error} onDismiss={() => setError(null)} />
-      <h2 className="text-xl font-bold mb-4">Evaluation Phase</h2>
-      <div className="mb-4">
-        <button
-          type="button"
-          onClick={() => setShowPromptEditor(!showPromptEditor)}
-          className="text-sm text-blue-600 hover:text-blue-800"
-        >
-          {showPromptEditor ? 'Hide Prompt' : 'Show Prompt'}
-        </button>
-        {showPromptEditor && (
-          <div className="mt-2 space-y-2">
-            <textarea
+    <ShadcnCard>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ClipboardCheck className="h-5 w-5" />
+          Evaluation Phase
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Select
+          label="Model"
+          value={model}
+          onChange={setModel}
+          options={[
+            { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
+            { value: 'claude-opus-4-5-20251101', label: 'Claude Opus 4.5' },
+          ]}
+        />
+
+        <Collapsible open={showPromptEditor} onOpenChange={setShowPromptEditor}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="text-primary">
+              <ChevronDown
+                className={cn('h-4 w-4 mr-2 transition-transform', showPromptEditor && 'rotate-180')}
+              />
+              {showPromptEditor ? 'Hide Prompt' : 'Show Prompt'}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 space-y-2">
+            <Textarea
               value={evaluationPrompt}
               onChange={(e) => setEvaluationPrompt(e.target.value)}
-              className="w-full border rounded p-2 font-mono text-sm h-64"
+              className="h-64 font-mono text-sm"
               placeholder="Enter evaluation prompt..."
             />
-            <button
-              type="button"
-              onClick={() => setEvaluationPrompt(DEFAULT_EVALUATION_PROMPT)}
-              className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
-            >
-              Reset to default
-            </button>
-          </div>
-        )}
-      </div>
-      <Button
-        onClick={handleRun}
-        disabled={isRunning}
-      >
-        {isRunning ? 'Evaluating...' : `Run Evaluation (${runs.length + 1})`}
-      </Button>
-      {runs.length > 0 && (
-        <div className="mt-6 space-y-2">
-          <h3 className="font-semibold">Evaluation Runs ({runs.length})</h3>
-          {runs.length >= 2 && (
             <Button
               variant="outline"
-              onClick={() => setShowComparison(true)}
+              size="sm"
+              onClick={() => setEvaluationPrompt(DEFAULT_EVALUATION_PROMPT)}
             >
-              Compare All {runs.length} Runs
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset to default
             </Button>
-          )}
-          {runs.map(run => (
-            <EvaluationRunCard
-              key={run.id}
-              run={run}
-              isExpanded={expandedRunId === run.id}
-              onToggleExpand={(id) => setExpandedRunId(expandedRunId === id ? null : id)}
-            />
-          ))}
-        </div>
-      )}
-      {showComparison && (
-        <RunComparisonModal
-          phase="evaluation"
-          runs={runs}
-          onClose={() => setShowComparison(false)}
-        />
-      )}
-    </Card>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <Button onClick={handleRun} disabled={isRunning}>
+          {isRunning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isRunning ? 'Evaluating...' : `Run Evaluation (${runs.length + 1})`}
+        </Button>
+
+        {runs.length > 0 && (
+          <>
+            <Separator className="my-4" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Evaluation Runs ({runs.length})</h3>
+                {runs.length >= 2 && (
+                  <Button variant="outline" size="sm" onClick={() => setShowComparison(true)}>
+                    Compare All
+                  </Button>
+                )}
+              </div>
+              {runs.map((run) => (
+                <EvaluationRunCard
+                  key={run.id}
+                  run={run}
+                  isExpanded={expandedRunId === run.id}
+                  onToggleExpand={(id) => setExpandedRunId(expandedRunId === id ? null : id)}
+                  onRemoveRun={onRemoveRun}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Comparison Dialog */}
+        <Dialog open={showComparison} onOpenChange={setShowComparison}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>Compare Evaluation Runs</DialogTitle>
+            </DialogHeader>
+            <div className={cn('grid gap-6', runs.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
+              {runs.map((run) => {
+                const evaluation = run.prompt_evaluations?.[0];
+                const details = (evaluation?.details || {}) as Record<string, unknown>;
+                return (
+                  <div key={run.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold">Run {run.phase_run_number}</h3>
+                      {evaluation?.score_overall !== undefined && (
+                        <Badge variant={evaluation.score_overall >= 7 ? 'success' : 'warning'}>
+                          {evaluation.score_overall.toFixed(1)}/10
+                        </Badge>
+                      )}
+                    </div>
+                    <EvaluationScoreGrid details={details} />
+                    <Separator />
+                    <EvaluationDetails details={details} />
+                  </div>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </ShadcnCard>
   );
 }

@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shadcn';
 import { ExperimentRunner } from './ExperimentRunner';
 import { ResultsBrowser } from './ResultsBrowser';
 
 export function App(): React.ReactElement {
-  const [view, setView] = useState<'runner' | 'results'>(
+  const [view, setView] = React.useState<'runner' | 'results'>(
     window.location.pathname === '/results' ? 'results' : 'runner'
   );
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    const newView = value as 'runner' | 'results';
+    setView(newView);
+    window.history.pushState({}, '', newView === 'results' ? '/results' : '/');
+  };
 
   // Listen to popstate for browser back/forward
   React.useEffect(() => {
@@ -17,44 +25,24 @@ export function App(): React.ReactElement {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Prompt Bench</h1>
+        <h1 className="text-3xl font-bold mb-6">Prompt Bench</h1>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className={`px-4 py-2 rounded font-medium transition-colors ${
-                view === 'runner'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-              }`}
-              onClick={() => {
-                window.history.pushState({}, '', '/');
-                setView('runner');
-              }}
-            >
-              Experiment Runner
-            </button>
-            <button
-              type="button"
-              className={`px-4 py-2 rounded font-medium transition-colors ${
-                view === 'results'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-              }`}
-              onClick={() => {
-                window.history.pushState({}, '', '/results');
-                setView('results');
-              }}
-            >
-              Results Browser
-            </button>
-          </div>
-        </div>
+        <Tabs value={view} onValueChange={handleTabChange}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="runner">Experiment Runner</TabsTrigger>
+            <TabsTrigger value="results">Results Browser</TabsTrigger>
+          </TabsList>
 
-        {view === 'runner' ? <ExperimentRunner /> : <ResultsBrowser />}
+          <TabsContent value="runner" className="mt-0">
+            <ExperimentRunner />
+          </TabsContent>
+
+          <TabsContent value="results" className="mt-0">
+            <ResultsBrowser />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

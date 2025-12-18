@@ -1,5 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button } from '../primitives';
+import * as React from 'react';
+import {
+  Card,
+  Button,
+  Input,
+  Label,
+  ShadcnCard,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+  cn,
+} from '../primitives';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../shadcn';
+import { ChevronDown, ArrowLeft, BarChart3 } from 'lucide-react';
 import { ComparisonView } from './ComparisonView';
 
 interface ResultsBrowserProps {
@@ -24,15 +37,15 @@ interface TestResult {
 }
 
 export function ResultsBrowser({ onCompare }: ResultsBrowserProps): React.ReactElement {
-  const [results, setResults] = useState<TestResult[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [results, setResults] = React.useState<TestResult[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [expandedRow, setExpandedRow] = React.useState<string | null>(null);
 
   // Filters
-  const [labelFilter, setLabelFilter] = useState('');
-  const [minScoreFilter, setMinScoreFilter] = useState('');
+  const [labelFilter, setLabelFilter] = React.useState('');
+  const [minScoreFilter, setMinScoreFilter] = React.useState('');
 
-  const fetchResultsCallback = useCallback(async () => {
+  const fetchResultsCallback = React.useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -49,74 +62,40 @@ export function ResultsBrowser({ onCompare }: ResultsBrowserProps): React.ReactE
     }
   }, [labelFilter, minScoreFilter]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchResultsCallback();
   }, [fetchResultsCallback]);
-
-  const fetchResults = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (labelFilter) params.set('label', labelFilter);
-      if (minScoreFilter) params.set('minScore', minScoreFilter);
-
-      const res = await fetch('/api/results?' + params);
-      const data = await res.json();
-      setResults(data.results || []);
-    } catch (err) {
-      console.error('Failed to fetch results:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const toggleRow = (batchLabel: string) => {
     setExpandedRow(expandedRow === batchLabel ? null : batchLabel);
   };
 
-  const handleCompare = (baseline: string, candidate: string) => {
-    if (onCompare) {
-      onCompare(baseline, candidate);
-    }
-  };
-
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Results Browser</h1>
-        <Button
-          variant="outline"
-          onClick={() => { window.location.href = '/'; }}
-        >
-          ← Back to Runner
-        </Button>
-      </div>
-
+    <div className="space-y-6">
       {/* Filters */}
       <Card title="Filters">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="label-filter" className="text-sm font-medium text-gray-700">Batch Label</label>
+          <Input
+            label="Batch Label"
+            value={labelFilter}
+            onChange={setLabelFilter}
+            placeholder="Filter by label..."
+          />
+          <div className="space-y-1.5">
+            <Label>Min Score</Label>
             <input
-              id="label-filter"
-              type="text"
-              value={labelFilter}
-              onChange={(e) => setLabelFilter(e.target.value)}
-              placeholder="Filter by label..."
-              className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="score-filter" className="text-sm font-medium text-gray-700">Min Score</label>
-            <input
-              id="score-filter"
               type="number"
               step="0.1"
               value={minScoreFilter}
               onChange={(e) => setMinScoreFilter(e.target.value)}
               placeholder="0.0 - 10.0"
-              className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={cn(
+                'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors',
+                'file:border-0 file:bg-transparent file:text-sm file:font-medium',
+                'placeholder:text-muted-foreground',
+                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                'disabled:cursor-not-allowed disabled:opacity-50'
+              )}
             />
           </div>
           <div className="flex items-end">
@@ -133,44 +112,74 @@ export function ResultsBrowser({ onCompare }: ResultsBrowserProps): React.ReactE
         </div>
       </Card>
 
-      {/* Results Table */}
+      {/* Results */}
       <Card title={`Results (${results.length})`}>
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <div className="space-y-4">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
         ) : results.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">📊 No experiment results yet</p>
-            <p className="text-gray-400 mb-6">Run your first experiment to see results here</p>
-            <Button onClick={() => { window.location.href = '/'; }}>
+            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-lg font-medium mb-2">No experiment results yet</p>
+            <p className="text-muted-foreground mb-6">
+              Run your first experiment to see results here
+            </p>
+            <Button
+              onClick={() => {
+                window.location.href = '/';
+              }}
+            >
               Go to Experiment Runner
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {results.map((result) => (
-              <div key={result.batchLabel}>
-                {/* Row header */}
-                <button
-                  type="button"
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded cursor-pointer hover:bg-gray-100 w-full text-left"
-                  onClick={() => toggleRow(result.batchLabel)}
-                >
-                  <div className="flex-1">
-                    <div className="font-medium">{result.batchLabel}</div>
-                    <div className="text-sm text-gray-500">
-                      {result.stats.count} tests | Mean Score: {result.stats.meanScore.toFixed(2)} | Cost: ${result.stats.totalCost.toFixed(4)}
+              <Collapsible
+                key={result.batchLabel}
+                open={expandedRow === result.batchLabel}
+                onOpenChange={() => toggleRow(result.batchLabel)}
+              >
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center justify-between w-full p-4 rounded-lg text-left transition-colors',
+                      'bg-muted/50 hover:bg-muted',
+                      expandedRow === result.batchLabel && 'bg-muted'
+                    )}
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium">{result.batchLabel}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {result.stats.count} tests | Mean Score:{' '}
+                        <span className="font-medium text-foreground">
+                          {result.stats.meanScore.toFixed(2)}
+                        </span>{' '}
+                        | Cost: ${result.stats.totalCost.toFixed(4)}
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-gray-400">
-                    {expandedRow === result.batchLabel ? '▼' : '▶'}
-                  </span>
-                </button>
+                    <ChevronDown
+                      className={cn(
+                        'h-5 w-5 text-muted-foreground transition-transform',
+                        expandedRow === result.batchLabel && 'rotate-180'
+                      )}
+                    />
+                  </button>
+                </CollapsibleTrigger>
 
-                {/* Expanded comparison view */}
-                {expandedRow === result.batchLabel && (
-                  <ComparisonView data={result} onClose={() => setExpandedRow(null)} />
-                )}
-              </div>
+                <CollapsibleContent>
+                  <div className="mt-2">
+                    <ComparisonView
+                      data={result}
+                      onClose={() => setExpandedRow(null)}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             ))}
           </div>
         )}

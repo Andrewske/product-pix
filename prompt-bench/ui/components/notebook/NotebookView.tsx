@@ -1,20 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
 import { SessionHeader } from './SessionHeader';
 import { FixtureImageSelector } from './FixtureImageSelector';
 import { AnalysisPhase } from './AnalysisPhase';
 import { GenerationPhase } from './GenerationPhase';
 import { EvaluationPhase } from './EvaluationPhase';
 import { ErrorMessage } from '../shared/ErrorMessage';
-import { Card } from '../primitives';
+import { ShadcnCard, CardContent, cn } from '../primitives';
+import { ImageIcon } from 'lucide-react';
 import type { AnalysisRun, GenerationRun, EvaluationRun } from '../../types/index';
-
-interface ImageCacheEntry {
-  runId: string;
-  r2Url: string;
-  dataUrl: string;
-  size: number;
-  timestamp: number;
-}
 
 interface FixtureImage {
   id: string;
@@ -23,36 +16,36 @@ interface FixtureImage {
   r2_url: string;
 }
 
-interface NotebookSession {
-  sessionId: string;
-  selectedFixtureIds: string[];
-  selectedAnalysisId: string | null;
-  selectedGenerationId: string | null;
-  analysisRuns: AnalysisRun[];
-  generationRuns: GenerationRun[];
-  evaluationRuns: EvaluationRun[];
-  imageCache: ImageCacheEntry[];
-}
+export function NotebookView(): React.ReactElement {
+  const [error, setError] = React.useState<string | null>(null);
+  const [sessionId, setSessionId] = React.useState<string | null>(null);
+  const [fixtureImages, setFixtureImages] = React.useState<
+    Record<string, FixtureImage[]>
+  >({});
+  const [selectedFixtureIds, setSelectedFixtureIds] = React.useState<string[]>(
+    []
+  );
 
-export function NotebookView(): React.JSX.Element {
-  const [error, setError] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [fixtureImages, setFixtureImages] = useState<Record<string, FixtureImage[]>>({});
-  const [selectedFixtureIds, setSelectedFixtureIds] = useState<string[]>([]);
+  const [analysisRuns, setAnalysisRuns] = React.useState<AnalysisRun[]>([]);
+  const [selectedAnalysisId, setSelectedAnalysisId] = React.useState<
+    string | null
+  >(null);
 
-  const [analysisRuns, setAnalysisRuns] = useState<AnalysisRun[]>([]);
-  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [generationRuns, setGenerationRuns] = React.useState<GenerationRun[]>(
+    []
+  );
+  const [selectedGenerationId, setSelectedGenerationId] = React.useState<
+    string | null
+  >(null);
 
-  const [generationRuns, setGenerationRuns] = useState<GenerationRun[]>([]);
-  const [selectedGenerationId, setSelectedGenerationId] = useState<string | null>(null);
+  const [evaluationRuns, setEvaluationRuns] = React.useState<EvaluationRun[]>(
+    []
+  );
 
-  const [evaluationRuns, setEvaluationRuns] = useState<EvaluationRun[]>([]);
+  const [isFixtureSelectorExpanded, setIsFixtureSelectorExpanded] =
+    React.useState(false);
 
-  const [imageCache, setImageCache] = useState<ImageCacheEntry[]>([]);
-
-  const [isFixtureSelectorExpanded, setIsFixtureSelectorExpanded] = useState(false);
-
-  const handleFixtureSelection = useCallback((fixtureIds: string[]) => {
+  const handleFixtureSelection = React.useCallback((fixtureIds: string[]) => {
     setSelectedFixtureIds(fixtureIds);
 
     // Clear downstream state (inputs changed)
@@ -61,12 +54,56 @@ export function NotebookView(): React.JSX.Element {
     setEvaluationRuns([]);
     setSelectedAnalysisId(null);
     setSelectedGenerationId(null);
-
-    // Collapse selector
-    setIsFixtureSelectorExpanded(false);
   }, []);
 
-  const loadSessionCallback = useCallback(async (sessionId: string) => {
+  const handleRemoveAnalysisRun = React.useCallback(
+    (runId: string) => {
+      setAnalysisRuns((prev) => prev.filter((run) => run.id !== runId));
+      if (selectedAnalysisId === runId) {
+        setSelectedAnalysisId(null);
+      }
+    },
+    [selectedAnalysisId]
+  );
+
+  const handleRemoveGenerationRun = React.useCallback(
+    (runId: string) => {
+      setGenerationRuns((prev) => prev.filter((run) => run.id !== runId));
+      if (selectedGenerationId === runId) {
+        setSelectedGenerationId(null);
+      }
+    },
+    [selectedGenerationId]
+  );
+
+  const handleRemoveEvaluationRun = React.useCallback((runId: string) => {
+    setEvaluationRuns((prev) => prev.filter((run) => run.id !== runId));
+  }, []);
+
+  const copyContextToClipboard = React.useCallback(() => {
+    const context = {
+      sessionId,
+      analysisRuns: analysisRuns.map((r) => ({
+        runNumber: r.phase_run_number,
+        inputs: r.inputs,
+      })),
+      generationRuns: generationRuns.map((r) => ({
+        runNumber: r.phase_run_number,
+        parentRun: r.parent_run_id,
+        finalPrompt: r.final_prompt,
+        imageUrls: r.debug_metadata?.image_urls,
+      })),
+      evaluationRuns: evaluationRuns.map((r) => ({
+        runNumber: r.phase_run_number,
+        score: r.prompt_evaluations?.[0]?.score_overall,
+        details: r.prompt_evaluations?.[0]?.details,
+      })),
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(context, null, 2));
+  }, [sessionId, analysisRuns, generationRuns, evaluationRuns]);
+
+  const loadSessionCallback = React.useCallback(async (sessionId: string) => {
     try {
       const res = await fetch(`/api/notebook/session/${sessionId}`, {});
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -74,53 +111,38 @@ export function NotebookView(): React.JSX.Element {
       const data = await res.json();
 
       // Update React state
-      setAnalysisRuns(data.phases.analysis || []);
-      setGenerationRuns(data.phases.generation || []);
-      setSelectedAnalysisId(data.phases.analysis?.[0]?.id || null);
-      setSelectedGenerationId(data.phases.generation?.[0]?.id || null);
+      const analysisRuns = data.phases.analysis || [];
+      const generationRuns = data.phases.generation || [];
+      setAnalysisRuns(analysisRuns);
+      setGenerationRuns(generationRuns);
+      // Select the most recent run for each phase
+      const mostRecentAnalysis = analysisRuns.sort(
+        (a: AnalysisRun, b: AnalysisRun) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )[0];
+      const mostRecentGeneration = generationRuns.sort(
+        (a: GenerationRun, b: GenerationRun) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )[0];
+      setSelectedAnalysisId(mostRecentAnalysis?.id || null);
+      setSelectedGenerationId(mostRecentGeneration?.id || null);
       setEvaluationRuns(data.phases.evaluation || []);
-
-      // Cache in SessionStorage for next reload
-      saveNotebookSession({
-        sessionId,
-        selectedFixtureIds: [], // Don't have this from DB
-        selectedAnalysisId: data.phases.analysis?.[0]?.id || null,
-        selectedGenerationId: data.phases.generation?.[0]?.id || null,
-        analysisRuns: data.phases.analysis || [],
-        generationRuns: data.phases.generation || [],
-        evaluationRuns: data.phases.evaluation || [],
-        imageCache: []
-      });
     } catch (err) {
       console.error('Failed to load session:', err);
-      setError('Failed to load session. Check network connection or try refreshing.');
+      setError(
+        'Failed to load session. Check network connection or try refreshing.'
+      );
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlSessionId = params.get('session');
 
     if (urlSessionId) {
       setSessionId(urlSessionId);
-
-      // Try SessionStorage first
-      const cached = loadNotebookSession(urlSessionId);
-      if (cached) {
-        console.log('Restored session from SessionStorage cache');
-        setSelectedFixtureIds(cached.selectedFixtureIds || []);
-        setAnalysisRuns(cached.analysisRuns || []);
-        setSelectedAnalysisId(cached.selectedAnalysisId);
-        setGenerationRuns(cached.generationRuns || []);
-        setSelectedGenerationId(cached.selectedGenerationId);
-        setEvaluationRuns(cached.evaluationRuns || []);
-        setImageCache(cached.imageCache || []);
-        setIsFixtureSelectorExpanded(false);
-      } else {
-        // Fallback to database
-        console.log('SessionStorage miss, loading from database');
-        loadSessionCallback(urlSessionId);
-      }
+      // Load from database
+      loadSessionCallback(urlSessionId);
     } else {
       // No session: expand selector, create session ID
       setIsFixtureSelectorExpanded(true);
@@ -133,116 +155,97 @@ export function NotebookView(): React.JSX.Element {
 
     // Load fixtures (always)
     fetch('/api/notebook/fixtures')
-      .then(res => res.json())
-      .then(data => setFixtureImages(data.fixtures))
-      .catch(err => {
+      .then((res) => res.json())
+      .then((data) => setFixtureImages(data.fixtures))
+      .catch((err) => {
         console.error('Failed to load fixtures:', err);
-        setError('Failed to load fixture images. Have you run `bun bench sync`?');
+        setError(
+          'Failed to load fixture images. Have you run `bun bench sync`?'
+        );
       });
   }, [loadSessionCallback]);
 
-  // Save complete session state to SessionStorage
-  useEffect(() => {
-    if (sessionId) {
-      saveNotebookSession({
-        sessionId,
-        selectedFixtureIds,
-        selectedAnalysisId,
-        selectedGenerationId,
-        analysisRuns,
-        generationRuns,
-        evaluationRuns,
-        imageCache
-      });
-    }
-  }, [
-    sessionId,
-    selectedFixtureIds,
-    selectedAnalysisId,
-    selectedGenerationId,
-    analysisRuns,
-    generationRuns,
-    evaluationRuns,
-    imageCache
-   ]);
-
   return (
-    <div className="max-w-7xl mx-auto p-8">
-      {error && <ErrorMessage message={error} onDismiss={() => setError(null)} />}
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {error && (
+          <ErrorMessage message={error} onDismiss={() => setError(null)} />
+        )}
 
-      <SessionHeader sessionId={sessionId} />
+        <SessionHeader
+          sessionId={sessionId}
+          onCopyContext={copyContextToClipboard}
+        />
 
-      {/* ALWAYS render selector (not conditional) */}
-      <FixtureImageSelector
-        fixtures={fixtureImages}
-        selectedFixtureIds={selectedFixtureIds}
-        isExpanded={isFixtureSelectorExpanded}
-        onToggleExpand={() => setIsFixtureSelectorExpanded(!isFixtureSelectorExpanded)}
-        onSelect={handleFixtureSelection}
-      />
+        {/* ALWAYS render selector (not conditional) */}
+        <FixtureImageSelector
+          fixtures={fixtureImages}
+          selectedFixtureIds={selectedFixtureIds}
+          isExpanded={isFixtureSelectorExpanded}
+          onToggleExpand={() =>
+            setIsFixtureSelectorExpanded(!isFixtureSelectorExpanded)
+          }
+          onSelect={handleFixtureSelection}
+        />
 
-      {/* Only show phases when images are selected */}
-      {sessionId && selectedFixtureIds.length > 0 && (
-        <div className="space-y-8 mt-6">
-          <AnalysisPhase
-            sessionId={sessionId}
-            fixtureIds={selectedFixtureIds}
-            runs={analysisRuns}
-            selectedRunId={selectedAnalysisId}
-            onSelectRun={setSelectedAnalysisId}
-            onRunComplete={(newRun) => setAnalysisRuns([...analysisRuns, newRun])}
-          />
+        {/* Only show phases when images are selected */}
+        {sessionId && selectedFixtureIds.length > 0 && (
+          <div className="space-y-6 mt-6">
+            <AnalysisPhase
+              sessionId={sessionId}
+              fixtureIds={selectedFixtureIds}
+              runs={analysisRuns}
+              selectedRunId={selectedAnalysisId}
+              onSelectRun={setSelectedAnalysisId}
+              onRunComplete={(newRun) =>
+                setAnalysisRuns([...analysisRuns, newRun])
+              }
+              onRemoveRun={handleRemoveAnalysisRun}
+            />
 
-          <GenerationPhase
-            sessionId={sessionId}
-            parentRunId={selectedAnalysisId}
-            analysisRuns={analysisRuns}
-            runs={generationRuns.filter(r => r.parent_run_id === selectedAnalysisId)}
-            selectedRunId={selectedGenerationId}
-            disabled={!selectedAnalysisId}
-            onRunComplete={(newRun) => setGenerationRuns([...generationRuns, newRun])}
-            onSelectRun={setSelectedGenerationId}
-            imageCache={imageCache}
-            setImageCache={setImageCache}
-          />
+            <GenerationPhase
+              sessionId={sessionId}
+              parentRunId={selectedAnalysisId}
+              analysisRuns={analysisRuns}
+              runs={generationRuns.filter(
+                (r) => r.parent_run_id === selectedAnalysisId
+              )}
+              selectedRunId={selectedGenerationId}
+              disabled={!selectedAnalysisId}
+              onRunComplete={(newRun) =>
+                setGenerationRuns([...generationRuns, newRun])
+              }
+              onSelectRun={setSelectedGenerationId}
+              onRemoveRun={handleRemoveGenerationRun}
+            />
 
-          <EvaluationPhase
-            sessionId={sessionId}
-            parentRunId={selectedGenerationId}
-            runs={evaluationRuns.filter(r => r.parent_run_id === selectedGenerationId)}
-            disabled={!selectedGenerationId}
-            onRunComplete={(newRun) => setEvaluationRuns([...evaluationRuns, newRun])}
-          />
-        </div>
-      )}
+            <EvaluationPhase
+              sessionId={sessionId}
+              parentRunId={selectedGenerationId}
+              runs={evaluationRuns.filter(
+                (r) => r.parent_run_id === selectedGenerationId
+              )}
+              disabled={!selectedGenerationId}
+              onRunComplete={(newRun) =>
+                setEvaluationRuns([...evaluationRuns, newRun])
+              }
+              onRemoveRun={handleRemoveEvaluationRun}
+            />
+          </div>
+        )}
 
-      {/* Show prompt when no images selected */}
-      {sessionId && selectedFixtureIds.length === 0 && (
-        <Card className="mt-6 text-center py-8 text-gray-500">
-          Select fixture images above to begin analysis
-        </Card>
-      )}
+        {/* Show prompt when no images selected */}
+        {sessionId && selectedFixtureIds.length === 0 && (
+          <ShadcnCard className="mt-6">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground text-center">
+                Select fixture images above to begin analysis
+              </p>
+            </CardContent>
+          </ShadcnCard>
+        )}
+      </div>
     </div>
   );
-}
-
-// Helper functions for session storage
-function loadNotebookSession(sessionId: string): NotebookSession | null {
-  try {
-    const key = `notebook-session-${sessionId}`;
-    const stored = sessionStorage.getItem(key);
-    return stored ? JSON.parse(stored) : null;
-  } catch (err) {
-    console.error('Failed to load session from SessionStorage:', err);
-    return null;
-  }
-}
-
-function saveNotebookSession(session: NotebookSession): void {
-  try {
-    const key = `notebook-session-${session.sessionId}`;
-    sessionStorage.setItem(key, JSON.stringify(session));
-  } catch (err) {
-    console.error('Failed to save session to SessionStorage:', err);
-  }
 }

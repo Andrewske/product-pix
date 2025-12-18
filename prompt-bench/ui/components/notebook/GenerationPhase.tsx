@@ -1,16 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Select } from '../primitives';
-import { ErrorMessage } from '../shared/ErrorMessage';
+import * as React from 'react';
+import {
+  Button,
+  Select,
+  Label,
+  Textarea,
+  Badge,
+  ShadcnCard,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Separator,
+  Alert,
+  AlertDescription,
+  cn,
+} from '../primitives';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  RadioGroup,
+  RadioGroupItem,
+  AspectRatio,
+} from '../../shadcn';
+import { ChevronDown, X, Loader2, Wand2, Lock } from 'lucide-react';
 import type { GenerationRun, AnalysisRun } from '../../types/index';
-
-interface ImageCacheEntry {
-  runId: string;
-  r2Url: string;
-  dataUrl: string;
-  size: number;
-  timestamp: number;
-}
 
 interface GenerationPhaseProps {
   sessionId: string;
@@ -21,93 +38,13 @@ interface GenerationPhaseProps {
   disabled: boolean;
   onRunComplete: (run: GenerationRun) => void;
   onSelectRun: (id: string) => void;
-  imageCache: ImageCacheEntry[];
-  setImageCache: (cache: ImageCacheEntry[]) => void;
+  onRemoveRun: (id: string) => void;
 }
 
 interface Template {
   slug: string;
   template_data: Record<string, unknown>;
-}
-
-// Helper functions
-const convertImageToDataUrl = async (r2Url: string): Promise<string> => {
-  const response = await fetch(r2Url);
-  const blob = await response.blob();
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-};
-
-const getCachedOrConvertImage = async (
-  runId: string,
-  r2Url: string,
-  imageCache: ImageCacheEntry[]
-): Promise<{ dataUrl: string; isNew: boolean; updatedCache: ImageCacheEntry[] }> => {
-  const cached = imageCache.find(c => c.runId === runId);
-  if (cached) {
-    const updatedCache = imageCache.map(c =>
-      c.runId === runId ? { ...c, timestamp: Date.now() } : c
-    );
-    return { dataUrl: cached.dataUrl, isNew: false, updatedCache };
-  }
-
-  const dataUrl = await convertImageToDataUrl(r2Url);
-  const newEntry: ImageCacheEntry = { runId, r2Url, dataUrl, size: dataUrl.length, timestamp: Date.now() };
-  const withNewEntry = [...imageCache, newEntry];
-  const updatedCache = withNewEntry.length > 5
-    ? withNewEntry.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5)
-    : withNewEntry;
-
-  return { dataUrl, isNew: true, updatedCache };
-};
-
-function RunComparisonModal({ phase, runs, onClose }: { phase: string; runs: GenerationRun[]; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-6xl w-full max-h-[90vh] overflow-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Compare {phase.charAt(0).toUpperCase() + phase.slice(1)} Runs</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-        </div>
-        <div className={`grid gap-6 ${runs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-          {runs.map(run => (
-            <div key={run.id} className="border rounded p-4">
-              <h3 className="font-bold mb-3">Run {run.phase_run_number}</h3>
-              <div className="text-sm text-gray-600 mb-3">
-                Tokens: {run.debug_metadata?.tokens?.input || 0} in / {run.debug_metadata?.tokens?.output || 0} out
-              </div>
-              <div className="mb-3">
-                <img
-                  src={run.debug_metadata?.image_url || ''}
-                  alt={`Generated result for run ${run.phase_run_number}`}
-                  className="w-full rounded border border-gray-200"
-                />
-              </div>
-              {run.debug_metadata?.thinking && (
-                <details className="mb-2">
-                  <summary className="text-sm cursor-pointer font-semibold">Thinking</summary>
-                  <pre className="bg-gray-50 p-2 rounded text-xs mt-1 overflow-auto max-h-32 whitespace-pre-wrap">
-                    {run.debug_metadata.thinking}
-                  </pre>
-                </details>
-              )}
-              <details>
-                <summary className="text-sm cursor-pointer font-semibold">Final Prompt</summary>
-                <pre className="bg-gray-50 p-2 rounded text-xs mt-1 overflow-auto max-h-32 whitespace-pre-wrap">
-                  {run.final_prompt}
-                </pre>
-              </details>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  variables_schema?: Record<string, unknown>;
 }
 
 export function GenerationPhase({
@@ -119,108 +56,74 @@ export function GenerationPhase({
   disabled,
   onRunComplete,
   onSelectRun,
-  imageCache,
-  setImageCache
-}: GenerationPhaseProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [templateSlug, setTemplateSlug] = useState('');
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templateData, setTemplateData] = useState<Record<string, unknown>>({});
-  const [analysisVariables, setAnalysisVariables] = useState<Record<string, unknown>>({});
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
-  const [imageDataUrls, setImageDataUrls] = useState<Record<string, string>>({});
-  const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, string>>({});
+  onRemoveRun,
+}: GenerationPhaseProps): React.ReactElement {
+  const [error, setError] = React.useState<string | null>(null);
+  const [isRunning, setIsRunning] = React.useState(false);
+  const [templateSlug, setTemplateSlug] = React.useState('');
+  const [templates, setTemplates] = React.useState<Template[]>([]);
+  const [templateData, setTemplateData] = React.useState<Record<string, unknown>>({});
+  const [analysisVariables, setAnalysisVariables] = React.useState<Record<string, unknown>>({});
+  const [expandedRunId, setExpandedRunId] = React.useState<string | null>(null);
+  const [showComparison, setShowComparison] = React.useState(false);
+  const [model, setModel] = React.useState('gemini-3-pro-image-preview');
+  const [variablesSchema, setVariablesSchema] = React.useState<Record<string, unknown> | null>(null);
+  const [compiledPrompt, setCompiledPrompt] = React.useState<string | null>(null);
+  const [generationConfig, setGenerationConfig] = React.useState({
+    resolution: '1k' as '1k' | '2k' | '4k',
+    aspectRatio: '1:1' as string,
+  });
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetch('/api/templates')
-      .then(res => res.json())
-      .then(data => setTemplates(data.templates || []));
+      .then((res) => res.json())
+      .then((data) => setTemplates(data.templates || []));
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (templateSlug) {
-      const template = templates.find(t => t.slug === templateSlug);
+      const template = templates.find((t) => t.slug === templateSlug);
       if (template) {
         setTemplateData(template.template_data || {});
+        setVariablesSchema(template.variables_schema || null);
       }
     }
   }, [templateSlug, templates]);
 
-  // Load from parent run when selected
-  useEffect(() => {
+  React.useEffect(() => {
     if (parentRunId) {
-      const parentRun = analysisRuns.find(r => r.id === parentRunId);
+      const parentRun = analysisRuns.find((r) => r.id === parentRunId);
       if (parentRun) {
         setAnalysisVariables(parentRun.inputs || {});
       }
     }
   }, [parentRunId, analysisRuns]);
 
-  // Persist to SessionStorage
-  useEffect(() => {
-    sessionStorage.setItem('notebook.generation.analysisVariables', JSON.stringify(analysisVariables));
-  }, [analysisVariables]);
-
-  // Restore from SessionStorage on mount
-  useEffect(() => {
-    const stored = sessionStorage.getItem('notebook.generation.analysisVariables');
-    if (stored) {
-      try {
-        setAnalysisVariables(JSON.parse(stored));
-      } catch {
-        // Ignore corrupt data
-      }
+  const previewPrompt = async () => {
+    if (!templateSlug) {
+      setError('Please select a template first');
+      return;
     }
-  }, []);
-
-  const loadImage = useCallback(async (run: GenerationRun) => {
-    const r2Url = run.debug_metadata?.image_url;
-    if (!r2Url) return;
 
     try {
-      const result = await getCachedOrConvertImage(run.id, r2Url, imageCache);
-
-      setImageDataUrls(prev => ({ ...prev, [run.id]: result.dataUrl }));
-
-      if (result.updatedCache) {
-        setImageCache(result.updatedCache);
-      }
+      const res = await fetch('/api/notebook/compile-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateSlug, templateData, variables: analysisVariables }),
+      });
+      const data = await res.json();
+      setCompiledPrompt(data.prompt || 'Error compiling prompt');
     } catch (err) {
-      console.error('Failed to convert image to data URL', { error: (err as Error).message, runId: run.id });
-      setImageLoadErrors(prev => ({ ...prev, [run.id]: (err as Error).message }));
+      setError('Failed to compile prompt: ' + (err as Error).message);
     }
-  }, [imageCache, setImageCache]);
-
-  // Load image when run is expanded
-  useEffect(() => {
-    if (expandedRunId && !imageDataUrls[expandedRunId] && !imageLoadErrors[expandedRunId]) {
-      const run = runs.find(r => r.id === expandedRunId);
-      if (run) {
-        loadImage(run);
-      }
-    }
-  }, [expandedRunId, imageDataUrls, imageLoadErrors, runs, loadImage]);
+  };
 
   const handleRun = async () => {
-    // Validate template selected
     if (!templateSlug) {
       setError('Please select a template');
       return;
     }
 
-    // Validate template JSON
-    try {
-      if (typeof templateData === 'string') {
-        JSON.parse(templateData as string);
-      }
-    } catch (e) {
-      setError('Invalid JSON in template editor');
-      return;
-    }
-
-    // Validate parent run
     if (!parentRunId) {
       setError('No analysis run selected. Please select an analysis run first.');
       return;
@@ -238,8 +141,10 @@ export function GenerationPhase({
           parentRunId,
           templateSlug,
           templateData,
-          variables: analysisVariables
-        })
+          variables: analysisVariables,
+          model,
+          config: generationConfig,
+        }),
       });
 
       const result = await res.json();
@@ -259,141 +164,299 @@ export function GenerationPhase({
 
   if (disabled) {
     return (
-      <Card className="border rounded-lg p-6 bg-gray-50">
-        <h2 className="text-xl font-bold mb-4 text-gray-400">Generation Phase</h2>
-        <p className="text-gray-500">Select an analysis run to unlock generation</p>
-      </Card>
+      <ShadcnCard className="opacity-60">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-muted-foreground">
+            <Lock className="h-5 w-5" />
+            Generation Phase
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Select an analysis run to unlock generation
+          </p>
+        </CardContent>
+      </ShadcnCard>
     );
   }
 
+  const templateOptions = [
+    { value: '', label: '-- Select template --' },
+    ...templates.map((t) => ({ value: t.slug, label: t.slug })),
+  ];
+
   return (
-    <Card className="border rounded-lg p-6 bg-white">
-      <ErrorMessage message={error} onDismiss={() => setError(null)} />
-      <h2 className="text-xl font-bold mb-4">Generation Phase</h2>
-      <div className="space-y-4 mb-4">
-        <Select
-          label="Template"
-          value={templateSlug}
-          onChange={setTemplateSlug}
-          options={[
-            { value: '', label: '-- Select template --' },
-            ...templates.map(t => ({ value: t.slug, label: t.slug }))
-          ]}
-        />
+    <ShadcnCard>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Wand2 className="h-5 w-5" />
+          Generation Phase
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Select
+            label="Template"
+            value={templateSlug}
+            onChange={setTemplateSlug}
+            options={templateOptions}
+          />
+          <Select
+            label="Model"
+            value={model}
+            onChange={setModel}
+            options={[{ value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image' }]}
+          />
+        </div>
+
         {templateSlug && (
-          <div>
-            <label htmlFor="template-json" className="block text-sm font-medium mb-2">
-              Template JSON (edit to customize)
-            </label>
-            <textarea
-              id="template-json"
+          <div className="space-y-1.5">
+            <Label>Template JSON (edit to customize)</Label>
+            <Textarea
               value={JSON.stringify(templateData, null, 2)}
               onChange={(e) => {
                 try {
                   setTemplateData(JSON.parse(e.target.value));
-                } catch {}
+                } catch {
+                  // Invalid JSON
+                }
               }}
-              className="w-full border rounded p-2 font-mono text-sm h-64"
+              className="h-64 font-mono text-sm"
             />
           </div>
         )}
-        <div>
-          <label htmlFor="analysis-variables" className="block text-sm font-medium mb-1">
-            Analysis Variables
-          </label>
-          <textarea
-            id="analysis-variables"
+
+        {variablesSchema && (
+          <Collapsible>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground">
+              <ChevronDown className="h-4 w-4" />
+              Available Variables
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <pre className="mt-2 bg-muted p-2 rounded text-xs overflow-auto max-h-64">
+                {JSON.stringify(variablesSchema, null, 2)}
+              </pre>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {templateSlug && (
+          <Collapsible>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm text-primary">
+              <ChevronDown className="h-4 w-4" />
+              Preview Compiled Prompt
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-2">
+              <Button variant="outline" size="sm" onClick={previewPrompt}>
+                Compile
+              </Button>
+              {compiledPrompt && (
+                <Textarea
+                  value={compiledPrompt}
+                  onChange={(e) => setCompiledPrompt(e.target.value)}
+                  className="h-32 font-mono text-sm"
+                />
+              )}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Resolution"
+            value={generationConfig.resolution}
+            onChange={(value) =>
+              setGenerationConfig((prev) => ({ ...prev, resolution: value as '1k' | '2k' | '4k' }))
+            }
+            options={[
+              { value: '1k', label: '1K' },
+              { value: '2k', label: '2K' },
+              { value: '4k', label: '4K' },
+            ]}
+          />
+          <Select
+            label="Aspect Ratio"
+            value={generationConfig.aspectRatio}
+            onChange={(value) => setGenerationConfig((prev) => ({ ...prev, aspectRatio: value }))}
+            options={[
+              { value: '1:1', label: '1:1 (Square)' },
+              { value: '3:4', label: '3:4 (Portrait)' },
+              { value: '4:3', label: '4:3 (Landscape)' },
+              { value: '9:16', label: '9:16 (Vertical)' },
+              { value: '16:9', label: '16:9 (Horizontal)' },
+            ]}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Analysis Variables</Label>
+          <Textarea
             value={JSON.stringify(analysisVariables || {}, null, 2)}
             onChange={(e) => {
               try {
                 setAnalysisVariables(JSON.parse(e.target.value));
               } catch {
-                // Invalid JSON - just ignore, don't crash
+                // Invalid JSON
               }
             }}
             placeholder='{"background": "white"}'
-            className="w-full h-48 border rounded p-2 font-mono text-sm"
+            className="h-48 font-mono text-sm"
           />
         </div>
-      </div>
-      <Button
-        onClick={handleRun}
-        disabled={isRunning || !templateSlug}
-      >
-        {isRunning ? 'Generating...' : `Run Generation (${runs.length + 1})`}
-      </Button>
-      {runs.length > 0 && (
-        <div className="mt-6 space-y-2">
-          <h3 className="font-semibold">Generation Runs ({runs.length})</h3>
-          {runs.length >= 2 && (
-            <Button
-              variant="outline"
-              onClick={() => setShowComparison(true)}
-            >
-              Compare All {runs.length} Runs
-            </Button>
-          )}
-          {runs.map(run => (
-            <div
-              key={run.id}
-              className={`border rounded p-3 ${
-                selectedRunId === run.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
-              }`}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    checked={selectedRunId === run.id}
-                    onChange={() => onSelectRun(run.id)}
-                    className="w-4 h-4"
-                  />
-                  <span className="font-medium">Run {run.phase_run_number}</span>
-                  <span className="text-xs text-gray-500">
-                    {(run.debug_metadata?.tokens?.input || 0)} in / {(run.debug_metadata?.tokens?.output || 0)} out
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setExpandedRunId(expandedRunId === run.id ? null : run.id)}
-                  className="text-sm text-blue-600"
-                >
-                  {expandedRunId === run.id ? 'Collapse' : 'Expand'}
-                </button>
+
+        <Button onClick={handleRun} disabled={isRunning || !templateSlug}>
+          {isRunning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isRunning ? 'Generating...' : `Run Generation (${runs.length + 1})`}
+        </Button>
+
+        {runs.length > 0 && (
+          <>
+            <Separator className="my-4" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Generation Runs ({runs.length})</h3>
+                {runs.length >= 2 && (
+                  <Button variant="outline" size="sm" onClick={() => setShowComparison(true)}>
+                    Compare All
+                  </Button>
+                )}
               </div>
-              <img
-                src={imageDataUrls[run.id] || run.debug_metadata?.image_url || ''}
-                alt={`Generated result for run ${run.phase_run_number} - ${run.inputs?.product || ''}`}
-                className="w-full h-auto rounded border border-gray-200"
-              />
-              {imageLoadErrors[run.id] && (
-                <div className="text-xs text-red-600 mt-1">
-                  Cache failed, using direct URL
-                </div>
-              )}
-              {expandedRunId === run.id && run.debug_metadata?.thinking && (
-                <div className="mt-3 pt-3 border-t">
-                  <h4 className="text-sm font-semibold mb-2">Thinking:</h4>
-                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap">
-                    {run.debug_metadata.thinking}
-                  </pre>
-                  <h4 className="text-sm font-semibold mb-2 mt-3">Final Prompt:</h4>
-                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap">
-                    {run.final_prompt}
-                  </pre>
-                </div>
-              )}
+              <RadioGroup
+                value={selectedRunId || ''}
+                onValueChange={onSelectRun}
+                className="space-y-3"
+              >
+                {runs.map((run) => (
+                  <Collapsible
+                    key={run.id}
+                    open={expandedRunId === run.id}
+                    onOpenChange={() =>
+                      setExpandedRunId(expandedRunId === run.id ? null : run.id)
+                    }
+                  >
+                    <div
+                      className={cn(
+                        'rounded-lg border p-3',
+                        selectedRunId === run.id ? 'border-primary bg-primary/5' : 'border-border'
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <RadioGroupItem value={run.id} id={run.id} />
+                          <label htmlFor={run.id} className="cursor-pointer">
+                            <span className="font-medium">Run {run.phase_run_number}</span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              <Badge variant="info">{run.debug_metadata?.model || 'unknown'}</Badge>
+                              <Badge variant="info">
+                                ${run.debug_metadata?.cost?.toFixed(4) || '0.0000'}
+                              </Badge>
+                            </div>
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <ChevronDown
+                                className={cn(
+                                  'h-4 w-4 transition-transform',
+                                  expandedRunId === run.id && 'rotate-180'
+                                )}
+                              />
+                            </Button>
+                          </CollapsibleTrigger>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveRun(run.id);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Image grid */}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {(run.debug_metadata?.image_urls || []).map((imageUrl, index) => (
+                          <div key={`${run.id}-${index}`} className="relative">
+                            <img
+                              src={imageUrl}
+                              alt={`Generated result ${index + 1}`}
+                              className="w-[150px] h-[150px] object-cover rounded border"
+                            />
+                            {index === 0 && run.debug_metadata?.image_urls && run.debug_metadata.image_urls.length > 1 && (
+                              <Badge className="absolute -top-1 -right-1" variant="info">
+                                {run.debug_metadata.image_urls.length}
+                              </Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <CollapsibleContent>
+                        <Separator className="my-3" />
+                        {run.debug_metadata?.thinking && (
+                          <div className="space-y-2 mb-3">
+                            <h4 className="text-sm font-medium">Thinking:</h4>
+                            <pre className="bg-muted p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap max-h-32">
+                              {run.debug_metadata.thinking}
+                            </pre>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium">Final Prompt:</h4>
+                          <pre className="bg-muted p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap max-h-32">
+                            {run.final_prompt}
+                          </pre>
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                ))}
+              </RadioGroup>
             </div>
-          ))}
-        </div>
-      )}
-      {showComparison && (
-        <RunComparisonModal
-          phase="generation"
-          runs={runs}
-          onClose={() => setShowComparison(false)}
-        />
-      )}
-    </Card>
+          </>
+        )}
+
+        {/* Comparison Dialog */}
+        <Dialog open={showComparison} onOpenChange={setShowComparison}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>Compare Generation Runs</DialogTitle>
+            </DialogHeader>
+            <div className={cn('grid gap-6', runs.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
+              {runs.map((run) => (
+                <div key={run.id} className="border rounded-lg p-4 space-y-3">
+                  <h3 className="font-bold">Run {run.phase_run_number}</h3>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <div>Model: {run.debug_metadata?.model || 'unknown'}</div>
+                    <div>Cost: ${run.debug_metadata?.cost?.toFixed(4) || '0.0000'}</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {run.debug_metadata?.image_urls?.map((url, idx) => (
+                      <img
+                        key={`${run.id}-modal-${idx}`}
+                        src={url}
+                        alt={`Result ${idx + 1}`}
+                        className="w-full aspect-square object-cover rounded"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </ShadcnCard>
   );
 }

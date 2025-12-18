@@ -1,22 +1,29 @@
-import { Card } from '../primitives';
+import * as React from 'react';
+import { Alert, AlertTitle, AlertDescription } from '../primitives';
+import { AlertTriangle, Terminal } from 'lucide-react';
 
-export function FixturesEmptyState(): React.JSX.Element {
+export function FixturesEmptyState(): React.ReactElement {
   return (
-    <Card className="border-yellow-200 bg-yellow-50">
-      <div className="text-center py-6">
-        <h3 className="text-lg font-semibold text-yellow-900 mb-2">
-          No Fixture Images Found
-        </h3>
-        <p className="text-sm text-yellow-800 mb-4">
-          Fixture images must be synced from the filesystem before you can use the notebook.
+    <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+      <AlertTriangle className="h-4 w-4 text-amber-600" />
+      <AlertTitle className="text-amber-900 dark:text-amber-400">
+        No Fixture Images Found
+      </AlertTitle>
+      <AlertDescription className="mt-2">
+        <p className="text-amber-800 dark:text-amber-300 mb-4">
+          Fixture images must be synced from the filesystem before you can use
+          the notebook.
         </p>
-        <div className="bg-white border border-yellow-200 rounded p-3 mb-4">
-          <code className="text-sm text-gray-800">bun bench sync</code>
+        <div className="flex items-center gap-2 bg-card border rounded-md p-3 mb-4">
+          <Terminal className="h-4 w-4 text-muted-foreground" />
+          <code className="text-sm font-mono">bun bench sync</code>
         </div>
-        <p className="text-xs text-yellow-700">
-          This command uploads images from <code>prompt-bench/fixtures/images/</code> to R2 and saves references to the database.
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          This command uploads images from{' '}
+          <code className="text-xs">prompt-bench/fixtures/images/</code> to R2
+          and saves references to the database.
         </p>
-      </div>
-    </Card>
+      </AlertDescription>
+    </Alert>
   );
 }

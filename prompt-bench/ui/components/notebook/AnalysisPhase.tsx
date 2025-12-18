@@ -1,6 +1,27 @@
-import { useState, useEffect } from 'react';
-import { Button, Card } from '../primitives';
-import { ErrorMessage } from '../shared/ErrorMessage';
+import * as React from 'react';
+import {
+  Button,
+  Select,
+  Label,
+  Textarea,
+  Badge,
+  ShadcnCard,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Separator,
+  Alert,
+  AlertDescription,
+  cn,
+} from '../primitives';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  RadioGroup,
+  RadioGroupItem,
+} from '../../shadcn';
+import { ChevronDown, X, CheckCircle, Loader2, Microscope } from 'lucide-react';
 import type { AnalysisRun } from '../../types/index';
 
 interface AnalysisPhaseProps {
@@ -10,33 +31,7 @@ interface AnalysisPhaseProps {
   selectedRunId: string | null;
   onSelectRun: (id: string) => void;
   onRunComplete: (run: AnalysisRun) => void;
-}
-
-function RunComparisonModal({ phase, runs, onClose }: { phase: string; runs: AnalysisRun[]; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Compare {phase.charAt(0).toUpperCase() + phase.slice(1)} Runs</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700">×</button>
-        </div>
-        <div className={`grid gap-6 ${runs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-          {runs.map(run => (
-            <div key={run.id} className="border rounded p-4">
-              <h3 className="font-bold mb-3">Run {run.phase_run_number}</h3>
-              <div className="text-sm text-gray-600 mb-3">
-                Tokens: {run.debug_metadata?.tokens?.input || 0} in / {run.debug_metadata?.tokens?.output || 0} out
-              </div>
-              <h4 className="text-sm font-semibold mb-2">Analysis Results:</h4>
-              <pre className="bg-gray-50 p-2 rounded text-xs overflow-auto max-h-64">
-                {JSON.stringify(run.inputs, null, 2)}
-              </pre>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  onRemoveRun: (id: string) => void;
 }
 
 export function AnalysisPhase({
@@ -45,40 +40,60 @@ export function AnalysisPhase({
   runs,
   selectedRunId,
   onSelectRun,
-  onRunComplete
-}: AnalysisPhaseProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [variables, setVariables] = useState<Record<string, unknown>>({});
-  const [analysisPrompt, setAnalysisPrompt] = useState<string>('');
-  const [analysisSchema, setAnalysisSchema] = useState<Record<string, any>>({});
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  //   // const [showComparison, setShowComparison] = useState(false);
+  onRunComplete,
+  onRemoveRun,
+}: AnalysisPhaseProps): React.ReactElement {
+  const [error, setError] = React.useState<string | null>(null);
+  const [isRunning, setIsRunning] = React.useState(false);
+  const [variables, setVariables] = React.useState<Record<string, unknown>>({});
+  const [analysisPrompt, setAnalysisPrompt] = React.useState<string>('');
+  const [analysisSchema, setAnalysisSchema] = React.useState<Record<string, unknown>>({});
+  const [expandedRunId, setExpandedRunId] = React.useState<string | null>(null);
+  const [model, setModel] = React.useState('gemini-2.0-flash');
 
   // Set default prompt and schema on mount
-  useEffect(() => {
-    setAnalysisPrompt('Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.');
+  React.useEffect(() => {
+    setAnalysisPrompt(
+      'Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.'
+    );
     setAnalysisSchema({
       product: { type: 'string', description: 'The main product name/type' },
       color: { type: 'string', description: 'Primary color and finish' },
       material: { type: 'string', description: 'Primary material composition' },
       shape: { type: 'string', description: 'Overall shape and form' },
-      features: { type: 'array', items: 'string', description: 'Key distinguishing features' },
-      hasScaleReference: { type: 'boolean', description: 'True if hand/body part visible for scale' },
-      scaleDescription: { type: 'string', optional: true, description: 'Scale description if visible' },
-      brand: { type: 'string', optional: true, description: 'Brand name if visible' },
-      brandingDetails: { type: 'string', optional: true, description: 'Branding element details' },
+      features: {
+        type: 'array',
+        items: 'string',
+        description: 'Key distinguishing features',
+      },
+      hasScaleReference: {
+        type: 'boolean',
+        description: 'True if hand/body part visible for scale',
+      },
+      scaleDescription: {
+        type: 'string',
+        optional: true,
+        description: 'Scale description if visible',
+      },
+      brand: {
+        type: 'string',
+        optional: true,
+        description: 'Brand name if visible',
+      },
+      brandingDetails: {
+        type: 'string',
+        optional: true,
+        description: 'Branding element details',
+      },
     });
   }, []);
 
   const handleRun = async () => {
-    // Validate before running
     if (fixtureIds.length === 0) {
       setError('No fixture images selected. Please start a new session with images.');
       return;
     }
 
-    // Validate JSON
     try {
       JSON.stringify(variables);
     } catch {
@@ -97,11 +112,11 @@ export function AnalysisPhase({
           sessionId: sessionId,
           fixtureImageIds: fixtureIds,
           variables,
-          model: 'gemini-2.0-flash-exp',
+          model,
           cacheEnabled: true,
           customPrompt: analysisPrompt,
-          customSchema: analysisSchema
-        })
+          customSchema: analysisSchema,
+        }),
       });
 
       const result = await res.json();
@@ -129,149 +144,173 @@ export function AnalysisPhase({
     }
   };
 
-  const handleExpandRun = (runId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setExpandedRunId(expandedRunId === runId ? null : runId);
-  };
-
-  const handleRunClick = (runId: string) => {
-    onSelectRun(runId);
-  };
-
-  const handleRunKeyDown = (runId: string, event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onSelectRun(runId);
-    }
-  };
-
   return (
-    <Card>
-      <ErrorMessage message={error} onDismiss={() => setError(null)} />
-      <h2 className="text-xl font-bold mb-4">Analysis Phase</h2>
-      <div className="mb-4">
-        <label htmlFor="analysis-prompt-textarea" className="block text-sm font-medium mb-1">
-          Analysis Prompt
-        </label>
-        <textarea
-          id="analysis-prompt-textarea"
-          value={analysisPrompt}
-          onChange={(e) => setAnalysisPrompt(e.target.value)}
-          className="w-full h-24 border rounded p-2 font-mono text-sm"
+    <ShadcnCard>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Microscope className="h-5 w-5" />
+          Analysis Phase
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Select
+          label="Model"
+          value={model}
+          onChange={setModel}
+          options={[
+            { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+            { value: 'gemini-2.0-flash-thinking', label: 'Gemini 2.0 Flash Thinking' },
+          ]}
         />
-      </div>
-      <div className="mb-4">
-        <label htmlFor="analysis-schema-textarea" className="block text-sm font-medium mb-1">
-          Response Schema (fields to extract)
-        </label>
-        <textarea
-          id="analysis-schema-textarea"
-          value={JSON.stringify(analysisSchema, null, 2)}
-          onChange={(e) => {
-            try {
-              setAnalysisSchema(JSON.parse(e.target.value));
-            } catch {
-              // Invalid JSON - ignore
-            }
-          }}
-          className="w-full h-64 border rounded p-2 font-mono text-sm"
-        />
-      </div>
-      <div className="mb-4">
-        <label htmlFor="variables-textarea" className="block text-sm font-medium mb-2">
-          Analysis Variables (optional overrides)
-        </label>
-        <textarea
-          id="variables-textarea"
-          value={JSON.stringify(variables || {}, null, 2)}
-          onChange={(e) => handleVariablesChange(e.target.value)}
-          className="w-full border rounded p-2 font-mono text-sm h-24"
-          placeholder='{"key": "value"}'
-        />
-      </div>
-      <Button
-        onClick={handleRun}
-        disabled={isRunning || fixtureIds.length === 0}
-      >
-        {isRunning ? 'Running Analysis...' : `Run Analysis (${runs.length + 1})`}
-      </Button>
-      {runs.length > 0 && (
-        <div className="mt-6 space-y-2">
-          <h3 className="font-semibold">Analysis Runs ({runs.length})</h3>
-          {/* {runs.length >= 2 && (
-            <Button
-              variant="outline"
-              onClick={() => setShowComparison(true)}
-            >
-              Compare All {runs.length} Runs
-            </Button>
-          )} */}
-           {runs.map(run => (
-             <div
-               key={run.id}
-               className={`border rounded p-3 w-full ${
-                 selectedRunId === run.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
-               }`}
-             >
-               <div className="flex justify-between items-center">
-                 <button
-                   type="button"
-                   className="flex items-center gap-3 cursor-pointer flex-1 text-left"
-                   onClick={() => handleRunClick(run.id)}
-                   onKeyDown={(e) => handleRunKeyDown(run.id, e)}
-                   aria-label={`Select analysis run ${run.phase_run_number}`}
-                 >
-                   <input
-                     type="radio"
-                     checked={selectedRunId === run.id}
-                     onChange={() => onSelectRun(run.id)}
-                     className="w-4 h-4"
-                     aria-label={`Select run ${run.phase_run_number}`}
-                   />
-                   <div>
-                     <span className="font-medium">Run {run.phase_run_number}</span>
-                     <span className="text-xs text-gray-500 ml-2">
-                       {run.debug_metadata?.tokens?.input || 0} in / {run.debug_metadata?.tokens?.output || 0} out
-                     </span>
-                   </div>
-                 </button>
-                 <button
-                   type="button"
-                   onClick={(e) => handleExpandRun(run.id, e)}
-                   className="text-sm text-blue-600 ml-2"
-                 >
-                   {expandedRunId === run.id ? 'Collapse' : 'Expand'}
-                 </button>
-               </div>
-               {expandedRunId === run.id && (
-                 <div className="mt-3 pt-3 border-t">
-                   <h4 className="text-sm font-semibold mb-2">Analysis Results:</h4>
-                   <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">
-                     {JSON.stringify(run.inputs, null, 2)}
-                   </pre>
-                 </div>
-               )}
-             </div>
-           ))}
+
+        <div className="space-y-1.5">
+          <Label>Analysis Prompt</Label>
+          <Textarea
+            value={analysisPrompt}
+            onChange={(e) => setAnalysisPrompt(e.target.value)}
+            className="h-24 font-mono text-sm"
+          />
         </div>
-      )}
-      {(() => {
-        if (!selectedRunId) return null;
-        const run = runs.find(r => r.id === selectedRunId as string);
-        const runNumber = run?.phase_run_number || 'Unknown';
-        return (
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
-            ✓ Analysis Run {runNumber} selected for generation
-          </div>
-        );
-      })()}
-      {/* {showComparison && (
-        <RunComparisonModal
-          phase="analysis"
-          runs={runs}
-          onClose={() => setShowComparison(false)}
-        />
-      )} */}
-    </Card>
+
+        <div className="space-y-1.5">
+          <Label>Response Schema (fields to extract)</Label>
+          <Textarea
+            value={JSON.stringify(analysisSchema, null, 2)}
+            onChange={(e) => {
+              try {
+                setAnalysisSchema(JSON.parse(e.target.value));
+              } catch {
+                // Invalid JSON - ignore
+              }
+            }}
+            className="h-64 font-mono text-sm"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Analysis Variables (optional overrides)</Label>
+          <Textarea
+            value={JSON.stringify(variables || {}, null, 2)}
+            onChange={(e) => handleVariablesChange(e.target.value)}
+            className="h-24 font-mono text-sm"
+            placeholder='{"key": "value"}'
+          />
+        </div>
+
+        <Button onClick={handleRun} disabled={isRunning || fixtureIds.length === 0}>
+          {isRunning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isRunning ? 'Running Analysis...' : `Run Analysis (${runs.length + 1})`}
+        </Button>
+
+        {runs.length > 0 && (
+          <>
+            <Separator className="my-4" />
+            <div className="space-y-3">
+              <h3 className="font-semibold">Analysis Runs ({runs.length})</h3>
+              <RadioGroup
+                value={selectedRunId || ''}
+                onValueChange={onSelectRun}
+                className="space-y-2"
+              >
+                {runs.map((run) => (
+                  <Collapsible
+                    key={run.id}
+                    open={expandedRunId === run.id}
+                    onOpenChange={() =>
+                      setExpandedRunId(expandedRunId === run.id ? null : run.id)
+                    }
+                  >
+                    <div
+                      className={cn(
+                        'rounded-lg border p-3',
+                        selectedRunId === run.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border'
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <RadioGroupItem value={run.id} id={run.id} />
+                          <label
+                            htmlFor={run.id}
+                            className="cursor-pointer flex-1"
+                          >
+                            <span className="font-medium">
+                              Run {run.phase_run_number}
+                            </span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              <Badge variant="info">
+                                {run.debug_metadata?.model || 'unknown'}
+                              </Badge>
+                              <Badge variant="info">
+                                ${run.debug_metadata?.cost?.toFixed(4) || '0.0000'}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {run.debug_metadata?.duration_ms !== undefined
+                                  ? `${(run.debug_metadata.duration_ms / 1000).toFixed(2)}s`
+                                  : ''}
+                              </span>
+                            </div>
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <ChevronDown
+                                className={cn(
+                                  'h-4 w-4 transition-transform',
+                                  expandedRunId === run.id && 'rotate-180'
+                                )}
+                              />
+                            </Button>
+                          </CollapsibleTrigger>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveRun(run.id);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <CollapsibleContent>
+                        <Separator className="my-3" />
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium">Analysis Results:</h4>
+                          <pre className="bg-muted p-2 rounded text-xs overflow-x-auto max-h-64">
+                            {JSON.stringify(run.inputs, null, 2)}
+                          </pre>
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                ))}
+              </RadioGroup>
+            </div>
+          </>
+        )}
+
+        {selectedRunId && (
+          <Alert className="bg-primary/10 border-primary/20">
+            <CheckCircle className="h-4 w-4 text-primary" />
+            <AlertDescription>
+              Analysis Run{' '}
+              {runs.find((r) => r.id === selectedRunId)?.phase_run_number || ''}{' '}
+              selected for generation
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </ShadcnCard>
   );
 }
