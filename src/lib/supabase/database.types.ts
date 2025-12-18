@@ -66,6 +66,92 @@ export type Database = {
           },
         ]
       }
+      analysis_cache: {
+        Row: {
+          created_at: string
+          images_hash: string
+          individual_results: Json
+          merged_result: Json
+          prompt_slug: string
+          prompt_version: number
+        }
+        Insert: {
+          created_at?: string
+          images_hash: string
+          individual_results: Json
+          merged_result: Json
+          prompt_slug: string
+          prompt_version: number
+        }
+        Update: {
+          created_at?: string
+          images_hash?: string
+          individual_results?: Json
+          merged_result?: Json
+          prompt_slug?: string
+          prompt_version?: number
+        }
+        Relationships: []
+      }
+      analysis_prompts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          prompt_text: string
+          response_schema: Json
+          slug: string
+          status: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          prompt_text: string
+          response_schema: Json
+          slug: string
+          status?: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          prompt_text?: string
+          response_schema?: Json
+          slug?: string
+          status?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_prompts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      angle_cache: {
+        Row: {
+          created_at: string
+          detected_angles: Json
+          images_hash: string
+        }
+        Insert: {
+          created_at?: string
+          detected_angles: Json
+          images_hash: string
+        }
+        Update: {
+          created_at?: string
+          detected_angles?: Json
+          images_hash?: string
+        }
+        Relationships: []
+      }
       batch_feedback: {
         Row: {
           batch_id: string
@@ -497,6 +583,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fixture_images: {
+        Row: {
+          created_at: string
+          filename: string
+          filepath: string
+          id: string
+          product: string
+          r2_key: string
+          r2_url: string
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          filepath: string
+          id?: string
+          product: string
+          r2_key: string
+          r2_url: string
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          filepath?: string
+          id?: string
+          product?: string
+          r2_key?: string
+          r2_url?: string
+        }
+        Relationships: []
       }
       generated_images: {
         Row: {
@@ -1002,6 +1118,7 @@ export type Database = {
           completed_at: string | null
           cost_usd: number | null
           created_at: string
+          debug_metadata: Json | null
           duration_ms: number | null
           error_code: string | null
           error_message: string | null
@@ -1013,6 +1130,10 @@ export type Database = {
           input_tokens: number | null
           inputs: Json
           output_tokens: number | null
+          parent_run_id: string | null
+          phase: string | null
+          phase_run_number: number | null
+          session_id: string | null
           source_image_key: string | null
           source_image_url: string | null
           status: Database["public"]["Enums"]["prompt_test_status"]
@@ -1023,6 +1144,7 @@ export type Database = {
           completed_at?: string | null
           cost_usd?: number | null
           created_at?: string
+          debug_metadata?: Json | null
           duration_ms?: number | null
           error_code?: string | null
           error_message?: string | null
@@ -1034,6 +1156,10 @@ export type Database = {
           input_tokens?: number | null
           inputs: Json
           output_tokens?: number | null
+          parent_run_id?: string | null
+          phase?: string | null
+          phase_run_number?: number | null
+          session_id?: string | null
           source_image_key?: string | null
           source_image_url?: string | null
           status?: Database["public"]["Enums"]["prompt_test_status"]
@@ -1044,6 +1170,7 @@ export type Database = {
           completed_at?: string | null
           cost_usd?: number | null
           created_at?: string
+          debug_metadata?: Json | null
           duration_ms?: number | null
           error_code?: string | null
           error_message?: string | null
@@ -1055,12 +1182,23 @@ export type Database = {
           input_tokens?: number | null
           inputs?: Json
           output_tokens?: number | null
+          parent_run_id?: string | null
+          phase?: string | null
+          phase_run_number?: number | null
+          session_id?: string | null
           source_image_key?: string | null
           source_image_url?: string | null
           status?: Database["public"]["Enums"]["prompt_test_status"]
           template_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "prompt_tests_parent_run_id_fkey"
+            columns: ["parent_run_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_tests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "prompt_tests_template_id_fkey"
             columns: ["template_id"]
@@ -1593,7 +1731,6 @@ export type Database = {
               p_credits?: number
               p_parameters?: Json
               p_prompt: string
-              p_template_slug?: string
               p_upload_id: string
               p_user_id: string
             }
@@ -1623,6 +1760,7 @@ export type Database = {
               p_credits?: number
               p_parameters?: Json
               p_prompt: string
+              p_template_slug?: string
               p_upload_id: string
               p_user_id: string
             }
