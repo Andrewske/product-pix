@@ -5,6 +5,9 @@ import { config } from 'dotenv';
 import { createAdminClient } from '../../src/lib/supabase/admin';
 import { testCommand } from '../commands/test';
 import { logger } from '../core/logger';
+import { runAnalysisPhase, runGenerationPhase } from '../core/notebook-orchestrator';
+import { isOk } from '../core/errors';
+import type { AnalysisResult, GenerationResult } from '../core/notebook-orchestrator';
 import type { ProgressCallback } from '../core/orchestrator';
 import type { BatchFileMetadata, TemplateMetadata } from './types';
 
@@ -1833,24 +1836,32 @@ const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
       return Response.json({ error: 'Missing required fields: sessionId, fixtureImageIds' }, { status: 400 });
     }
 
-    // TODO: Implement analysis logic
-    // For now, return a mock response
-    const mockRun = {
-      id: 'analysis-' + Date.now(),
-      session_id: sessionId,
-      phase: 'analysis',
-      phase_run_number: 1,
-      inputs: { fixtureImageIds, variables },
-      debug_metadata: {
-        tokens: { input: 150, output: 200 },
-        model
-      },
-      created_at: new Date().toISOString()
-    };
+    // Call real orchestrator function
+    const result = await runAnalysisPhase({
+      sessionId,
+      fixtureImageIds,
+      variables: variables || {},
+      model: model || 'gemini-2.0-flash',
+      cacheEnabled: cacheEnabled ?? true
+    });
 
-    return Response.json(mockRun);
+    if (!isOk(result)) {
+      logger.error('Notebook analysis failed', {
+        sessionId,
+        error: result.error.message
+      });
+      return Response.json({ error: result.error.message }, { status: 500 });
+    }
+
+    logger.info('Notebook analysis succeeded', {
+      sessionId,
+      runId: (result.data as AnalysisResult).runId
+    });
+
+    return Response.json(result.data as AnalysisResult);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Notebook analyze endpoint error', { error: message });
     return Response.json({ error: 'Analysis failed: ' + message }, { status: 500 });
   }
 };
@@ -1864,27 +1875,34 @@ const handleNotebookGenerate = async (req: Request): Promise<Response> => {
       return Response.json({ error: 'Missing required fields: sessionId, parentRunId, templateSlug' }, { status: 400 });
     }
 
-    // TODO: Implement generation logic
-    // For now, return a mock response
-    const mockRun = {
-      id: 'generation-' + Date.now(),
-      session_id: sessionId,
-      parent_run_id: parentRunId,
-      phase: 'generation',
-      phase_run_number: 1,
-      inputs: { templateSlug, templateData, variables },
-      image_url: 'https://via.placeholder.com/512x512?text=Generated+Image',
-      debug_metadata: {
-        tokens: { input: 300, output: 150 },
-        thinking: 'Analyzing the fixture images and generating appropriate content...',
-        final_prompt: 'Create a product photo based on the analysis...'
-      },
-      created_at: new Date().toISOString()
-    };
+    // Call real orchestrator function
+    const result = await runGenerationPhase({
+      sessionId,
+      parentRunId,
+      templateSlug,
+      templateData: templateData || {},
+      variables: variables || {}
+    });
 
-    return Response.json(mockRun);
+    if (!isOk(result)) {
+      logger.error('Notebook generation failed', {
+        sessionId,
+        parentRunId,
+        error: result.error.message
+      });
+      return Response.json({ error: result.error.message }, { status: 500 });
+    }
+
+    logger.info('Notebook generation succeeded', {
+      sessionId,
+      runId: (result.data as GenerationResult).runId,
+      imageUrl: (result.data as GenerationResult).imageUrl
+    });
+
+    return Response.json(result.data as GenerationResult);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Notebook generate endpoint error', { error: message });
     return Response.json({ error: 'Generation failed: ' + message }, { status: 500 });
   }
 };
@@ -1898,19 +1916,45 @@ const handleNotebookSession = async (req: Request): Promise<Response> => {
       return Response.json({ error: 'Session ID required' }, { status: 400 });
     }
 
-    // TODO: Implement session loading from database
-    // For now, return mock data
-    const mockData = {
-      phases: {
-        analysis: [],
-        generation: [],
-        evaluation: []
-      }
+    const supabase = createAdminClient();
+
+    // Fetch all runs for this session
+    const { data: runs, error } = await supabase
+      .from('prompt_tests')
+      .select(`
+        *,
+        prompt_evaluations(*)
+      `)
+      .eq('session_id', sessionId)
+      .order('phase', { ascending: true })
+      .order('phase_run_number', { ascending: true });
+
+    if (error) {
+      logger.error('Failed to load notebook session', {
+        sessionId,
+        error: error.message
+      });
+      return Response.json({ error: `Database error: ${error.message}` }, { status: 500 });
+    }
+
+    // Group by phase
+    const phases = {
+      analysis: runs?.filter(r => r.phase === 'analysis') || [],
+      generation: runs?.filter(r => r.phase === 'generation') || [],
+      evaluation: runs?.filter(r => r.phase === 'evaluation') || []
     };
 
-    return Response.json(mockData);
+    logger.info('Loaded notebook session', {
+      sessionId,
+      analysisRuns: phases.analysis.length,
+      generationRuns: phases.generation.length,
+      evaluationRuns: phases.evaluation.length
+    });
+
+    return Response.json({ sessionId, phases });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Notebook session endpoint error', { error: message });
     return Response.json({ error: 'Failed to load session: ' + message }, { status: 500 });
   }
 };
