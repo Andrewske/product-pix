@@ -842,6 +842,133 @@ const serveNotebookHTML = (): Response => {
       }
     };
 
+    // SessionStorage schema (lines 837-900)
+    interface NotebookSessionState {
+      version: 1;
+      sessionId: string;
+      timestamp: number;
+      selectedFixtureIds: string[];
+      selectedAnalysisId: string | null;
+      selectedGenerationId: string | null;
+      analysisRuns: Array<{
+        id: string;
+        phase_run_number: number;
+        created_at: string;
+        inputs: Record<string, unknown>;
+        debug_metadata: {
+          thinking: string | null;
+          tokens: { input: number; output: number };
+          raw_prompt: string;
+          raw_response: unknown;
+        };
+      }>;
+      generationRuns: Array<{
+        id: string;
+        parent_run_id: string;
+        phase_run_number: number;
+        created_at: string;
+        inputs: Record<string, unknown>;
+        final_prompt: string;
+        debug_metadata: {
+          thinking: string | null;
+          tokens: { input: number; output: number };
+          image_url: string;
+        };
+      }>;
+      evaluationRuns: Array<{
+        id: string;
+        parent_run_id: string;
+        phase_run_number: number;
+        created_at: string;
+        score: number;
+        criteria: Record<string, unknown>;
+        reasoning: string;
+      }>;
+      imageCache: Array<{
+        runId: string;
+        r2Url: string;
+        dataUrl: string;
+        size: number;
+        timestamp: number;
+      }>;
+    }
+
+    const saveNotebookSession = (state) => {
+      try {
+        sessionStorage.setItem(\`notebook-\${state.sessionId}\`, JSON.stringify({
+          version: 1,
+          timestamp: Date.now(),
+          ...state
+        }));
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          // Clear image cache and retry
+          state.imageCache = [];
+          try {
+            sessionStorage.setItem(\`notebook-\${state.sessionId}\`, JSON.stringify({
+              version: 1,
+              timestamp: Date.now(),
+              ...state
+            }));
+          } catch (e2) {
+            console.warn('SessionStorage unavailable, using R2 URLs only');
+          }
+        }
+      }
+    };
+
+    const loadNotebookSession = (sessionId) => {
+      try {
+        const cached = sessionStorage.getItem(\`notebook-\${sessionId}\`);
+        if (!cached) return null;
+
+        const state = JSON.parse(cached);
+
+        // Migrate old schema (only had selectedAnalysisId, selectedGenerationId)
+        if (!state.version) {
+          console.log('Migrating old session schema to v1');
+          return {
+            version: 1,
+            sessionId,
+            timestamp: Date.now(),
+            selectedAnalysisId: state.selectedAnalysisId || null,
+            selectedGenerationId: state.selectedGenerationId || null,
+            selectedFixtureIds: [],
+            analysisRuns: [],
+            generationRuns: [],
+            evaluationRuns: [],
+            imageCache: []
+          };
+        }
+
+        // Validate current schema
+        if (state.version !== 1) {
+          console.warn('Incompatible schema version, clearing cache');
+          sessionStorage.removeItem(\`notebook-\${sessionId}\`);
+          return null;
+        }
+
+        // Check staleness (1 hour)
+        if (Date.now() - state.timestamp > 3600000) {
+          console.log('Session cache stale (>1 hour), will fetch fresh data');
+          return null;
+        }
+
+        // Validate required fields
+        if (!state.sessionId || !Array.isArray(state.analysisRuns)) {
+          console.warn('Invalid session structure, clearing cache');
+          sessionStorage.removeItem(\`notebook-\${sessionId}\`);
+          return null;
+        }
+
+        return state;
+      } catch (e) {
+        console.warn('Failed to parse SessionStorage, clearing:', e);
+        sessionStorage.removeItem(\`notebook-\${sessionId}\`);
+        return null;
+      }
+    };
+
     const SessionHeader = ({ sessionId }) => {
       return React.createElement('div', { className: 'bg-white rounded-lg shadow p-4 mb-6' },
         React.createElement('div', { className: 'flex justify-between items-center' },
