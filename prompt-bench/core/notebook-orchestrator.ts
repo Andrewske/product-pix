@@ -31,6 +31,7 @@ export interface AnalysisRequest {
   model?: string;
   cacheEnabled?: boolean;
   customPrompt?: string;
+  customSchema?: Record<string, any>;
 }
 
 export interface AnalysisResult {
@@ -40,6 +41,7 @@ export interface AnalysisResult {
   tokens: { input: number; output: number };
   rawPrompt: string;
   rawResponse: unknown;
+  databaseRecord: unknown;
 }
 
 export interface GenerationRequest {
@@ -294,7 +296,8 @@ export const runAnalysisPhase = async (
   const analysisResult = await analyzeProductImages(imagesResult.data, {
     model: request.model || 'gemini-2.0-flash',
     cacheEnabled: request.cacheEnabled ?? true,
-    customPrompt: request.customPrompt
+    customPrompt: request.customPrompt,
+    customSchema: request.customSchema
   });
 
   if (!isOk(analysisResult)) {
@@ -330,20 +333,22 @@ export const runAnalysisPhase = async (
 
   const testRecord = storeResult.data;
 
-  logger.info('Analysis phase complete', {
-    sessionId: request.sessionId,
-    runId: testRecord.id,
-    phaseRunNumber: phaseRunNumberResult.data
-  });
-
-   return ok({
+   logger.info('Analysis phase complete', {
+     sessionId: request.sessionId,
      runId: testRecord.id,
-     phaseRunNumber: phaseRunNumberResult.data,
-     analysis: merged,
-     tokens: analysisResult.data.usage || { input: 0, output: 0 },
-     rawPrompt: '',
-     rawResponse: analysisResult.data.raw
+     phaseRunNumber: phaseRunNumberResult.data
    });
+
+    return ok({
+      runId: testRecord.id,
+      phaseRunNumber: phaseRunNumberResult.data,
+      analysis: merged,
+      tokens: analysisResult.data.usage || { input: 0, output: 0 },
+      rawPrompt: '',
+      rawResponse: analysisResult.data.raw,
+      // Include the database record for UI compatibility
+      databaseRecord: testRecord
+    });
 };
 
 // =============================================================================

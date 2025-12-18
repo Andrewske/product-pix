@@ -411,11 +411,13 @@ const handleNotebookFixtures = async (req: Request): Promise<Response> => {
 const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
-    const { sessionId, fixtureImageIds, variables, model, cacheEnabled, customPrompt } = body;
+    const { sessionId, fixtureImageIds, variables, model, cacheEnabled, customPrompt, customSchema } = body;
 
     if (!sessionId || !fixtureImageIds || fixtureImageIds.length === 0) {
       return Response.json({ error: 'Missing required fields: sessionId, fixtureImageIds' }, { status: 400 });
     }
+
+    const supabase = createAdminClient();
 
     // Call real orchestrator function
     const result = await runAnalysisPhase({
@@ -424,7 +426,8 @@ const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
       variables: variables || {},
       model: model || 'gemini-2.0-flash',
       cacheEnabled: cacheEnabled ?? true,
-      customPrompt
+      customPrompt,
+      customSchema
     });
 
     if (!isOk(result)) {
@@ -435,12 +438,29 @@ const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
       return Response.json({ error: result.error.message }, { status: 500 });
     }
 
+    const analysisResult = result.data as any;
     logger.info('Notebook analysis succeeded', {
       sessionId,
-      runId: (result.data as AnalysisResult).runId
+      runId: analysisResult.runId
     });
 
-    return Response.json(result.data as AnalysisResult);
+    // Fetch the database record to return to UI
+    const { data: dbRecord, error: fetchError } = await supabase
+      .from('prompt_tests')
+      .select('*')
+      .eq('id', analysisResult.runId)
+      .single();
+
+    if (fetchError) {
+      logger.error('Failed to fetch analysis record', {
+        sessionId,
+        runId: analysisResult.runId,
+        error: fetchError.message
+      });
+      return Response.json({ error: `Failed to fetch result: ${fetchError.message}` }, { status: 500 });
+    }
+
+    return Response.json(dbRecord);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Notebook analyze endpoint error', { error: message });

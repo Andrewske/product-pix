@@ -4,6 +4,50 @@ import { z } from 'zod';
 import { ok, err, type Result, createError } from '@bench/core/errors';
 import { fetchAnalysisPrompt } from '@bench/db/analysis-prompts';
 import { getAnalysisCache, setAnalysisCache, generateCacheKey } from './analysis-cache';
+
+/**
+ * Convert JSON schema to Zod schema dynamically
+ */
+function jsonSchemaToZod(jsonSchema: Record<string, any>): z.ZodObject<any> {
+  const shape: Record<string, z.ZodTypeAny> = {};
+
+  for (const [key, config] of Object.entries(jsonSchema)) {
+    let zodType: z.ZodTypeAny;
+
+    // Build base type
+    switch (config.type) {
+      case 'string':
+        zodType = z.string();
+        break;
+      case 'boolean':
+        zodType = z.boolean();
+        break;
+      case 'number':
+        zodType = z.number();
+        break;
+      case 'array':
+        const itemType = config.items === 'string' ? z.string() : z.any();
+        zodType = z.array(itemType);
+        break;
+      default:
+        zodType = z.string();
+    }
+
+    // Add description
+    if (config.description) {
+      zodType = zodType.describe(config.description);
+    }
+
+    // Make optional
+    if (config.optional) {
+      zodType = zodType.optional();
+    }
+
+    shape[key] = zodType;
+  }
+
+  return z.object(shape);
+}
 import { mergeAnalysisResults } from './consensus';
 import type { ProductAnalysis, MergedAnalysis } from '@/types/analysis';
 
@@ -12,6 +56,7 @@ export interface AnalysisOptions {
   promptSlug?: string;
   cacheEnabled?: boolean;
   customPrompt?: string;
+  customSchema?: Record<string, any>;
 }
 
 export interface AnalysisResult {
@@ -34,7 +79,8 @@ export async function analyzeProductImages(
     model = 'gemini-2.0-flash',
     promptSlug = 'product-analysis',
     cacheEnabled = true,
-    customPrompt
+    customPrompt,
+    customSchema
   } = options;
 
   // 1. Get analysis prompt - use custom if provided, otherwise fetch from DB
@@ -68,7 +114,7 @@ export async function analyzeProductImages(
 
   // 4. Analyze each image in parallel
   const analysisPromises = images.map(image =>
-    analyzeSingleImage(image, promptText, model)
+    analyzeSingleImage(image, promptText, model, customSchema)
   );
 
   const analysisResults = await Promise.all(analysisPromises);
@@ -117,9 +163,25 @@ export async function analyzeProductImages(
 async function analyzeSingleImage(
   image: { buffer: Buffer; mimeType: string },
   promptText: string,
-  model: string
+  model: string,
+  customSchema?: Record<string, any>
 ): Promise<Result<ProductAnalysis>> {
   try {
+    // Use custom schema if provided, otherwise default
+    const schema = customSchema
+      ? jsonSchemaToZod(customSchema)
+      : z.object({
+          product: z.string().describe('The main product name/type'),
+          color: z.string().describe('Primary color and finish'),
+          material: z.string().describe('Primary material composition'),
+          shape: z.string().describe('Overall shape and form'),
+          features: z.array(z.string()).describe('Key distinguishing features'),
+          hasScaleReference: z.boolean().describe('True if human hand/body part or common object visible for scale comparison'),
+          scaleDescription: z.string().optional().describe('Natural language description of scale if reference visible (e.g., "fits in palm", "hand-holdable size", "about 12 inches wide")'),
+          brand: z.string().optional().describe('Brand name if visible on logos, tags, or plaques'),
+          brandingDetails: z.string().optional().describe('Description of branding elements (logo placement, plaque text, tag details)')
+        });
+
     const result = await generateObject({
       model: google(model),
       messages: [
@@ -137,17 +199,7 @@ async function analyzeSingleImage(
           ]
         }
       ],
-      schema: z.object({
-        product: z.string().describe('The main product name/type'),
-        color: z.string().describe('Primary color and finish'),
-        material: z.string().describe('Primary material composition'),
-        shape: z.string().describe('Overall shape and form'),
-        features: z.array(z.string()).describe('Key distinguishing features'),
-        hasScaleReference: z.boolean().describe('True if human hand/body part or common object visible for scale comparison'),
-        scaleDescription: z.string().optional().describe('Natural language description of scale if reference visible (e.g., "fits in palm", "hand-holdable size", "about 12 inches wide")'),
-        brand: z.string().optional().describe('Brand name if visible on logos, tags, or plaques'),
-        brandingDetails: z.string().optional().describe('Description of branding elements (logo placement, plaque text, tag details)')
-      })
+      schema
     });
 
     return ok(result.object);
