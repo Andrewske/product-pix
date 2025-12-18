@@ -9,6 +9,7 @@ export * from './collection-evaluator';
 export * from './statistics';
 export * from './source-image';
 export * from './orchestrator';
+export * from './notebook-orchestrator';
 export * from './category-classifier';
 export * from './category-angles';
 export * from './angle-detector';
