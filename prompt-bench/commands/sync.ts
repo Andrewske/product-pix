@@ -2,7 +2,7 @@
  * Sync Command - Sync templates and analysis prompts from local files to database
  */
 
-import { readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, basename, extname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { uploadBuffer, getPublicUrl } from '@/lib/r2';
@@ -86,9 +86,9 @@ const syncFixtureImages = async (supabase: ReturnType<typeof createAdminClient>)
     }
 
     // Read file and generate hash
-    const buffer = await Bun.file(filePath).arrayBuffer();
+    const buffer = await readFile(filePath);
     const hash = createHash('sha256')
-      .update(Buffer.from(buffer))
+      .update(buffer)
       .digest('hex')
       .slice(0, 8);
 
@@ -102,21 +102,23 @@ const syncFixtureImages = async (supabase: ReturnType<typeof createAdminClient>)
                        fileExt.toLowerCase() === '.webp' ? 'image/webp' :
                        'image/jpeg';
 
-    const uploadResult = await uploadBuffer(
-      Buffer.from(buffer),
-      r2Key,
-      contentType
-    );
-
-    if (!isOk(uploadResult)) {
+    let uploadedKey: string;
+    try {
+      const uploadResult = await uploadBuffer(
+        buffer,
+        r2Key,
+        contentType
+      );
+      uploadedKey = uploadResult.fileKey;
+    } catch (error) {
       logger.error('Failed to upload fixture to R2', {
         filepath: relativePath,
-        error: uploadResult.error.message
+        error: error instanceof Error ? error.message : String(error)
       });
       continue;
     }
 
-    const r2Url = getPublicUrl(uploadResult.data.key);
+    const r2Url = getPublicUrl(uploadedKey);
 
     // Insert into database
     const { error: insertError } = await supabase
@@ -126,7 +128,7 @@ const syncFixtureImages = async (supabase: ReturnType<typeof createAdminClient>)
         filename,
         filepath: relativePath,
         r2_url: r2Url,
-        r2_key: uploadResult.data.key
+        r2_key: uploadedKey
       });
 
     if (insertError) {

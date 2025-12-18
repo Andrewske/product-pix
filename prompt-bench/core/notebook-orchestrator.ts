@@ -30,6 +30,7 @@ export interface AnalysisRequest {
   variables?: Record<string, unknown>;
   model?: string;
   cacheEnabled?: boolean;
+  customPrompt?: string;
 }
 
 export interface AnalysisResult {
@@ -292,7 +293,8 @@ export const runAnalysisPhase = async (
   // 3. Run product analysis
   const analysisResult = await analyzeProductImages(imagesResult.data, {
     model: request.model || 'gemini-2.0-flash',
-    cacheEnabled: request.cacheEnabled ?? true
+    cacheEnabled: request.cacheEnabled ?? true,
+    customPrompt: request.customPrompt
   });
 
   if (!isOk(analysisResult)) {

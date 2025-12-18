@@ -36,9 +36,7 @@ async function buildExperimentBundle(production = false): Promise<void> {
       outdir: DIST_DIR,
       target: 'browser',
       format: 'iife',
-      banner: 'window.ExperimentApp = (function(){',
-      footer: 'return exports;})();',
-      external: ['react', 'react-dom'],
+      globalName: 'ExperimentApp',
       minify: production,
       sourcemap: production ? 'none' : 'inline',
       define: {
@@ -68,9 +66,7 @@ async function buildNotebookBundle(production = false): Promise<void> {
       outdir: DIST_DIR,
       target: 'browser',
       format: 'iife',
-      banner: 'window.NotebookApp = (function(){',
-      footer: 'return exports;})();',
-      external: ['react', 'react-dom'],
+      globalName: 'NotebookApp',
       minify: production,
       sourcemap: production ? 'none' : 'inline',
       define: {

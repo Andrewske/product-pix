@@ -11,6 +11,7 @@ export interface AnalysisOptions {
   model?: string;
   promptSlug?: string;
   cacheEnabled?: boolean;
+  customPrompt?: string;
 }
 
 export interface AnalysisResult {
@@ -32,19 +33,24 @@ export async function analyzeProductImages(
   const {
     model = 'gemini-2.0-flash',
     promptSlug = 'product-analysis',
-    cacheEnabled = true
+    cacheEnabled = true,
+    customPrompt
   } = options;
 
-  // 1. Fetch analysis prompt from DB
-  const promptResult = await fetchAnalysisPrompt(promptSlug);
-  if (!promptResult.ok) {
-    return err(createError(
-      'ANALYSIS_ERROR',
-      `Failed to fetch analysis prompt: ${promptResult.error.message}`
-    ));
+  // 1. Get analysis prompt - use custom if provided, otherwise fetch from DB
+  let promptText: string;
+  if (customPrompt) {
+    promptText = customPrompt;
+  } else {
+    const promptResult = await fetchAnalysisPrompt(promptSlug);
+    if (!promptResult.ok) {
+      return err(createError(
+        'ANALYSIS_ERROR',
+        `Failed to fetch analysis prompt: ${promptResult.error.message}`
+      ));
+    }
+    promptText = promptResult.data.promptText;
   }
-
-  const prompt = promptResult.data;
 
   // 2. Generate batch hash for cache lookup
   const batchHash = generateCacheKey(images);
@@ -62,7 +68,7 @@ export async function analyzeProductImages(
 
   // 4. Analyze each image in parallel
   const analysisPromises = images.map(image =>
-    analyzeSingleImage(image, prompt.promptText, model)
+    analyzeSingleImage(image, promptText, model)
   );
 
   const analysisResults = await Promise.all(analysisPromises);
@@ -79,15 +85,19 @@ export async function analyzeProductImages(
   // 5. Merge results with consensus
   const merged = mergeAnalysisResults(successfulResults);
 
-  // 6. Store in cache if enabled
-  if (cacheEnabled) {
-    await setAnalysisCache(
-      batchHash,
-      prompt.slug,
-      prompt.version,
-      merged,
-      successfulResults
-    );
+  // 6. Store in cache if enabled (skip for custom prompts to avoid cache pollution)
+  if (cacheEnabled && !customPrompt) {
+    const promptResult = await fetchAnalysisPrompt(promptSlug);
+    if (promptResult.ok) {
+      const prompt = promptResult.data;
+      await setAnalysisCache(
+        batchHash,
+        prompt.slug,
+        prompt.version,
+        merged,
+        successfulResults
+      );
+    }
   }
 
   return ok({

@@ -52,7 +52,8 @@ Bun.serve({
 console.log('🚀 Prompt Bench UI running at http://localhost:8181');
 
 const serveHTML = (): Response => {
-  const experimentBundle = loadBundle('experiment.js');
+  const experimentBundle = loadBundle('experiment.js')
+    .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
 
   const html = `
     <!DOCTYPE html>
@@ -61,8 +62,6 @@ const serveHTML = (): Response => {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Prompt Bench - Experiment Runner</title>
-      <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-      <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
       <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     </head>
     <body>
@@ -70,9 +69,8 @@ const serveHTML = (): Response => {
       <script>
         ${experimentBundle}
 
-        // Mount app
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(ExperimentApp.App));
+        // Mount app using bundled React
+        ExperimentApp.mount();
       </script>
     </body>
     </html>
@@ -84,7 +82,8 @@ const serveHTML = (): Response => {
 };
 
 const serveNotebookHTML = (): Response => {
-  const notebookBundle = loadBundle('notebook.js');
+  const notebookBundle = loadBundle('notebook.js')
+    .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
 
   const html = `
     <!DOCTYPE html>
@@ -93,8 +92,6 @@ const serveNotebookHTML = (): Response => {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Prompt Bench - Notebook</title>
-      <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-      <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
       <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     </head>
     <body>
@@ -102,9 +99,8 @@ const serveNotebookHTML = (): Response => {
       <script>
         ${notebookBundle}
 
-        // Mount app
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(NotebookApp.NotebookView));
+        // Mount app using bundled React
+        NotebookApp.mount();
       </script>
     </body>
     </html>
@@ -399,7 +395,13 @@ const handleNotebookFixtures = async (req: Request): Promise<Response> => {
       return acc;
     }, {} as Record<string, typeof fixtures>);
 
-    return Response.json({ fixtures: grouped });
+    const totalCount = fixtures?.length || 0;
+    const productCount = Object.keys(grouped).length;
+
+    return Response.json({
+      fixtures: grouped,
+      metadata: { totalCount, productCount }
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return Response.json({ error: `Failed to load fixtures: ${message}` }, { status: 500 });
@@ -409,7 +411,7 @@ const handleNotebookFixtures = async (req: Request): Promise<Response> => {
 const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
-    const { sessionId, fixtureImageIds, variables, model, cacheEnabled } = body;
+    const { sessionId, fixtureImageIds, variables, model, cacheEnabled, customPrompt } = body;
 
     if (!sessionId || !fixtureImageIds || fixtureImageIds.length === 0) {
       return Response.json({ error: 'Missing required fields: sessionId, fixtureImageIds' }, { status: 400 });
@@ -421,7 +423,8 @@ const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
       fixtureImageIds,
       variables: variables || {},
       model: model || 'gemini-2.0-flash',
-      cacheEnabled: cacheEnabled ?? true
+      cacheEnabled: cacheEnabled ?? true,
+      customPrompt
     });
 
     if (!isOk(result)) {
