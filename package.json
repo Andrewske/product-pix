@@ -9,6 +9,9 @@
     "lint": "eslint --cache",
     "validate-models": "tsx scripts/validate-models.ts",
     "bench": "tsx prompt-bench/cli.ts",
+    "bench:ui:build": "bun run prompt-bench/ui/build.ts all",
+    "bench:ui:dev": "bun run prompt-bench/ui/build.ts watch",
+    "bench:ui:serve": "bun run prompt-bench/ui/server.ts",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage"
