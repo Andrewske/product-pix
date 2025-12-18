@@ -1254,7 +1254,7 @@ const serveNotebookHTML = (): Response => {
       );
     };
 
-    const GenerationPhase = ({ sessionId, parentRunId, runs, selectedRunId, disabled, onRunComplete, onSelectRun }) => {
+    const GenerationPhase = ({ sessionId, parentRunId, runs, selectedRunId, disabled, onRunComplete, onSelectRun, imageCache, setImageCache }) => {
       const [error, setError] = useState(null);
       const [isRunning, setIsRunning] = useState(false);
       const [templateSlug, setTemplateSlug] = useState('');
@@ -1262,6 +1262,7 @@ const serveNotebookHTML = (): Response => {
       const [templateData, setTemplateData] = useState({});
       const [expandedRunId, setExpandedRunId] = useState(null);
       const [showComparison, setShowComparison] = useState(false);
+      const [imageDataUrls, setImageDataUrls] = useState({});
 
       useEffect(() => {
         fetch('/api/templates')
@@ -1277,6 +1278,31 @@ const serveNotebookHTML = (): Response => {
           }
         }
       }, [templateSlug, templates]);
+
+      const loadImage = async (run) => {
+        if (imageDataUrls[run.id]) return; // Already loaded
+
+        const r2Url = run.debug_metadata?.image_url;
+        if (!r2Url) return;
+
+        try {
+          const { dataUrl, isNew } = await getCachedOrConvertImage(
+            run.id,
+            r2Url,
+            imageCache
+          );
+
+          setImageDataUrls(prev => ({ ...prev, [run.id]: dataUrl }));
+
+          if (isNew) {
+            // Trigger SessionStorage save via parent useEffect
+            setImageCache([...imageCache]);
+          }
+        } catch (err) {
+          logger.error('Failed to convert image to data URL', { error: err.message, runId: run.id });
+          // Fall back to R2 URL (already in img src)
+        }
+      };
 
       const handleRun = async () => {
         // Validate template selected
@@ -1408,9 +1434,14 @@ const serveNotebookHTML = (): Response => {
                 }, expandedRunId === run.id ? 'Collapse' : 'Expand')
               ),
               React.createElement('img', {
-                src: run.image_url,
-                alt: \`Run \${run.phase_run_number}\`,
-                className: 'w-48 rounded'
+                src: imageDataUrls[run.id] || run.debug_metadata?.image_url || '',
+                alt: \`Generation \${run.phase_run_number}\`,
+                className: 'w-full h-auto rounded border border-gray-200',
+                onLoad: () => {
+                  if (!imageDataUrls[run.id]) {
+                    loadImage(run);
+                  }
+                }
               }),
               expandedRunId === run.id && run.debug_metadata?.thinking && React.createElement('div', { className: 'mt-3 pt-3 border-t' },
                 React.createElement('h4', { className: 'text-sm font-semibold mb-2' }, 'Thinking:'),
@@ -1793,7 +1824,9 @@ const serveNotebookHTML = (): Response => {
             selectedRunId: selectedGenerationId,
             disabled: !selectedAnalysisId,
             onRunComplete: (newRun) => setGenerationRuns([...generationRuns, newRun]),
-            onSelectRun: setSelectedGenerationId
+            onSelectRun: setSelectedGenerationId,
+            imageCache,
+            setImageCache
           }),
           React.createElement(EvaluationPhase, {
             sessionId,
