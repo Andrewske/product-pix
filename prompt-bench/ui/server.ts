@@ -969,6 +969,49 @@ const serveNotebookHTML = (): Response => {
       }
     };
 
+    const convertImageToDataUrl = async (r2Url) => {
+      const response = await fetch(r2Url);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    };
+
+    const getCachedOrConvertImage = async (runId, r2Url, imageCache) => {
+      // Check cache first
+      const cached = imageCache.find(c => c.runId === runId);
+      if (cached) {
+        // Update timestamp for LRU
+        cached.timestamp = Date.now();
+        return { dataUrl: cached.dataUrl, isNew: false };
+      }
+
+      // Convert to data URL
+      const dataUrl = await convertImageToDataUrl(r2Url);
+      const newEntry = {
+        runId,
+        r2Url,
+        dataUrl,
+        size: dataUrl.length,
+        timestamp: Date.now()
+      };
+
+      // Add to cache
+      imageCache.push(newEntry);
+
+      // LRU eviction (keep max 5)
+      if (imageCache.length > 5) {
+        imageCache.sort((a, b) => b.timestamp - a.timestamp);
+        imageCache.splice(5); // Remove items beyond index 5
+      }
+
+      return { dataUrl, isNew: true };
+    };
+
     const SessionHeader = ({ sessionId }) => {
       return React.createElement('div', { className: 'bg-white rounded-lg shadow p-4 mb-6' },
         React.createElement('div', { className: 'flex justify-between items-center' },
