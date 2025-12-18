@@ -55,3 +55,6 @@ notes.md
 docs/archive/*
 # Prompt Bench Logs
 prompt-bench/logs/*.log
+
+# Component extraction dist
+prompt-bench/ui/dist/
