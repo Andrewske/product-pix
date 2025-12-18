@@ -5,7 +5,7 @@ import { type PromptTemplate } from '@bench/core/types';
  */
 export const ECOMMERCE_BASE: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdAt'> = {
   slug: 'ecommerce-base',
-  version: 4,
+  version: 5,
   status: 'active',
   templateData: {
     subject: 'Professional e-commerce photo of {product}, {color} {material}',
@@ -13,7 +13,7 @@ export const ECOMMERCE_BASE: Omit<PromptTemplate, 'id' | 'createdBy' | 'createdA
     lighting: 'soft diffused studio lighting with soft fill',
     camera: 'shot on DSLR with 85mm lens f/8',
     style: 'commercial catalog photography, color-accurate',
-    quality: '4K resolution, sharp focus, product centered filling 85% of frame, single product view only, no collages or grids',
+    quality: '4K resolution, sharp focus, product centered at authentic scale (not scaled to fill frame), single product view only, no collages or grids',
     negative: 'worst quality, blurry, watermark, text, logo',
     icon: '📦',
   },

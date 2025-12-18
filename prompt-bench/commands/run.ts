@@ -18,6 +18,7 @@ import { createGeminiProvider } from '@/lib/ai/providers/gemini';
 import { uploadBuffer, getPublicUrl } from '@/lib/r2';
 import { sleep, loadConfig } from './shared';
 import { calculateCost } from '@bench/core/cost';
+import { analyzeProductImages } from '@bench/core/product-analyzer';
 
 interface RunOptions {
   template: string;
@@ -138,6 +139,18 @@ export const runCommand = async (args: string[]): Promise<void> => {
     version: template.version
   });
 
+  // Check if this is a collection template
+  if ('type' in template && template.type === 'collection') {
+    logger.error('Collection templates not supported by run command', {
+      batchLabel,
+      template: template.slug,
+      message: 'Collection templates (multi-angle) must use the "test" command which provides full analysis and orchestration support'
+    });
+    console.error('\n❌ Error: Collection templates require the "test" command');
+    console.error(`   Run: bun bench test --template ${template.slug} --batch ${options.batchFile}\n`);
+    process.exit(1);
+  }
+
   // 3. Dry run - validate only
   if (options.dryRun) {
     logger.info('Starting dry run validation', { batchLabel });
@@ -257,6 +270,56 @@ export const runCommand = async (args: string[]): Promise<void> => {
       }
     }
 
+    // Run product analysis if source image exists (to detect scale and brand)
+    let scaleInstruction = '';
+    let brandInstruction = '';
+
+    if (resolvedSource) {
+      logger.info('Analyzing source image', {
+        batchLabel,
+        testIndex: testNum
+      });
+
+      const analysisResult = await analyzeProductImages(
+        [{ buffer: resolvedSource.buffer, mimeType: resolvedSource.mimeType }],
+        {
+          model: 'gemini-2.0-flash',
+          cacheEnabled: true
+        }
+      );
+
+      if (isOk(analysisResult)) {
+        // Merge analysis results into variables (manual values take precedence)
+        test.variables = {
+          ...analysisResult.data.merged,
+          ...test.variables
+        };
+
+        // Build scale instruction
+        if (analysisResult.data.merged.hasScaleReference && analysisResult.data.merged.scaleDescription) {
+          scaleInstruction = `SCALE REQUIREMENT: Source image shows scale reference (${analysisResult.data.merged.scaleDescription}). Maintain exact same physical product dimensions.`;
+        }
+
+        // Build brand instruction
+        if (analysisResult.data.merged.brand) {
+          brandInstruction = `BRAND REQUIREMENT: Product shows "${analysisResult.data.merged.brand}" branding${analysisResult.data.merged.brandingDetails ? ` (${analysisResult.data.merged.brandingDetails})` : ''}. Preserve this exact brand text and placement.`;
+        }
+
+        logger.info('Analysis complete', {
+          batchLabel,
+          testIndex: testNum,
+          hasScale: analysisResult.data.merged.hasScaleReference,
+          brand: analysisResult.data.merged.brand
+        });
+      } else {
+        logger.warn('Analysis failed, proceeding without', {
+          batchLabel,
+          testIndex: testNum,
+          error: analysisResult.error.message
+        });
+      }
+    }
+
     // Compile template
     const compileResult = compileTemplate(
       template.templateData,
@@ -276,6 +339,16 @@ export const runCommand = async (args: string[]): Promise<void> => {
     }
 
     const compiled = compileResult.data;
+
+    // Build final prompt with scale and brand instructions
+    const instructionsPrefix = [scaleInstruction, brandInstruction]
+      .filter(s => s.length > 0)
+      .join('\n');
+
+    const finalPrompt = instructionsPrefix.length > 0
+      ? `${instructionsPrefix}\n${compiled.prompt}`
+      : compiled.prompt;
+
     const idempotencyKey = generateIdempotencyKey(
       template.slug,
       template.version,
@@ -336,7 +409,7 @@ export const runCommand = async (args: string[]): Promise<void> => {
         idempotency_key: idempotencyKey,
         status: 'generating',
         inputs: test.variables as Json,
-        final_prompt: compiled.prompt,
+        final_prompt: finalPrompt,
         batch_label: batchLabel,
         source_image_url: resolvedSource?.r2Url ?? null,
         source_image_key: resolvedSource?.r2Key ?? null,
@@ -366,7 +439,7 @@ export const runCommand = async (args: string[]): Promise<void> => {
       generationResult = await gemini.generateFromImage(
         resolvedSource.buffer,
         resolvedSource.mimeType,
-        compiled.prompt,
+        finalPrompt,
         {
           aspectRatio: '1:1',
           resolution: '2k',
@@ -379,7 +452,7 @@ export const runCommand = async (args: string[]): Promise<void> => {
         batchLabel,
         testIndex: testNum
       });
-      generationResult = await gemini.generateFromText(compiled.prompt, {
+      generationResult = await gemini.generateFromText(finalPrompt, {
         aspectRatio: '1:1',
         resolution: '2k',
         rawPrompt: true,

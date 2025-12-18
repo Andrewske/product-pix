@@ -153,7 +153,29 @@ export const generateImage = async (
       error: `Template error: ${promptResult.error.message}`,
     };
   }
-  const compiledPrompt = promptResult.data;
+
+  // Build scale and brand instructions from analysis
+  let scaleInstruction = '';
+  let brandInstruction = '';
+
+  if (analysis) {
+    if (analysis.hasScaleReference && analysis.scaleDescription) {
+      scaleInstruction = `SCALE REQUIREMENT: Source image shows scale reference (${analysis.scaleDescription}). Maintain exact same physical product dimensions in generated image.`;
+    }
+
+    if (analysis.brand) {
+      brandInstruction = `BRAND REQUIREMENT: Product shows "${analysis.brand}" branding${analysis.brandingDetails ? ` (${analysis.brandingDetails})` : ''}. Preserve this exact brand text and placement in generated image.`;
+    }
+  }
+
+  // Inject scale and brand instructions into prompt
+  const instructionsPrefix = [scaleInstruction, brandInstruction]
+    .filter(s => s.length > 0)
+    .join('\n');
+
+  const compiledPrompt = instructionsPrefix.length > 0
+    ? `${instructionsPrefix}\n${promptResult.data}`
+    : promptResult.data;
 
   try {
     let result: GenerationResponse;

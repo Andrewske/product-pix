@@ -121,6 +121,11 @@ export const testCommand = async (
   const options = parseTestOptions(args);
   const batchLabel = options.label || generateBatchLabel(options.template);
 
+  // Send batch label to UI if callback provided
+  if (onProgress) {
+    onProgress('batch_label', 0, 0, batchLabel);
+  }
+
   // Header (unless quiet/json)
   if (!options.quiet && !options.json) {
     logger.info('Pipeline started', {

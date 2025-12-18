@@ -9,6 +9,10 @@ export interface ProductAnalysis {
   material: string;
   shape: string;
   features: string[];
+  hasScaleReference: boolean;
+  scaleDescription?: string;
+  brand?: string;
+  brandingDetails?: string;
 }
 
 export interface ImageConfig {

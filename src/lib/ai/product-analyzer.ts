@@ -65,6 +65,10 @@ export const analyzeProductImage = async (
         material: z.string().describe('Primary material composition (e.g., "ceramic", "genuine leather", "100% cotton")'),
         shape: z.string().describe('Overall shape and form (e.g., "cylindrical with handle", "rectangular with rounded corners")'),
         features: z.array(z.string()).describe('Key distinguishing features (e.g., ["textured surface", "embossed logo", "adjustable strap"])'),
+        hasScaleReference: z.boolean().describe('True if human hand/body part or common object visible for scale comparison'),
+        scaleDescription: z.string().optional().describe('Natural language description of scale if reference visible (e.g., "fits in palm", "hand-holdable size", "about 12 inches wide")'),
+        brand: z.string().optional().describe('Brand name if visible on logos, tags, or plaques'),
+        brandingDetails: z.string().optional().describe('Description of branding elements (logo placement, plaque text, tag details)'),
       }),
     });
 

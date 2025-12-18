@@ -13,17 +13,22 @@ export interface AnalysisOptions {
   cacheEnabled?: boolean;
 }
 
+export interface AnalysisResult {
+  merged: MergedAnalysis;
+  individual: ProductAnalysis[];
+}
+
 /**
  * Analyze multiple product images and merge results using consensus
  *
  * @param images - Array of images with buffers and MIME types
  * @param options - Configuration options
- * @returns Merged analysis result or error
+ * @returns Merged analysis result and individual per-image results or error
  */
 export async function analyzeProductImages(
   images: Array<{ buffer: Buffer; mimeType: string }>,
   options: AnalysisOptions = {}
-): Promise<Result<MergedAnalysis>> {
+): Promise<Result<AnalysisResult>> {
   const {
     model = 'gemini-2.0-flash',
     promptSlug = 'product-analysis',
@@ -48,7 +53,10 @@ export async function analyzeProductImages(
   if (cacheEnabled) {
     const cachedResult = await getAnalysisCache(batchHash);
     if (cachedResult.ok && cachedResult.data) {
-      return ok(cachedResult.data.mergedResult);
+      return ok({
+        merged: cachedResult.data.mergedResult,
+        individual: cachedResult.data.individualResults
+      });
     }
   }
 
@@ -82,7 +90,10 @@ export async function analyzeProductImages(
     );
   }
 
-  return ok(merged);
+  return ok({
+    merged,
+    individual: successfulResults
+  });
 }
 
 /**
@@ -121,7 +132,11 @@ async function analyzeSingleImage(
         color: z.string().describe('Primary color and finish'),
         material: z.string().describe('Primary material composition'),
         shape: z.string().describe('Overall shape and form'),
-        features: z.array(z.string()).describe('Key distinguishing features')
+        features: z.array(z.string()).describe('Key distinguishing features'),
+        hasScaleReference: z.boolean().describe('True if human hand/body part or common object visible for scale comparison'),
+        scaleDescription: z.string().optional().describe('Natural language description of scale if reference visible (e.g., "fits in palm", "hand-holdable size", "about 12 inches wide")'),
+        brand: z.string().optional().describe('Brand name if visible on logos, tags, or plaques'),
+        brandingDetails: z.string().optional().describe('Description of branding elements (logo placement, plaque text, tag details)')
       })
     });
 

@@ -6,7 +6,10 @@
             "sourceImages": [
                 "images/bag/bag-front.jpg",
                 "images/bag/bag-back.jpg"
-            ]
+            ],
+            "variables": {
+                "product": "Tote bag"
+            }
         }
     ]
 }

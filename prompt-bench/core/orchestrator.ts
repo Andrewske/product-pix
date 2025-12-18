@@ -51,7 +51,7 @@ analysisModel?: string;
 }
 
 export type ProgressCallback = (
-  phase: 'sync' | 'run' | 'evaluate' | 'report',
+  phase: 'sync' | 'run' | 'evaluate' | 'report' | 'batch_label',
   current: number,
   total: number,
   message: string
@@ -416,7 +416,7 @@ const runPhase = async (
 
         // Merge analysis results into variables (manual values take precedence)
         testCase.variables = {
-          ...analysisResult.data,  // Analysis results as defaults
+          ...analysisResult.data.merged,  // Analysis results as defaults
           ...testCase.variables     // Manual overrides
         };
 
@@ -426,7 +426,7 @@ const runPhase = async (
           step: 'analyze_product',
           testIndex: i,
           duration: `${Date.now() - analysisStart}ms`,
-          analysis: analysisResult.data
+          analysis: analysisResult.data.merged
         });
       }
 
@@ -702,6 +702,12 @@ export const coordinateCollectionGeneration = async (
     const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
     const needsAnalysis = analysisEnabled && sourceImages.length > 0;
 
+    // Initialize scale instruction (will be populated from analysis if available)
+    let scaleInstruction = 'SCALE REQUIREMENT: Maintain consistent realistic product dimensions across all generated images.';
+
+    // Initialize brand instruction (will be populated from analysis if available)
+    let brandInstruction = '';
+
     // Resolve ALL source images if needed for analysis or angle detection
     const resolvedSourceImagesForAnalysis: ResolvedSourceImage[] = [];
     if ((needsAnalysis || sourceImages.length > 0) && sourceImages.length > 0) {
@@ -750,9 +756,28 @@ export const coordinateCollectionGeneration = async (
 
       // Merge analysis results into variables (manual values take precedence)
       testCase.variables = {
-        ...analysisResult.data,
+        ...analysisResult.data.merged,
         ...testCase.variables
       };
+
+      // Build scale instruction from individual image analyses
+      const imagesWithScale = analysisResult.data.individual
+        .map((analysis, idx) => ({
+          index: idx,
+          hasScale: analysis.hasScaleReference,
+          description: analysis.scaleDescription
+        }))
+        .filter(x => x.hasScale);
+
+      if (imagesWithScale.length > 0) {
+        const scaleImage = imagesWithScale[0]; // Prioritize first one found
+        scaleInstruction = `SCALE REQUIREMENT: Image ${scaleImage.index + 1} shows scale reference${scaleImage.description ? ` (${scaleImage.description})` : ''}. Maintain exact same physical product dimensions in all generated images.`;
+      }
+
+      // Build brand instruction from merged analysis
+      if (analysisResult.data.merged.brand) {
+        brandInstruction = `BRAND REQUIREMENT: Product shows "${analysisResult.data.merged.brand}" branding${analysisResult.data.merged.brandingDetails ? ` (${analysisResult.data.merged.brandingDetails})` : ''}. Preserve this exact brand text and placement.`;
+      }
 
       logger.debug('Step completed', {
         batchLabel,
@@ -760,7 +785,8 @@ export const coordinateCollectionGeneration = async (
         step: 'analyze_product',
         testIndex: i,
         duration: `${Date.now() - analysisStart}ms`,
-        analysis: analysisResult.data
+        analysis: analysisResult.data.merged,
+        scaleInstruction
       });
     }
 
@@ -866,8 +892,10 @@ Each photo must be visually unique from previous outputs.`
         ));
       }
 
-      // Build angle-specific prompt with diversity instruction
+      // Build angle-specific prompt with diversity, scale, and brand instructions
       const prompt = `Generate image ${j + 1}/${targetAngles.length}: ${angle} view.
+${scaleInstruction}
+${brandInstruction}
 This must be distinctly different from any previous images.
 ${compileResult.data.prompt}`;
 

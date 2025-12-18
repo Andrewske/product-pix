@@ -14,12 +14,38 @@ export function mergeAnalysisResults(results: ProductAnalysis[]): MergedAnalysis
     return results[0];
   }
 
+  // Scale detection: if ANY image has scale reference, use it (OR logic)
+  // Prioritize the most specific/detailed scale description
+  const hasScale = results.some(r => r.hasScaleReference);
+  const scaleDescriptions = results
+    .filter(r => r.hasScaleReference && r.scaleDescription)
+    .map(r => r.scaleDescription!);
+
+  // Pick the longest description (usually most specific)
+  const bestScaleDescription = scaleDescriptions.length > 0
+    ? scaleDescriptions.sort((a, b) => b.length - a.length)[0]
+    : undefined;
+
+  // Brand: use majority vote, prefer non-empty values
+  const brands = results.map(r => r.brand).filter(b => b && b.trim().length > 0);
+  const brand = brands.length > 0 ? majorityVote(brands) : undefined;
+
+  // Branding details: pick the most detailed one
+  const brandingDetails = results
+    .filter(r => r.brandingDetails && r.brandingDetails.trim().length > 0)
+    .map(r => r.brandingDetails!)
+    .sort((a, b) => b.length - a.length)[0];
+
   return {
     product: majorityVote(results.map(r => r.product)),
     color: majorityVote(results.map(r => r.color)),
     material: majorityVote(results.map(r => r.material)),
     shape: majorityVote(results.map(r => r.shape)),
-    features: unionArray(results.flatMap(r => r.features))
+    features: unionArray(results.flatMap(r => r.features)),
+    hasScaleReference: hasScale,
+    scaleDescription: bestScaleDescription,
+    brand,
+    brandingDetails
   };
 }
 
