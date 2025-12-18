@@ -5,9 +5,9 @@ import { config } from 'dotenv';
 import { createAdminClient } from '../../src/lib/supabase/admin';
 import { testCommand } from '../commands/test';
 import { logger } from '../core/logger';
-import { runAnalysisPhase, runGenerationPhase } from '../core/notebook-orchestrator';
+import { runAnalysisPhase, runGenerationPhase, runEvaluationPhase } from '../core/notebook-orchestrator';
 import { isOk } from '../core/errors';
-import type { AnalysisResult, GenerationResult } from '../core/notebook-orchestrator';
+import type { AnalysisResult, GenerationResult, EvaluationResult } from '../core/notebook-orchestrator';
 import type { ProgressCallback } from '../core/orchestrator';
 import type { BatchFileMetadata, TemplateMetadata } from './types';
 
@@ -32,6 +32,7 @@ Bun.serve({
     if (url.pathname === '/api/notebook/fixtures') return handleNotebookFixtures(req);
     if (url.pathname === '/api/notebook/analyze' && req.method === 'POST') return handleNotebookAnalyze(req);
     if (url.pathname === '/api/notebook/generate' && req.method === 'POST') return handleNotebookGenerate(req);
+    if (url.pathname === '/api/notebook/evaluate' && req.method === 'POST') return handleNotebookEvaluate(req);
     if (url.pathname.match(/^\/api\/notebook\/session\/[^/]+$/)) return handleNotebookSession(req);
 
     return new Response('Not Found', { status: 404 });
@@ -58,6 +59,10 @@ const serveHTML = (): Response => {
     const { useState, useEffect } = React;
     const { createRoot } = ReactDOM;
 
+    const DEFAULT_EVALUATION_PROMPT = 'You are evaluating an AI-generated product photo for e-commerce use.\n\nScore each criterion from 1-10 (1 = poor, 10 = excellent):\n\n1. **Composition** (1-10): Product placement, visual balance, appropriate fill percentage (product should fill 60-90% of frame)\n\n2. **Lighting** (1-10): Even illumination, no harsh shadows, appropriate highlights, professional studio quality\n\n3. **Product Visibility** (1-10): Sharp focus on product, all features clearly visible, no obscured details\n\n4. **Background Quality** (1-10): Clean, distraction-free background, appropriate for e-commerce\n\n5. **Professional Quality** (1-10): Overall marketplace-ready appearance, color accuracy, no artifacts\n\n6. **Prompt Adherence** (1-10): How well the image matches the original prompt request\n\nCalculate an overall score as the weighted average:\n- Composition: 15%\n- Lighting: 20%\n- Product Visibility: 25%\n- Background Quality: 15%\n- Professional Quality: 15%\n- Prompt Adherence: 10%\n\nReturn ONLY valid JSON in this exact format:\n{\n  "overall": 8.5,\n  "composition": 8,\n  "lighting": 9,\n  "productVisibility": 8,\n  "backgroundQuality": 9,\n  "professionalQuality": 8,\n  "promptAdherence": 9,\n  "reasoning": "Brief explanation of scores...",\n  "suggestions": ["Suggestion 1", "Suggestion 2"]\n}';
+
+    // ============================================================================
+    // Notebook Components
     // ============================================================================
     // UI Primitives (~150 LOC)
     // ============================================================================
@@ -795,6 +800,8 @@ const serveNotebookHTML = (): Response => {
     const { useState, useEffect } = React;
     const { createRoot } = ReactDOM;
 
+    const DEFAULT_EVALUATION_PROMPT = 'You are evaluating an AI-generated product photo for e-commerce use.\\n\\nScore each criterion from 1-10 (1 = poor, 10 = excellent):\\n\\n1. **Composition** (1-10): Product placement, visual balance, appropriate fill percentage (product should fill 60-90% of frame)\\n\\n2. **Lighting** (1-10): Even illumination, no harsh shadows, appropriate highlights, professional studio quality\\n\\n3. **Product Visibility** (1-10): Sharp focus on product, all features clearly visible, no obscured details\\n\\n4. **Background Quality** (1-10): Clean, distraction-free background, appropriate for e-commerce\\n\\n5. **Professional Quality** (1-10): Overall marketplace-ready appearance, color accuracy, no artifacts\\n\\n6. **Prompt Adherence** (1-10): How well the image matches the original prompt request\\n\\nCalculate an overall score as the weighted average:\\n- Composition: 15%\\n- Lighting: 20%\\n- Product Visibility: 25%\\n- Background Quality: 15%\\n- Professional Quality: 15%\\n- Prompt Adherence: 10%\\n\\nReturn ONLY valid JSON in this exact format:\\n{\\n  "overall": 8.5,\\n  "composition": 8,\\n  "lighting": 9,\\n  "productVisibility": 8,\\n  "backgroundQuality": 9,\\n  "professionalQuality": 8,\\n  "promptAdherence": 9,\\n  "reasoning": "Brief explanation of scores...",\\n  "suggestions": ["Suggestion 1", "Suggestion 2"]\\n}';
+
     // ============================================================================
     // Notebook Components
     // ============================================================================
@@ -1257,27 +1264,39 @@ const serveNotebookHTML = (): Response => {
     };
 
     const EvaluationPhase = ({ sessionId, parentRunId, runs, disabled, onRunComplete }) => {
+      const [error, setError] = useState(null);
       const [isRunning, setIsRunning] = useState(false);
+      const [evaluationPrompt, setEvaluationPrompt] = useState(DEFAULT_EVALUATION_PROMPT);
+      const [showPromptEditor, setShowPromptEditor] = useState(false);
+      const [expandedRunId, setExpandedRunId] = useState(null);
       const [showComparison, setShowComparison] = useState(false);
 
       const handleRun = async () => {
+        setError(null);
         setIsRunning(true);
+
         try {
-          const res = await fetch('/api/notebook/evaluate', {
+          const res = await fetchWithTimeout('/api/notebook/evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sessionId,
-              parentRunId
+              parentRunId,
+              evaluationPrompt: showPromptEditor ? evaluationPrompt : undefined,
+              model: 'claude-sonnet-4-20250514'
             })
           });
 
           const result = await res.json();
+
           if (result.error) {
-            alert('Evaluation failed: ' + result.error);
+            setError('Evaluation failed: ' + result.error);
           } else {
+            setError(null);
             onRunComplete(result);
           }
+        } catch (err) {
+          setError('Network error: ' + err.message);
         } finally {
           setIsRunning(false);
         }
@@ -1291,11 +1310,30 @@ const serveNotebookHTML = (): Response => {
       }
 
       return React.createElement('div', { className: 'border rounded-lg p-6 bg-white' },
+        React.createElement(ErrorMessage, { message: error, onDismiss: () => setError(null) }),
         React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Evaluation Phase'),
+        React.createElement('div', { className: 'mb-4' },
+          React.createElement('button', {
+            onClick: () => setShowPromptEditor(!showPromptEditor),
+            className: 'text-sm text-blue-600 hover:text-blue-800'
+          }, showPromptEditor ? '▼ Hide evaluation criteria editor' : '▶ Customize evaluation criteria'),
+          showPromptEditor && React.createElement('div', { className: 'mt-2 space-y-2' },
+            React.createElement('textarea', {
+              value: evaluationPrompt,
+              onChange: (e) => setEvaluationPrompt(e.target.value),
+              className: 'w-full border rounded p-2 font-mono text-sm h-64',
+              placeholder: 'Enter evaluation prompt...'
+            }),
+            React.createElement('button', {
+              onClick: () => setEvaluationPrompt(DEFAULT_EVALUATION_PROMPT),
+              className: 'px-3 py-1 text-sm border rounded hover:bg-gray-50'
+            }, 'Reset to default')
+          )
+        ),
         React.createElement('button', {
           onClick: handleRun,
           disabled: isRunning,
-          className: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300'
+          className: 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300'
         }, isRunning ? 'Evaluating...' : \`Run Evaluation (\${runs.length + 1})\`),
         runs.length > 0 && React.createElement('div', { className: 'mt-6 space-y-2' },
           React.createElement('h3', { className: 'font-semibold' }, \`Evaluation Runs (\${runs.length})\`),
@@ -1303,19 +1341,67 @@ const serveNotebookHTML = (): Response => {
             onClick: () => setShowComparison(true),
             className: 'mt-2 px-4 py-2 border rounded hover:bg-gray-50'
           }, \`Compare All \${runs.length} Runs\`),
-          runs.map(run =>
-            React.createElement('div', { key: run.id, className: 'border rounded p-3 border-gray-200' },
-              React.createElement('div', { className: 'flex justify-between items-center' },
-                React.createElement('span', { className: 'font-medium' }, \`Run \${run.phase_run_number}\`),
-                React.createElement('span', { className: 'text-xs text-gray-500' },
-                  (run.debug_metadata?.tokens?.input || 0) + ' in / ' + (run.debug_metadata?.tokens?.output || 0) + ' out'
+          runs.map(run => {
+            const evaluation = run.prompt_evaluations?.[0];
+            const details = evaluation?.details || {};
+            const scoreOverall = evaluation?.score_overall;
+
+            return React.createElement('div', { key: run.id, className: 'border rounded p-3 border-gray-200' },
+              React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+                React.createElement('div', { className: 'flex items-center gap-3' },
+                  React.createElement('span', { className: 'font-medium' }, \`Run \${run.phase_run_number}\`),
+                  scoreOverall && React.createElement('span', { className: 'font-bold text-green-600' }, scoreOverall.toFixed(1) + '/10'),
+                  React.createElement('span', { className: 'text-xs text-gray-500' },
+                    (run.debug_metadata?.tokens?.input || 0) + ' tokens'
+                  )
+                ),
+                React.createElement('button', {
+                  onClick: () => setExpandedRunId(expandedRunId === run.id ? null : run.id),
+                  className: 'text-sm text-blue-600'
+                }, expandedRunId === run.id ? 'Collapse' : 'Expand')
+              ),
+              React.createElement('div', { className: 'grid grid-cols-3 gap-2' },
+                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
+                  React.createElement('div', { className: 'font-medium' }, 'Composition'),
+                  React.createElement('div', {}, details.composition || 'N/A')
+                ),
+                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
+                  React.createElement('div', { className: 'font-medium' }, 'Lighting'),
+                  React.createElement('div', {}, details.lighting || 'N/A')
+                ),
+                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
+                  React.createElement('div', { className: 'font-medium' }, 'Product Visibility'),
+                  React.createElement('div', {}, details.productVisibility || 'N/A')
+                ),
+                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
+                  React.createElement('div', { className: 'font-medium' }, 'Background Quality'),
+                  React.createElement('div', {}, details.backgroundQuality || 'N/A')
+                ),
+                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
+                  React.createElement('div', { className: 'font-medium' }, 'Professional Quality'),
+                  React.createElement('div', {}, details.professionalQuality || 'N/A')
+                ),
+                React.createElement('div', { className: 'bg-gray-50 p-2 rounded text-xs' },
+                  React.createElement('div', { className: 'font-medium' }, 'Prompt Adherence'),
+                  React.createElement('div', {}, details.promptAdherence || 'N/A')
                 )
               ),
-              React.createElement('div', { className: 'mt-2 text-sm' },
-                'Score: ' + (run.score || 'N/A')
+              expandedRunId === run.id && React.createElement('div', { className: 'mt-3 pt-3 border-t space-y-2' },
+                details.reasoning && React.createElement('div', {},
+                  React.createElement('h4', { className: 'text-sm font-semibold mb-1' }, 'Reasoning:'),
+                  React.createElement('p', { className: 'text-sm text-gray-700 whitespace-pre-wrap' }, details.reasoning)
+                ),
+                details.suggestions && details.suggestions.length > 0 && React.createElement('div', {},
+                  React.createElement('h4', { className: 'text-sm font-semibold mb-1' }, 'Suggestions:'),
+                  React.createElement('ul', { className: 'text-sm text-gray-700 list-disc list-inside' },
+                    details.suggestions.map((suggestion, idx) =>
+                      React.createElement('li', { key: idx }, suggestion)
+                    )
+                  )
+                )
               )
-            )
-          )
+            );
+          })
         ),
         showComparison && React.createElement(RunComparisonModal, {
           phase: 'evaluation',
@@ -1904,6 +1990,52 @@ const handleNotebookGenerate = async (req: Request): Promise<Response> => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Notebook generate endpoint error', { error: message });
     return Response.json({ error: 'Generation failed: ' + message }, { status: 500 });
+  }
+};
+
+const handleNotebookEvaluate = async (req: Request): Promise<Response> => {
+  try {
+    const body = await req.json();
+    const { sessionId, parentRunId, evaluationPrompt, model } = body;
+
+    // Validate required fields
+    if (!sessionId || !parentRunId) {
+      return Response.json(
+        { error: 'Missing required fields: sessionId, parentRunId' },
+        { status: 400 }
+      );
+    }
+
+    // Call orchestrator function
+    const result = await runEvaluationPhase({
+      sessionId,
+      parentRunId,
+      evaluationPrompt: evaluationPrompt || undefined,
+      model: model || 'claude-sonnet-4-20250514'
+    });
+
+    // Handle errors
+    if (!isOk(result)) {
+      logger.error('Notebook evaluation failed', {
+        sessionId,
+        parentRunId,
+        error: result.error.message
+      });
+      return Response.json({ error: result.error.message }, { status: 500 });
+    }
+
+    // Success
+    logger.info('Notebook evaluation succeeded', {
+      sessionId,
+      runId: (result.data as EvaluationResult).runId,
+      scoreOverall: (result.data as EvaluationResult).scoreOverall
+    });
+
+    return Response.json(result.data as EvaluationResult);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Notebook evaluate endpoint error', { error: message });
+    return Response.json({ error: 'Evaluation failed: ' + message }, { status: 500 });
   }
 };
 

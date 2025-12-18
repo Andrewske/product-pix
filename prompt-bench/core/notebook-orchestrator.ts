@@ -7,6 +7,8 @@ import { uploadBase64Image } from '@/lib/r2';
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@bench/core/logger';
+import { evaluateImage } from '@bench/core/evaluator';
+import type { EvaluationDetails } from '@bench/core/types';
 
 // =============================================================================
 // Types
@@ -44,6 +46,22 @@ export interface GenerationResult {
   imageUrl: string;
   finalPrompt: string;
   thinking: string | null;
+  tokens: { input: number; output: number };
+}
+
+export interface EvaluationRequest {
+  sessionId: string;
+  parentRunId: string;        // Generation run to evaluate
+  evaluationPrompt?: string;  // Optional custom prompt override
+  model?: string;             // Default: claude-sonnet-4-20250514
+}
+
+export interface EvaluationResult {
+  runId: string;              // prompt_tests.id
+  phaseRunNumber: number;
+  evaluationId: string;       // prompt_evaluations.id
+  scoreOverall: number;
+  details: EvaluationDetails;
   tokens: { input: number; output: number };
 }
 
@@ -114,7 +132,8 @@ const storeAnalysisResult = async (
   phaseRunNumber: number,
   merged: Record<string, unknown>,
   variables: Record<string, unknown> | undefined,
-  analysisResult: any
+  analysisResult: any,
+  sourceImageUrl?: string
 ): Promise<Result<any>> => {
   const { data: testRecord, error: insertError } = await supabase
     .from('prompt_tests')
@@ -125,6 +144,7 @@ const storeAnalysisResult = async (
       parent_run_id: null, // Analysis has no parent
       status: 'completed',
       inputs: { ...merged, ...variables },
+      source_image_url: sourceImageUrl,
       final_prompt: '', // Analysis doesn't generate prompts
       debug_metadata: {
         thinking: null,
@@ -188,13 +208,15 @@ export const runAnalysisPhase = async (
   if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
 
   // 5. Store in database
+  const sourceImageUrl = fixtures && fixtures.length > 0 ? fixtures[0].r2_url : undefined;
   const storeResult = await storeAnalysisResult(
     supabase,
     request.sessionId,
     phaseRunNumberResult.data,
     merged,
     request.variables,
-    analysisResult
+    analysisResult,
+    sourceImageUrl
   );
   if (!isOk(storeResult)) return storeResult;
 
@@ -394,5 +416,132 @@ export const runGenerationPhase = async (
       input: genResult.usage.promptTokens,
       output: genResult.usage.completionTokens
     } : { input: 0, output: 0 }
+  });
+};
+
+// =============================================================================
+// Evaluation Phase
+// =============================================================================
+
+export const runEvaluationPhase = async (
+  request: EvaluationRequest
+): Promise<Result<EvaluationResult>> => {
+  const supabase = createAdminClient();
+
+  logger.info('Starting evaluation phase', {
+    sessionId: request.sessionId,
+    parentRunId: request.parentRunId
+  });
+
+  // 1. Fetch parent generation run
+  const { data: parentRun, error: parentError } = await supabase
+    .from('prompt_tests')
+    .select('*')
+    .eq('id', request.parentRunId)
+    .single();
+
+  if (parentError || !parentRun) {
+    return err(createError('VALIDATION_ERROR', 'Parent generation run not found'));
+  }
+
+  if (parentRun.phase !== 'generation') {
+    return err(createError('VALIDATION_ERROR', 'Parent run must be a generation phase'));
+  }
+
+  if (!parentRun.image_key) {
+    return err(createError('VALIDATION_ERROR', 'Parent run must have an image_key'));
+  }
+
+  // 2. Call evaluator
+  const model = request.model || 'claude-sonnet-4-20250514';
+  const evaluationResult = await evaluateImage(
+    { type: 'key', value: parentRun.image_key },
+    parentRun.final_prompt,
+    { model }
+  );
+
+  if (!isOk(evaluationResult)) {
+    logger.error('Evaluation failed', {
+      sessionId: request.sessionId,
+      error: evaluationResult.error.message
+    });
+    return evaluationResult;
+  }
+
+  const { overall, details, tokensUsed, costUsd, model: evaluatorModel } = evaluationResult.data;
+
+  // 3. Get next phase_run_number
+  const { data: existingRuns } = await supabase
+    .from('prompt_tests')
+    .select('phase_run_number')
+    .eq('session_id', request.sessionId)
+    .eq('phase', 'evaluation')
+    .eq('parent_run_id', request.parentRunId)
+    .order('phase_run_number', { ascending: false })
+    .limit(1);
+
+  const phaseRunNumber = (existingRuns?.[0]?.phase_run_number || 0) + 1;
+
+  // 4. Insert into prompt_tests
+  const { data: testRecord, error: insertError } = await supabase
+    .from('prompt_tests')
+    .insert({
+      session_id: request.sessionId,
+      phase: 'evaluation',
+      phase_run_number: phaseRunNumber,
+      parent_run_id: request.parentRunId,
+      status: 'completed',
+      inputs: { evaluation_prompt: request.evaluationPrompt || 'default' },
+      final_prompt: '', // Not applicable
+      debug_metadata: {
+        thinking: null,
+        tokens: { input: tokensUsed, output: 0 },
+        raw_prompt: request.evaluationPrompt || 'default',
+        raw_response: { overall, details }
+      }
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    return err(createError('DATABASE_ERROR', `Failed to save evaluation: ${insertError.message}`));
+  }
+
+  // 5. Insert into prompt_evaluations
+  const { data: evalRecord, error: evalInsertError } = await supabase
+    .from('prompt_evaluations')
+    .insert({
+      test_id: testRecord.id,
+      score_overall: overall,
+      details: details,
+      evaluator_model: evaluatorModel,
+      evaluator_type: 'llm',
+      cost_usd: costUsd,
+      tokens_used: tokensUsed,
+      input_tokens: tokensUsed,
+      output_tokens: 0 // Evaluation only consumes input
+    })
+    .select()
+    .single();
+
+  if (evalInsertError) {
+    return err(createError('DATABASE_ERROR', `Failed to save evaluation details: ${evalInsertError.message}`));
+  }
+
+  // 6. Return result
+  logger.info('Evaluation phase complete', {
+    sessionId: request.sessionId,
+    runId: testRecord.id,
+    phaseRunNumber,
+    scoreOverall: overall
+  });
+
+  return ok({
+    runId: testRecord.id,
+    phaseRunNumber,
+    evaluationId: evalRecord.id,
+    scoreOverall: overall,
+    details,
+    tokens: { input: tokensUsed, output: 0 }
   });
 };
