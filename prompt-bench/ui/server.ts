@@ -8,6 +8,7 @@ import { logger } from '../core/logger';
 import { runAnalysisPhase, runGenerationPhase, runEvaluationPhase } from '../core/notebook-orchestrator';
 import { isOk } from '../core/errors';
 import { EVALUATION_PROMPT } from '../core/evaluator';
+import { compileTemplate } from '../core/compiler';
 import type { AnalysisResult, GenerationResult, EvaluationPhaseResult } from '../core/notebook-orchestrator';
 import type { ProgressCallback } from '../core/orchestrator';
 import type { BatchFileMetadata, TemplateMetadata } from './types/index';
@@ -22,6 +23,15 @@ const loadBundle = (filename: string): string => {
   } catch (err) {
     console.error(`Failed to load bundle ${filename}:`, err);
     return `console.error('Bundle ${filename} not found. Run: bun run bench:ui:build');`;
+  }
+};
+
+const loadThemeCSS = (): string => {
+  try {
+    return readFileSync(join(__dirname, 'styles', 'theme.css'), 'utf-8');
+  } catch (err) {
+    console.error('Failed to load theme.css:', err);
+    return '/* Theme CSS not found */';
   }
 };
 
@@ -43,6 +53,7 @@ Bun.serve({
     if (url.pathname === '/api/notebook/analyze' && req.method === 'POST') return handleNotebookAnalyze(req);
     if (url.pathname === '/api/notebook/generate' && req.method === 'POST') return handleNotebookGenerate(req);
     if (url.pathname === '/api/notebook/evaluate' && req.method === 'POST') return handleNotebookEvaluate(req);
+    if (url.pathname === '/api/notebook/compile-prompt' && req.method === 'POST') return handleNotebookCompilePrompt(req);
     if (url.pathname.match(/^\/api\/notebook\/session\/[^/]+$/)) return handleNotebookSession(req);
 
     return new Response('Not Found', { status: 404 });
@@ -54,6 +65,7 @@ console.log('🚀 Prompt Bench UI running at http://localhost:8181');
 const serveHTML = (): Response => {
   const experimentBundle = loadBundle('experiment.js')
     .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
+  const themeCSS = loadThemeCSS();
 
   const html = `
     <!DOCTYPE html>
@@ -62,9 +74,15 @@ const serveHTML = (): Response => {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Prompt Bench - Experiment Runner</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
       <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+      <style>
+        ${themeCSS}
+      </style>
     </head>
-    <body>
+    <body class="dark bg-background text-foreground antialiased">
       <div id="root"></div>
       <script>
         ${experimentBundle}
@@ -84,6 +102,7 @@ const serveHTML = (): Response => {
 const serveNotebookHTML = (): Response => {
   const notebookBundle = loadBundle('notebook.js')
     .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
+  const themeCSS = loadThemeCSS();
 
   const html = `
     <!DOCTYPE html>
@@ -92,9 +111,15 @@ const serveNotebookHTML = (): Response => {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Prompt Bench - Notebook</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
       <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+      <style>
+        ${themeCSS}
+      </style>
     </head>
-    <body>
+    <body class="dark bg-background text-foreground antialiased">
       <div id="root"></div>
       <script>
         ${notebookBundle}
@@ -141,7 +166,7 @@ const handleTemplates = async (req: Request): Promise<Response> => {
 
     const { data: templates, error } = await supabase
       .from('prompt_templates')
-      .select('slug, version, status')
+      .select('slug, version, status, template_data, variables_schema')
       .order('slug', { ascending: true })
       .order('version', { ascending: false });
 
@@ -477,6 +502,8 @@ const handleNotebookGenerate = async (req: Request): Promise<Response> => {
       return Response.json({ error: 'Missing required fields: sessionId, parentRunId, templateSlug' }, { status: 400 });
     }
 
+    const supabase = createAdminClient();
+
     // Call real orchestrator function
     const result = await runGenerationPhase({
       sessionId,
@@ -495,13 +522,31 @@ const handleNotebookGenerate = async (req: Request): Promise<Response> => {
       return Response.json({ error: result.error.message }, { status: 500 });
     }
 
+    const generationResult = result.data as GenerationResult;
+
     logger.info('Notebook generation succeeded', {
       sessionId,
-      runId: (result.data as GenerationResult).runId,
-      imageUrl: (result.data as GenerationResult).imageUrl
+      runId: generationResult.runId,
+      imageUrls: generationResult.imageUrls
     });
 
-    return Response.json(result.data as GenerationResult);
+    // Fetch the database record to return complete data to UI
+    const { data: dbRecord, error: fetchError } = await supabase
+      .from('prompt_tests')
+      .select('*')
+      .eq('id', generationResult.runId)
+      .single();
+
+    if (fetchError) {
+      logger.error('Failed to fetch generation record', {
+        sessionId,
+        runId: generationResult.runId,
+        error: fetchError.message
+      });
+      return Response.json({ error: `Failed to fetch result: ${fetchError.message}` }, { status: 500 });
+    }
+
+    return Response.json(dbRecord);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Notebook generate endpoint error', { error: message });
@@ -553,6 +598,46 @@ const handleNotebookEvaluate = async (req: Request): Promise<Response> => {
   }
 };
 
+const handleNotebookCompilePrompt = async (req: Request): Promise<Response> => {
+  try {
+    const body = await req.json();
+    const { templateSlug, templateData, variables } = body;
+
+    // Validate required fields
+    if (!templateSlug || !templateData) {
+      return Response.json({ error: 'Missing required fields: templateSlug, templateData' }, { status: 400 });
+    }
+
+    // Fetch template to get variables_schema
+    const supabase = createAdminClient();
+    const { data: template, error: templateError } = await supabase
+      .from('prompt_templates')
+      .select('variables_schema')
+      .eq('slug', templateSlug)
+      .single();
+
+    if (templateError || !template) {
+      return Response.json({ error: 'Template not found' }, { status: 404 });
+    }
+
+    // Compile the template
+    const compileResult = compileTemplate(
+      templateData,
+      template.variables_schema,
+      variables || {}
+    );
+
+    if (!isOk(compileResult)) {
+      return Response.json({ error: compileResult.error.message }, { status: 400 });
+    }
+
+    return Response.json({ prompt: compileResult.data.prompt });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return Response.json({ error: 'Failed to compile prompt: ' + message }, { status: 500 });
+  }
+};
+
 const handleNotebookSession = async (req: Request): Promise<Response> => {
   try {
     const url = new URL(req.url);
@@ -572,8 +657,7 @@ const handleNotebookSession = async (req: Request): Promise<Response> => {
         prompt_evaluations(*)
       `)
       .eq('session_id', sessionId)
-      .order('phase', { ascending: true })
-      .order('phase_run_number', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) {
       logger.error('Failed to load notebook session', {

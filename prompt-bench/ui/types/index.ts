@@ -37,6 +37,9 @@ export interface AnalysisRun extends NotebookRun {
   debug_metadata: {
     thinking: string | null;
     tokens: { input: number; output: number };
+    model: string;
+    cost: number;
+    duration_ms: number;
     raw_prompt: string;
     raw_response: unknown;
   };
@@ -48,7 +51,10 @@ export interface GenerationRun extends NotebookRun {
   debug_metadata: {
     thinking: string | null;
     tokens: { input: number; output: number };
-    image_url: string;
+    model: string;
+    cost: number;
+    duration_ms: number;
+    image_urls: string[];
   };
 }
 
@@ -60,6 +66,9 @@ export interface EvaluationRun extends NotebookRun {
   }>;
   debug_metadata?: {
     tokens: { input: number; output: number };
+    model?: string;
+    cost?: number;
+    duration_ms?: number;
   };
 }
 
