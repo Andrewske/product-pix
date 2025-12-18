@@ -17,6 +17,7 @@ open http://localhost:3001
 - **Experiment Runner**: Configure and run Stage 1-3 experiments
 - **Real-time Progress**: Live SSE updates during generation
 - **Results Browser**: View, filter, and compare past experiments
+- **Notebook**: Interactive phase-based experimentation (analysis → generation → evaluation)
 - **Collection Metrics**: Consistency, variety, and plausibility scores
 - **Image Gallery**: Side-by-side comparison of generated images
 

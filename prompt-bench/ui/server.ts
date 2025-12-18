@@ -21,10 +21,15 @@ Bun.serve({
     // Route handlers
     if (url.pathname === '/') return serveHTML();
     if (url.pathname === '/results') return serveHTML(); // Same HTML, client-side routing
+    if (url.pathname === '/notebook') return serveNotebookHTML();
     if (url.pathname === '/api/batches') return handleBatches(req);
     if (url.pathname === '/api/templates') return handleTemplates(req);
     if (url.pathname === '/api/results') return handleResults(req);
     if (url.pathname === '/api/run' && req.method === 'POST') return handleRun(req);
+    if (url.pathname === '/api/notebook/fixtures') return handleNotebookFixtures(req);
+    if (url.pathname === '/api/notebook/analyze' && req.method === 'POST') return handleNotebookAnalyze(req);
+    if (url.pathname === '/api/notebook/generate' && req.method === 'POST') return handleNotebookGenerate(req);
+    if (url.pathname.match(/^\/api\/notebook\/session\/[^/]+$/)) return handleNotebookSession(req);
 
     return new Response('Not Found', { status: 404 });
   }
@@ -739,7 +744,13 @@ const serveHTML = (): Response => {
                   window.history.pushState({}, '', '/results');
                   setView('results');
                 }
-              }, 'Results Browser')
+              }, 'Results Browser'),
+              React.createElement('button', {
+                className: 'font-medium text-gray-600 hover:text-gray-900',
+                onClick: () => {
+                  window.location.href = '/notebook';
+                }
+              }, 'Notebook')
             )
           )
         ),
@@ -753,6 +764,764 @@ const serveHTML = (): Response => {
 
     const root = createRoot(document.getElementById('root'));
     root.render(React.createElement(ErrorBoundary, {}, React.createElement(App)));
+  </script>
+</body>
+</html>
+  `;
+
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html' }
+  });
+};
+
+const serveNotebookHTML = (): Response => {
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notebook - Prompt Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="root"></div>
+  <script type="module">
+    const { useState, useEffect } = React;
+    const { createRoot } = ReactDOM;
+
+    // ============================================================================
+    // Notebook Components
+    // ============================================================================
+
+    const ErrorMessage = ({ message, onDismiss }) => {
+      if (!message) return null;
+
+      return React.createElement('div', { className: 'fixed top-4 right-4 max-w-md bg-red-50 border border-red-200 rounded p-4 shadow-lg z-50' },
+        React.createElement('div', { className: 'flex justify-between items-start' },
+          React.createElement('div', {},
+            React.createElement('div', { className: 'font-semibold text-red-900' }, 'Error'),
+            React.createElement('div', { className: 'text-sm text-red-700 mt-1' }, message)
+          ),
+          React.createElement('button', {
+            onClick: onDismiss,
+            className: 'text-red-500 hover:text-red-700 ml-4'
+          }, '×')
+        )
+      );
+    };
+
+    const fetchWithTimeout = async (url, options, timeout = 120000) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error('Request timed out after 2 minutes');
+        }
+        throw err;
+      }
+    };
+
+    const SessionHeader = ({ sessionId }) => {
+      return React.createElement('div', { className: 'bg-white rounded-lg shadow p-4 mb-6' },
+        React.createElement('div', { className: 'flex justify-between items-center' },
+          React.createElement('div', {},
+            React.createElement('h1', { className: 'text-2xl font-bold' }, 'Notebook'),
+            sessionId && React.createElement('p', { className: 'text-sm text-gray-500 mt-1' }, 'Session: ' + sessionId)
+          ),
+          React.createElement('button', {
+            onClick: () => window.location.href = '/',
+            className: 'px-4 py-2 border rounded hover:bg-gray-50'
+          }, '← Back')
+        )
+      );
+    };
+
+    const FixtureImageSelector = ({ fixtures, onSelect, onCancel }) => {
+      const [selectedIds, setSelectedIds] = useState([]);
+      const [searchTerm, setSearchTerm] = useState('');
+
+      const toggleImage = (imageId) => {
+        setSelectedIds(prev =>
+          prev.includes(imageId)
+            ? prev.filter(id => id !== imageId)
+            : [...prev, imageId]
+        );
+      };
+
+      const filteredFixtures = Object.entries(fixtures).reduce((acc, [product, images]) => {
+        const filtered = images.filter(img =>
+          img.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        if (filtered.length > 0) acc[product] = filtered;
+        return acc;
+      }, {});
+
+      const selectedCount = selectedIds.length;
+      const productCount = new Set(
+        selectedIds.map(id => {
+          for (const [product, images] of Object.entries(fixtures)) {
+            if (images.some(img => img.id === id)) return product;
+          }
+        })
+      ).size;
+
+      return React.createElement('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' },
+        React.createElement('div', { className: 'bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col' },
+          React.createElement('h2', { className: 'text-2xl font-bold mb-4' }, 'Select Fixture Images'),
+          React.createElement('input', {
+            type: 'text',
+            placeholder: 'Search images...',
+            value: searchTerm,
+            onChange: (e) => setSearchTerm(e.target.value),
+            className: 'border rounded px-3 py-2 mb-4'
+          }),
+          React.createElement('div', { className: 'text-sm text-gray-600 mb-4' },
+            selectedCount > 0 ? (
+              \`Selected: \${selectedCount} images from \${productCount} product\${productCount !== 1 ? 's' : ''} → Will create \${productCount} test\${productCount !== 1 ? 's' : ''}\`
+            ) : (
+              'Click images to select. Same product = 1 test with multiple images.'
+            )
+          ),
+          React.createElement('div', { className: 'flex-1 overflow-y-auto space-y-6' },
+            Object.entries(filteredFixtures).map(([product, images]) =>
+              React.createElement('div', { key: product, className: 'border rounded p-4' },
+                React.createElement('h3', { className: 'font-semibold mb-3 capitalize' }, product.replace(/-/g, ' ')),
+                React.createElement('div', { className: 'grid grid-cols-6 gap-2' },
+                  images.map(img =>
+                    React.createElement('div', {
+                      key: img.id,
+                      onClick: () => toggleImage(img.id),
+                      className: 'cursor-pointer border-2 rounded p-1 transition ' + (
+                        selectedIds.includes(img.id)
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-400'
+                      )
+                    },
+                      React.createElement('img', {
+                        src: img.r2_url,
+                        alt: img.filename,
+                        className: 'w-full h-12 object-cover rounded'
+                      }),
+                      React.createElement('p', { className: 'text-xs mt-1 truncate text-center' }, img.filename),
+                      selectedIds.includes(img.id) && React.createElement('div', {
+                        className: 'absolute top-1 right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs'
+                      }, '✓')
+                    )
+                  )
+                )
+              )
+            )
+          ),
+          React.createElement('div', { className: 'flex justify-end gap-3 mt-4 pt-4 border-t' },
+            React.createElement('button', {
+              onClick: onCancel,
+              className: 'px-4 py-2 border rounded hover:bg-gray-50'
+            }, 'Cancel'),
+            React.createElement('button', {
+              onClick: () => onSelect(selectedIds),
+              disabled: selectedIds.length === 0,
+              className: 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300'
+            }, 'Use Selected Images')
+          )
+        )
+      );
+    };
+
+    const AnalysisPhase = ({ sessionId, fixtureImageIds, runs, selectedRunId, onRunComplete, onSelectRun }) => {
+      const [error, setError] = useState(null);
+      const [isRunning, setIsRunning] = useState(false);
+      const [variables, setVariables] = useState({});
+      const [expandedRunId, setExpandedRunId] = useState(null);
+      const [showComparison, setShowComparison] = useState(false);
+
+      const handleRun = async () => {
+        // Validate before running
+        if (fixtureImageIds.length === 0) {
+          setError('No fixture images selected. Please start a new session with images.');
+          return;
+        }
+
+        // Validate JSON
+        try {
+          if (typeof variables === 'string') {
+            JSON.parse(variables);
+          }
+        } catch (e) {
+          setError('Invalid JSON in variables field');
+          return;
+        }
+
+        setError(null);
+        setIsRunning(true);
+
+        try {
+          const res = await fetchWithTimeout('/api/notebook/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId,
+              fixtureImageIds,
+              variables,
+              model: 'gemini-2.0-flash-exp',
+              cacheEnabled: true
+            })
+          });
+
+          const result = await res.json();
+
+          if (result.error) {
+            setError('Analysis failed: ' + result.error);
+          } else {
+            setError(null);
+            onRunComplete(result);
+            setVariables({});
+          }
+        } catch (err) {
+          setError('Network error: ' + err.message);
+        } finally {
+          setIsRunning(false);
+        }
+      };
+
+      return React.createElement('div', { className: 'border rounded-lg p-6 bg-white' },
+        React.createElement(ErrorMessage, { message: error, onDismiss: () => setError(null) }),
+        React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Analysis Phase'),
+        React.createElement('div', { className: 'mb-4' },
+          React.createElement('label', { className: 'block text-sm font-medium mb-2' },
+            'Analysis Variables (optional overrides)'
+          ),
+          React.createElement('textarea', {
+            value: JSON.stringify(variables, null, 2),
+            onChange: (e) => {
+              try {
+                setVariables(JSON.parse(e.target.value));
+              } catch {}
+            },
+            className: 'w-full border rounded p-2 font-mono text-sm h-24',
+            placeholder: '{"key": "value"}'
+          })
+        ),
+        React.createElement('button', {
+          onClick: handleRun,
+          disabled: isRunning || fixtureImageIds.length === 0,
+          className: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300'
+        }, isRunning ? 'Running Analysis...' : \`Run Analysis (\${runs.length + 1})\`),
+        runs.length > 0 && React.createElement('div', { className: 'mt-6 space-y-2' },
+          React.createElement('h3', { className: 'font-semibold' }, \`Analysis Runs (\${runs.length})\`),
+          runs.length >= 2 && React.createElement('button', {
+            onClick: () => setShowComparison(true),
+            className: 'mt-2 px-4 py-2 border rounded hover:bg-gray-50'
+          }, \`Compare All \${runs.length} Runs\`),
+          runs.map(run =>
+            React.createElement('div', {
+              key: run.id,
+              className: 'border rounded p-3 cursor-pointer ' + (
+                selectedRunId === run.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
+              )
+            },
+              React.createElement('div', { className: 'flex justify-between items-center' },
+                React.createElement('div', { className: 'flex items-center gap-3' },
+                  React.createElement('input', {
+                    type: 'radio',
+                    checked: selectedRunId === run.id,
+                    onChange: () => onSelectRun(run.id),
+                    className: 'w-4 h-4'
+                  }),
+                  React.createElement('div', {},
+                    React.createElement('span', { className: 'font-medium' }, \`Run \${run.phase_run_number}\`),
+                    React.createElement('span', { className: 'text-xs text-gray-500 ml-2' },
+                      (run.debug_metadata?.tokens?.input || 0) + ' in / ' + (run.debug_metadata?.tokens?.output || 0) + ' out'
+                    )
+                  )
+                ),
+                React.createElement('button', {
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    setExpandedRunId(expandedRunId === run.id ? null : run.id);
+                  },
+                  className: 'text-sm text-blue-600'
+                }, expandedRunId === run.id ? 'Collapse' : 'Expand')
+              ),
+              expandedRunId === run.id && React.createElement('div', { className: 'mt-3 pt-3 border-t' },
+                React.createElement('h4', { className: 'text-sm font-semibold mb-2' }, 'Analysis Results:'),
+                React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs overflow-x-auto' },
+                  JSON.stringify(run.inputs, null, 2)
+                )
+              )
+            )
+          )
+        ),
+        selectedRunId && React.createElement('div', { className: 'mt-4 p-3 bg-green-50 border border-green-200 rounded' },
+          '✓ Analysis Run ' + runs.find(r => r.id === selectedRunId)?.phase_run_number + ' selected for generation'
+        ),
+        showComparison && React.createElement(RunComparisonModal, {
+          phase: 'analysis',
+          runs: runs,
+          onClose: () => setShowComparison(false)
+        })
+      );
+    };
+
+    const GenerationPhase = ({ sessionId, parentRunId, runs, selectedRunId, disabled, onRunComplete, onSelectRun }) => {
+      const [error, setError] = useState(null);
+      const [isRunning, setIsRunning] = useState(false);
+      const [templateSlug, setTemplateSlug] = useState('');
+      const [templates, setTemplates] = useState([]);
+      const [templateData, setTemplateData] = useState({});
+      const [expandedRunId, setExpandedRunId] = useState(null);
+      const [showComparison, setShowComparison] = useState(false);
+
+      useEffect(() => {
+        fetch('/api/templates')
+          .then(res => res.json())
+          .then(data => setTemplates(data.templates || []));
+      }, []);
+
+      useEffect(() => {
+        if (templateSlug) {
+          const template = templates.find(t => t.slug === templateSlug);
+          if (template) {
+            setTemplateData(template.template_data || {});
+          }
+        }
+      }, [templateSlug, templates]);
+
+      const handleRun = async () => {
+        // Validate template selected
+        if (!templateSlug) {
+          setError('Please select a template');
+          return;
+        }
+
+        // Validate template JSON
+        try {
+          if (typeof templateData === 'string') {
+            JSON.parse(templateData);
+          }
+        } catch (e) {
+          setError('Invalid JSON in template editor');
+          return;
+        }
+
+        // Validate parent run
+        if (!parentRunId) {
+          setError('No analysis run selected. Please select an analysis run first.');
+          return;
+        }
+
+        setError(null);
+        setIsRunning(true);
+
+        try {
+          const res = await fetchWithTimeout('/api/notebook/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId,
+              parentRunId,
+              templateSlug,
+              templateData,
+              variables: {}
+            })
+          });
+
+          const result = await res.json();
+
+          if (result.error) {
+            setError('Generation failed: ' + result.error);
+          } else {
+            setError(null);
+            onRunComplete(result);
+          }
+        } catch (err) {
+          setError('Network error: ' + err.message);
+        } finally {
+          setIsRunning(false);
+        }
+      };
+
+      if (disabled) {
+        return React.createElement('div', { className: 'border rounded-lg p-6 bg-gray-50' },
+          React.createElement('h2', { className: 'text-xl font-bold mb-4 text-gray-400' }, 'Generation Phase'),
+          React.createElement('p', { className: 'text-gray-500' }, 'Select an analysis run to unlock generation')
+        );
+      }
+
+      return React.createElement('div', { className: 'border rounded-lg p-6 bg-white' },
+        React.createElement(ErrorMessage, { message: error, onDismiss: () => setError(null) }),
+        React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Generation Phase'),
+        React.createElement('div', { className: 'space-y-4 mb-4' },
+          React.createElement('div', {},
+            React.createElement('label', { className: 'block text-sm font-medium mb-2' }, 'Template'),
+            React.createElement('select', {
+              value: templateSlug,
+              onChange: (e) => setTemplateSlug(e.target.value),
+              className: 'w-full border rounded px-3 py-2'
+            },
+              React.createElement('option', { value: '' }, '-- Select template --'),
+              templates.map(t =>
+                React.createElement('option', { key: t.slug, value: t.slug }, t.slug)
+              )
+            )
+          ),
+          templateSlug && React.createElement('div', {},
+            React.createElement('label', { className: 'block text-sm font-medium mb-2' },
+              'Template JSON (edit to customize)'
+            ),
+            React.createElement('textarea', {
+              value: JSON.stringify(templateData, null, 2),
+              onChange: (e) => {
+                try {
+                  setTemplateData(JSON.parse(e.target.value));
+                } catch {}
+              },
+              className: 'w-full border rounded p-2 font-mono text-sm h-64'
+            })
+          )
+        ),
+        React.createElement('button', {
+          onClick: handleRun,
+          disabled: isRunning || !templateSlug,
+          className: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300'
+        }, isRunning ? 'Generating...' : \`Run Generation (\${runs.length + 1})\`),
+        runs.length > 0 && React.createElement('div', { className: 'mt-6 space-y-2' },
+          React.createElement('h3', { className: 'font-semibold' }, \`Generation Runs (\${runs.length})\`),
+          runs.length >= 2 && React.createElement('button', {
+            onClick: () => setShowComparison(true),
+            className: 'mt-2 px-4 py-2 border rounded hover:bg-gray-50'
+          }, \`Compare All \${runs.length} Runs\`),
+          runs.map(run =>
+            React.createElement('div', {
+              key: run.id,
+              className: 'border rounded p-3 ' + (
+                selectedRunId === run.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
+              )
+            },
+              React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+                React.createElement('div', { className: 'flex items-center gap-3' },
+                  React.createElement('input', {
+                    type: 'radio',
+                    checked: selectedRunId === run.id,
+                    onChange: () => onSelectRun(run.id),
+                    className: 'w-4 h-4'
+                  }),
+                  React.createElement('span', { className: 'font-medium' }, \`Run \${run.phase_run_number}\`),
+                  React.createElement('span', { className: 'text-xs text-gray-500' },
+                    (run.debug_metadata?.tokens?.input || 0) + ' in / ' + (run.debug_metadata?.tokens?.output || 0) + ' out'
+                  )
+                ),
+                React.createElement('button', {
+                  onClick: () => setExpandedRunId(expandedRunId === run.id ? null : run.id),
+                  className: 'text-sm text-blue-600'
+                }, expandedRunId === run.id ? 'Collapse' : 'Expand')
+              ),
+              React.createElement('img', {
+                src: run.image_url,
+                alt: \`Run \${run.phase_run_number}\`,
+                className: 'w-48 rounded'
+              }),
+              expandedRunId === run.id && run.debug_metadata?.thinking && React.createElement('div', { className: 'mt-3 pt-3 border-t' },
+                React.createElement('h4', { className: 'text-sm font-semibold mb-2' }, 'Thinking:'),
+                React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap' },
+                  run.debug_metadata.thinking
+                ),
+                React.createElement('h4', { className: 'text-sm font-semibold mb-2 mt-3' }, 'Final Prompt:'),
+                React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap' },
+                  run.final_prompt
+                )
+              )
+            )
+          )
+        ),
+        showComparison && React.createElement(RunComparisonModal, {
+          phase: 'generation',
+          runs: runs,
+          onClose: () => setShowComparison(false)
+        })
+      );
+    };
+
+    const EvaluationPhase = ({ sessionId, parentRunId, runs, disabled, onRunComplete }) => {
+      const [isRunning, setIsRunning] = useState(false);
+      const [showComparison, setShowComparison] = useState(false);
+
+      const handleRun = async () => {
+        setIsRunning(true);
+        try {
+          const res = await fetch('/api/notebook/evaluate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId,
+              parentRunId
+            })
+          });
+
+          const result = await res.json();
+          if (result.error) {
+            alert('Evaluation failed: ' + result.error);
+          } else {
+            onRunComplete(result);
+          }
+        } finally {
+          setIsRunning(false);
+        }
+      };
+
+      if (disabled) {
+        return React.createElement('div', { className: 'border rounded-lg p-6 bg-gray-50' },
+          React.createElement('h2', { className: 'text-xl font-bold mb-4 text-gray-400' }, 'Evaluation Phase'),
+          React.createElement('p', { className: 'text-gray-500' }, 'Select a generation run to unlock evaluation')
+        );
+      }
+
+      return React.createElement('div', { className: 'border rounded-lg p-6 bg-white' },
+        React.createElement('h2', { className: 'text-xl font-bold mb-4' }, 'Evaluation Phase'),
+        React.createElement('button', {
+          onClick: handleRun,
+          disabled: isRunning,
+          className: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300'
+        }, isRunning ? 'Evaluating...' : \`Run Evaluation (\${runs.length + 1})\`),
+        runs.length > 0 && React.createElement('div', { className: 'mt-6 space-y-2' },
+          React.createElement('h3', { className: 'font-semibold' }, \`Evaluation Runs (\${runs.length})\`),
+          runs.length >= 2 && React.createElement('button', {
+            onClick: () => setShowComparison(true),
+            className: 'mt-2 px-4 py-2 border rounded hover:bg-gray-50'
+          }, \`Compare All \${runs.length} Runs\`),
+          runs.map(run =>
+            React.createElement('div', { key: run.id, className: 'border rounded p-3 border-gray-200' },
+              React.createElement('div', { className: 'flex justify-between items-center' },
+                React.createElement('span', { className: 'font-medium' }, \`Run \${run.phase_run_number}\`),
+                React.createElement('span', { className: 'text-xs text-gray-500' },
+                  (run.debug_metadata?.tokens?.input || 0) + ' in / ' + (run.debug_metadata?.tokens?.output || 0) + ' out'
+                )
+              ),
+              React.createElement('div', { className: 'mt-2 text-sm' },
+                'Score: ' + (run.score || 'N/A')
+              )
+            )
+          )
+        ),
+        showComparison && React.createElement(RunComparisonModal, {
+          phase: 'evaluation',
+          runs: runs,
+          onClose: () => setShowComparison(false)
+        })
+      );
+    };
+
+    const RunComparisonModal = ({ phase, runs, onClose }) => {
+      if (runs.length < 2) return null;
+
+      return React.createElement('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' },
+        React.createElement('div', { className: 'bg-white rounded-lg p-6 max-w-6xl w-full max-h-[90vh] overflow-auto' },
+          React.createElement('div', { className: 'flex justify-between items-center mb-6' },
+            React.createElement('h2', { className: 'text-2xl font-bold' }, \`Compare \${phase.charAt(0).toUpperCase() + phase.slice(1)} Runs\`),
+            React.createElement('button', {
+              onClick: onClose,
+              className: 'text-gray-500 hover:text-gray-700 text-2xl'
+            }, '×')
+          ),
+
+          React.createElement('div', {
+            className: 'grid gap-6',
+            style: { gridTemplateColumns: \`repeat(\${runs.length}, 1fr)\` }
+          },
+            runs.map(run =>
+              React.createElement('div', { key: run.id, className: 'border rounded p-4' },
+                React.createElement('h3', { className: 'font-bold mb-3' }, \`Run \${run.phase_run_number}\`),
+
+                // Tokens
+                React.createElement('div', { className: 'mb-3' },
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Tokens'),
+                  React.createElement('div', { className: 'text-xs' },
+                    \`In: \${run.debug_metadata?.tokens?.input || 0} / Out: \${run.debug_metadata?.tokens?.output || 0}\`
+                  )
+                ),
+
+                // Phase-specific content
+                phase === 'analysis' && React.createElement('div', {},
+                  React.createElement('div', { className: 'text-sm font-semibold mb-2' }, 'Analysis Results:'),
+                  React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs overflow-auto max-h-64' },
+                    JSON.stringify(run.inputs, null, 2)
+                  )
+                ),
+
+                phase === 'generation' && React.createElement('div', {},
+                  React.createElement('img', {
+                    src: run.image_url,
+                    alt: \`Run \${run.phase_run_number}\`,
+                    className: 'w-full rounded mb-2'
+                  }),
+                  run.debug_metadata?.thinking && React.createElement('details', { className: 'mt-2' },
+                    React.createElement('summary', { className: 'text-sm cursor-pointer' }, 'Thinking'),
+                    React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs mt-1 overflow-auto max-h-32 whitespace-pre-wrap' },
+                      run.debug_metadata.thinking
+                    )
+                  ),
+                  React.createElement('details', { className: 'mt-2' },
+                    React.createElement('summary', { className: 'text-sm cursor-pointer' }, 'Prompt'),
+                    React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs mt-1 overflow-auto max-h-32 whitespace-pre-wrap' },
+                      run.final_prompt
+                    )
+                  )
+                ),
+
+                phase === 'evaluation' && run.prompt_evaluations?.length > 0 && React.createElement('div', {},
+                  React.createElement('div', { className: 'text-sm font-semibold mb-2' }, \`Score: \${run.prompt_evaluations[0].score_overall}/10\`),
+                  React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs overflow-auto max-h-64' },
+                    JSON.stringify(run.prompt_evaluations[0].details, null, 2)
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
+    };
+
+    const NotebookView = () => {
+      const [error, setError] = useState(null);
+      const [sessionId, setSessionId] = useState(null);
+      const [fixtureImages, setFixtureImages] = useState({});
+      const [selectedFixtureIds, setSelectedFixtureIds] = useState([]);
+      const [showFixtureSelector, setShowFixtureSelector] = useState(false);
+
+      const [analysisRuns, setAnalysisRuns] = useState([]);
+      const [selectedAnalysisId, setSelectedAnalysisId] = useState(null);
+
+      const [generationRuns, setGenerationRuns] = useState([]);
+      const [selectedGenerationId, setSelectedGenerationId] = useState(null);
+
+      const [evaluationRuns, setEvaluationRuns] = useState([]);
+
+      useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const urlSessionId = params.get('session');
+
+        if (urlSessionId) {
+          setSessionId(urlSessionId);
+          loadSession(urlSessionId);
+
+          // Restore session state from SessionStorage
+          const saved = sessionStorage.getItem(\`notebook-\${urlSessionId}\`);
+          if (saved) {
+            try {
+              const { selectedAnalysisId, selectedGenerationId } = JSON.parse(saved);
+              setSelectedAnalysisId(selectedAnalysisId);
+              setSelectedGenerationId(selectedGenerationId);
+            } catch (e) {
+              console.warn('Failed to restore session state:', e);
+              // Continue without restored state - no error shown to user
+            }
+          }
+        } else {
+          setShowFixtureSelector(true);
+        }
+
+        fetch('/api/notebook/fixtures')
+          .then(res => res.json())
+          .then(data => {
+            if (!data.fixtures || Object.keys(data.fixtures).length === 0) {
+              setError('No fixture images found. Run "bun bench sync" to upload fixture images.');
+            }
+            setFixtureImages(data.fixtures);
+          })
+          .catch(err => setError('Failed to load fixtures: ' + err.message));
+      }, []);
+
+      // Save session state to SessionStorage
+      useEffect(() => {
+        if (sessionId) {
+          sessionStorage.setItem(\`notebook-\${sessionId}\`, JSON.stringify({
+            selectedAnalysisId,
+            selectedGenerationId
+          }));
+        }
+      }, [sessionId, selectedAnalysisId, selectedGenerationId]);
+
+      const loadSession = async (sessionId) => {
+        try {
+          const res = await fetchWithTimeout(\`/api/notebook/session/\${sessionId}\`, {});
+
+          if (!res.ok) {
+            if (res.status === 404) {
+              setError('Session not found. Starting new session.');
+              window.location.href = '/notebook';
+              return;
+            }
+            throw new Error(\`HTTP \${res.status}\`);
+          }
+
+          const data = await res.json();
+          setAnalysisRuns(data.phases.analysis);
+          setGenerationRuns(data.phases.generation);
+          setEvaluationRuns(data.phases.evaluation);
+        } catch (err) {
+          setError('Failed to load session: ' + err.message);
+        }
+      };
+
+      const handleFixtureSelection = (fixtureIds) => {
+        setSelectedFixtureIds(fixtureIds);
+        setShowFixtureSelector(false);
+
+        const newSessionId = \`notebook-\${Date.now()}-\${Math.random().toString(36).slice(2, 8)}\`;
+        setSessionId(newSessionId);
+        window.history.replaceState({}, '', \`?session=\${newSessionId}\`);
+      };
+
+      return React.createElement('div', { className: 'max-w-7xl mx-auto p-8' },
+        React.createElement(ErrorMessage, { message: error, onDismiss: () => setError(null) }),
+        React.createElement(SessionHeader, { sessionId }),
+        showFixtureSelector && React.createElement(FixtureImageSelector, {
+          fixtures: fixtureImages,
+          onSelect: handleFixtureSelection,
+          onCancel: () => setShowFixtureSelector(false)
+        }),
+        sessionId && React.createElement('div', { className: 'space-y-8 mt-6' },
+          React.createElement(AnalysisPhase, {
+            sessionId,
+            fixtureImageIds: selectedFixtureIds,
+            runs: analysisRuns,
+            selectedRunId: selectedAnalysisId,
+            onRunComplete: (newRun) => setAnalysisRuns([...analysisRuns, newRun]),
+            onSelectRun: setSelectedAnalysisId
+          }),
+          React.createElement(GenerationPhase, {
+            sessionId,
+            parentRunId: selectedAnalysisId,
+            runs: generationRuns.filter(r => r.parent_run_id === selectedAnalysisId),
+            selectedRunId: selectedGenerationId,
+            disabled: !selectedAnalysisId,
+            onRunComplete: (newRun) => setGenerationRuns([...generationRuns, newRun]),
+            onSelectRun: setSelectedGenerationId
+          }),
+          React.createElement(EvaluationPhase, {
+            sessionId,
+            parentRunId: selectedGenerationId,
+            runs: evaluationRuns.filter(r => r.parent_run_id === selectedGenerationId),
+            disabled: !selectedGenerationId,
+            onRunComplete: (newRun) => setEvaluationRuns([...evaluationRuns, newRun])
+          })
+        )
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(React.createElement(NotebookView));
   </script>
 </body>
 </html>
@@ -1022,5 +1791,126 @@ const handleRun = async (req: Request): Promise<Response> => {
       error: message
     });
     return Response.json({ error: `Failed to start run: ${message}` }, { status: 500 });
+  }
+};
+
+const handleNotebookFixtures = async (req: Request): Promise<Response> => {
+  try {
+    const supabase = createAdminClient();
+
+    const { data: fixtures, error } = await supabase
+      .from('fixture_images')
+      .select('id, filename, r2_url, product')
+      .order('product', { ascending: true })
+      .order('filename', { ascending: true });
+
+    if (error) {
+      return Response.json({ error: `Database error: ${error.message}` }, { status: 500 });
+    }
+
+    // Group by product
+    const grouped = (fixtures || []).reduce((acc, fixture) => {
+      if (!acc[fixture.product]) {
+        acc[fixture.product] = [];
+      }
+      acc[fixture.product].push(fixture);
+      return acc;
+    }, {} as Record<string, typeof fixtures>);
+
+    return Response.json({ fixtures: grouped });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return Response.json({ error: `Failed to load fixtures: ${message}` }, { status: 500 });
+  }
+};
+
+const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
+  try {
+    const body = await req.json();
+    const { sessionId, fixtureImageIds, variables, model, cacheEnabled } = body;
+
+    if (!sessionId || !fixtureImageIds || fixtureImageIds.length === 0) {
+      return Response.json({ error: 'Missing required fields: sessionId, fixtureImageIds' }, { status: 400 });
+    }
+
+    // TODO: Implement analysis logic
+    // For now, return a mock response
+    const mockRun = {
+      id: 'analysis-' + Date.now(),
+      session_id: sessionId,
+      phase: 'analysis',
+      phase_run_number: 1,
+      inputs: { fixtureImageIds, variables },
+      debug_metadata: {
+        tokens: { input: 150, output: 200 },
+        model
+      },
+      created_at: new Date().toISOString()
+    };
+
+    return Response.json(mockRun);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return Response.json({ error: 'Analysis failed: ' + message }, { status: 500 });
+  }
+};
+
+const handleNotebookGenerate = async (req: Request): Promise<Response> => {
+  try {
+    const body = await req.json();
+    const { sessionId, parentRunId, templateSlug, templateData, variables } = body;
+
+    if (!sessionId || !parentRunId || !templateSlug) {
+      return Response.json({ error: 'Missing required fields: sessionId, parentRunId, templateSlug' }, { status: 400 });
+    }
+
+    // TODO: Implement generation logic
+    // For now, return a mock response
+    const mockRun = {
+      id: 'generation-' + Date.now(),
+      session_id: sessionId,
+      parent_run_id: parentRunId,
+      phase: 'generation',
+      phase_run_number: 1,
+      inputs: { templateSlug, templateData, variables },
+      image_url: 'https://via.placeholder.com/512x512?text=Generated+Image',
+      debug_metadata: {
+        tokens: { input: 300, output: 150 },
+        thinking: 'Analyzing the fixture images and generating appropriate content...',
+        final_prompt: 'Create a product photo based on the analysis...'
+      },
+      created_at: new Date().toISOString()
+    };
+
+    return Response.json(mockRun);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return Response.json({ error: 'Generation failed: ' + message }, { status: 500 });
+  }
+};
+
+const handleNotebookSession = async (req: Request): Promise<Response> => {
+  try {
+    const url = new URL(req.url);
+    const sessionId = url.pathname.split('/').pop();
+
+    if (!sessionId) {
+      return Response.json({ error: 'Session ID required' }, { status: 400 });
+    }
+
+    // TODO: Implement session loading from database
+    // For now, return mock data
+    const mockData = {
+      phases: {
+        analysis: [],
+        generation: [],
+        evaluation: []
+      }
+    };
+
+    return Response.json(mockData);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return Response.json({ error: 'Failed to load session: ' + message }, { status: 500 });
   }
 };
