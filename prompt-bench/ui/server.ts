@@ -1730,32 +1730,43 @@ const serveNotebookHTML = (): Response => {
       const loadSession = async (sessionId) => {
         try {
           const res = await fetchWithTimeout(\`/api/notebook/session/\${sessionId}\`, {});
-
-          if (!res.ok) {
-            if (res.status === 404) {
-              setError('Session not found. Starting new session.');
-              window.location.href = '/notebook';
-              return;
-            }
-            throw new Error(\`HTTP \${res.status}\`);
-          }
+          if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
 
           const data = await res.json();
-          setAnalysisRuns(data.phases.analysis);
-          setGenerationRuns(data.phases.generation);
-          setEvaluationRuns(data.phases.evaluation);
+
+          // Update React state
+          setAnalysisRuns(data.phases.analysis || []);
+          setGenerationRuns(data.phases.generation || []);
+          setSelectedAnalysisId(data.phases.analysis?.[0]?.id || null);
+          setSelectedGenerationId(data.phases.generation?.[0]?.id || null);
+          setEvaluationRuns(data.phases.evaluation || []);
+
+          // Cache in SessionStorage for next reload
+          saveNotebookSession({
+            sessionId,
+            selectedFixtureIds: [], // Don't have this from DB
+            selectedAnalysisId: data.phases.analysis?.[0]?.id || null,
+            selectedGenerationId: data.phases.generation?.[0]?.id || null,
+            analysisRuns: data.phases.analysis || [],
+            generationRuns: data.phases.generation || [],
+            evaluationRuns: data.phases.evaluation || [],
+            imageCache: []
+          });
         } catch (err) {
-          setError('Failed to load session: ' + err.message);
+          console.error('Failed to load session:', err);
+          setError('Failed to load session. Check network connection or try refreshing.');
         }
       };
 
       const handleFixtureSelection = (fixtureIds) => {
         setSelectedFixtureIds(fixtureIds);
+        const newSessionId = \`notebook-\${Date.now()}-\${Math.random().toString(36).substring(2, 9)}\`;
+        setSessionId(newSessionId);
         setShowFixtureSelector(false);
 
-        const newSessionId = \`notebook-\${Date.now()}-\${Math.random().toString(36).slice(2, 8)}\`;
-        setSessionId(newSessionId);
-        window.history.replaceState({}, '', \`?session=\${newSessionId}\`);
+        const params = new URLSearchParams(window.location.search);
+        params.set('session', newSessionId);
+        window.history.pushState({}, '', \`\${window.location.pathname}?\${params}\`);
       };
 
       return React.createElement('div', { className: 'max-w-7xl mx-auto p-8' },
