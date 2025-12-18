@@ -983,34 +983,22 @@ const serveNotebookHTML = (): Response => {
     };
 
     const getCachedOrConvertImage = async (runId, r2Url, imageCache) => {
-      // Check cache first
       const cached = imageCache.find(c => c.runId === runId);
       if (cached) {
-        // Update timestamp for LRU
-        cached.timestamp = Date.now();
-        return { dataUrl: cached.dataUrl, isNew: false };
+        const updatedCache = imageCache.map(c =>
+          c.runId === runId ? { ...c, timestamp: Date.now() } : c
+        );
+        return { dataUrl: cached.dataUrl, isNew: false, updatedCache };
       }
 
-      // Convert to data URL
       const dataUrl = await convertImageToDataUrl(r2Url);
-      const newEntry = {
-        runId,
-        r2Url,
-        dataUrl,
-        size: dataUrl.length,
-        timestamp: Date.now()
-      };
+      const newEntry = { runId, r2Url, dataUrl, size: dataUrl.length, timestamp: Date.now() };
+      const withNewEntry = [...imageCache, newEntry];
+      const updatedCache = withNewEntry.length > 5
+        ? withNewEntry.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5)
+        : withNewEntry;
 
-      // Add to cache
-      imageCache.push(newEntry);
-
-      // LRU eviction (keep max 5)
-      if (imageCache.length > 5) {
-        imageCache.sort((a, b) => b.timestamp - a.timestamp);
-        imageCache.splice(5); // Remove items beyond index 5
-      }
-
-      return { dataUrl, isNew: true };
+      return { dataUrl, isNew: true, updatedCache };
     };
 
     const SessionHeader = ({ sessionId }) => {
@@ -1263,7 +1251,9 @@ const serveNotebookHTML = (): Response => {
       const [templateData, setTemplateData] = useState({});
       const [expandedRunId, setExpandedRunId] = useState(null);
       const [showComparison, setShowComparison] = useState(false);
-      const [imageDataUrls, setImageDataUrls] = useState({});
+      /** @type {[Record<string, string>, function]} */
+      const [imageDataUrls, setImageDataUrls] = useState<Record<string, string>>({});
+      const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, string>>({});
 
       useEffect(() => {
         fetch('/api/templates')
@@ -1280,28 +1270,31 @@ const serveNotebookHTML = (): Response => {
         }
       }, [templateSlug, templates]);
 
-      const loadImage = async (run) => {
-        if (imageDataUrls[run.id]) return; // Already loaded
+      // NEW: Load image when run is expanded
+      useEffect(() => {
+        if (expandedRunId && !imageDataUrls[expandedRunId] && !imageLoadErrors[expandedRunId]) {
+          const run = runs.find(r => r.id === expandedRunId);
+          if (run) {
+            loadImage(run);
+          }
+        }
+      }, [expandedRunId]);
 
+      const loadImage = async (run) => {
         const r2Url = run.debug_metadata?.image_url;
         if (!r2Url) return;
 
         try {
-          const { dataUrl, isNew } = await getCachedOrConvertImage(
-            run.id,
-            r2Url,
-            imageCache
-          );
+          const result = await getCachedOrConvertImage(run.id, r2Url, imageCache);
 
-          setImageDataUrls(prev => ({ ...prev, [run.id]: dataUrl }));
+          setImageDataUrls(prev => ({ ...prev, [run.id]: result.dataUrl }));
 
-          if (isNew) {
-            // Trigger SessionStorage save via parent useEffect
-            setImageCache([...imageCache]);
+          if (result.updatedCache) {
+            setImageCache(result.updatedCache);
           }
         } catch (err) {
           logger.error('Failed to convert image to data URL', { error: err.message, runId: run.id });
-          // Fall back to R2 URL (already in img src)
+          setImageLoadErrors(prev => ({ ...prev, [run.id]: err.message }));
         }
       };
 
@@ -1436,14 +1429,13 @@ const serveNotebookHTML = (): Response => {
               ),
               React.createElement('img', {
                 src: imageDataUrls[run.id] || run.debug_metadata?.image_url || '',
-                alt: \`Generation \${run.phase_run_number}\`,
-                className: 'w-full h-auto rounded border border-gray-200',
-                onLoad: () => {
-                  if (!imageDataUrls[run.id]) {
-                    loadImage(run);
-                  }
-                }
+                alt: 'Generated image for run ' + run.phase_run_number + (run.inputs?.product ? ' - ' + run.inputs.product : ''),
+                className: 'w-full h-auto rounded border border-gray-200'
               }),
+              // Add error indicator if conversion failed
+              imageLoadErrors[run.id] && React.createElement('div', {
+                className: 'text-xs text-red-600 mt-1'
+              }, 'Cache failed, using direct URL'),
               expandedRunId === run.id && run.debug_metadata?.thinking && React.createElement('div', { className: 'mt-3 pt-3 border-t' },
                 React.createElement('h4', { className: 'text-sm font-semibold mb-2' }, 'Thinking:'),
                 React.createElement('pre', { className: 'bg-gray-50 p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap' },
