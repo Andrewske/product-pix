@@ -8,7 +8,7 @@ import {
 } from '@/lib/db/batch';
 import { createBatchJob as createGeminiBatch } from '@/lib/ai/gemini-batch';
 import { getBatchItemParameters } from '@/lib/db/types';
-import { calculateBatchCredits } from '@/lib/pricing/credits';
+import { calculateGenerationCost } from '@/lib/pricing';
 import { getTemplateBySlug } from '@/lib/db/templates';
 import { buildPromptFromTemplate } from '@/lib/ai/prompt-builder';
 import { logger } from '@/lib/logging';
@@ -25,6 +25,7 @@ const createBatchSchema = z.object({
         source_image_url: z.string().url().optional(),
         aspect_ratio: z.enum(['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9']).default('1:1'),
         resolution: z.enum(['1k', '2k', '4k']).default('1k'),
+        addons: z.array(z.string()).optional(),
       })
     )
     .min(1)
@@ -53,8 +54,15 @@ const createBatchHandler = async (request: AuthenticatedRequest): Promise<NextRe
 
     const { name, items, parameters } = parsed.data;
 
-    // Calculate credits using centralized pricing
-    const totalCredits = calculateBatchCredits(items);
+    // Calculate credits using new cost function (batch uploads = snail pricing)
+    const totalCredits = items.reduce((sum, item) => {
+      const cost = calculateGenerationCost({
+        resolution: item.resolution,
+        mode: 'snail', // Batch uploads always use snail pricing
+        addons: item.addons as ('titleGeneration' | 'fancyBackground')[]
+      });
+      return sum + cost.total;
+    }, 0);
 
     const adminSupabase = createAdminClient();
 

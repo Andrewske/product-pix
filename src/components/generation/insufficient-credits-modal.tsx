@@ -18,24 +18,33 @@ import {
 import { getPricingForModal, createPackCheckout } from '@/lib/stripe/checkout-actions';
 import type { PricingPack } from '@/lib/pricing/utils';
 import type { CreditPackId } from '@/lib/stripe/products';
+import { CostBreakdown } from '@/components/pricing';
+import type { GenerationCostBreakdown, GenerationMode } from '@/lib/pricing/types';
+import type { Resolution } from '@/lib/pricing/credits';
 
 interface InsufficientCreditsModalProps {
   isOpen: boolean;
   currentBalance: number;
-  requiredCredits: number;
+  costBreakdown: GenerationCostBreakdown;
+  resolution: Resolution;
+  mode: GenerationMode;
+  addons?: Array<string>;
   onClose: () => void;
 }
 
 export function InsufficientCreditsModal({
   isOpen,
   currentBalance,
-  requiredCredits,
+  costBreakdown,
+  resolution,
+  mode,
+  addons,
   onClose,
 }: InsufficientCreditsModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [packs, setPacks] = useState<Record<string, PricingPack> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const deficit = requiredCredits - currentBalance;
+  const deficit = costBreakdown.total - currentBalance;
 
   const formatPrice = (priceCents: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -79,14 +88,27 @@ export function InsufficientCreditsModal({
             Insufficient Credits
           </DialogTitle>
           <DialogDescription>
-            You need {deficit} more credits to generate this image.
+            This generation requires the following credits:
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="text-center p-4 bg-muted rounded">
-            <p className="text-sm text-muted-foreground">Current balance</p>
-            <p className="text-2xl font-bold">{currentBalance} credits</p>
+          <CostBreakdown
+            resolution={resolution}
+            mode={mode}
+            addons={addons}
+            variant="default"
+          />
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center p-3 bg-muted rounded">
+              <span className="text-sm text-muted-foreground">Your balance:</span>
+              <span className="font-mono font-medium">{currentBalance} credits</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-destructive/10 border border-destructive/20 rounded">
+              <span className="text-sm text-destructive font-medium">Shortfall:</span>
+              <span className="font-mono font-semibold text-destructive">{deficit} credits</span>
+            </div>
           </div>
 
           {recommendedPack && (

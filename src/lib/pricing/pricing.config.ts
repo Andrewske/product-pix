@@ -2,14 +2,22 @@ import { z } from 'zod';
 
 /**
  * Credit economy configuration schema.
- * Defines the credit system: resolution costs, signup bonuses, packs, and subscriptions.
+ * Defines the credit system: generation costs by mode, addons, signup bonuses, packs, and subscriptions.
  */
 const CreditEconomySchema = z.object({
-  creditsPerResolution: z.object({
-    '1k': z.number().int().positive(),
-    '2k': z.number().int().positive(),
-    '4k': z.number().int().positive(),
+  generationCosts: z.object({
+    lightning: z.object({
+      '1k': z.number().int().positive(),
+      '2k': z.number().int().positive(),
+      '4k': z.number().int().positive(),
+    }),
+    snail: z.object({
+      '1k': z.number().int().positive(),
+      '2k': z.number().int().positive(),
+      '4k': z.number().int().positive(),
+    }),
   }),
+  addonCosts: z.record(z.string(), z.number().int().min(0)),
   freeCreditsOnSignup: z.number().int().min(0),
   packs: z.object({
     pack_50: z.object({
@@ -42,7 +50,15 @@ const CreditEconomySchema = z.object({
  * Source of truth for credit costs, bonuses, and subscription tiers.
  */
 export const creditEconomy = {
-  creditsPerResolution: { '1k': 1, '2k': 2, '4k': 3 },
+  generationCosts: {
+    lightning: { '1k': 30, '2k': 60, '4k': 120 },
+    snail: { '1k': 15, '2k': 30, '4k': 60 }
+  },
+  addonCosts: {
+    // Future features
+    titleGeneration: 50,
+    fancyBackground: 10
+  },
   freeCreditsOnSignup: 5,
   packs: {
     pack_50: { credits: 50, slug: 'pack_50' },

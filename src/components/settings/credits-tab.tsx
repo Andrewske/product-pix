@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserProfile } from '@/lib/auth/hooks';
 import { getCreditHistory } from '@/lib/db/credits';
+import { getPricingForModal } from '@/lib/stripe/checkout-actions';
 import type { CreditTransaction, TransactionType } from '@/types';
+import type { PricingPack } from '@/lib/pricing/utils';
 
 const getTransactionTypeColor = (type: TransactionType): string => {
   switch (type) {
@@ -38,18 +40,23 @@ const formatAmount = (amount: number): string => {
 export function CreditsTab(): React.ReactElement {
   const { user } = useUserProfile();
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
+  const [packs, setPacks] = useState<Record<string, PricingPack> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
 
-    const fetchCreditHistory = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const history = await getCreditHistory(user.id);
+        const [history, pricing] = await Promise.all([
+          getCreditHistory(user.id),
+          getPricingForModal()
+        ]);
         setTransactions(history);
+        setPacks(pricing);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load credit history');
       } finally {
@@ -57,7 +64,7 @@ export function CreditsTab(): React.ReactElement {
       }
     };
 
-    fetchCreditHistory();
+    fetchData();
   }, [user?.id]);
 
   if (loading) {
@@ -145,11 +152,16 @@ export function CreditsTab(): React.ReactElement {
                     {formatAmount(transaction.amount)} credits
                   </span>
                 </div>
-                {transaction.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {transaction.description}
-                  </p>
-                )}
+                 {transaction.description && (
+                   <p className="text-sm text-muted-foreground">
+                     {transaction.description}
+                   </p>
+                 )}
+                 {transaction.transaction_type === 'pack_purchase' && (
+                   <div className="text-sm text-muted-foreground mt-1">
+                     {transaction.amount} credits purchased
+                   </div>
+                 )}
                 <p className="text-xs text-muted-foreground">
                   {new Date(transaction.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',

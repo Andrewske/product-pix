@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getBatchJob, getBatchItems } from '@/lib/db/batch';
 import { cancelBatch } from '@/lib/ai/gemini-batch';
 import { getBatchItemParameters } from '@/lib/db/types';
-import { getCreditsForResolution } from '@/lib/pricing/credits';
+import { getCreditsForGeneration } from '@/lib/pricing/credits';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-middleware';
 import { createGenerationError, createCreditError, ErrorCodes } from '@/lib/errors';
 import { captureError } from '@/lib/observability/capture-error';
@@ -82,8 +82,8 @@ const cancelBatchHandler = async (
       const params = firstItem ? getBatchItemParameters(firstItem.parameters) : null;
       const resolution = params?.resolution || '1k';
 
-      // Calculate refund for pending items
-      const creditsPerPendingItem = getCreditsForResolution(resolution);
+      // Calculate refund for pending items (default to lightning mode)
+      const creditsPerPendingItem = getCreditsForGeneration(resolution, 'lightning');
       refundAmount = pendingItems.length * creditsPerPendingItem;
 
       // Refund credits using the add_credits RPC function

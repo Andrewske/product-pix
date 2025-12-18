@@ -1,3 +1,5 @@
+import type { Resolution } from './credits';
+
 export type Provider = 'anthropic' | 'openai' | 'google';
 
 export interface ModelPricing {
@@ -23,4 +25,16 @@ export interface CostResult {
   modelId: string;
   provider: Provider;
 }
+
+export type GenerationMode = 'lightning' | 'snail';
+export type GenerationParams = {
+  resolution: Resolution;
+  mode: GenerationMode;
+  addons?: Array<string>; // Specific type derived in credits.ts
+};
+export type GenerationCostBreakdown = {
+  baseGeneration: number;
+  addons: Array<{ name: string; credits: number }>;
+  total: number;
+};
 

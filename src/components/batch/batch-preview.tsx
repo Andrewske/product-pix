@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getCreditsForGeneration } from '@/lib/pricing/credits';
 import type { ParsedBatchItem, ParseError } from './csv-upload-form';
 
 interface BatchPreviewProps {
@@ -24,12 +25,19 @@ export function BatchPreview({
 }: BatchPreviewProps) {
   const [expanded, setExpanded] = useState(false);
 
-  // Calculate credit cost
-  const creditsPerItem = { '1k': 1, '2k': 2, '4k': 3 } as const;
-  const totalCredits = items.reduce(
-    (sum, item) => sum + creditsPerItem[item.resolution || '1k'],
-    0
-  );
+  // Calculate credit costs for both modes
+  const lightningTotal = items.reduce((sum, item) => {
+    const cost = getCreditsForGeneration(item.resolution || '1k', 'lightning');
+    return sum + cost;
+  }, 0);
+
+  const snailTotal = items.reduce((sum, item) => {
+    const cost = getCreditsForGeneration(item.resolution || '1k', 'snail');
+    return sum + cost;
+  }, 0);
+
+  const discount = lightningTotal - snailTotal;
+  const discountPercent = Math.round((discount / lightningTotal) * 100);
 
   const previewItems = expanded ? items : items.slice(0, 5);
   const hasMore = items.length > 5;
@@ -85,9 +93,9 @@ export function BatchPreview({
                       {item.resolution}
                     </Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {creditsPerItem[item.resolution || '1k']} credit{creditsPerItem[item.resolution || '1k'] !== 1 ? 's' : ''}
-                  </div>
+                   <div className="text-xs text-muted-foreground">
+                     {getCreditsForGeneration(item.resolution || '1k', 'lightning')} credits (lightning)
+                   </div>
                 </div>
               </Card>
             ))}
@@ -104,6 +112,23 @@ export function BatchPreview({
             </Button>
           )}
         </div>
+      )}
+
+      {/* Pricing Summary */}
+      {items.length > 0 && (
+        <Card className="p-4 bg-muted/50">
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-sm">
+              {items.length} images × avg {Math.round(lightningTotal / items.length)}cr (lightning) = {lightningTotal} credits
+            </p>
+            <p className="text-green-600 font-medium text-sm">
+              Snail mode discount ({discountPercent}%): -{discount} credits
+            </p>
+            <p className="text-lg font-semibold">
+              Total: {snailTotal} credits
+            </p>
+          </div>
+        </Card>
       )}
 
       {/* Action Buttons */}
@@ -124,7 +149,7 @@ export function BatchPreview({
           disabled={loading || items.length === 0 || errors.length > 0}
           className="flex-1"
         >
-          {loading ? 'Creating Batch...' : `Start Batch (${totalCredits} credits)`}
+          {loading ? 'Creating Batch...' : `Start Batch (${snailTotal} credits)`}
         </Button>
       </div>
     </div>

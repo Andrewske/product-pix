@@ -10,12 +10,13 @@ export const createGenerationJob = async (
   prompt: string,
   parameters: Json = {},
   credits = 1,
-  templateSlug?: string
+  templateSlug?: string,
+  generationMode?: string
 ): Promise<CreateJobResult> => {
   const supabase = createAdminClient();
 
   // Pass parameters in the exact order expected by the database function:
-  // p_user_id, p_upload_id, p_prompt, p_parameters, p_credits, p_template_slug
+  // p_user_id, p_upload_id, p_prompt, p_parameters, p_credits, p_template_slug, p_generation_mode
   const { data, error } = await supabase.rpc('create_generation_job', {
     p_user_id: userId,
     p_upload_id: uploadId || '',
@@ -23,6 +24,7 @@ export const createGenerationJob = async (
     p_parameters: parameters,
     p_credits: credits,
     p_template_slug: templateSlug || 'ecommerce-base',
+    p_generation_mode: generationMode || 'lightning',
   });
 
   if (error) {

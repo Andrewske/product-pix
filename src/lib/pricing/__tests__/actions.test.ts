@@ -164,7 +164,14 @@ describe('Pricing Actions', () => {
           },
         },
         economy: {
-          creditsPerResolution: { '1k': 1, '2k': 2, '4k': 3 },
+          generationCosts: {
+            lightning: { '1k': 30, '2k': 60, '4k': 120 },
+            snail: { '1k': 15, '2k': 30, '4k': 60 }
+          },
+          addonCosts: {
+            titleGeneration: 50,
+            fancyBackground: 10
+          },
           freeCreditsOnSignup: 5,
         },
       };

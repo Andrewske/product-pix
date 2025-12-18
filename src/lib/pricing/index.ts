@@ -1,5 +1,6 @@
 // Types
 export type { Provider, ModelPricing, PricingConfig, TokenUsage, CostResult } from './types';
+export type { GenerationMode, GenerationParams, GenerationCostBreakdown } from './types';
 export type { PricingData, PricingPack, PricingSubscription, PricingEconomy } from './utils';
 
 // Config loading (server-only)
@@ -15,7 +16,7 @@ export { creditEconomy, type CreditEconomy } from './pricing.config';
 // export { calculateCost } from './calculator';
 
 // Credit calculation
-export * from './credits';
+export { getCreditsForGeneration, calculateGenerationCost } from './credits';
 
 // Utility functions
 export { mergePacks, mergeSubscriptions } from './utils';

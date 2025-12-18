@@ -20,7 +20,8 @@ export interface PricingSubscription {
 }
 
 export interface PricingEconomy {
-  creditsPerResolution: CreditEconomy['creditsPerResolution'];
+  generationCosts: CreditEconomy['generationCosts'];
+  addonCosts: CreditEconomy['addonCosts'];
   freeCreditsOnSignup: number;
 }
 

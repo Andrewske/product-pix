@@ -8,7 +8,7 @@ import { trackActivity } from '@/lib/db';
 import { generateImage } from '@/lib/ai/generate-image';
 import { getPublicUrl } from '@/lib/r2';
 import { rateLimiters } from '@/lib/rate-limit';
-import { getCreditsForResolution } from '@/lib/pricing/credits';
+import { calculateGenerationCost, type GenerationMode } from '@/lib/pricing';
 import { createGenerationError } from '@/lib/errors/error-classes';
 import { captureError } from '@/lib/observability/capture-error';
 import { ErrorCodes } from '@/lib/errors/codes';
@@ -20,6 +20,8 @@ const requestSchema = z.object({
   templateSlug: z.string().min(1),
   aspectRatio: z.enum(['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9']).default('1:1'),
   resolution: z.enum(['1k', '2k', '4k']).default('1k'),
+  mode: z.enum(['lightning', 'snail']).optional().default('lightning'),
+  addons: z.array(z.string()).optional(),
 });
 
 export const POST = withAuth(async (request) => {
@@ -69,11 +71,16 @@ export const POST = withAuth(async (request) => {
       );
     }
 
-    const { uploadId, templateSlug: parsedTemplateSlug, aspectRatio, resolution } = parsed.data;
+    const { uploadId, templateSlug: parsedTemplateSlug, aspectRatio, resolution, mode, addons } = parsed.data;
     templateSlug = parsedTemplateSlug;
 
-    // Calculate credits based on resolution
-    creditCost = getCreditsForResolution(resolution);
+    // Calculate credits using new cost breakdown function
+    const costBreakdown = calculateGenerationCost({
+      resolution,
+      mode,
+      addons: addons as ('titleGeneration' | 'fancyBackground')[]
+    });
+    creditCost = costBreakdown.total;
 
     // If uploadId provided, fetch the upload
     let sourceImage: Buffer | undefined;
@@ -119,7 +126,8 @@ export const POST = withAuth(async (request) => {
       '', // Empty prompt - using template instead
       { aspectRatio, resolution },
       creditCost,
-      templateSlug
+      templateSlug,
+      mode
     );
 
     // Check for insufficient credits
@@ -142,7 +150,8 @@ export const POST = withAuth(async (request) => {
         {
           error: "Insufficient credits",
           balance: userData?.credit_balance || 0,
-          required: creditCost
+          required: creditCost,
+          costBreakdown: costBreakdown
         },
         { status: 402 }
       );

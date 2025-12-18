@@ -28,7 +28,8 @@ export async function getPricing(): Promise<PricingData> {
       packs: mergePacks(stripePrices, creditEconomy),
       subscriptions: mergeSubscriptions(stripePrices, creditEconomy),
       economy: {
-        creditsPerResolution: creditEconomy.creditsPerResolution,
+        generationCosts: creditEconomy.generationCosts,
+        addonCosts: creditEconomy.addonCosts,
         freeCreditsOnSignup: creditEconomy.freeCreditsOnSignup,
       },
     };

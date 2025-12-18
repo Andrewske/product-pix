@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -861,6 +856,7 @@ export type Database = {
           created_at: string
           credits_charged: number
           error_message: string | null
+          generation_mode: string | null
           id: string
           max_retries: number
           parameters: Json | null
@@ -878,6 +874,7 @@ export type Database = {
           created_at?: string
           credits_charged?: number
           error_message?: string | null
+          generation_mode?: string | null
           id?: string
           max_retries?: number
           parameters?: Json | null
@@ -895,6 +892,7 @@ export type Database = {
           created_at?: string
           credits_charged?: number
           error_message?: string | null
+          generation_mode?: string | null
           id?: string
           max_retries?: number
           parameters?: Json | null
@@ -1660,21 +1658,67 @@ export type Database = {
         }
         Returns: string
       }
-      create_generation_job: {
-        Args: {
-          p_credits?: number
-          p_parameters?: Json
-          p_prompt?: string
-          p_template_slug?: string
-          p_upload_id?: string
-          p_user_id: string
-        }
-        Returns: {
-          job_id: string
-          message: string
-          success: boolean
-        }[]
-      }
+      create_generation_job:
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt: string
+              p_template_slug?: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_generation_mode?: string
+              p_parameters?: Json
+              p_prompt: string
+              p_template_slug?: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt: string
+              p_template_id?: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_credits?: number
+              p_parameters?: Json
+              p_prompt: string
+              p_upload_id: string
+              p_user_id: string
+            }
+            Returns: {
+              job_id: string
+              message: string
+              success: boolean
+            }[]
+          }
       deduct_credits_for_cash_refund: {
         Args: {
           p_amount: number
@@ -1723,7 +1767,6 @@ export type Database = {
           job_count: number
           last_active_at: string
           message_count: number
-          next_cursor: string
         }[]
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }
@@ -1994,3 +2037,4 @@ export const Constants = {
     },
   },
 } as const
+
