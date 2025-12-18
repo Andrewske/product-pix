@@ -20,8 +20,12 @@ import {
   CollapsibleTrigger,
   RadioGroup,
   RadioGroupItem,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '../../shadcn';
-import { ChevronDown, X, CheckCircle, Loader2, Microscope } from 'lucide-react';
+import { ChevronDown, X, CheckCircle, Loader2, Microscope, Settings2, Play } from 'lucide-react';
 import type { AnalysisRun } from '../../types/index';
 
 interface AnalysisPhaseProps {
@@ -145,170 +149,186 @@ export function AnalysisPhase({
   };
 
   return (
-    <ShadcnCard>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Microscope className="h-5 w-5" />
-          Analysis Phase
-        </CardTitle>
+    <ShadcnCard className="border-l-4 border-l-primary/50 shadow-sm">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Microscope className="h-5 w-5 text-primary" />
+            Analysis Phase
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Select
+              label=""
+              value={model}
+              onChange={setModel}
+              options={[
+                { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+                { value: 'gemini-2.0-flash-thinking', label: 'Gemini 2.0 Flash Thinking' },
+              ]}
+              className="w-[200px]"
+            />
+            <Button onClick={handleRun} disabled={isRunning || fixtureIds.length === 0} size="sm">
+              {isRunning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isRunning ? 'Running...' : 'Run Analysis'}
+              {!isRunning && <Play className="ml-2 h-3 w-3" />}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      
+      <CardContent className="space-y-6">
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        <Select
-          label="Model"
-          value={model}
-          onChange={setModel}
-          options={[
-            { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-            { value: 'gemini-2.0-flash-thinking', label: 'Gemini 2.0 Flash Thinking' },
-          ]}
-        />
-
-        <div className="space-y-1.5">
-          <Label>Analysis Prompt</Label>
-          <Textarea
-            value={analysisPrompt}
-            onChange={(e) => setAnalysisPrompt(e.target.value)}
-            className="h-24 font-mono text-sm"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Response Schema (fields to extract)</Label>
-          <Textarea
-            value={JSON.stringify(analysisSchema, null, 2)}
-            onChange={(e) => {
-              try {
-                setAnalysisSchema(JSON.parse(e.target.value));
-              } catch {
-                // Invalid JSON - ignore
-              }
-            }}
-            className="h-64 font-mono text-sm"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Analysis Variables (optional overrides)</Label>
-          <Textarea
-            value={JSON.stringify(variables || {}, null, 2)}
-            onChange={(e) => handleVariablesChange(e.target.value)}
-            className="h-24 font-mono text-sm"
-            placeholder='{"key": "value"}'
-          />
-        </div>
-
-        <Button onClick={handleRun} disabled={isRunning || fixtureIds.length === 0}>
-          {isRunning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isRunning ? 'Running Analysis...' : `Run Analysis (${runs.length + 1})`}
-        </Button>
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="config" className="border rounded-md px-4">
+            <AccordionTrigger className="hover:no-underline py-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Settings2 className="h-4 w-4" />
+                <span>Configure Prompt & Schema</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Analysis Prompt</Label>
+                  <Textarea
+                    value={analysisPrompt}
+                    onChange={(e) => setAnalysisPrompt(e.target.value)}
+                    className="h-48 font-mono text-xs resize-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Response Schema</Label>
+                  <Textarea
+                    value={JSON.stringify(analysisSchema, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        setAnalysisSchema(JSON.parse(e.target.value));
+                      } catch {
+                        // Invalid JSON - ignore
+                      }
+                    }}
+                    className="h-48 font-mono text-xs resize-none"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Variables (JSON)</Label>
+                <Textarea
+                  value={JSON.stringify(variables || {}, null, 2)}
+                  onChange={(e) => handleVariablesChange(e.target.value)}
+                  className="h-24 font-mono text-xs"
+                  placeholder='{"key": "value"}'
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {runs.length > 0 && (
-          <>
-            <Separator className="my-4" />
-            <div className="space-y-3">
-              <h3 className="font-semibold">Analysis Runs ({runs.length})</h3>
-              <RadioGroup
-                value={selectedRunId || ''}
-                onValueChange={onSelectRun}
-                className="space-y-2"
-              >
-                {runs.map((run) => (
-                  <Collapsible
-                    key={run.id}
-                    open={expandedRunId === run.id}
-                    onOpenChange={() =>
-                      setExpandedRunId(expandedRunId === run.id ? null : run.id)
-                    }
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Run History</h3>
+               <span className="text-xs text-muted-foreground">{runs.length} run{runs.length !== 1 ? 's' : ''}</span>
+            </div>
+            
+            <RadioGroup
+              value={selectedRunId || ''}
+              onValueChange={onSelectRun}
+              className="space-y-3"
+            >
+              {runs.map((run) => (
+                <Collapsible
+                  key={run.id}
+                  open={expandedRunId === run.id}
+                  onOpenChange={() =>
+                    setExpandedRunId(expandedRunId === run.id ? null : run.id)
+                  }
+                >
+                  <div
+                    className={cn(
+                      'rounded-xl border transition-all duration-200',
+                      selectedRunId === run.id
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border hover:border-border/80'
+                    )}
                   >
-                    <div
-                      className={cn(
-                        'rounded-lg border p-3',
-                        selectedRunId === run.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border'
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem value={run.id} id={run.id} />
-                          <label
-                            htmlFor={run.id}
-                            className="cursor-pointer flex-1"
-                          >
-                            <span className="font-medium">
+                    <div className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-3 flex-1">
+                        <RadioGroupItem value={run.id} id={run.id} />
+                        <label
+                          htmlFor={run.id}
+                          className="cursor-pointer flex-1 grid gap-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm">
                               Run {run.phase_run_number}
                             </span>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              <Badge variant="info">
-                                {run.debug_metadata?.model || 'unknown'}
-                              </Badge>
-                              <Badge variant="info">
-                                ${run.debug_metadata?.cost?.toFixed(4) || '0.0000'}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {run.debug_metadata?.duration_ms !== undefined
-                                  ? `${(run.debug_metadata.duration_ms / 1000).toFixed(2)}s`
-                                  : ''}
-                              </span>
-                            </div>
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <ChevronDown
-                                className={cn(
-                                  'h-4 w-4 transition-transform',
-                                  expandedRunId === run.id && 'rotate-180'
-                                )}
-                              />
-                            </Button>
-                          </CollapsibleTrigger>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRemoveRun(run.id);
-                            }}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
+                            {selectedRunId === run.id && (
+                                <span className="flex items-center text-xs text-primary font-medium">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Active
+                                </span>
+                            )}
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2 items-center text-xs text-muted-foreground">
+                            <span>{run.debug_metadata?.model}</span>
+                            <span>•</span>
+                            <span>${run.debug_metadata?.cost?.toFixed(4) || '0.0000'}</span>
+                            <span>•</span>
+                            <span>
+                              {run.debug_metadata?.duration_ms !== undefined
+                                ? `${(run.debug_metadata.duration_ms / 1000).toFixed(2)}s`
+                                : ''}
+                            </span>
+                          </div>
+                        </label>
                       </div>
-                      <CollapsibleContent>
-                        <Separator className="my-3" />
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium">Analysis Results:</h4>
-                          <pre className="bg-muted p-2 rounded text-xs overflow-x-auto max-h-64">
-                            {JSON.stringify(run.inputs, null, 2)}
-                          </pre>
-                        </div>
-                      </CollapsibleContent>
+                      <div className="flex items-center gap-1">
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <ChevronDown
+                              className={cn(
+                                'h-4 w-4 transition-transform text-muted-foreground',
+                                expandedRunId === run.id && 'rotate-180'
+                              )}
+                            />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveRun(run.id);
+                          }}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </Collapsible>
-                ))}
-              </RadioGroup>
-            </div>
-          </>
-        )}
-
-        {selectedRunId && (
-          <Alert className="bg-primary/10 border-primary/20">
-            <CheckCircle className="h-4 w-4 text-primary" />
-            <AlertDescription>
-              Analysis Run{' '}
-              {runs.find((r) => r.id === selectedRunId)?.phase_run_number || ''}{' '}
-              selected for generation
-            </AlertDescription>
-          </Alert>
+                    <CollapsibleContent>
+                      <Separator />
+                      <div className="p-3 bg-muted/30 rounded-b-xl">
+                        <div className="flex justify-between items-center mb-2">
+                             <h4 className="text-xs font-semibold text-muted-foreground uppercase">Extracted Data</h4>
+                        </div>
+                        <pre className="text-xs font-mono bg-background p-3 rounded-md border overflow-x-auto max-h-[300px]">
+                          {JSON.stringify(run.inputs, null, 2)}
+                        </pre>
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
+              ))}
+            </RadioGroup>
+          </div>
         )}
       </CardContent>
     </ShadcnCard>

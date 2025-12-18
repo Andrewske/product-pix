@@ -5,8 +5,6 @@ import { AnalysisPhase } from './AnalysisPhase';
 import { GenerationPhase } from './GenerationPhase';
 import { EvaluationPhase } from './EvaluationPhase';
 import { ErrorMessage } from '../shared/ErrorMessage';
-import { ShadcnCard, CardContent, cn } from '../primitives';
-import { ImageIcon } from 'lucide-react';
 import type { AnalysisRun, GenerationRun, EvaluationRun } from '../../types/index';
 
 interface FixtureImage {
@@ -166,8 +164,8 @@ export function NotebookView(): React.ReactElement {
   }, [loadSessionCallback]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto px-6 py-10">
         {error && (
           <ErrorMessage message={error} onDismiss={() => setError(null)} />
         )}
@@ -177,74 +175,62 @@ export function NotebookView(): React.ReactElement {
           onCopyContext={copyContextToClipboard}
         />
 
-        {/* ALWAYS render selector (not conditional) */}
-        <FixtureImageSelector
-          fixtures={fixtureImages}
-          selectedFixtureIds={selectedFixtureIds}
-          isExpanded={isFixtureSelectorExpanded}
-          onToggleExpand={() =>
-            setIsFixtureSelectorExpanded(!isFixtureSelectorExpanded)
-          }
-          onSelect={handleFixtureSelection}
-        />
+        <div className="space-y-8">
+          <FixtureImageSelector
+            fixtures={fixtureImages}
+            selectedFixtureIds={selectedFixtureIds}
+            isExpanded={isFixtureSelectorExpanded}
+            onToggleExpand={() =>
+              setIsFixtureSelectorExpanded(!isFixtureSelectorExpanded)
+            }
+            onSelect={handleFixtureSelection}
+          />
 
-        {/* Only show phases when images are selected */}
-        {sessionId && selectedFixtureIds.length > 0 && (
-          <div className="space-y-6 mt-6">
-            <AnalysisPhase
-              sessionId={sessionId}
-              fixtureIds={selectedFixtureIds}
-              runs={analysisRuns}
-              selectedRunId={selectedAnalysisId}
-              onSelectRun={setSelectedAnalysisId}
-              onRunComplete={(newRun) =>
-                setAnalysisRuns([...analysisRuns, newRun])
-              }
-              onRemoveRun={handleRemoveAnalysisRun}
-            />
+          {sessionId && selectedFixtureIds.length > 0 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <AnalysisPhase
+                sessionId={sessionId}
+                fixtureIds={selectedFixtureIds}
+                runs={analysisRuns}
+                selectedRunId={selectedAnalysisId}
+                onSelectRun={setSelectedAnalysisId}
+                onRunComplete={(newRun) =>
+                  setAnalysisRuns([...analysisRuns, newRun])
+                }
+                onRemoveRun={handleRemoveAnalysisRun}
+              />
 
-            <GenerationPhase
-              sessionId={sessionId}
-              parentRunId={selectedAnalysisId}
-              analysisRuns={analysisRuns}
-              runs={generationRuns.filter(
-                (r) => r.parent_run_id === selectedAnalysisId
-              )}
-              selectedRunId={selectedGenerationId}
-              disabled={!selectedAnalysisId}
-              onRunComplete={(newRun) =>
-                setGenerationRuns([...generationRuns, newRun])
-              }
-              onSelectRun={setSelectedGenerationId}
-              onRemoveRun={handleRemoveGenerationRun}
-            />
+              <GenerationPhase
+                sessionId={sessionId}
+                parentRunId={selectedAnalysisId}
+                analysisRuns={analysisRuns}
+                runs={generationRuns.filter(
+                  (r) => r.parent_run_id === selectedAnalysisId
+                )}
+                selectedRunId={selectedGenerationId}
+                disabled={!selectedAnalysisId}
+                onRunComplete={(newRun) =>
+                  setGenerationRuns([...generationRuns, newRun])
+                }
+                onSelectRun={setSelectedGenerationId}
+                onRemoveRun={handleRemoveGenerationRun}
+              />
 
-            <EvaluationPhase
-              sessionId={sessionId}
-              parentRunId={selectedGenerationId}
-              runs={evaluationRuns.filter(
-                (r) => r.parent_run_id === selectedGenerationId
-              )}
-              disabled={!selectedGenerationId}
-              onRunComplete={(newRun) =>
-                setEvaluationRuns([...evaluationRuns, newRun])
-              }
-              onRemoveRun={handleRemoveEvaluationRun}
-            />
-          </div>
-        )}
-
-        {/* Show prompt when no images selected */}
-        {sessionId && selectedFixtureIds.length === 0 && (
-          <ShadcnCard className="mt-6">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-center">
-                Select fixture images above to begin analysis
-              </p>
-            </CardContent>
-          </ShadcnCard>
-        )}
+              <EvaluationPhase
+                sessionId={sessionId}
+                parentRunId={selectedGenerationId}
+                runs={evaluationRuns.filter(
+                  (r) => r.parent_run_id === selectedGenerationId
+                )}
+                disabled={!selectedGenerationId}
+                onRunComplete={(newRun) =>
+                  setEvaluationRuns([...evaluationRuns, newRun])
+                }
+                onRemoveRun={handleRemoveEvaluationRun}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -74,6 +74,14 @@ export {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
+// Accordion
+export {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+
 // Radio Group
 export { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
