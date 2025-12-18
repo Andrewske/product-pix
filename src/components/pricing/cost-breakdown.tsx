@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { calculateGenerationCost, getCreditsForGeneration } from '@/lib/pricing/credits';
+import { creditEconomy } from '@/lib/pricing/pricing.config';
 import type { GenerationMode } from '@/lib/pricing/types';
 import type { Resolution } from '@/lib/pricing/credits';
 
@@ -22,7 +23,7 @@ export function CostBreakdown({
   const breakdown = calculateGenerationCost({
     resolution,
     mode,
-    addons: addons as Array<keyof typeof import('@/lib/pricing/pricing.config').creditEconomy.addonCosts> | undefined
+    addons: addons as Array<keyof typeof creditEconomy.addonCosts> | undefined
   });
 
   // Calculate discount for snail mode

@@ -1,4 +1,5 @@
 import type { Resolution } from './credits';
+import type { creditEconomy } from './pricing.config';
 
 export type Provider = 'anthropic' | 'openai' | 'google';
 
@@ -30,7 +31,7 @@ export type GenerationMode = 'lightning' | 'snail';
 export type GenerationParams = {
   resolution: Resolution;
   mode: GenerationMode;
-  addons?: Array<string>; // Specific type derived in credits.ts
+  addons?: Array<keyof typeof creditEconomy.addonCosts>;
 };
 export type GenerationCostBreakdown = {
   baseGeneration: number;

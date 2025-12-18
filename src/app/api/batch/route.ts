@@ -9,6 +9,7 @@ import {
 import { createBatchJob as createGeminiBatch } from '@/lib/ai/gemini-batch';
 import { getBatchItemParameters } from '@/lib/db/types';
 import { calculateGenerationCost } from '@/lib/pricing';
+import type { creditEconomy } from '@/lib/pricing/pricing.config';
 import { getTemplateBySlug } from '@/lib/db/templates';
 import { buildPromptFromTemplate } from '@/lib/ai/prompt-builder';
 import { logger } from '@/lib/logging';
@@ -59,7 +60,7 @@ const createBatchHandler = async (request: AuthenticatedRequest): Promise<NextRe
       const cost = calculateGenerationCost({
         resolution: item.resolution,
         mode: 'snail', // Batch uploads always use snail pricing
-        addons: item.addons as ('titleGeneration' | 'fancyBackground')[]
+        addons: item.addons as Array<keyof typeof creditEconomy.addonCosts> | undefined
       });
       return sum + cost.total;
     }, 0);

@@ -8,7 +8,8 @@ import { trackActivity } from '@/lib/db';
 import { generateImage } from '@/lib/ai/generate-image';
 import { getPublicUrl } from '@/lib/r2';
 import { rateLimiters } from '@/lib/rate-limit';
-import { calculateGenerationCost, type GenerationMode } from '@/lib/pricing';
+import { calculateGenerationCost } from '@/lib/pricing';
+import type { creditEconomy } from '@/lib/pricing/pricing.config';
 import { createGenerationError } from '@/lib/errors/error-classes';
 import { captureError } from '@/lib/observability/capture-error';
 import { ErrorCodes } from '@/lib/errors/codes';
@@ -27,7 +28,7 @@ const requestSchema = z.object({
 export const POST = withAuth(async (request) => {
   let templateSlug = '';
   let creditCost = 0;
-  let jobResult: { success: boolean; job_id: string | null; message?: string } | undefined;
+  let jobResult: { success: boolean; job_id: string | null; message: string } | undefined;
 
   try {
 
@@ -78,7 +79,7 @@ export const POST = withAuth(async (request) => {
     const costBreakdown = calculateGenerationCost({
       resolution,
       mode,
-      addons: addons as ('titleGeneration' | 'fancyBackground')[]
+      addons: addons as Array<keyof typeof creditEconomy.addonCosts> | undefined
     });
     creditCost = costBreakdown.total;
 
@@ -120,7 +121,7 @@ export const POST = withAuth(async (request) => {
     }
 
     // Create job with credit consumption
-    const jobResult = await createGenerationJob(
+    jobResult = await createGenerationJob(
       request.user.id,
       uploadId ?? null,
       '', // Empty prompt - using template instead

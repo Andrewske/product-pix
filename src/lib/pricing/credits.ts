@@ -3,18 +3,12 @@
  */
 
 import { creditEconomy } from './pricing.config';
-import type { GenerationMode, GenerationCostBreakdown } from './types';
+import type { GenerationMode, GenerationCostBreakdown, GenerationParams } from './types';
 
 export type Resolution = '1k' | '2k' | '4k';
 
 // Derive addon names from config for type safety
 type AddonName = keyof typeof creditEconomy.addonCosts;
-
-export type GenerationParams = {
-  resolution: Resolution;
-  mode: GenerationMode;
-  addons?: Array<AddonName>;
-};
 
 /**
  * Get credits required for a given resolution and mode.
