@@ -588,7 +588,30 @@ const handleNotebookConversationGenerate = async (req: Request): Promise<Respons
       return Response.json({ error: result.error.message }, { status: 500 });
     }
 
-    return Response.json(result.data);
+    const orchestratorResult = result.data;
+    const supabase = createAdminClient();
+
+    // Fetch full database records for each generation run
+    const runIds = orchestratorResult.generationRuns.map(r => r.runId);
+    const { data: dbRecords, error: fetchError } = await supabase
+      .from('prompt_tests')
+      .select('*')
+      .in('id', runIds)
+      .order('phase_run_number', { ascending: true });
+
+    if (fetchError) {
+      logger.error('Failed to fetch generation records', {
+        sessionId,
+        error: fetchError.message
+      });
+      return Response.json({ error: `Failed to fetch results: ${fetchError.message}` }, { status: 500 });
+    }
+
+    return Response.json({
+      generationRuns: dbRecords || [],
+      totalTokens: orchestratorResult.totalTokens,
+      totalCost: orchestratorResult.totalCost
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Notebook conversation generate endpoint error', { error: message });
