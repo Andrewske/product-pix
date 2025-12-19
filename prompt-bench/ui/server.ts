@@ -852,35 +852,26 @@ const handleArchiveRun = async (req: Request): Promise<Response> => {
     const supabase = createAdminClient();
 
     // Try to update the archived field (will work once migration is applied)
-    try {
-      const { data: updatedRun, error } = await supabase
-        .from('prompt_tests')
-        .update({ archived })
-        .eq('id', runId)
-        .select()
-        .single();
+    const { data: updatedRun, error } = await supabase
+      .from('prompt_tests')
+      .update({ archived })
+      .eq('id', runId)
+      .select()
+      .single();
 
-      if (error) {
-        // If the archived column doesn't exist yet, just return success
-        // (migration not applied, but UI will still work)
-        logger.warn('Archive update failed (migration not applied?)', {
-          runId,
-          archived,
-          error: error.message
-        });
-        return Response.json({ run: { id: runId, archived } });
-      }
-
-      logger.info('Run archived/unarchived', { runId, archived });
-      return Response.json({ run: updatedRun });
-    } catch (dbError) {
-      // Fallback if archived column doesn't exist
-      logger.warn('Archive operation skipped (migration not applied)', {
+    if (error) {
+      // If the archived column doesn't exist yet, just return success
+      // (migration not applied, but UI will still work)
+      logger.warn('Archive update failed (migration not applied?)', {
         runId,
-        archived
+        archived,
+        error: error.message
       });
       return Response.json({ run: { id: runId, archived } });
     }
+
+    logger.info('Run archived/unarchived', { runId, archived });
+    return Response.json({ run: updatedRun });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Archive run endpoint error', { error: message });
