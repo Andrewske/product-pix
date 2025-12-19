@@ -1,7 +1,7 @@
 // src/lib/ai/providers/gemini.ts
 import { google } from '@ai-sdk/google';
 import { generateText, convertToModelMessages } from 'ai';
-import { GoogleGenAI, type Chat, type Part, type GenerateContentResponse } from '@google/genai';
+import { GoogleGenAI, type Chat, type Part, type GenerateContentResponse, type GenerateContentConfig } from '@google/genai';
 import { env } from '@/lib/env';
 import type { ImageProvider, ImageConfig, GenerationResponse, ConversationMessage, ImageConversationSession } from '../types';
 import { normalizeUsage } from '../usage-types';
@@ -12,6 +12,7 @@ import { logger } from '@bench/core/logger';
 // =============================================================================
 
 interface GenerateTextResult {
+  text?: string;
   files?: Array<{
     mediaType?: string;
     base64?: string;
@@ -24,7 +25,7 @@ interface GenerateTextResult {
     candidatesTokenCount?: number;
     totalTokenCount?: number;
   };
-};
+}
 
 
 
@@ -60,12 +61,15 @@ const getResolutionDimensions = (
 };
 
 const extractImageFromResponse = (
-  result: GenerateTextResult,
+  result: unknown,
   config: ImageConfig
 ): GenerationResponse => {
+  // Type cast to access properties
+  const response = result as any;
+
   // Extract image from response
   // Gemini 2.5 returns images in the files array
-  const files = result.files;
+  const files = response.files;
 
   if (!files || files.length === 0) {
     return {
@@ -77,7 +81,7 @@ const extractImageFromResponse = (
   }
 
   // Get the first image file
-  const imageFile = files.find((file) => file.mediaType?.startsWith('image/'));
+  const imageFile = files.find((file: any) => file.mediaType?.startsWith('image/'));
 
   if (!imageFile || !imageFile.base64) {
     return {
@@ -96,7 +100,7 @@ const extractImageFromResponse = (
     : imageFile.base64;
 
   // Extract usage data if available
-  const usage = result.usage ? normalizeUsage(result.usage) : undefined;
+  const usage = response.usage ? normalizeUsage(response.usage) : undefined;
 
   return {
     success: true,
@@ -105,6 +109,7 @@ const extractImageFromResponse = (
     width: dimensions.width,
     height: dimensions.height,
     usage,
+    rawResponse: result, // Include the full raw response
   };
 };
 
@@ -349,7 +354,10 @@ export class GoogleConversationSession implements ImageConversationSession {
           imageConfig: {
             aspectRatio: config.aspectRatio,
           },
-        },
+          thinkingConfig: {
+            includeThoughts: true,
+          },
+        } as GenerateContentConfig,
       });
 
       const imageData = this.extractImageFromResponse(response);
@@ -363,6 +371,7 @@ export class GoogleConversationSession implements ImageConversationSession {
       }
 
       const usage = this.extractUsage(response);
+      const thinking = this.extractThinking(response);
 
       this.messageCount++;
 
@@ -372,6 +381,7 @@ export class GoogleConversationSession implements ImageConversationSession {
         messageCount: this.messageCount,
         aspectRatio: config.aspectRatio,
         hasUsage: !!usage,
+        hasThinking: !!thinking,
       });
 
       return {
@@ -381,6 +391,8 @@ export class GoogleConversationSession implements ImageConversationSession {
         width: dimensions.width,
         height: dimensions.height,
         usage,
+        thinking,
+        rawResponse: response, // Include the full raw response
       };
     } catch (error) {
       logger.debug('GoogleConversationSession generation failed', {
@@ -411,6 +423,23 @@ export class GoogleConversationSession implements ImageConversationSession {
       }
     }
     return null;
+  }
+
+  private extractThinking(response: GenerateContentResponse): string | undefined {
+    // Extract all thinking text from parts marked with thought: true
+    const thinkingTexts: string[] = [];
+
+    for (const candidate of response.candidates || []) {
+      if (!candidate.content?.parts) continue;
+      for (const part of candidate.content.parts) {
+        // Gemini marks thinking parts with thought: true
+        if ((part as any).thought === true && part.text) {
+          thinkingTexts.push(part.text);
+        }
+      }
+    }
+
+    return thinkingTexts.length > 0 ? thinkingTexts.join('\n\n') : undefined;
   }
 
   private extractUsage(response: GenerateContentResponse): {
