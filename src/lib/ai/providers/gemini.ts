@@ -21,10 +21,12 @@ interface GenerateTextResult {
     promptTokens?: number;
     completionTokens?: number;
     totalTokens?: number;
-    promptTokenCount?: number;
-    candidatesTokenCount?: number;
-    totalTokenCount?: number;
   };
+}
+
+interface GeminiPart {
+  thought?: boolean;
+  text?: string;
 }
 
 
@@ -65,7 +67,7 @@ const extractImageFromResponse = (
   config: ImageConfig
 ): GenerationResponse => {
   // Type cast to access properties
-  const response = result as any;
+  const response = result as GenerateTextResult;
 
   // Extract image from response
   // Gemini 2.5 returns images in the files array
@@ -81,7 +83,7 @@ const extractImageFromResponse = (
   }
 
   // Get the first image file
-  const imageFile = files.find((file: any) => file.mediaType?.startsWith('image/'));
+  const imageFile = files.find((file) => file.mediaType?.startsWith('image/'));
 
   if (!imageFile || !imageFile.base64) {
     return {
@@ -94,23 +96,17 @@ const extractImageFromResponse = (
 
   const dimensions = getResolutionDimensions(config.aspectRatio, config.resolution);
 
-  // Extract base64 data (strip data URL prefix if present)
-  const base64Data = imageFile.base64.includes(',')
-    ? imageFile.base64.split(',')[1]
-    : imageFile.base64;
-
   // Extract usage data if available
   const usage = response.usage ? normalizeUsage(response.usage) : undefined;
 
-  return {
-    success: true,
-    imageData: base64Data,
-    mimeType: imageFile.mediaType || 'image/png',
-    width: dimensions.width,
-    height: dimensions.height,
-    usage,
-    rawResponse: result, // Include the full raw response
-  };
+      return {
+        success: true,
+        imageData: imageFile.base64,
+        mimeType: imageFile.mediaType || 'image/png',
+        width: dimensions.width,
+        height: dimensions.height,
+        usage,
+      };
 };
 
 const handleError = (error: unknown): GenerationResponse => {
@@ -391,8 +387,6 @@ export class GoogleConversationSession implements ImageConversationSession {
         width: dimensions.width,
         height: dimensions.height,
         usage,
-        thinking,
-        rawResponse: response, // Include the full raw response
       };
     } catch (error) {
       logger.debug('GoogleConversationSession generation failed', {
@@ -433,8 +427,9 @@ export class GoogleConversationSession implements ImageConversationSession {
       if (!candidate.content?.parts) continue;
       for (const part of candidate.content.parts) {
         // Gemini marks thinking parts with thought: true
-        if ((part as any).thought === true && part.text) {
-          thinkingTexts.push(part.text);
+        const geminiPart = part as GeminiPart;
+        if (geminiPart.thought === true && geminiPart.text) {
+          thinkingTexts.push(geminiPart.text);
         }
       }
     }
