@@ -54,6 +54,7 @@ export function AnalysisPhase({
   const [analysisSchema, setAnalysisSchema] = React.useState<Record<string, unknown>>({});
   const [expandedRunId, setExpandedRunId] = React.useState<string | null>(null);
   const [model, setModel] = React.useState('gemini-3-flash-preview');
+  const [showAllRuns, setShowAllRuns] = React.useState(false);
 
   // Set default prompt and schema on mount
   React.useEffect(() => {
@@ -252,13 +253,13 @@ Extract product details accurately. If you cannot determine a field, use an empt
                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Run History</h3>
                <span className="text-xs text-muted-foreground">{runs.length} run{runs.length !== 1 ? 's' : ''}</span>
             </div>
-            
+
             <RadioGroup
               value={selectedRunId || ''}
               onValueChange={onSelectRun}
               className="space-y-3"
             >
-              {runs.map((run) => (
+              {runs.slice(0, showAllRuns ? runs.length : 1).map((run) => (
                 <Collapsible
                   key={run.id}
                   open={expandedRunId === run.id}
@@ -345,6 +346,19 @@ Extract product details accurately. If you cannot determine a field, use an empt
                 </Collapsible>
               ))}
             </RadioGroup>
+
+            {runs.length > 1 && (
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllRuns(!showAllRuns)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {showAllRuns ? 'Show Less' : `Show ${runs.length - 1} More Run${runs.length - 1 !== 1 ? 's' : ''}`}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

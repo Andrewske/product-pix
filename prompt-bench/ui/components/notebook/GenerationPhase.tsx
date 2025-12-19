@@ -491,12 +491,12 @@ export function GenerationPhase({
                        isSelected ? "border-purple-500/50 shadow-md bg-purple-500/5" : "border-border hover:border-purple-500/20 hover:shadow-sm"
                     )}
                   >
-                     <div className="flex flex-col md:flex-row">
+                     <div className="flex flex-col md:flex-row" onClick={() => onSelectRun(run.id)}>
                         {/* Image Preview Area */}
                         <div className="relative w-full md:w-48 h-48 md:h-auto bg-muted/10 shrink-0 border-b md:border-b-0 md:border-r border-border/50">
                             {run.debug_metadata?.image_urls && run.debug_metadata.image_urls.length > 1 ? (
                                // Multi-image grid for conversations
-                               <div className="grid grid-cols-2 gap-2 p-2 h-full">
+                               <div className="grid grid-cols-1 gap-2 p-2 h-full">
                                   {run.debug_metadata.image_urls.map((url, idx) => (
                                      <div key={`${run.id}-image-${idx}`} className="flex flex-col">
                                         <div className="flex-1 relative">
@@ -536,23 +536,9 @@ export function GenerationPhase({
                               </div>
                            )}
                            
-                           {/* Selection Overlay */}
-                           <div className={cn(
-                             "absolute inset-0 bg-black/10 transition-opacity flex items-center justify-center",
-                              isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                           )}>
-                              <Button
-                                size="sm"
-                                variant={isSelected ? "default" : "secondary"}
-                                onClick={() => onSelectRun(run.id)}
-                                className={cn("shadow-lg", isSelected && "bg-purple-600 hover:bg-purple-700")}
-                              >
-                                {isSelected ? "Selected" : "Select Result"}
-                              </Button>
-                           </div>
                            
                            <div className="absolute top-2 left-2">
-                              <Badge variant="secondary" className="backdrop-blur-md bg-background/50 border-white/10 text-xs">
+                              <Badge variant="secondary" className={cn("backdrop-blur-md bg-background/50 border-white/10 text-xs", isSelected && "bg-purple-500/50 border-purple-500/20 text-purple-500")}>
                                 Run {run.phase_run_number}
                               </Badge>
                            </div>
@@ -584,18 +570,30 @@ export function GenerationPhase({
                               {/* Collapsible Details */}
                               <Collapsible open={expandedRunId === run.id} onOpenChange={() => setExpandedRunId(expandedRunId === run.id ? null : run.id)}>
                                  <CollapsibleContent>
-                                    <div className="space-y-3 mt-3">
-                                       {run.debug_metadata?.thinking && (
+                                    <div className="space-y-3 mt-3 h-full">
+                                       {run.debug_metadata?.thinking ? (
                                          <div className="space-y-1">
                                            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">AI Thought Process</span>
-                                           <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded max-h-24 overflow-y-auto">
-                                              {run.debug_metadata.thinking}
+                                           <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded max-h-24 overflow-y-auto space-y-2">
+                                              {Array.isArray(run.debug_metadata.thinking)
+                                                ? run.debug_metadata.thinking.map((thought, idx) => (
+                                                    thought ? (
+                                                      <div key={idx}>
+                                                        {run.debug_metadata.thinking.length > 1 && (
+                                                          <strong className="text-primary">Image {idx + 1}:</strong>
+                                                        )}
+                                                        {' '}{thought}
+                                                      </div>
+                                                    ) : null
+                                                  ))
+                                                : run.debug_metadata.thinking}
                                            </div>
                                          </div>
-                                       )}
+                                       ) : null}
+
                                        <div className="space-y-1">
                                            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Final Prompt</span>
-                                           <div className="text-xs font-mono text-muted-foreground bg-muted/30 p-2 rounded max-h-24 overflow-y-auto">
+                                           <div className="text-xs font-mono text-muted-foreground bg-muted/30 p-2 rounded overflow-y-auto">
                                               {run.final_prompt}
                                            </div>
                                        </div>

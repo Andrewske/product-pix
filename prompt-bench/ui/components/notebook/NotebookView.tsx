@@ -67,51 +67,127 @@ export function NotebookView(): React.ReactElement {
   }, []);
 
   const handleRemoveAnalysisRun = React.useCallback(
-    (runId: string) => {
-      setAnalysisRuns((prev) => prev.filter((run) => run.id !== runId));
-      if (selectedAnalysisId === runId) {
-        setSelectedAnalysisId(null);
+    async (runId: string) => {
+      try {
+        const response = await fetch(`/api/notebook/runs/${runId}/archive`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ archived: true }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        // Remove from local state
+        setAnalysisRuns((prev) => prev.filter((run) => run.id !== runId));
+        if (selectedAnalysisId === runId) {
+          setSelectedAnalysisId(null);
+        }
+      } catch (error) {
+        console.error('Failed to archive analysis run:', error);
+        setError('Failed to archive run. Please try again.');
       }
     },
     [selectedAnalysisId]
   );
 
   const handleRemoveGenerationRun = React.useCallback(
-    (runId: string) => {
-      setGenerationRuns((prev) => prev.filter((run) => run.id !== runId));
-      if (selectedGenerationId === runId) {
-        setSelectedGenerationId(null);
+    async (runId: string) => {
+      try {
+        const response = await fetch(`/api/notebook/runs/${runId}/archive`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ archived: true }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        // Remove from local state
+        setGenerationRuns((prev) => prev.filter((run) => run.id !== runId));
+        if (selectedGenerationId === runId) {
+          setSelectedGenerationId(null);
+        }
+      } catch (error) {
+        console.error('Failed to archive generation run:', error);
+        setError('Failed to archive run. Please try again.');
       }
     },
     [selectedGenerationId]
   );
 
-  const handleRemoveEvaluationRun = React.useCallback((runId: string) => {
-    setEvaluationRuns((prev) => prev.filter((run) => run.id !== runId));
+  const handleRemoveEvaluationRun = React.useCallback(async (runId: string) => {
+    try {
+      const response = await fetch(`/api/notebook/runs/${runId}/archive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archived: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Remove from local state
+      setEvaluationRuns((prev) => prev.filter((run) => run.id !== runId));
+    } catch (error) {
+      console.error('Failed to archive evaluation run:', error);
+      setError('Failed to archive run. Please try again.');
+    }
   }, []);
 
   const copyContextToClipboard = React.useCallback(() => {
+    const selectedAnalysisRun = analysisRuns.find((r) => r.id === selectedAnalysisId);
+
+    // Filter generation runs to only those belonging to the selected analysis (matching UI)
+    const generationRunsForAnalysis = generationRuns.filter(
+      (r) => r.parent_run_id === selectedAnalysisId
+    );
+
+    // Find the selected generation within those that belong to the analysis
+    const selectedGenerationRun = selectedGenerationId
+      ? generationRunsForAnalysis.find((r) => r.id === selectedGenerationId)
+      : (generationRunsForAnalysis.length > 0
+          ? [...generationRunsForAnalysis].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )[0]
+          : null);
+
+    // Filter evaluations for the selected generation
+    const selectedEvaluationRuns = selectedGenerationRun
+      ? evaluationRuns.filter((r) => r.parent_run_id === selectedGenerationRun.id)
+      : [];
+
+    // Get the most recent evaluation for the selected generation
+    const selectedEvaluationRun = selectedEvaluationRuns.length > 0
+      ? [...selectedEvaluationRuns].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0]
+      : null;
+
     const context = {
       sessionId,
-      analysisRuns: analysisRuns.map((r) => ({
-        runNumber: r.phase_run_number,
-        inputs: r.inputs,
-      })),
-      generationRuns: generationRuns.map((r) => ({
-        runNumber: r.phase_run_number,
-        parentRun: r.parent_run_id,
-        finalPrompt: r.final_prompt,
-        imageUrls: r.debug_metadata?.image_urls,
-      })),
-      evaluationRuns: evaluationRuns.map((r) => ({
-        runNumber: r.phase_run_number,
-        score: r.prompt_evaluations?.[0]?.score_overall,
-        details: r.prompt_evaluations?.[0]?.details,
-      })),
+      analysisRuns: selectedAnalysisRun ? [{
+        runNumber: selectedAnalysisRun.phase_run_number,
+        inputs: selectedAnalysisRun.inputs,
+      }] : [],
+      generationRuns: selectedGenerationRun ? [{
+        runNumber: selectedGenerationRun.phase_run_number,
+        parentRun: selectedGenerationRun.parent_run_id,
+        finalPrompt: selectedGenerationRun.final_prompt,
+        imageUrls: selectedGenerationRun.debug_metadata?.image_urls,
+      }] : [],
+      evaluationRuns: selectedEvaluationRun ? [{
+        runNumber: selectedEvaluationRun.phase_run_number,
+        score: selectedEvaluationRun.prompt_evaluations?.[0]?.score_overall,
+        details: selectedEvaluationRun.prompt_evaluations?.[0]?.details,
+      }] : [],
     };
 
     navigator.clipboard.writeText(JSON.stringify(context, null, 2));
-  }, [sessionId, analysisRuns, generationRuns, evaluationRuns]);
+  }, [sessionId, analysisRuns, selectedAnalysisId, generationRuns, selectedGenerationId, evaluationRuns]);
 
   const handleNewSession = React.useCallback(() => {
     // Clear localStorage
