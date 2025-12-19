@@ -350,9 +350,55 @@ export function GenerationPhase({
                   />
                </div>
             </div>
-        </div>
+         </div>
 
-        {templateSlug && (
+         {/* Angle Plan Display - Only show when we have generation runs with angle data */}
+         {runs.length > 0 && runs[0].debug_metadata?.angle_plan && (
+           <Accordion type="single" collapsible className="w-full border rounded-lg bg-card">
+             <AccordionItem value="angles" className="border-none px-4">
+               <AccordionTrigger className="hover:no-underline py-3">
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                   <BarChart2 className="h-4 w-4" />
+                   <span>Angle Plan</span>
+                 </div>
+               </AccordionTrigger>
+               <AccordionContent className="pt-2 pb-4 space-y-4">
+                 {/* Display angle assignments */}
+                 <div className="space-y-2">
+                   <Label className="text-xs font-medium text-muted-foreground">Generation Plan:</Label>
+                   <div className="space-y-1">
+                     {runs[0].debug_metadata.angle_plan.assignments.map((assignment, idx) => (
+                       <div key={`${runs[0].id}-assignment-${idx}`} className="text-xs font-mono bg-muted/30 p-2 rounded flex items-center justify-between">
+                         <span>
+                           {idx + 1}. <strong>{assignment.targetAngle}</strong>
+                         </span>
+                         <span className="text-muted-foreground">
+                           using Image {assignment.sourceImageIndex + 1} ({assignment.matchType.replace('-', ' ')})
+                         </span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 {/* Optional: Show angle-specific prompts */}
+                 {runs[0].debug_metadata.angle_prompts && runs[0].debug_metadata.angle_prompts.length > 0 && (
+                   <div className="space-y-2">
+                     <Label className="text-xs font-medium text-muted-foreground">Angle-Specific Prompts:</Label>
+                     <div className="space-y-1 max-h-40 overflow-y-auto">
+                       {runs[0].debug_metadata.angle_prompts.map((prompt, idx) => (
+                         <div key={`${runs[0].id}-prompt-${idx}`} className="text-xs bg-muted/20 p-2 rounded">
+                           <strong className="text-muted-foreground">Image {idx + 1}:</strong> {prompt}
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+               </AccordionContent>
+             </AccordionItem>
+           </Accordion>
+         )}
+
+         {templateSlug && (
           <Accordion type="single" collapsible className="w-full border rounded-lg bg-card">
             <AccordionItem value="config" className="border-none px-4">
               <AccordionTrigger className="hover:no-underline py-3">
@@ -448,23 +494,39 @@ export function GenerationPhase({
                      <div className="flex flex-col md:flex-row">
                         {/* Image Preview Area */}
                         <div className="relative w-full md:w-48 h-48 md:h-auto bg-muted/10 shrink-0 border-b md:border-b-0 md:border-r border-border/50">
-                           {run.debug_metadata?.image_urls && run.debug_metadata.image_urls.length > 1 ? (
-                              // Multi-image grid for conversations
-                              <div className="grid grid-cols-2 gap-2 p-2">
-                                 {run.debug_metadata.image_urls.map((url, idx) => (
-                                    <img
-                                       key={url}
-                                       src={url}
-                                       alt={`Generated ${idx + 1}`}
-                                       className="w-full h-full object-cover rounded"
-                                    />
-                                 ))}
-                              </div>
+                            {run.debug_metadata?.image_urls && run.debug_metadata.image_urls.length > 1 ? (
+                               // Multi-image grid for conversations
+                               <div className="grid grid-cols-2 gap-2 p-2 h-full">
+                                  {run.debug_metadata.image_urls.map((url, idx) => (
+                                     <div key={`${run.id}-image-${idx}`} className="flex flex-col">
+                                        <div className="flex-1 relative">
+                                           <img
+                                              src={url}
+                                              alt={`Generated ${idx + 1}`}
+                                              loading="lazy"
+                                              className="w-full h-full object-cover rounded"
+                                           />
+                                        </div>
+                                        {/* Add angle label underneath */}
+                                        {run.debug_metadata.angle_plan?.assignments[idx] && (
+                                           <div className="text-center mt-1">
+                                              <Badge
+                                                 variant="secondary"
+                                                 className="text-xs"
+                                              >
+                                                 {run.debug_metadata.angle_plan.assignments[idx].targetAngle}
+                                              </Badge>
+                                           </div>
+                                        )}
+                                     </div>
+                                  ))}
+                               </div>
                            ) : run.debug_metadata?.image_urls?.[0] ? (
                               // Single image fallback
                               <img
                                  src={run.debug_metadata.image_urls[0]}
                                  alt="Generated"
+                                 loading="lazy"
                                  className="w-full h-full object-cover"
                               />
                            ) : (

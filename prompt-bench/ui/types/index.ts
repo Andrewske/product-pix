@@ -55,6 +55,14 @@ export interface GenerationRun extends NotebookRun {
     cost: number;
     duration_ms: number;
     image_urls: string[];
+    angle_prompts?: string[];  // One prompt per generated image
+    angle_plan?: {             // Plan for which angles to generate
+      assignments: Array<{
+        targetAngle: string;
+        sourceImageIndex: number;
+        matchType: 'exact' | 'similar' | 'primary-fallback';
+      }>;
+    };
   };
 }
 
