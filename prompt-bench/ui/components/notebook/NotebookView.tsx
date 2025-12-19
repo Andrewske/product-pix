@@ -194,9 +194,10 @@ export function NotebookView(): React.ReactElement {
                 runs={analysisRuns}
                 selectedRunId={selectedAnalysisId}
                 onSelectRun={setSelectedAnalysisId}
-                onRunComplete={(newRun) =>
-                  setAnalysisRuns([...analysisRuns, newRun])
-                }
+                 onRunComplete={(newRun) => {
+                   setAnalysisRuns([...analysisRuns, newRun]);
+                   setSelectedAnalysisId(newRun.id);
+                 }}
                 onRemoveRun={handleRemoveAnalysisRun}
               />
 
