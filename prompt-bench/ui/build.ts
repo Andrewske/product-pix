@@ -84,10 +84,40 @@ async function buildNotebookBundle(production = false): Promise<void> {
   }
 }
 
+// Build Tailwind CSS from bench.css (which imports globals.css + adds source paths)
+async function buildCSS(production = false): Promise<void> {
+  console.log(`Building Tailwind CSS (${production ? 'production' : 'development'})...`);
+
+  const args = [
+    'tailwindcss',
+    '-i', join(UI_DIR, 'styles', 'bench.css'),
+    '-o', join(DIST_DIR, 'styles.css'),
+  ];
+
+  if (production) {
+    args.push('--minify');
+  }
+
+  const proc = Bun.spawn(['bunx', ...args], {
+    stdout: 'inherit',
+    stderr: 'inherit',
+    cwd: process.cwd(),
+  });
+
+  const exitCode = await proc.exited;
+
+  if (exitCode === 0) {
+    console.log('✅ Tailwind CSS built successfully');
+  } else {
+    console.error(`❌ Tailwind CSS build failed with exit code ${exitCode}`);
+  }
+}
+
 // Build all bundles
 async function buildAll(production = false): Promise<void> {
   ensureDistDir();
   await Promise.all([
+    buildCSS(production),
     buildExperimentBundle(production),
     buildNotebookBundle(production),
   ]);
@@ -115,6 +145,7 @@ function startWatchMode(): void {
 
   let rebuildTimeout: Timer | null = null;
 
+  // Watch UI directory for TS/TSX changes
   const watcher = watch(UI_DIR, { recursive: true }, async (eventType: string, filename: string | null) => {
     if (filename && (filename.endsWith('.tsx') || filename.endsWith('.ts'))) {
       // Debounce rebuilds
@@ -127,6 +158,29 @@ function startWatchMode(): void {
     }
   });
 
+  // Watch CSS files (globals.css and bench.css) for changes
+  const cssWatcher = watch(resolve(process.cwd(), 'src/app'), { recursive: false }, async (eventType: string, filename: string | null) => {
+    if (filename === 'globals.css') {
+      if (rebuildTimeout) clearTimeout(rebuildTimeout);
+      rebuildTimeout = setTimeout(async () => {
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] CSS changed: ${filename}, rebuilding...`);
+        await buildCSS(false);
+      }, 300);
+    }
+  });
+
+  const benchCssWatcher = watch(join(UI_DIR, 'styles'), { recursive: false }, async (eventType: string, filename: string | null) => {
+    if (filename === 'bench.css') {
+      if (rebuildTimeout) clearTimeout(rebuildTimeout);
+      rebuildTimeout = setTimeout(async () => {
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] CSS changed: ${filename}, rebuilding...`);
+        await buildCSS(false);
+      }, 300);
+    }
+  });
+
   console.log('👀 Watching for changes in prompt-bench/ui/');
   console.log('🌐 UI server running at http://localhost:8181');
   console.log('Press Ctrl+C to stop');
@@ -135,6 +189,8 @@ function startWatchMode(): void {
   process.on('SIGINT', () => {
     console.log('\n🛑 Stopping watch mode...');
     watcher.close();
+    cssWatcher.close();
+    benchCssWatcher.close();
     serverProcess.kill();
     process.exit(0);
   });
