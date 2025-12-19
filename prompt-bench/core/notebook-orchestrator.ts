@@ -923,6 +923,7 @@ ${prompt}`;
           model: request.model || 'gemini-3-pro-image-preview',
           cost,
           duration_ms: 0, // TODO: track duration
+          image_urls: [uploadResult.publicUrl],
           raw_prompt: angleSpecificPrompt,
           raw_response: null
         }
