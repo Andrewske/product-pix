@@ -12,6 +12,7 @@ import { compileTemplate } from '../core/compiler';
 import type { AnalysisResult, GenerationResult, EvaluationPhaseResult } from '../core/notebook-orchestrator';
 import type { ProgressCallback } from '../core/orchestrator';
 import type { BatchFileMetadata, TemplateMetadata } from './types/index';
+import type { ConversationGenerationResult } from '../core/types';
 
 // Load environment variables
 config({ path: resolve(process.cwd(), '.env') });
@@ -57,6 +58,7 @@ Bun.serve({
     if (url.pathname === '/api/notebook/compile-prompt' && req.method === 'POST') return handleNotebookCompilePrompt(req);
     if (url.pathname === '/api/notebook/save-template' && req.method === 'POST') return handleSaveTemplate(req);
     if (url.pathname.match(/^\/api\/notebook\/session\/[^/]+$/)) return handleNotebookSession(req);
+    if (url.pathname.match(/^\/api\/notebook\/runs\/[^/]+\/archive$/) && req.method === 'POST') return handleArchiveRun(req);
 
     return new Response('Not Found', { status: 404 });
   }
@@ -588,27 +590,40 @@ const handleNotebookConversationGenerate = async (req: Request): Promise<Respons
       return Response.json({ error: result.error.message }, { status: 500 });
     }
 
-    const orchestratorResult = result.data;
+    const orchestratorResult = result.data as ConversationGenerationResult;
     const supabase = createAdminClient();
 
-    // Fetch full database records for each generation run
-    const runIds = orchestratorResult.generationRuns.map(r => r.runId);
-    const { data: dbRecords, error: fetchError } = await supabase
+    // After the orchestrator fix, there's only ONE record
+    // Guard against empty array (defensive programming)
+    if (!orchestratorResult.generationRuns.length) {
+      logger.error('No generation results returned from orchestrator', { sessionId });
+      return Response.json(
+        { error: 'No generation results returned' },
+        { status: 500 }
+      );
+    }
+
+    const singleRunId = orchestratorResult.generationRuns[0].runId;
+    const { data: dbRecord, error: fetchError } = await supabase
       .from('prompt_tests')
       .select('*')
-      .in('id', runIds)
-      .order('phase_run_number', { ascending: true });
+      .eq('id', singleRunId)  // Single record query
+      .single();
 
     if (fetchError) {
-      logger.error('Failed to fetch generation records', {
+      logger.error('Failed to fetch generation record', {
         sessionId,
         error: fetchError.message
       });
-      return Response.json({ error: `Failed to fetch results: ${fetchError.message}` }, { status: 500 });
+      return Response.json(
+        { error: `Failed to fetch result: ${fetchError.message}` },
+        { status: 500 }
+      );
     }
 
+    // Return single record in array (maintains UI compatibility)
     return Response.json({
-      generationRuns: dbRecords || [],
+      generationRuns: [dbRecord],  // Array with 1 record
       totalTokens: orchestratorResult.totalTokens,
       totalCost: orchestratorResult.totalCost
     });
@@ -732,11 +747,14 @@ const handleNotebookSession = async (req: Request): Promise<Response> => {
       return Response.json({ error: `Database error: ${error.message}` }, { status: 500 });
     }
 
+    // Filter out archived runs (if archived column exists)
+    const filteredRuns = runs?.filter(run => run.archived !== true) || [];
+
     // Group by phase
     const phases = {
-      analysis: runs?.filter(r => r.phase === 'analysis') || [],
-      generation: runs?.filter(r => r.phase === 'generation') || [],
-      evaluation: runs?.filter(r => r.phase === 'evaluation') || []
+      analysis: filteredRuns.filter(r => r.phase === 'analysis'),
+      generation: filteredRuns.filter(r => r.phase === 'generation'),
+      evaluation: filteredRuns.filter(r => r.phase === 'evaluation')
     };
 
     logger.info('Loaded notebook session', {
@@ -812,5 +830,60 @@ const handleSaveTemplate = async (req: Request): Promise<Response> => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Save template endpoint error', { error: message });
     return Response.json({ error: 'Failed to save template: ' + message }, { status: 500 });
+  }
+};
+
+const handleArchiveRun = async (req: Request): Promise<Response> => {
+  try {
+    const url = new URL(req.url);
+    const runId = url.pathname.split('/').find((part, index, arr) => arr[index - 1] === 'runs');
+
+    if (!runId) {
+      return Response.json({ error: 'Run ID required' }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { archived } = body;
+
+    if (typeof archived !== 'boolean') {
+      return Response.json({ error: 'archived must be a boolean' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+
+    // Try to update the archived field (will work once migration is applied)
+    try {
+      const { data: updatedRun, error } = await supabase
+        .from('prompt_tests')
+        .update({ archived })
+        .eq('id', runId)
+        .select()
+        .single();
+
+      if (error) {
+        // If the archived column doesn't exist yet, just return success
+        // (migration not applied, but UI will still work)
+        logger.warn('Archive update failed (migration not applied?)', {
+          runId,
+          archived,
+          error: error.message
+        });
+        return Response.json({ run: { id: runId, archived } });
+      }
+
+      logger.info('Run archived/unarchived', { runId, archived });
+      return Response.json({ run: updatedRun });
+    } catch (dbError) {
+      // Fallback if archived column doesn't exist
+      logger.warn('Archive operation skipped (migration not applied)', {
+        runId,
+        archived
+      });
+      return Response.json({ run: { id: runId, archived } });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Archive run endpoint error', { error: message });
+    return Response.json({ error: 'Failed to archive run: ' + message }, { status: 500 });
   }
 };

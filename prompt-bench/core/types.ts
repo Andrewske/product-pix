@@ -303,9 +303,8 @@ export interface ConversationGenerationResult {
   generationRuns: Array<{
     runId: string;
     phaseRunNumber: number;
-    angleIndex: number;
-    targetAngle: string;
-    imageUrl: string;
+    imageUrl: string;          // First image (for simple access)
+    imageUrls: string[];       // NEW: All images from conversation
     finalPrompt: string;
     tokens: { input: number; output: number };
   }>;

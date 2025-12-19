@@ -448,14 +448,30 @@ export function GenerationPhase({
                      <div className="flex flex-col md:flex-row">
                         {/* Image Preview Area */}
                         <div className="relative w-full md:w-48 h-48 md:h-auto bg-muted/10 shrink-0 border-b md:border-b-0 md:border-r border-border/50">
-                           {run.debug_metadata?.image_urls?.[0] ? (
+                           {run.debug_metadata?.image_urls && run.debug_metadata.image_urls.length > 1 ? (
+                              // Multi-image grid for conversations
+                              <div className="grid grid-cols-2 gap-2 p-2">
+                                 {run.debug_metadata.image_urls.map((url, idx) => (
+                                    <img
+                                       key={url}
+                                       src={url}
+                                       alt={`Generated ${idx + 1}`}
+                                       className="w-full h-full object-cover rounded"
+                                    />
+                                 ))}
+                              </div>
+                           ) : run.debug_metadata?.image_urls?.[0] ? (
+                              // Single image fallback
                               <img
-                                src={run.debug_metadata.image_urls[0]}
-                                alt="Generated"
-                                className="w-full h-full object-cover"
+                                 src={run.debug_metadata.image_urls[0]}
+                                 alt="Generated"
+                                 className="w-full h-full object-cover"
                               />
                            ) : (
-                              <div className="flex items-center justify-center h-full text-muted-foreground text-xs">No image</div>
+                              // No image fallback
+                              <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
+                                 No image
+                              </div>
                            )}
                            
                            {/* Selection Overlay */}
