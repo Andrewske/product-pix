@@ -8,7 +8,7 @@
 
 [defaults]
 # Default template slug for run/test commands
-template = "ecommerce-base"
+template = "multi-angle-hybrid"
 
 # Default batch file path for run/test commands (relative to project root)
 batch_file = "prompt-bench/fixtures/images-batch-uniform.json"
