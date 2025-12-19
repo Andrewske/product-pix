@@ -474,51 +474,55 @@ export const runGenerationPhase = async (
   };
 
   const numberOfImages = config.numberOfImages || 1;
-  const imageUrls: string[] = [];
-  const imageKeys: string[] = [];
-  let totalTokens = { input: 0, output: 0 };
-  let totalDurationMs = 0;
+   const imageUrls: string[] = [];
+   const imageKeys: string[] = [];
+   const thinkingResults: (string | null)[] = [];
+   let totalTokens = { input: 0, output: 0 };
+   let totalDurationMs = 0;
 
-  // Generate multiple images
-  for (let i = 0; i < numberOfImages; i++) {
-    const genStartTime = Date.now();
-    const genResult = await gemini.generateFromImage(
-      sourceImageBuffer,
-      sourceMimeType,
-      prompt,
-      config
-    );
-    const genEndTime = Date.now();
-    const genDurationMs = genEndTime - genStartTime;
-    totalDurationMs += genDurationMs;
+   // Generate multiple images
+   for (let i = 0; i < numberOfImages; i++) {
+     const genStartTime = Date.now();
+     const genResult = await gemini.generateFromImage(
+       sourceImageBuffer,
+       sourceMimeType,
+       prompt,
+       config
+     );
+     const genEndTime = Date.now();
+     const genDurationMs = genEndTime - genStartTime;
+     totalDurationMs += genDurationMs;
 
-    if (!genResult.success) {
-      logger.error('Image generation failed', {
-        sessionId: request.sessionId,
-        imageIndex: i,
-        error: genResult.error
-      });
-      return err(createError('GENERATION_ERROR', genResult.error));
-    }
+     if (!genResult.success) {
+       logger.error('Image generation failed', {
+         sessionId: request.sessionId,
+         imageIndex: i,
+         error: genResult.error
+       });
+       return err(createError('GENERATION_ERROR', genResult.error));
+     }
 
-    // Upload image to R2
-    const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
-    const uploadResult = await uploadBase64Image(
-      genResult.imageData,
-      'notebook-user', // Use a test user ID for notebook
-      request.sessionId,
-      format
-    );
+     // Collect thinking
+     thinkingResults.push(genResult.thinking || null);
 
-    imageUrls.push(uploadResult.publicUrl);
-    imageKeys.push(uploadResult.fileKey);
+     // Upload image to R2
+     const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
+     const uploadResult = await uploadBase64Image(
+       genResult.imageData,
+       'notebook-user', // Use a test user ID for notebook
+       request.sessionId,
+       format
+     );
 
-    // Accumulate tokens
-    if (genResult.usage) {
-      totalTokens.input += genResult.usage.promptTokens;
-      totalTokens.output += genResult.usage.completionTokens;
-    }
-  }
+     imageUrls.push(uploadResult.publicUrl);
+     imageKeys.push(uploadResult.fileKey);
+
+     // Accumulate tokens
+     if (genResult.usage) {
+       totalTokens.input += genResult.usage.promptTokens;
+       totalTokens.output += genResult.usage.completionTokens;
+     }
+   }
 
   // 6. Get next phase run number
   const phaseRunNumberResult = await getNextPhaseRunNumber(
@@ -544,19 +548,18 @@ export const runGenerationPhase = async (
       final_prompt: prompt,
       image_url: JSON.stringify(imageUrls),
       image_key: JSON.stringify(imageKeys),
-        debug_metadata: {
-          thinking: null,
-          tokens: totalTokens,
-          model: request.model || 'gemini-3-pro-image-preview',
-          cost: (() => {
-            const costResult = calculateCost(request.model || 'gemini-3-pro-image-preview', totalTokens);
-            return costResult.ok ? costResult.data.total : 0;
-          })(),
-          duration_ms: totalDurationMs,
-          image_urls: imageUrls,
-          raw_prompt: prompt,
-          raw_response: null // TODO: store all responses
-        }
+         debug_metadata: {
+           thinking: thinkingResults.length > 0 ? thinkingResults : null,
+           tokens: totalTokens,
+           model: request.model || 'gemini-3-pro-image-preview',
+           cost: (() => {
+             const costResult = calculateCost(request.model || 'gemini-3-pro-image-preview', totalTokens);
+             return costResult.ok ? costResult.data.total : 0;
+           })(),
+           duration_ms: totalDurationMs,
+           image_urls: imageUrls,
+           raw_prompt: prompt,
+         }
     })
     .select()
     .single();
@@ -564,6 +567,8 @@ export const runGenerationPhase = async (
   if (insertError) {
     return err(createError('DATABASE_ERROR', `Failed to save generation: ${insertError.message}`));
   }
+
+
 
   logger.info('Generation phase complete', {
     sessionId: request.sessionId,
@@ -578,7 +583,7 @@ export const runGenerationPhase = async (
     phaseRunNumber,
     imageUrls,
     finalPrompt: prompt,
-    thinking: null, // Gemini doesn't provide thinking for image generation
+    thinking: thinkingResults[0] || null,
     tokens: totalTokens
   });
 };
@@ -809,16 +814,17 @@ export const runConversationGenerationPhase = async (
     `Product: ${productName}\nCategory: ${category}\nGenerating ${request.outputCount} images`
   );
 
-   // 9. Generate each angle in loop
-   const imageUrls: string[] = [];
-   const imageKeys: string[] = [];
-   const angleSpecificPrompts: string[] = [];
-   let totalTokens = { input: 0, output: 0 };
-   let totalCost = 0;
-   let totalDurationMs = 0;
+  // 9. Generate each angle in loop
+  const imageUrls: string[] = [];
+  const imageKeys: string[] = [];
+  const angleSpecificPrompts: string[] = [];
+  const thinkingResults: (string | null)[] = [];
+  let totalTokens = { input: 0, output: 0 };
+  let totalCost = 0;
+  let totalDurationMs = 0;
 
-   for (let i = 0; i < anglePlan.assignments.length; i++) {
-     const assignment = anglePlan.assignments[i];
+  for (let i = 0; i < anglePlan.assignments.length; i++) {
+    const assignment = anglePlan.assignments[i];
 
     // Merge variables
     const mergedVariables = {
@@ -864,6 +870,7 @@ ${prompt}`;
       aspectRatio: config.aspectRatio,
       resolution: config.resolution
     });
+    
     const genDurationMs = Date.now() - genStartTime;
 
     if (!genResult.success) {
@@ -884,6 +891,9 @@ ${prompt}`;
       format
     );
 
+    // Collect raw response and thinking
+    thinkingResults.push(genResult.thinking || null);
+
     // Calculate cost
     const costResult = calculateCost(request.model || 'gemini-3-pro-image-preview', {
       input: genResult.usage?.promptTokens || 0,
@@ -891,93 +901,100 @@ ${prompt}`;
     });
     const cost = costResult.ok ? costResult.data.total : 0;
 
-     // ACCUMULATE instead of INSERT
-     imageUrls.push(uploadResult.publicUrl);
-     imageKeys.push(uploadResult.fileKey);
-     angleSpecificPrompts.push(angleSpecificPrompt);
+    // ACCUMULATE instead of INSERT
+    imageUrls.push(uploadResult.publicUrl);
+    imageKeys.push(uploadResult.fileKey);
+    angleSpecificPrompts.push(angleSpecificPrompt);
 
-     // Accumulate tokens/cost
-     if (genResult.usage) {
-       totalTokens.input += genResult.usage.promptTokens;
-       totalTokens.output += genResult.usage.completionTokens;
-     }
-     totalCost += costResult.ok ? costResult.data.total : 0;
-     totalDurationMs += genDurationMs;
-   }
+    // Accumulate tokens/cost
+    if (genResult.usage) {
+      totalTokens.input += genResult.usage.promptTokens;
+      totalTokens.output += genResult.usage.completionTokens;
+    }
+    if (costResult.ok) {
+      totalCost += costResult.data.total;
+    } else {
+      logger.warn('Cost calculation failed for generation', {
+        sessionId: request.sessionId,
+        imageIndex: i,
+        model: request.model || 'gemini-3-pro-image-preview'
+      });
+    }
+    totalDurationMs += genDurationMs;
+  }
 
-   // Get ONE phase run number (after loop)
-   const phaseRunNumberResult = await getNextPhaseRunNumber(
-     supabase,
-     request.sessionId,
-     'generation',
-     request.parentRunId
-   );
-   if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
-   const phaseRunNumber = phaseRunNumberResult.data;
+  // Get ONE phase run number (after loop)
+  const phaseRunNumberResult = await getNextPhaseRunNumber(
+    supabase,
+    request.sessionId,
+    'generation',
+    request.parentRunId
+  );
+  if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
+  const phaseRunNumber = phaseRunNumberResult.data;
 
-   // Prepare merged variables (common across all iterations)
-   // Note: Per-iteration variables (angle, outputIndex, totalOutputs) are not stored here
-   // Angle data is preserved in debug_metadata.angle_plan and debug_metadata.angle_prompts
-   const mergedVariables = {
-     ...parentRun.inputs,
-     ...request.variables,
-     outputCount: request.outputCount,
-     angles: anglePlan.assignments.map(a => a.targetAngle)
-   };
+  // Prepare merged variables (common across all iterations)
+  // Note: Per-iteration variables (angle, outputIndex, totalOutputs) are not stored here
+  // Angle data is preserved in debug_metadata.angle_plan and debug_metadata.angle_prompts
+  const mergedVariables = {
+    ...parentRun.inputs,
+    ...request.variables,
+    outputCount: request.outputCount,
+    angles: anglePlan.assignments.map(a => a.targetAngle)
+  };
 
-   // Insert ONE record with ALL images
-   const { data: testRecord, error: insertError } = await supabase
-     .from('prompt_tests')
-     .insert({
-       session_id: request.sessionId,
-       phase: 'generation',
-       phase_run_number: phaseRunNumber,
-       parent_run_id: request.parentRunId,
-       template_id: template.id,
-       status: 'completed',
-       inputs: mergedVariables,
-       final_prompt: angleSpecificPrompts[0],
-       image_url: JSON.stringify(imageUrls),    // JSON array
-       image_key: JSON.stringify(imageKeys),    // JSON array
-       debug_metadata: {
-         thinking: null,
-         tokens: totalTokens,
-         model: request.model || 'gemini-3-pro-image-preview',
-         cost: totalCost,
-         duration_ms: totalDurationMs,
-         image_urls: imageUrls,
-         angle_prompts: angleSpecificPrompts,
-         angle_plan: anglePlan,
-         raw_prompt: angleSpecificPrompts[0],
-         raw_response: null
-       }
-     })
-     .select()
-     .single();
+  // Insert ONE record with ALL images
+  const { data: testRecord, error: insertError } = await supabase
+    .from('prompt_tests')
+    .insert({
+      session_id: request.sessionId,
+      phase: 'generation',
+      phase_run_number: phaseRunNumber,
+      parent_run_id: request.parentRunId,
+      template_id: template.id,
+      status: 'completed',
+      inputs: mergedVariables,
+      final_prompt: angleSpecificPrompts[0],
+      image_url: JSON.stringify(imageUrls),    // JSON array
+      image_key: JSON.stringify(imageKeys),    // JSON array
+      debug_metadata: {
+        thinking: thinkingResults.length > 0 ? thinkingResults : null,
+        tokens: totalTokens,
+        model: request.model || 'gemini-3-pro-image-preview',
+        cost: totalCost,
+        duration_ms: totalDurationMs,
+        image_urls: imageUrls,
+        angle_prompts: angleSpecificPrompts,
+        angle_plan: anglePlan,
+        raw_prompt: angleSpecificPrompts[0],
+      }
+    })
+    .select()
+    .single();
 
-   if (insertError) {
-     return err(createError('DATABASE_ERROR', `Failed to save generation: ${insertError.message}`));
-   }
+  if (insertError) {
+    return err(createError('DATABASE_ERROR', `Failed to save generation: ${insertError.message}`));
+  }
 
-   // 10. Return result
-   logger.info('Conversation generation phase complete', {
-     sessionId: request.sessionId,
-     runId: request.parentRunId,
-     imageCount: imageUrls.length,
-     totalTokens,
-     totalCost
-   });
+  // 10. Return result
+  logger.info('Conversation generation phase complete', {
+    sessionId: request.sessionId,
+    runId: request.parentRunId,
+    imageCount: imageUrls.length,
+    totalTokens,
+    totalCost
+  });
 
-   return ok({
-     generationRuns: [{
-       runId: testRecord.id,
-       phaseRunNumber,
-       imageUrl: imageUrls[0],
-       imageUrls: imageUrls,
-       finalPrompt: angleSpecificPrompts[0],
-       tokens: totalTokens
-     }],
-     totalTokens,
-     totalCost
-   });
+  return ok({
+    generationRuns: [{
+      runId: testRecord.id,
+      phaseRunNumber,
+      imageUrl: imageUrls[0],
+      imageUrls: imageUrls,
+      finalPrompt: angleSpecificPrompts[0],
+      tokens: totalTokens
+    }],
+    totalTokens,
+    totalCost
+  });
 };

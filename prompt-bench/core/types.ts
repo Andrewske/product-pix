@@ -299,12 +299,19 @@ export interface ConversationGenerationRequest {
   outputCount: number;         // From UI (overrides template.outputCount)
 }
 
+/**
+ * Result from conversation-based generation phase.
+ *
+ * Note: Returns a single database record containing all generated images,
+ * rather than one record per image. This consolidation prevents database
+ * clutter and groups conversation outputs together logically.
+ */
 export interface ConversationGenerationResult {
   generationRuns: Array<{
     runId: string;
     phaseRunNumber: number;
     imageUrl: string;          // First image (for simple access)
-    imageUrls: string[];       // NEW: All images from conversation
+    imageUrls: string[];       // All images from conversation
     finalPrompt: string;
     tokens: { input: number; output: number };
   }>;
