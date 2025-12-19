@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ImageConfig } from '@/lib/ai/types';
 
 // =============================================================================
 // Product Category Types
@@ -282,6 +283,35 @@ export const PromptEvaluationSchema = z.object({
 });
 
 export type PromptEvaluation = z.infer<typeof PromptEvaluationSchema>;
+
+// =============================================================================
+// Conversation Generation Types
+// =============================================================================
+
+export interface ConversationGenerationRequest {
+  sessionId: string;
+  parentRunId: string;         // Analysis run with fixture images
+  templateSlug: string;
+  templateData: Record<string, unknown>;  // UI edits
+  variables?: Record<string, unknown>;    // Manual variable overrides
+  model?: string;
+  config?: ImageConfig;        // aspectRatio, resolution
+  outputCount: number;         // From UI (overrides template.outputCount)
+}
+
+export interface ConversationGenerationResult {
+  generationRuns: Array<{
+    runId: string;
+    phaseRunNumber: number;
+    angleIndex: number;
+    targetAngle: string;
+    imageUrl: string;
+    finalPrompt: string;
+    tokens: { input: number; output: number };
+  }>;
+  totalTokens: { input: number; output: number };
+  totalCost: number;
+}
 
 // =============================================================================
 // CLI Command Schemas

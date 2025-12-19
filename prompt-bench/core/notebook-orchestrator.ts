@@ -1,15 +1,17 @@
 import { Result, ok, err, createError, isOk } from '@bench/core/errors';
-import { Result, err, ok, createError, isOk } from '@bench/core/errors';
 import { analyzeProductImages } from '@bench/core/product-analyzer';
 import { compileTemplate } from '@bench/core/compiler';
-import { createGeminiProvider } from '@/lib/ai/providers/gemini';
+import { createGeminiProvider, createConversationSession } from '@/lib/ai/providers/gemini';
 import type { ImageConfig } from '@/lib/ai/types';
 import { uploadBase64Image } from '@/lib/r2';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@bench/core/logger';
 import { evaluateImage } from '@bench/core/evaluator';
-import type { EvaluationDetails, TemplateData } from '@bench/core/types';
+import type { EvaluationDetails, TemplateData, ProductCategory, DetectedAngles, AnglePlan, ConversationGenerationRequest, ConversationGenerationResult } from '@bench/core/types';
 import { calculateCost } from '@bench/core/cost';
+import { classifyProduct } from '@bench/core/category-classifier';
+import { detectSourceAngles } from '@bench/core/angle-detector';
+import { planCollection } from '@bench/core/angle-planner';
 
 // =============================================================================
 // Types
@@ -243,7 +245,8 @@ const storeAnalysisResult = async (
   analysisResult: AnalysisResultData,
   sourceImageUrl?: string,
   model?: string,
-  durationMs?: number
+  durationMs?: number,
+  fixtureImageIds?: string[]
 ): Promise<Result<unknown>> => {
   const { data: testRecord, error: insertError } = await supabase
     .from('prompt_tests')
@@ -253,7 +256,7 @@ const storeAnalysisResult = async (
       phase_run_number: phaseRunNumber,
       parent_run_id: null, // Analysis has no parent
       status: 'completed',
-      inputs: { ...merged, ...variables },
+      inputs: { ...merged, ...variables, fixtureImageIds },
       source_image_url: sourceImageUrl,
       final_prompt: '', // Analysis doesn't generate prompts
        debug_metadata: {
@@ -347,7 +350,8 @@ export const runAnalysisPhase = async (
     analysisResult,
     sourceImageUrl,
     model,
-    durationMs
+    durationMs,
+    request.fixtureImageIds
   );
   if (!isOk(storeResult)) return storeResult;
 
@@ -424,9 +428,13 @@ export const runGenerationPhase = async (
     manualVars: Object.keys(request.variables || {})
   });
 
-  // 4. Compile template
+  // 4. Compile template (use request.templateData to allow UI edits)
+  const templateDataToUse = request.templateData && Object.keys(request.templateData).length > 0
+    ? request.templateData
+    : template.template_data;
+
   const compileResult = compileTemplate(
-    template.template_data as TemplateData,
+    templateDataToUse as TemplateData,
     template.variables_schema,
     mergedVariables
   );
@@ -683,5 +691,273 @@ export const runEvaluationPhase = async (
     scoreOverall: overall,
     details,
     tokens: { input: tokensUsed, output: 0 }
+  });
+};
+
+// =============================================================================
+// Conversation Generation Phase
+// =============================================================================
+
+export const runConversationGenerationPhase = async (
+  request: ConversationGenerationRequest
+): Promise<Result<ConversationGenerationResult>> => {
+  const supabase = createAdminClient();
+
+  logger.info('Starting conversation generation phase', {
+    sessionId: request.sessionId,
+    parentRunId: request.parentRunId,
+    templateSlug: request.templateSlug,
+    outputCount: request.outputCount
+  });
+
+  // 1. Fetch parent analysis run
+  const { data: parentRun, error: parentError } = await supabase
+    .from('prompt_tests')
+    .select('*')
+    .eq('id', request.parentRunId)
+    .single();
+
+  if (parentError || !parentRun) {
+    return err(createError('VALIDATION_ERROR', 'Parent analysis run not found'));
+  }
+
+  if (parentRun.phase !== 'analysis') {
+    return err(createError('VALIDATION_ERROR', 'Parent run must be an analysis phase'));
+  }
+
+  // Extract fixture image IDs from analysis run data
+  // Note: This assumes fixtureImageIds are stored in parentRun.inputs.fixtureImageIds
+  const fixtureImageIds = (parentRun.inputs as any)?.fixtureImageIds;
+  if (!fixtureImageIds || !Array.isArray(fixtureImageIds) || fixtureImageIds.length === 0) {
+    return err(createError('VALIDATION_ERROR', 'No fixture image IDs found in parent analysis run'));
+  }
+
+  // 2. Fetch template from database
+  const { data: template, error: templateError } = await supabase
+    .from('prompt_templates')
+    .select('*')
+    .eq('slug', request.templateSlug)
+    .single();
+
+  if (templateError || !template) {
+    return err(createError('VALIDATION_ERROR', `Template ${request.templateSlug} not found`));
+  }
+
+  // Use request.templateData if provided, else template.template_data
+  const templateDataToUse = request.templateData && Object.keys(request.templateData).length > 0
+    ? request.templateData
+    : template.template_data;
+
+  // 3. Resolve fixture images
+  const fixturesResult = await fetchFixtureImages(supabase, fixtureImageIds);
+  if (!isOk(fixturesResult)) return fixturesResult;
+
+  const fixtures = fixturesResult.data;
+
+  // Download images from R2
+  const imagesResult = await downloadImagesFromR2(fixtures);
+  if (!isOk(imagesResult)) return imagesResult;
+
+  const fixtureImages = imagesResult.data;
+
+  // 4. Product category classification
+  const firstFixtureImage = fixtureImages[0];
+  if (!firstFixtureImage) {
+    return err(createError('VALIDATION_ERROR', 'No fixture images available'));
+  }
+
+  const categoryResult = await classifyProduct(fixtures[0].r2_url);
+  const category: ProductCategory = isOk(categoryResult) ? categoryResult.data : 'generic';
+
+  // 5. Angle detection
+  const detectedAnglesResult = await detectSourceAngles(
+    fixtureImages.map((img) => ({
+      buffer: img.buffer,
+      mimeType: img.mimeType,
+      hash: '', // Not needed for detection
+      r2Key: '',
+      r2Url: ''
+    }))
+  );
+
+  if (!isOk(detectedAnglesResult)) {
+    // Fallback to category defaults
+    logger.warn('Angle detection failed, using category defaults', {
+      sessionId: request.sessionId,
+      error: detectedAnglesResult.error.message
+    });
+  }
+
+  const detectedAngles: DetectedAngles = isOk(detectedAnglesResult)
+    ? detectedAnglesResult.data
+    : { sourceAngles: [] };
+
+  // 6. Angle planning
+  const anglePlan = planCollection(detectedAngles, category, request.outputCount);
+
+  // 7. Create conversation session
+  const session = createConversationSession();
+
+  // 8. Initialize session with reference images
+  const productName = (parentRun.inputs as any)?.productName || 'Product';
+  await session.initialize(
+    fixtureImages.map((img, idx) => ({
+      buffer: img.buffer,
+      mimeType: img.mimeType,
+      label: detectedAngles.sourceAngles[idx]?.detectedAngle || `Reference ${idx + 1}`
+    })),
+    `Product: ${productName}\nCategory: ${category}\nGenerating ${request.outputCount} images`
+  );
+
+  // 9. Generate each angle in loop
+  const generationRuns: ConversationGenerationResult['generationRuns'] = [];
+  let totalTokens = { input: 0, output: 0 };
+  let totalCost = 0;
+
+  for (let i = 0; i < anglePlan.assignments.length; i++) {
+    const assignment = anglePlan.assignments[i];
+
+    // Get next phase run number
+    const phaseRunNumberResult = await getNextPhaseRunNumber(
+      supabase,
+      request.sessionId,
+      'generation',
+      request.parentRunId
+    );
+    if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
+    const phaseRunNumber = phaseRunNumberResult.data;
+
+    // Merge variables
+    const mergedVariables = {
+      ...parentRun.inputs,
+      ...request.variables,
+      angle: assignment.targetAngle,
+      outputIndex: i,
+      totalOutputs: request.outputCount
+    };
+
+    // Compile template
+    const compileResult = compileTemplate(
+      templateDataToUse as TemplateData,
+      template.variables_schema,
+      mergedVariables
+    );
+
+    if (!isOk(compileResult)) {
+      logger.error('Template compilation failed', {
+        sessionId: request.sessionId,
+        error: compileResult.error.message
+      });
+      return compileResult;
+    }
+
+    const { prompt } = compileResult.data;
+
+    // Build angle-specific prompt
+    const angleSpecificPrompt = `Generate image ${i + 1}/${request.outputCount}: ${assignment.targetAngle} view.
+This must be distinctly different from any previous images.
+${prompt}`;
+
+    // Generate image
+    const config: ImageConfig = request.config || {
+      aspectRatio: '1:1',
+      resolution: '1k',
+      rawPrompt: true,
+      numberOfImages: 1,
+    };
+
+    const genResult = await session.generateNext(angleSpecificPrompt, {
+      aspectRatio: config.aspectRatio,
+      resolution: config.resolution
+    });
+
+    if (!genResult.success) {
+      logger.error('Image generation failed', {
+        sessionId: request.sessionId,
+        imageIndex: i,
+        error: genResult.error
+      });
+      return err(createError('GENERATION_ERROR', genResult.error));
+    }
+
+    // Upload to R2
+    const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
+    const uploadResult = await uploadBase64Image(
+      genResult.imageData,
+      'notebook-user',
+      request.sessionId,
+      format
+    );
+
+    // Calculate cost
+    const costResult = calculateCost(request.model || 'gemini-3-pro-image-preview', {
+      input: genResult.usage?.promptTokens || 0,
+      output: genResult.usage?.completionTokens || 0
+    });
+    const cost = costResult.ok ? costResult.data.total : 0;
+
+    // Accumulate tokens and cost
+    if (genResult.usage) {
+      totalTokens.input += genResult.usage.promptTokens;
+      totalTokens.output += genResult.usage.completionTokens;
+    }
+    totalCost += cost;
+
+    // Insert prompt_tests record
+    const { data: testRecord, error: insertError } = await supabase
+      .from('prompt_tests')
+      .insert({
+        session_id: request.sessionId,
+        phase: 'generation',
+        phase_run_number: phaseRunNumber,
+        parent_run_id: request.parentRunId,
+        template_id: template.id,
+        status: 'completed',
+        inputs: mergedVariables,
+        final_prompt: angleSpecificPrompt,
+        image_url: uploadResult.publicUrl,
+        image_key: uploadResult.fileKey,
+        debug_metadata: {
+          thinking: null,
+          tokens: genResult.usage || { input: 0, output: 0 },
+          model: request.model || 'gemini-3-pro-image-preview',
+          cost,
+          duration_ms: 0, // TODO: track duration
+          raw_prompt: angleSpecificPrompt,
+          raw_response: null
+        }
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      return err(createError('DATABASE_ERROR', `Failed to save generation: ${insertError.message}`));
+    }
+
+    // Add to results
+    generationRuns.push({
+      runId: testRecord.id,
+      phaseRunNumber,
+      angleIndex: i,
+      targetAngle: assignment.targetAngle,
+      imageUrl: uploadResult.publicUrl,
+      finalPrompt: angleSpecificPrompt,
+      tokens: genResult.usage || { input: 0, output: 0 }
+    });
+  }
+
+  // 10. Return result
+  logger.info('Conversation generation phase complete', {
+    sessionId: request.sessionId,
+    runId: request.parentRunId,
+    imageCount: generationRuns.length,
+    totalTokens,
+    totalCost
+  });
+
+  return ok({
+    generationRuns,
+    totalTokens,
+    totalCost
   });
 };

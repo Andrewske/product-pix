@@ -41,6 +41,7 @@ interface Template {
   slug: string;
   template_data: Record<string, unknown>;
   variables_schema?: Record<string, unknown>;
+  version?: number;
 }
 
 export function GenerationPhase({
@@ -56,6 +57,7 @@ export function GenerationPhase({
 }: GenerationPhaseProps): React.ReactElement {
   const [error, setError] = React.useState<string | null>(null);
   const [isRunning, setIsRunning] = React.useState(false);
+  const [generationProgress, setGenerationProgress] = React.useState<{ current: number; total: number } | null>(null);
   const [templateSlug, setTemplateSlug] = React.useState('');
   const [templates, setTemplates] = React.useState<Template[]>([]);
   const [templateData, setTemplateData] = React.useState<Record<string, unknown>>({});
@@ -66,7 +68,11 @@ export function GenerationPhase({
   const [generationConfig, setGenerationConfig] = React.useState({
     resolution: '1k' as '1k' | '2k' | '4k',
     aspectRatio: '1:1' as string,
+    numberOfImages: 1,
   });
+  const [currentTemplateVersion, setCurrentTemplateVersion] = React.useState<number | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
 
   React.useEffect(() => {
     fetch('/api/templates')
@@ -78,10 +84,20 @@ export function GenerationPhase({
     if (templateSlug) {
       const template = templates.find((t) => t.slug === templateSlug);
       if (template) {
+        // Warn if switching templates with unsaved changes
+        if (hasUnsavedChanges) {
+          const confirmed = window.confirm(
+            'You have unsaved changes. Switching templates will lose your edits. Continue?'
+          );
+          if (!confirmed) return;
+        }
+
         setTemplateData(template.template_data || {});
+        setCurrentTemplateVersion(template.version || null);
+        setHasUnsavedChanges(false);
       }
     }
-  }, [templateSlug, templates]);
+  }, [templateSlug, templates, hasUnsavedChanges]);
 
   React.useEffect(() => {
     if (parentRunId) {
@@ -91,6 +107,15 @@ export function GenerationPhase({
       }
     }
   }, [parentRunId, analysisRuns]);
+
+  React.useEffect(() => {
+    if (templateSlug) {
+      const template = templates.find((t) => t.slug === templateSlug);
+      const originalData = template?.template_data || {};
+      const hasChanges = JSON.stringify(templateData) !== JSON.stringify(originalData);
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [templateData, templateSlug, templates]);
 
   const previewPrompt = async () => {
     if (!templateSlug) {
@@ -112,21 +137,17 @@ export function GenerationPhase({
   };
 
   const handleRun = async () => {
-    if (!templateSlug) {
-      setError('Please select a template');
-      return;
-    }
-
-    if (!parentRunId) {
-      setError('No analysis run selected. Please select an analysis run first.');
+    if (!templateSlug || !parentRunId) {
+      setError('Missing required fields');
       return;
     }
 
     setError(null);
     setIsRunning(true);
+    setGenerationProgress({ current: 0, total: generationConfig.numberOfImages });
 
     try {
-      const res = await fetch('/api/notebook/generate', {
+      const res = await fetch('/api/notebook/conversation-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,7 +157,11 @@ export function GenerationPhase({
           templateData,
           variables: analysisVariables,
           model,
-          config: generationConfig,
+          config: {
+            aspectRatio: generationConfig.aspectRatio,
+            resolution: generationConfig.resolution
+          },
+          outputCount: generationConfig.numberOfImages
         }),
       });
 
@@ -145,13 +170,52 @@ export function GenerationPhase({
       if (result.error) {
         setError(`Generation failed: ${result.error}`);
       } else {
+        // result.generationRuns is array of generation records
+        result.generationRuns.forEach(run => onRunComplete(run));
         setError(null);
-        onRunComplete(result);
       }
     } catch (err) {
       setError(`Network error: ${(err as Error).message}`);
     } finally {
       setIsRunning(false);
+      setGenerationProgress(null);
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateSlug || !templateData) {
+      setError('Cannot save: missing template slug or data');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const res = await fetch('/api/notebook/save-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: templateSlug,
+          templateData,
+          variablesSchema: templates.find(t => t.slug === templateSlug)?.variables_schema,
+          outputCount: generationConfig.numberOfImages  // Backend auto-detects type from this
+        }),
+      });
+
+      const result = await res.json();
+
+      if (result.error) {
+        setError(`Save failed: ${result.error}`);
+      } else {
+        setCurrentTemplateVersion(result.template.version);
+        setHasUnsavedChanges(false);
+        // Optionally: show success toast or message
+        console.log(result.message); // "Saved template-slug v4"
+      }
+    } catch (err) {
+      setError(`Save failed: ${(err as Error).message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -185,10 +249,15 @@ export function GenerationPhase({
           <CardTitle className="flex items-center gap-2 text-xl">
             <Wand2 className="h-5 w-5 text-purple-500" />
             Generation Phase
+            {currentTemplateVersion && (
+              <Badge variant="secondary" className="text-xs">
+                v{currentTemplateVersion}
+              </Badge>
+            )}
           </CardTitle>
-           <Button onClick={handleRun} disabled={isRunning || !templateSlug} className="bg-purple-600 hover:bg-purple-700">
+            <Button onClick={handleRun} disabled={isRunning || !templateSlug} className="bg-purple-600 hover:bg-purple-700">
               {isRunning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isRunning ? 'Generating...' : 'Generate Image'}
+              {isRunning ? 'Generating...' : `Generate ${generationConfig.numberOfImages} Image${generationConfig.numberOfImages > 1 ? 's' : ''}`}
               {!isRunning && <Play className="ml-2 h-3 w-3" />}
             </Button>
         </div>
@@ -198,6 +267,14 @@ export function GenerationPhase({
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {generationProgress && (
+          <Alert>
+            <AlertDescription>
+              Generating image {generationProgress.current} of {generationProgress.total}...
+            </AlertDescription>
           </Alert>
         )}
 
@@ -216,6 +293,20 @@ export function GenerationPhase({
                 onChange={setModel}
                 options={[{ value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image' }]}
                  className="w-full"
+              />
+               <Select
+                label="Number of Images"
+                value={generationConfig.numberOfImages.toString()}
+                onChange={(value) =>
+                  setGenerationConfig((prev) => ({ ...prev, numberOfImages: parseInt(value, 10) }))
+                }
+                options={[
+                  { value: '1', label: '1 Image' },
+                  { value: '2', label: '2 Images' },
+                  { value: '3', label: '3 Images' },
+                  { value: '4', label: '4 Images' },
+                ]}
+                className="w-full"
               />
             </div>
             <div className="space-y-4">
@@ -236,13 +327,18 @@ export function GenerationPhase({
                     label="Aspect Ratio"
                     value={generationConfig.aspectRatio}
                     onChange={(value) => setGenerationConfig((prev) => ({ ...prev, aspectRatio: value }))}
-                    options={[
-                      { value: '1:1', label: '1:1 (Square)' },
-                      { value: '3:4', label: '3:4 (Portrait)' },
-                      { value: '4:3', label: '4:3 (Landscape)' },
-                      { value: '9:16', label: '9:16 (Vertical)' },
-                      { value: '16:9', label: '16:9 (Horizontal)' },
-                    ]}
+                     options={[
+                       { value: '1:1', label: '1:1 (Square)' },
+                       { value: '2:3', label: '2:3 (Portrait)' },
+                       { value: '3:2', label: '3:2 (Landscape)' },
+                       { value: '3:4', label: '3:4 (Portrait)' },
+                       { value: '4:3', label: '4:3 (Landscape)' },
+                       { value: '4:5', label: '4:5 (Portrait)' },
+                       { value: '5:4', label: '5:4 (Landscape)' },
+                       { value: '9:16', label: '9:16 (Vertical)' },
+                       { value: '16:9', label: '16:9 (Horizontal)' },
+                       { value: '21:9', label: '21:9 (Ultrawide)' },
+                     ]}
                   />
                </div>
             </div>
@@ -291,9 +387,18 @@ export function GenerationPhase({
                 </div>
 
                 <div className="flex gap-2 justify-end pt-2">
-                   <Button variant="outline" size="sm" onClick={previewPrompt} className="h-8">
-                     Preview Compiled Prompt
-                   </Button>
+                  <Button variant="outline" size="sm" onClick={previewPrompt} className="h-8">
+                    Preview Compiled Prompt
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleSaveTemplate}
+                    disabled={isSaving || !templateSlug}
+                    className="h-8"
+                  >
+                    {isSaving ? 'Saving...' : `Save as v${(currentTemplateVersion || 0) + 1}`}
+                  </Button>
                 </div>
                 
                 {compiledPrompt && (

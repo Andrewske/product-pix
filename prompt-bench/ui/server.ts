@@ -5,7 +5,7 @@ import { config } from 'dotenv';
 import { createAdminClient } from '../../src/lib/supabase/admin';
 import { testCommand } from '../commands/test';
 import { logger } from '../core/logger';
-import { runAnalysisPhase, runGenerationPhase, runEvaluationPhase } from '../core/notebook-orchestrator';
+import { runAnalysisPhase, runGenerationPhase, runEvaluationPhase, runConversationGenerationPhase } from '../core/notebook-orchestrator';
 import { isOk } from '../core/errors';
 import { EVALUATION_PROMPT } from '../core/evaluator';
 import { compileTemplate } from '../core/compiler';
@@ -26,12 +26,12 @@ const loadBundle = (filename: string): string => {
   }
 };
 
-const loadThemeCSS = (): string => {
+const loadBuiltCSS = (): string => {
   try {
-    return readFileSync(join(__dirname, 'styles', 'theme.css'), 'utf-8');
+    return readFileSync(join(__dirname, 'dist', 'styles.css'), 'utf-8');
   } catch (err) {
-    console.error('Failed to load theme.css:', err);
-    return '/* Theme CSS not found */';
+    console.error('Failed to load styles.css:', err);
+    return '/* Built CSS not found. Run: bun bench:ui:build */';
   }
 };
 
@@ -52,8 +52,10 @@ Bun.serve({
     if (url.pathname === '/api/notebook/fixtures') return handleNotebookFixtures(req);
     if (url.pathname === '/api/notebook/analyze' && req.method === 'POST') return handleNotebookAnalyze(req);
     if (url.pathname === '/api/notebook/generate' && req.method === 'POST') return handleNotebookGenerate(req);
+    if (url.pathname === '/api/notebook/conversation-generate' && req.method === 'POST') return handleNotebookConversationGenerate(req);
     if (url.pathname === '/api/notebook/evaluate' && req.method === 'POST') return handleNotebookEvaluate(req);
     if (url.pathname === '/api/notebook/compile-prompt' && req.method === 'POST') return handleNotebookCompilePrompt(req);
+    if (url.pathname === '/api/notebook/save-template' && req.method === 'POST') return handleSaveTemplate(req);
     if (url.pathname.match(/^\/api\/notebook\/session\/[^/]+$/)) return handleNotebookSession(req);
 
     return new Response('Not Found', { status: 404 });
@@ -65,7 +67,7 @@ console.log('🚀 Prompt Bench UI running at http://localhost:8181');
 const serveHTML = (): Response => {
   const experimentBundle = loadBundle('experiment.js')
     .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
-  const themeCSS = loadThemeCSS();
+  const builtCSS = loadBuiltCSS();
 
   const html = `
     <!DOCTYPE html>
@@ -76,10 +78,9 @@ const serveHTML = (): Response => {
       <title>Prompt Bench - Experiment Runner</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-      <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+      <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
       <style>
-        ${themeCSS}
+        ${builtCSS}
       </style>
     </head>
     <body class="dark bg-background text-foreground antialiased">
@@ -102,7 +103,7 @@ const serveHTML = (): Response => {
 const serveNotebookHTML = (): Response => {
   const notebookBundle = loadBundle('notebook.js')
     .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
-  const themeCSS = loadThemeCSS();
+  const builtCSS = loadBuiltCSS();
 
   const html = `
     <!DOCTYPE html>
@@ -113,10 +114,9 @@ const serveNotebookHTML = (): Response => {
       <title>Prompt Bench - Notebook</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-      <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+      <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
       <style>
-        ${themeCSS}
+        ${builtCSS}
       </style>
     </head>
     <body class="dark bg-background text-foreground antialiased">
@@ -496,7 +496,7 @@ const handleNotebookAnalyze = async (req: Request): Promise<Response> => {
 const handleNotebookGenerate = async (req: Request): Promise<Response> => {
   try {
     const body = await req.json();
-    const { sessionId, parentRunId, templateSlug, templateData, variables } = body;
+    const { sessionId, parentRunId, templateSlug, templateData, variables, model, config } = body;
 
     if (!sessionId || !parentRunId || !templateSlug) {
       return Response.json({ error: 'Missing required fields: sessionId, parentRunId, templateSlug' }, { status: 400 });
@@ -510,7 +510,9 @@ const handleNotebookGenerate = async (req: Request): Promise<Response> => {
       parentRunId,
       templateSlug,
       templateData: templateData || {},
-      variables: variables || {}
+      variables: variables || {},
+      model,
+      config
     });
 
     if (!isOk(result)) {
@@ -551,6 +553,46 @@ const handleNotebookGenerate = async (req: Request): Promise<Response> => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Notebook generate endpoint error', { error: message });
     return Response.json({ error: 'Generation failed: ' + message }, { status: 500 });
+  }
+};
+
+const handleNotebookConversationGenerate = async (req: Request): Promise<Response> => {
+  try {
+    const body = await req.json();
+    const { sessionId, parentRunId, templateSlug, templateData, variables, model, config, outputCount } = body;
+
+    // Validate required fields
+    if (!sessionId || !parentRunId || !templateSlug || !outputCount) {
+      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Validate outputCount range
+    if (outputCount < 1 || outputCount > 7) {
+      return Response.json({ error: 'outputCount must be between 1 and 7' }, { status: 400 });
+    }
+
+    // Call orchestrator
+    const result = await runConversationGenerationPhase({
+      sessionId,
+      parentRunId,
+      templateSlug,
+      templateData: templateData || {},
+      variables: variables || {},
+      model,
+      config,
+      outputCount
+    });
+
+    if (!isOk(result)) {
+      logger.error('Conversation generation failed', { error: result.error.message });
+      return Response.json({ error: result.error.message }, { status: 500 });
+    }
+
+    return Response.json(result.data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Notebook conversation generate endpoint error', { error: message });
+    return Response.json({ error: 'Conversation generation failed: ' + message }, { status: 500 });
   }
 };
 
@@ -631,7 +673,7 @@ const handleNotebookCompilePrompt = async (req: Request): Promise<Response> => {
       return Response.json({ error: compileResult.error.message }, { status: 400 });
     }
 
-    return Response.json({ prompt: compileResult.data.prompt });
+    return Response.json({ prompt: (compileResult.data as any).prompt });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return Response.json({ error: 'Failed to compile prompt: ' + message }, { status: 500 });
@@ -686,5 +728,66 @@ const handleNotebookSession = async (req: Request): Promise<Response> => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Notebook session endpoint error', { error: message });
     return Response.json({ error: 'Failed to load session: ' + message }, { status: 500 });
+  }
+};
+
+const handleSaveTemplate = async (req: Request): Promise<Response> => {
+  try {
+    const body = await req.json();
+    const { slug, templateData, variablesSchema, type, outputCount } = body;
+
+    if (!slug || !templateData) {
+      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+
+    // 1. Fetch current latest version
+    const { data: currentTemplate, error: fetchError } = await supabase
+      .from('prompt_templates')
+      .select('version')
+      .eq('slug', slug)
+      .order('version', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows
+      return Response.json({ error: `Failed to fetch current version: ${fetchError.message}` }, { status: 500 });
+    }
+
+    // 2. Calculate next version (auto-increment)
+    const nextVersion = currentTemplate ? currentTemplate.version + 1 : 1;
+
+    // 3. Insert new template version
+    const newTemplate = {
+      slug,
+      version: nextVersion,
+      status: 'active',
+      type: outputCount > 1 ? 'collection' : 'single',  // Auto-detect from outputCount
+      output_count: outputCount || 1,
+      template_data: templateData,
+      variables_schema: variablesSchema
+    };
+
+    const { data: insertResult, error: insertError } = await supabase
+      .from('prompt_templates')
+      .insert(newTemplate)
+      .select()
+      .single();
+
+    if (insertError) {
+      return Response.json({ error: `Failed to save template: ${insertError.message}` }, { status: 500 });
+    }
+
+    logger.info('Template saved', { slug, version: nextVersion });
+
+    return Response.json({
+      template: insertResult,
+      message: `Saved ${slug} v${nextVersion}`
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Save template endpoint error', { error: message });
+    return Response.json({ error: 'Failed to save template: ' + message }, { status: 500 });
   }
 };

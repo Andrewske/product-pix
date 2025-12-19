@@ -181,7 +181,7 @@ See `docs/legal-policy-decisions.md`
 
 ## Gotchas
 - **Gemini SDKs**: AI SDK for single-shot, Google SDK for conversations (thought signatures handled automatically)
-- **Conversation aspect ratios**: Google SDK supports only `1:1`, `3:4`, `4:3`, `9:16`, `16:9`
+- **Conversation aspect ratios**: Gemini 3 Pro Image Preview supports `1:1`, `2:3`, `3:2`, `3:4`, `4:3`, `4:5`, `5:4`, `9:16`, `16:9`, `21:9`
 
 
 - **R2 uploads**: Browser → presigned URL → R2 → confirm (NOT through server)
