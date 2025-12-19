@@ -44,14 +44,26 @@ export function NotebookView(): React.ReactElement {
     React.useState(false);
 
   const handleFixtureSelection = React.useCallback((fixtureIds: string[]) => {
-    setSelectedFixtureIds(fixtureIds);
+    setSelectedFixtureIds((prevIds) => {
+      // Check if selection actually changed
+      const hasChanged =
+        prevIds.length !== fixtureIds.length ||
+        !prevIds.every((id) => fixtureIds.includes(id));
 
-    // Clear downstream state (inputs changed)
-    setAnalysisRuns([]);
-    setGenerationRuns([]);
-    setEvaluationRuns([]);
-    setSelectedAnalysisId(null);
-    setSelectedGenerationId(null);
+      // Only clear downstream state if fixtures actually changed
+      if (hasChanged) {
+        console.log('[NotebookView] Fixture selection changed, clearing runs');
+        setAnalysisRuns([]);
+        setGenerationRuns([]);
+        setEvaluationRuns([]);
+        setSelectedAnalysisId(null);
+        setSelectedGenerationId(null);
+      } else {
+        console.log('[NotebookView] Fixture selection unchanged, keeping runs');
+      }
+
+      return fixtureIds;
+    });
   }, []);
 
   const handleRemoveAnalysisRun = React.useCallback(
@@ -101,30 +113,71 @@ export function NotebookView(): React.ReactElement {
     navigator.clipboard.writeText(JSON.stringify(context, null, 2));
   }, [sessionId, analysisRuns, generationRuns, evaluationRuns]);
 
+  const handleNewSession = React.useCallback(() => {
+    // Clear localStorage
+    localStorage.removeItem('promptBench:lastSessionId');
+
+    // Create fresh session
+    const newSessionId = `notebook-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+    // Update state
+    setSessionId(newSessionId);
+    setAnalysisRuns([]);
+    setGenerationRuns([]);
+    setEvaluationRuns([]);
+    setSelectedAnalysisId(null);
+    setSelectedGenerationId(null);
+    setIsFixtureSelectorExpanded(true);
+
+    // Update URL
+    const params = new URLSearchParams(window.location.search);
+    params.set('session', newSessionId);
+    window.history.pushState({}, '', `${window.location.pathname}?${params}`);
+
+    // Save to localStorage for future refreshes
+    localStorage.setItem('promptBench:lastSessionId', newSessionId);
+  }, []);
+
   const loadSessionCallback = React.useCallback(async (sessionId: string) => {
     try {
+      console.log('[NotebookView] Loading session:', sessionId);
       const res = await fetch(`/api/notebook/session/${sessionId}`, {});
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
+      console.log('[NotebookView] Session data loaded:', {
+        analysisCount: data.phases.analysis?.length || 0,
+        generationCount: data.phases.generation?.length || 0,
+        evaluationCount: data.phases.evaluation?.length || 0,
+      });
 
       // Update React state
       const analysisRuns = data.phases.analysis || [];
       const generationRuns = data.phases.generation || [];
-      setAnalysisRuns(analysisRuns);
-      setGenerationRuns(generationRuns);
+
       // Select the most recent run for each phase
-      const mostRecentAnalysis = analysisRuns.sort(
+      const mostRecentAnalysis = [...analysisRuns].sort(
         (a: AnalysisRun, b: AnalysisRun) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       )[0];
-      const mostRecentGeneration = generationRuns.sort(
+      const mostRecentGeneration = [...generationRuns].sort(
         (a: GenerationRun, b: GenerationRun) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       )[0];
+
+      // Extract fixture IDs from most recent analysis run to restore selection
+      if (mostRecentAnalysis?.inputs?.fixtureImageIds) {
+        const fixtureIds = mostRecentAnalysis.inputs.fixtureImageIds;
+        console.log('[NotebookView] Restoring fixture IDs from most recent run:', fixtureIds);
+        setSelectedFixtureIds(fixtureIds);
+      }
+
+      setAnalysisRuns(analysisRuns);
+      setGenerationRuns(generationRuns);
       setSelectedAnalysisId(mostRecentAnalysis?.id || null);
       setSelectedGenerationId(mostRecentGeneration?.id || null);
       setEvaluationRuns(data.phases.evaluation || []);
+      console.log('[NotebookView] State updated with runs');
     } catch (err) {
       console.error('Failed to load session:', err);
       setError(
@@ -136,17 +189,35 @@ export function NotebookView(): React.ReactElement {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlSessionId = params.get('session');
+    const storedSessionId = localStorage.getItem('promptBench:lastSessionId');
+
+    console.log('[NotebookView] Session initialization:', {
+      urlSessionId,
+      storedSessionId,
+      localStorage: !!window.localStorage,
+    });
 
     if (urlSessionId) {
+      // URL takes precedence (for bookmarks/sharing)
+      console.log('[NotebookView] Using URL session ID');
       setSessionId(urlSessionId);
-      // Load from database
+      localStorage.setItem('promptBench:lastSessionId', urlSessionId);
       loadSessionCallback(urlSessionId);
+    } else if (storedSessionId) {
+      // Resume last session from localStorage
+      console.log('[NotebookView] Resuming from localStorage');
+      setSessionId(storedSessionId);
+      loadSessionCallback(storedSessionId);
+      // Update URL to match
+      params.set('session', storedSessionId);
+      window.history.pushState({}, '', `${window.location.pathname}?${params}`);
     } else {
-      // No session: expand selector, create session ID
+      // First-time visit: create new session
+      console.log('[NotebookView] Creating new session');
       setIsFixtureSelectorExpanded(true);
       const tempId = `notebook-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       setSessionId(tempId);
-      const params = new URLSearchParams(window.location.search);
+      localStorage.setItem('promptBench:lastSessionId', tempId);
       params.set('session', tempId);
       window.history.pushState({}, '', `${window.location.pathname}?${params}`);
     }
@@ -173,6 +244,7 @@ export function NotebookView(): React.ReactElement {
         <SessionHeader
           sessionId={sessionId}
           onCopyContext={copyContextToClipboard}
+          onNewSession={handleNewSession}
         />
 
         <div className="space-y-8">
@@ -211,7 +283,7 @@ export function NotebookView(): React.ReactElement {
                 selectedRunId={selectedGenerationId}
                 disabled={!selectedAnalysisId}
                 onRunComplete={(newRun) =>
-                  setGenerationRuns([...generationRuns, newRun])
+                  setGenerationRuns(prev => [...prev, newRun])
                 }
                 onSelectRun={setSelectedGenerationId}
                 onRemoveRun={handleRemoveGenerationRun}

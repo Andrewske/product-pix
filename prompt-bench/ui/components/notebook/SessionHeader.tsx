@@ -5,11 +5,13 @@ import { ArrowLeft, Copy, Sparkles } from 'lucide-react';
 interface SessionHeaderProps {
   sessionId: string | null;
   onCopyContext?: () => void;
+  onNewSession?: () => void;
 }
 
 export function SessionHeader({
   sessionId,
   onCopyContext,
+  onNewSession,
 }: SessionHeaderProps): React.ReactElement {
   const handleBackClick = () => {
     window.location.href = '/';
@@ -31,6 +33,12 @@ export function SessionHeader({
         )}
       </div>
       <div className="flex gap-3 pl-[52px] md:pl-0">
+        {onNewSession && (
+          <Button variant="outline" size="sm" onClick={onNewSession}>
+            <Sparkles className="h-4 w-4 mr-2" />
+            New Session
+          </Button>
+        )}
         {onCopyContext && (
           <Button variant="outline" size="sm" onClick={onCopyContext}>
             <Copy className="h-4 w-4 mr-2" />

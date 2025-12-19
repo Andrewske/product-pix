@@ -58,7 +58,7 @@ export function GenerationPhase({
   const [error, setError] = React.useState<string | null>(null);
   const [isRunning, setIsRunning] = React.useState(false);
   const [generationProgress, setGenerationProgress] = React.useState<{ current: number; total: number } | null>(null);
-  const [templateSlug, setTemplateSlug] = React.useState('');
+  const [templateSlug, setTemplateSlug] = React.useState('multi-angle-hybrid');
   const [templates, setTemplates] = React.useState<Template[]>([]);
   const [templateData, setTemplateData] = React.useState<Record<string, unknown>>({});
   const [analysisVariables, setAnalysisVariables] = React.useState<Record<string, unknown>>({});
@@ -73,6 +73,7 @@ export function GenerationPhase({
   const [currentTemplateVersion, setCurrentTemplateVersion] = React.useState<number | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
+  const previousTemplateSlugRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     fetch('/api/templates')
@@ -84,8 +85,11 @@ export function GenerationPhase({
     if (templateSlug) {
       const template = templates.find((t) => t.slug === templateSlug);
       if (template) {
-        // Warn if switching templates with unsaved changes
-        if (hasUnsavedChanges) {
+        // Only warn if actually switching templates (not on initial load or template data changes)
+        const isTemplateSwitch = previousTemplateSlugRef.current !== null &&
+                                 previousTemplateSlugRef.current !== templateSlug;
+
+        if (isTemplateSwitch && hasUnsavedChanges) {
           const confirmed = window.confirm(
             'You have unsaved changes. Switching templates will lose your edits. Continue?'
           );
@@ -95,6 +99,7 @@ export function GenerationPhase({
         setTemplateData(template.template_data || {});
         setCurrentTemplateVersion(template.version || null);
         setHasUnsavedChanges(false);
+        previousTemplateSlugRef.current = templateSlug;
       }
     }
   }, [templateSlug, templates, hasUnsavedChanges]);
@@ -305,6 +310,9 @@ export function GenerationPhase({
                   { value: '2', label: '2 Images' },
                   { value: '3', label: '3 Images' },
                   { value: '4', label: '4 Images' },
+                  { value: '5', label: '5 Images' },
+                  { value: '6', label: '6 Images' },
+                  { value: '7', label: '7 Images' },
                 ]}
                 className="w-full"
               />
