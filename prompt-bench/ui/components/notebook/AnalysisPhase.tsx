@@ -336,9 +336,9 @@ Extract product details accurately. If you cannot determine a field, use an empt
                         <div className="flex justify-between items-center mb-2">
                              <h4 className="text-xs font-semibold text-muted-foreground uppercase">Extracted Data</h4>
                         </div>
-                        <pre className="text-xs font-mono bg-background p-3 rounded-md border overflow-x-auto max-h-[300px]">
-                          {JSON.stringify(run.inputs, null, 2)}
-                        </pre>
+                         <pre className="text-xs font-mono bg-background p-3 rounded-md border whitespace-pre-wrap break-words max-h-[300px] overflow-scroll">
+                           {JSON.stringify(run.inputs, null, 2)}
+                         </pre>
                       </div>
                     </CollapsibleContent>
                   </div>

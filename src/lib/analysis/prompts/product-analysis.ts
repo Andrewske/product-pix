@@ -3,7 +3,7 @@ import type { AnalysisPrompt } from '@/types/analysis';
 export const PRODUCT_ANALYSIS_V1: Omit<AnalysisPrompt, 'id' | 'createdBy' | 'createdAt'> = {
   slug: 'product-analysis',
   version: 1,
-  status: 'deprecated',
+   status: 'archived',
   promptText: `Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.`,
   responseSchema: {
     product: {
