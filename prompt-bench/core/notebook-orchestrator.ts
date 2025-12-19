@@ -308,7 +308,7 @@ export const runAnalysisPhase = async (
   if (!isOk(imagesResult)) return imagesResult;
 
   // 3. Run product analysis
-  const model = request.model || 'gemini-2.0-flash';
+  const model = request.model || 'gemini-3-flash-preview';
   const startTime = Date.now();
 
   const analysisResult = await analyzeProductImages(imagesResult.data, {

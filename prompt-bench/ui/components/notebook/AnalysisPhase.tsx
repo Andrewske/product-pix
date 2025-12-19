@@ -53,12 +53,27 @@ export function AnalysisPhase({
   const [analysisPrompt, setAnalysisPrompt] = React.useState<string>('');
   const [analysisSchema, setAnalysisSchema] = React.useState<Record<string, unknown>>({});
   const [expandedRunId, setExpandedRunId] = React.useState<string | null>(null);
-  const [model, setModel] = React.useState('gemini-2.0-flash');
+  const [model, setModel] = React.useState('gemini-3-flash-preview');
 
   // Set default prompt and schema on mount
   React.useEffect(() => {
     setAnalysisPrompt(
-      'Analyze this product image and extract the following information. Be specific and descriptive. If you cannot determine a field, use an empty string.'
+      `Analyze this product image carefully. Be specific and descriptive.
+
+## Brand Detection (CRITICAL)
+Look for brand identifiers on:
+- Metal plaques or badges
+- Embossed or debossed text
+- Tags, labels, or hang tags
+- Logos or emblems
+
+**IMPORTANT**: Read brand text CHARACTER BY CHARACTER. Do not guess or infer brand names.
+- If text is partially obscured or unclear, report only the letters you can clearly see
+- Report EXACTLY what is written, preserving spacing and capitalization
+- If you cannot read the text clearly, leave brand empty rather than guessing
+
+## Product Analysis
+Extract product details accurately. If you cannot determine a field, use an empty string.`
     );
     setAnalysisSchema({
       product: { type: 'string', description: 'The main product name/type' },
@@ -72,22 +87,22 @@ export function AnalysisPhase({
       },
       hasScaleReference: {
         type: 'boolean',
-        description: 'True if hand/body part visible for scale',
+        description: 'True if human hand/body part or common object visible for scale comparison',
       },
       scaleDescription: {
         type: 'string',
         optional: true,
-        description: 'Scale description if visible',
+        description: 'Natural language description of scale if reference visible (e.g., "fits in palm", "hand-holdable size", "about 12 inches wide")',
       },
       brand: {
         type: 'string',
         optional: true,
-        description: 'Brand name if visible',
+        description: 'Brand name EXACTLY as shown on product (read character by character, do not guess)',
       },
       brandingDetails: {
         type: 'string',
         optional: true,
-        description: 'Branding element details',
+        description: 'Description of where/how branding appears (e.g., "metal plaque on front")',
       },
     });
   }, []);
@@ -162,8 +177,10 @@ export function AnalysisPhase({
               value={model}
               onChange={setModel}
               options={[
-                { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-                { value: 'gemini-2.0-flash-thinking', label: 'Gemini 2.0 Flash Thinking' },
+                { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+                { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+                { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash' },
+                { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro' },
               ]}
               className="w-[200px]"
             />

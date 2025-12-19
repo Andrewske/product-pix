@@ -58,12 +58,15 @@ export function SimpleSelect({
         </Label>
       )}
       <ShadcnSelect
+        key={`select-${value || 'empty'}`}
         value={value || undefined}
         onValueChange={onChange}
         disabled={disabled}
       >
         <SelectTrigger id={id} className="w-full">
-          <SelectValue placeholder={placeholderOption?.label || 'Select...'} />
+          <SelectValue>
+            {value ? options.find(opt => opt.value === value)?.label : (placeholderOption?.label || 'Select...')}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {validOptions.map((opt) => (
