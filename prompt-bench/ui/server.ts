@@ -36,6 +36,42 @@ const loadBuiltCSS = (): string => {
   }
 };
 
+const serveApp = (bundleName: string, title: string, mountCall: string): Response => {
+  const bundle = loadBundle(bundleName)
+    .replace(/<\/script>/gi, '<\\/script>');
+  const builtCSS = loadBuiltCSS();
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${title}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+      <style>
+        ${builtCSS}
+      </style>
+    </head>
+    <body class="dark bg-background text-foreground antialiased">
+      <div id="root"></div>
+      <script>
+        ${bundle}
+
+        // Mount app using bundled React
+        ${mountCall}
+      </script>
+    </body>
+    </html>
+  `;
+
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  });
+};
+
 Bun.serve({
   port: 8181,
   idleTimeout: 255, // 4.25 minutes max for Bun.serve, for long-running prompt bench operations
@@ -66,77 +102,11 @@ Bun.serve({
 
 console.log('🚀 Prompt Bench UI running at http://localhost:8181');
 
-const serveHTML = (): Response => {
-  const experimentBundle = loadBundle('experiment.js')
-    .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
-  const builtCSS = loadBuiltCSS();
+const serveHTML = (): Response =>
+  serveApp('experiment.js', 'Prompt Bench - Experiment Runner', 'ExperimentApp.mount();');
 
-  const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Prompt Bench - Experiment Runner</title>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
-      <style>
-        ${builtCSS}
-      </style>
-    </head>
-    <body class="dark bg-background text-foreground antialiased">
-      <div id="root"></div>
-      <script>
-        ${experimentBundle}
-
-        // Mount app using bundled React
-        ExperimentApp.mount();
-      </script>
-    </body>
-    </html>
-  `;
-
-  return new Response(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' }
-  });
-};
-
-const serveNotebookHTML = (): Response => {
-  const notebookBundle = loadBundle('notebook.js')
-    .replace(/<\/script>/gi, '<\\/script>'); // Escape closing script tags
-  const builtCSS = loadBuiltCSS();
-
-  const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Prompt Bench - Notebook</title>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
-      <style>
-        ${builtCSS}
-      </style>
-    </head>
-    <body class="dark bg-background text-foreground antialiased">
-      <div id="root"></div>
-      <script>
-        ${notebookBundle}
-
-        // Mount app using bundled React
-        NotebookApp.mount();
-      </script>
-    </body>
-    </html>
-  `;
-
-  return new Response(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' }
-  });
-};
+const serveNotebookHTML = (): Response =>
+  serveApp('notebook.js', 'Prompt Bench - Notebook', 'NotebookApp.mount();');
 const handleBatches = async (req: Request): Promise<Response> => {
   try {
     const fixturesDir = resolve(process.cwd(), 'prompt-bench/fixtures');

@@ -20,5 +20,6 @@ export * from './refinement-types';
 
 // Improvement system exports
 export * from './improvement-types';
+export * from './evaluation-utils';
 export * from './template-diff';
 export * from './template-io';

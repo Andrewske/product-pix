@@ -23,6 +23,7 @@ import { fetchTemplate, insertTemplate } from '@bench/db/templates';
 import { fetchBatchEvaluations } from './shared';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { summarize } from '@bench/core/statistics';
+import { mapEvaluationsToProductScores } from '@bench/core/evaluation-utils';
 import { autoReportForLabel } from './report';
 import type {
   ImprovementConfig,
@@ -373,11 +374,16 @@ const runIterationLoop = async (
 
   // Step 4: Approval (if not auto-approve)
   if (!session.config.autoApprove && !options['auto-approve']) {
-    const approved = await requestApproval(implementationResult.data.changes);
-    if (!approved) {
-      console.log('❌ Changes rejected by user');
-      return;
+    console.log('\n📝 Proposed Changes:');
+    console.log('─'.repeat(80));
+    for (const change of implementationResult.data.changes) {
+      console.log(`[${change.type.toUpperCase()}] ${change.path}`);
+      console.log(`  ${change.description}`);
     }
+    console.log('─'.repeat(80));
+    console.log('\nℹ️  Use --auto-approve to skip manual approval\n');
+    console.error('❌ Manual approval required. Exiting.');
+    return;
   }
 
   // Step 5: Test improved version
@@ -513,41 +519,7 @@ const testBaseline = async (
   const scores = evaluations.map(e => e.score);
   const stats = summarize(scores);
 
-  const productScores: ProductScore[] = evaluations.map((evaluation, idx) => {
-    const details = evaluation.details;
-
-    // Type guard for breakdown structure
-    const hasBreakdown = (d: Record<string, unknown>): d is {
-      composition: number;
-      lighting: number;
-      productVisibility: number;
-      backgroundQuality: number;
-      professionalQuality: number;
-      promptAdherence: number;
-    } => {
-      return typeof d.composition === 'number' &&
-             typeof d.lighting === 'number' &&
-             typeof d.productVisibility === 'number' &&
-             typeof d.backgroundQuality === 'number' &&
-             typeof d.professionalQuality === 'number' &&
-             typeof d.promptAdherence === 'number';
-    };
-
-    return {
-      productId: `product-${idx}`,
-      score: evaluation.score,
-      breakdown: details && hasBreakdown(details) ? {
-        composition: details.composition,
-        lighting: details.lighting,
-        productVisibility: details.productVisibility,
-        backgroundQuality: details.backgroundQuality,
-        professionalQuality: details.professionalQuality,
-        promptAdherence: details.promptAdherence,
-      } : undefined,
-      reasoning: typeof details?.reasoning === 'string' ? details.reasoning : undefined,
-      suggestions: Array.isArray(details?.suggestions) ? details.suggestions as string[] : undefined,
-    };
-  });
+  const productScores = mapEvaluationsToProductScores(evaluations);
 
   const dimensionAverages = calculateDimensionAverages(productScores);
 
@@ -669,41 +641,7 @@ const testImproved = async (
   const scores = evaluations.map(e => e.score);
   const stats = summarize(scores);
 
-  const productScores: ProductScore[] = evaluations.map((evaluation, idx) => {
-    const details = evaluation.details;
-
-    // Type guard for breakdown structure
-    const hasBreakdown = (d: Record<string, unknown>): d is {
-      composition: number;
-      lighting: number;
-      productVisibility: number;
-      backgroundQuality: number;
-      professionalQuality: number;
-      promptAdherence: number;
-    } => {
-      return typeof d.composition === 'number' &&
-             typeof d.lighting === 'number' &&
-             typeof d.productVisibility === 'number' &&
-             typeof d.backgroundQuality === 'number' &&
-             typeof d.professionalQuality === 'number' &&
-             typeof d.promptAdherence === 'number';
-    };
-
-    return {
-      productId: `product-${idx}`,
-      score: evaluation.score,
-      breakdown: details && hasBreakdown(details) ? {
-        composition: details.composition,
-        lighting: details.lighting,
-        productVisibility: details.productVisibility,
-        backgroundQuality: details.backgroundQuality,
-        professionalQuality: details.professionalQuality,
-        promptAdherence: details.promptAdherence,
-      } : undefined,
-      reasoning: typeof details?.reasoning === 'string' ? details.reasoning : undefined,
-      suggestions: Array.isArray(details?.suggestions) ? details.suggestions as string[] : undefined,
-    };
-  });
+  const productScores = mapEvaluationsToProductScores(evaluations);
 
   const dimensionAverages = calculateDimensionAverages(productScores);
 
@@ -925,18 +863,5 @@ export const validateBatchSize = async (
   return ok(undefined);
 };
 
-const requestApproval = async (changes: import('@bench/core/improvement-types').TemplateChange[]): Promise<boolean> => {
-  console.log('\n📝 Proposed Changes:');
-  console.log('─'.repeat(80));
-  for (const change of changes) {
-    console.log(`[${change.type.toUpperCase()}] ${change.path}`);
-    console.log(`  ${change.description}`);
-  }
-  console.log('─'.repeat(80));
-  console.log('\nApprove changes? [y/N]: ');
 
-  // TODO: Implement actual user input
-  // For now, return true (auto-approve)
-  return true;
-};
 

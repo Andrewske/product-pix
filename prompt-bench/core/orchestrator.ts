@@ -10,7 +10,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import type { PromptTemplate, BatchFile, PromptTest } from '@bench/core/types';
+import type { PromptTemplate, BatchFile, PromptTest, TestCase } from '@bench/core/types';
 import { BatchFileSchema } from '@bench/core/types';
 import type { Result } from '@bench/core/errors';
 import { ok, err, createError, isOk } from '@bench/core/errors';
@@ -29,7 +29,7 @@ import { detectSourceAngles } from '@bench/core/angle-detector';
 import { planCollection } from '@bench/core/angle-planner';
 import type { CollectionTemplate, ProductCategory } from '@bench/core/types';
 import { logger } from '@bench/core/logger';
-import { analyzeProductImages } from '@bench/core/product-analyzer';
+import { analyzeProductImages, type AnalysisResult } from '@bench/core/product-analyzer';
 
 // =============================================================================
 // Types
@@ -104,6 +104,12 @@ export const runPipeline = async (
   let generationCost = 0;
   let evaluationCost = 0;
 
+  // Create dependencies once
+  const deps: PipelineDependencies = {
+    supabase: createAdminClient(),
+    gemini: createGeminiProvider(),
+  };
+
   // Generate batch label if not provided
   const batchLabel = options.label || generateBatchLabel(options.templateSlug);
 
@@ -126,7 +132,7 @@ export const runPipeline = async (
       });
       const phaseStart = Date.now();
 
-      const syncResult = await syncPhase(options.templateSlug, onProgress);
+      const syncResult = await syncPhase(options.templateSlug, deps, onProgress);
       if (!isOk(syncResult)) {
         logger.error('Phase failed', {
           batchLabel,
@@ -174,6 +180,7 @@ export const runPipeline = async (
       options.analysisEnabled,
       options.analysisModel,
       options.analysisCacheEnabled,
+      deps,
       onProgress
     );
     if (!isOk(runResult)) {
@@ -214,7 +221,7 @@ export const runPipeline = async (
       });
       const evalPhaseStart = Date.now();
 
-      const evalResult = await evaluatePhase(batchLabel, options.evalModel, onProgress);
+      const evalResult = await evaluatePhase(batchLabel, options.evalModel, deps, onProgress);
       if (!isOk(evalResult)) {
         logger.error('Phase failed', {
           batchLabel,
@@ -247,7 +254,7 @@ export const runPipeline = async (
       });
       const reportPhaseStart = Date.now();
 
-      const reportResult = await reportPhase(batchLabel, onProgress);
+      const reportResult = await reportPhase(batchLabel, deps, onProgress);
       if (!isOk(reportResult)) {
         logger.error('Phase failed', {
           batchLabel,
@@ -286,6 +293,7 @@ export const runPipeline = async (
 
 const syncPhase = async (
   templateSlug: string,
+  deps: PipelineDependencies,
   onProgress?: ProgressCallback
 ): Promise<Result<{ synced: boolean }>> => {
   onProgress?.('sync', 0, 1, 'Checking template...');
@@ -306,6 +314,7 @@ const runPhase = async (
   analysisEnabled: boolean | undefined,
   analysisModel: string | undefined,
   analysisCacheEnabled: boolean | undefined,
+  deps: PipelineDependencies,
   onProgress?: ProgressCallback
 ): Promise<Result<RunPhaseResult>> => {
   // Handle collection templates differently
@@ -319,12 +328,12 @@ const runPhase = async (
       analysisEnabled,
       analysisModel,
       analysisCacheEnabled,
+      deps,
       onProgress
     );
   }
 
-  const supabase = createAdminClient();
-  const gemini = createGeminiProvider();
+  const { supabase, gemini } = deps;
 
   let completed = 0;
   let failed = 0;
@@ -415,10 +424,7 @@ const runPhase = async (
         }
 
         // Merge analysis results into variables (manual values take precedence)
-        testCase.variables = {
-          ...analysisResult.data.merged,  // Analysis results as defaults
-          ...testCase.variables     // Manual overrides
-        };
+        mergeAnalysisIntoVariables(testCase, analysisResult.data);
 
         logger.debug('Step completed', {
           batchLabel,
@@ -469,19 +475,14 @@ const runPhase = async (
         duration: `${Date.now() - compileStart}ms`
       });
 
-      // Generate idempotency key
-      const idempotencyKey = generateIdempotencyKey(
-        template.slug,
-        template.version,
-        {
-          ...testCase.variables,
-          angle,
-          outputIndex: j,
-          detectedCategory: category,
-        },
-        batchLabel,
-        sourceImage?.hash
-      );
+       // Generate idempotency key
+       const idempotencyKey = generateIdempotencyKey(
+         template.slug,
+         template.version,
+         testCase.variables,
+         batchLabel,
+         resolvedSourceImage?.hash
+       );
 
       // Check for existing test
       const { data: existingTest } = await supabase
@@ -666,12 +667,361 @@ const runPhase = async (
 };
 
 // =============================================================================
-// Collection Generation Coordination
+// Dependencies
 // =============================================================================
 
-interface GenerationDependencies {
+export interface PipelineDependencies {
   supabase: ReturnType<typeof createAdminClient>;
   gemini: ReturnType<typeof createGeminiProvider>;
+}
+
+// =============================================================================
+// Collection Generation Helper Functions
+// =============================================================================
+
+interface ResolvedImages {
+  images: ResolvedSourceImage[];
+  needsAnalysis: boolean;
+}
+
+async function resolveCollectionSourceImages(
+  testCase: TestCase,
+  batchFilePath: string,
+  analysisEnabled: boolean | undefined
+): Promise<Result<ResolvedImages>> {
+  const sourceImages = testCase.sourceImages ||
+    (testCase.sourceImage ? [testCase.sourceImage] : []);
+  const needsAnalysis = analysisEnabled && sourceImages.length > 0;
+
+  if (sourceImages.length === 0) {
+    return ok({ images: [], needsAnalysis: false });
+  }
+
+  const resolvedImages: ResolvedSourceImage[] = [];
+  for (const sourceImagePath of sourceImages) {
+    const resolveResult = await resolveSourceImage(sourceImagePath, {
+      batchFilePath,
+      skipUpload: false,
+    });
+    if (!isOk(resolveResult)) {
+      return err(createError(
+        'SOURCE_IMAGE_ERROR',
+        `Failed to resolve source image: ${resolveResult.error.message}`
+      ));
+    }
+    resolvedImages.push(resolveResult.data);
+  }
+
+  return ok({ images: resolvedImages, needsAnalysis });
+}
+
+interface AnalysisPhaseResult {
+  variables: Record<string, unknown>;
+  scaleInstruction: string;
+  brandInstruction: string;
+}
+
+async function runCollectionAnalysisPhase(
+  images: ResolvedSourceImage[],
+  testCase: TestCase,
+  options: { model?: string; cacheEnabled?: boolean }
+): Promise<Result<AnalysisPhaseResult>> {
+  const analysisResult = await analyzeProductImages(
+    images.map(img => ({ buffer: img.buffer, mimeType: img.mimeType })),
+    options
+  );
+
+  if (!isOk(analysisResult)) {
+    return err(createError(
+      'ANALYSIS_ERROR',
+      `Analysis failed: ${analysisResult.error.message}`
+    ));
+  }
+
+  // Merge analysis into variables
+  const variables = {
+    ...analysisResult.data.merged,
+    ...testCase.variables
+  };
+
+  // Build scale instruction
+  let scaleInstruction = 'SCALE REQUIREMENT: Maintain consistent realistic product dimensions.';
+  const imagesWithScale = analysisResult.data.individual
+    .map((analysis, idx) => ({
+      index: idx,
+      hasScale: analysis.hasScaleReference,
+      description: analysis.scaleDescription
+    }))
+    .filter(x => x.hasScale);
+
+  if (imagesWithScale.length > 0) {
+    const scaleImage = imagesWithScale[0];
+    scaleInstruction = `SCALE REQUIREMENT: Image ${scaleImage.index + 1} shows scale reference${scaleImage.description ? ` (${scaleImage.description})` : ''}. Maintain exact same physical product dimensions.`;
+  }
+
+  // Build brand instruction
+  let brandInstruction = '';
+  if (analysisResult.data.merged.brand) {
+    const details = analysisResult.data.merged.brandingDetails
+      ? ` ${analysisResult.data.merged.brandingDetails}`
+      : '';
+    brandInstruction = `CRITICAL: The product MUST display "${analysisResult.data.merged.brand}" branding exactly as shown.${details}`;
+  }
+
+  return ok({ variables, scaleInstruction, brandInstruction });
+}
+
+interface CollectionPlan {
+  category: ProductCategory;
+  targetAngles: string[];
+  detectedAngles: { sourceAngles: Array<{ imageIndex: number; detectedAngle: string; isPrimaryReference?: boolean }> };
+  labeledImages: Array<{ buffer: Buffer; mimeType: string; label: string }>;
+}
+
+async function planCollectionImages(
+  images: ResolvedSourceImage[],
+  outputCount: number,
+  cacheEnabled?: boolean
+): Promise<Result<CollectionPlan>> {
+  // Detect category
+  let category: ProductCategory = 'generic';
+  if (images.length > 0) {
+    const categoryResult = await classifyProduct(images[0].r2Url);
+    if (isOk(categoryResult)) {
+      category = categoryResult.data;
+    }
+  }
+
+  // Detect angles
+  let detectedAngles;
+  if (images.length > 0) {
+    const detected = await detectSourceAngles(images, { cacheEnabled });
+    if (!isOk(detected)) {
+      detectedAngles = {
+        sourceAngles: images.map((_, index) => ({
+          imageIndex: index,
+          detectedAngle: 'unknown',
+          isPrimaryReference: index === 0
+        }))
+      };
+    } else {
+      detectedAngles = detected.data;
+    }
+  } else {
+    detectedAngles = { sourceAngles: [] };
+  }
+
+  // Get target angles
+  const targetAngles = getAnglesForCategory(category).slice(0, outputCount);
+
+  // Label images for session
+  const labeledImages = images.map((img, i) => ({
+    buffer: img.buffer,
+    mimeType: img.mimeType,
+    label: detectedAngles.sourceAngles[i]?.detectedAngle || `reference ${i + 1}`
+  }));
+
+  return ok({ category, targetAngles, detectedAngles, labeledImages });
+}
+
+async function generateCollectionWithSession(
+  template: CollectionTemplate,
+  testCase: TestCase,
+  plan: CollectionPlan,
+  analysisContext: AnalysisPhaseResult,
+  batchLabel: string,
+  dryRun: boolean,
+  deps: PipelineDependencies
+): Promise<Result<{ completed: number; failed: number; skipped: number; tests: PromptTest[] }>> {
+  const { supabase } = deps;
+  let completed = 0, failed = 0, skipped = 0;
+  const tests: PromptTest[] = [];
+
+  // Create conversation session for this collection
+  const session = createConversationSession();
+
+  // Initialize with labeled reference images
+  await session.initialize(
+    plan.labeledImages,
+    `Product: ${testCase.variables?.product || 'product'}
+Category: ${plan.category}
+You have ${plan.labeledImages.length} reference images of this product from different angles.
+You will be asked to generate ${template.outputCount} professional e-commerce photos, one at a time.
+Each photo must be visually unique from previous outputs.`
+  );
+
+  // Generate each angle
+  for (let j = 0; j < plan.targetAngles.length; j++) {
+    const angle = plan.targetAngles[j];
+
+    // Compile prompt
+    const compileResult = compileTemplate(
+      template.templateData,
+      template.variablesSchema,
+      {
+        ...testCase.variables,
+        angle,
+        category: plan.category,
+        outputIndex: j,
+        totalOutputs: template.outputCount
+      }
+    );
+    if (!isOk(compileResult)) {
+      return err(createError(
+        'COMPILATION_ERROR',
+        `Image ${j + 1} failed to compile: ${compileResult.error.message}`
+      ));
+    }
+
+    // Build angle-specific prompt with diversity, scale, and brand instructions
+    const prompt = `Generate image ${j + 1}/${plan.targetAngles.length}: ${angle} view.
+${analysisContext.scaleInstruction}
+${analysisContext.brandInstruction}
+This must be distinctly different from any previous images.
+${compileResult.data.prompt}`;
+
+    const idempotencyKey = generateIdempotencyKey(
+      template.slug,
+      template.version,
+      {
+        ...testCase.variables,
+        angle,
+        outputIndex: j,
+        detectedCategory: plan.category,
+      },
+      batchLabel,
+      null // No specific source image hash for session-based generation
+    );
+
+    // Check for existing test
+    const { data: existingTest } = await supabase
+      .from('prompt_tests')
+      .select('*')
+      .eq('idempotency_key', idempotencyKey)
+      .single();
+
+    if (existingTest && (existingTest as any).status !== 'failed') {
+      skipped++;
+      tests.push(existingTest as any);
+      continue;
+    }
+
+    if (dryRun) {
+      completed++;
+      continue;
+    }
+
+    if (!template.id) {
+      return err(createError(
+        'VALIDATION_ERROR',
+        `Template ${template.slug} has no ID. Ensure template is synced to database first.`
+      ));
+    }
+
+    // Create test record
+    const { data: testRecord, error: insertError } = await (supabase
+      .from('prompt_tests')
+      .insert({
+        template_id: template.id,
+        idempotency_key: idempotencyKey,
+        status: 'generating',
+        inputs: {
+          ...testCase.variables,
+          angle,
+          outputIndex: j,
+          detectedCategory: plan.category,
+        } as any,
+        final_prompt: prompt,
+        batch_label: batchLabel,
+        source_image_url: null, // Session-based, no specific source
+        source_image_key: null,
+      })
+      .select()
+      .single() as any);
+
+    if (insertError || !testRecord) {
+      return err(createError(
+        'DATABASE_ERROR',
+        `Image ${j + 1} failed to create: ${insertError?.message || 'Unknown error'}`
+      ));
+    }
+
+    // Generate image using session
+    const generationStart = Date.now();
+    const generationResult = await session.generateNext(prompt, {
+      rawPrompt: true,
+      aspectRatio: '1:1' as const,
+      resolution: '1k' as const
+    });
+
+    if (!generationResult.success) {
+      await supabase
+        .from('prompt_tests')
+        .update({
+          status: 'failed',
+          error_message: generationResult.error,
+          completed_at: new Date().toISOString(),
+          duration_ms: Date.now() - generationStart,
+        })
+        .eq('id', testRecord.id);
+      failed++;
+      return err(createError(
+        'GENERATION_ERROR',
+        `Image ${j + 1} failed: ${generationResult.error}`,
+        { testId: testRecord.id }
+      ));
+    }
+
+    // Upload and complete test
+    const imageKey = `prompt-tests/${testRecord.id}.png`;
+    const buffer = Buffer.from(generationResult.imageData, 'base64');
+    await uploadBuffer(buffer, imageKey, 'image/png');
+
+    let generationCost = 0;
+    if (generationResult.usage) {
+      const costResult = calculateCost('gemini-3-pro-image-preview', {
+        input: generationResult.usage.promptTokens,
+        output: generationResult.usage.completionTokens,
+      });
+      if (costResult.ok) {
+        generationCost = costResult.data.total;
+      }
+    } else {
+      const costResult = calculateCost('gemini-3-pro-image-preview', {
+        input: 1000,
+        output: 50000,
+      });
+      if (costResult.ok) {
+        generationCost = costResult.data.total;
+      }
+    }
+
+    const imageUrl = getPublicUrl(imageKey);
+    const updateData = {
+      status: 'completed' as const,
+      image_url: imageUrl,
+      image_key: imageKey,
+      completed_at: new Date().toISOString(),
+      duration_ms: Date.now() - generationStart,
+      cost_usd: generationCost,
+      input_tokens: generationResult.usage?.promptTokens,
+      output_tokens: generationResult.usage?.completionTokens,
+    };
+
+    const { data: updatedTest } = await supabase
+      .from('prompt_tests')
+      .update(updateData)
+      .eq('id', testRecord.id)
+      .select()
+      .single();
+
+    completed++;
+    // Use updated test record with fresh cost_usd from database
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tests.push((updatedTest || testRecord) as any);
+  }
+
+  return ok({ completed, failed, skipped, tests });
 }
 
 export const coordinateCollectionGeneration = async (
@@ -680,367 +1030,52 @@ export const coordinateCollectionGeneration = async (
   batchLabel: string,
   dryRun: boolean,
   batchFilePath: string,
-  dependencies: GenerationDependencies,
+  dependencies: PipelineDependencies,
   onProgress?: ProgressCallback,
   analysisEnabled?: boolean,
   analysisModel?: string,
   analysisCacheEnabled?: boolean
 ): Promise<Result<{ completed: number; failed: number; skipped: number; tests: PromptTest[] }>> => {
-  const { supabase, gemini } = dependencies;
-
-  let completed = 0;
-  let failed = 0;
-  let skipped = 0;
+  const { supabase } = dependencies;
+  let completed = 0, failed = 0, skipped = 0;
   const tests: PromptTest[] = [];
 
-  // Process each test case
   for (let i = 0; i < batch.tests.length; i++) {
     const testCase = batch.tests[i];
-    onProgress?.('run', i, batch.tests.length, `Processing collection test ${i + 1}/${batch.tests.length}...`);
+    onProgress?.('run', i, batch.tests.length, `Processing collection ${i + 1}/${batch.tests.length}...`);
 
-    // Get source images for analysis and angle detection
-    const sourceImages = testCase.sourceImages || (testCase.sourceImage ? [testCase.sourceImage] : []);
-    const needsAnalysis = analysisEnabled && sourceImages.length > 0;
+    // Step 1: Resolve source images
+    const imagesResult = await resolveCollectionSourceImages(testCase, batchFilePath, analysisEnabled);
+    if (!isOk(imagesResult)) return imagesResult;
+    const { images, needsAnalysis } = imagesResult.data;
 
-    // Initialize scale instruction (will be populated from analysis if available)
-    let scaleInstruction = 'SCALE REQUIREMENT: Maintain consistent realistic product dimensions across all generated images.';
-
-    // Initialize brand instruction (will be populated from analysis if available)
-    let brandInstruction = '';
-
-    // Resolve ALL source images if needed for analysis or angle detection
-    const resolvedSourceImagesForAnalysis: ResolvedSourceImage[] = [];
-    if ((needsAnalysis || sourceImages.length > 0) && sourceImages.length > 0) {
-      for (const sourceImagePath of sourceImages) {
-        const resolveResult = await resolveSourceImage(sourceImagePath, {
-          batchFilePath: batchFilePath,
-          skipUpload: false,
-        });
-        if (!isOk(resolveResult)) {
-          return err(createError(
-            'SOURCE_IMAGE_ERROR',
-            `Test ${i + 1}/${batch.tests.length} failed to resolve source image: ${resolveResult.error.message}`,
-            { testId: `test-${i}` }
-          ));
-        }
-        resolvedSourceImagesForAnalysis.push(resolveResult.data);
-      }
-    }
-
-    // Run product analysis if enabled (use ALL images for better consensus)
-    if (needsAnalysis && resolvedSourceImagesForAnalysis.length > 0) {
-      logger.debug('Step started', {
-        batchLabel,
-        phase: 'run',
-        step: 'analyze_product',
-        testIndex: i,
-        imageCount: resolvedSourceImagesForAnalysis.length
-      });
-      const analysisStart = Date.now();
-
-      const analysisResult = await analyzeProductImages(
-        resolvedSourceImagesForAnalysis.map(img => ({ buffer: img.buffer, mimeType: img.mimeType })),
-        {
-          model: analysisModel,
-          cacheEnabled: analysisCacheEnabled
-        }
-      );
-
-      if (!isOk(analysisResult)) {
-        return err(createError(
-          'ANALYSIS_ERROR',
-          `Test ${i + 1}/${batch.tests.length} failed analysis: ${analysisResult.error.message}`,
-          { testId: `test-${i}` }
-        ));
-      }
-
-      // Merge analysis results into variables (manual values take precedence)
-      testCase.variables = {
-        ...analysisResult.data.merged,
-        ...testCase.variables
-      };
-
-      // Build scale instruction from individual image analyses
-      const imagesWithScale = analysisResult.data.individual
-        .map((analysis, idx) => ({
-          index: idx,
-          hasScale: analysis.hasScaleReference,
-          description: analysis.scaleDescription
-        }))
-        .filter(x => x.hasScale);
-
-      if (imagesWithScale.length > 0) {
-        const scaleImage = imagesWithScale[0]; // Prioritize first one found
-        scaleInstruction = `SCALE REQUIREMENT: Image ${scaleImage.index + 1} shows scale reference${scaleImage.description ? ` (${scaleImage.description})` : ''}. Maintain exact same physical product dimensions in all generated images.`;
-      }
-
-      // Build brand instruction from merged analysis
-      if (analysisResult.data.merged.brand) {
-        const details = analysisResult.data.merged.brandingDetails ? ` ${analysisResult.data.merged.brandingDetails}` : '';
-        brandInstruction = `CRITICAL: The product MUST display "${analysisResult.data.merged.brand}" branding exactly as shown in the reference images.${details} This text must be clearly legible and accurately reproduced.`;
-      }
-
-      logger.debug('Step completed', {
-        batchLabel,
-        phase: 'run',
-        step: 'analyze_product',
-        testIndex: i,
-        duration: `${Date.now() - analysisStart}ms`,
-        analysis: analysisResult.data.merged,
-        scaleInstruction
-      });
-    }
-
-    // Detect product category (use first image for fallback planning)
-    let category: ProductCategory = 'generic';
-    if (resolvedSourceImagesForAnalysis.length > 0) {
-      const categoryResult = await classifyProduct(resolvedSourceImagesForAnalysis[0].r2Url);
-      if (isOk(categoryResult)) {
-        category = categoryResult.data;
-      }
-    }
-
-    // Step 1: Detect angles from source images (only if we have images)
-    let detectedAngles;
-    if (resolvedSourceImagesForAnalysis.length > 0) {
-      const detected = await detectSourceAngles(resolvedSourceImagesForAnalysis, {
+    // Step 2: Run analysis if needed
+    let analysisContext = { variables: testCase.variables || {}, scaleInstruction: '', brandInstruction: '' };
+    if (needsAnalysis && images.length > 0) {
+      const analysisResult = await runCollectionAnalysisPhase(images, testCase, {
+        model: analysisModel,
         cacheEnabled: analysisCacheEnabled
       });
-
-      if (!isOk(detected)) {
-        logger.warn('Angle detection failed completely, will use category fallbacks in planner', {
-          error: detected.error.message,
-          category,
-          sourceImageCount: resolvedSourceImagesForAnalysis.length
-        });
-        // Create minimal fallback - planner will handle category fallbacks
-        detectedAngles = {
-          sourceAngles: resolvedSourceImagesForAnalysis.map((_, index) => ({
-            imageIndex: index,
-            detectedAngle: 'unknown',
-            isPrimaryReference: index === 0
-          }))
-        };
-      } else {
-        detectedAngles = detected.data;
-      }
-    } else {
-      // No source images - planner will use only category defaults
-      detectedAngles = { sourceAngles: [] };
+      if (!isOk(analysisResult)) return analysisResult;
+      analysisContext = analysisResult.data;
+      testCase.variables = analysisContext.variables;
     }
 
-    // Step 2: Plan the collection or use category fallback for text-to-image
-    let plan;
-    if (resolvedSourceImagesForAnalysis.length > 0) {
-      plan = planCollection(detectedAngles, category, template.outputCount);
-    } else {
-      // No source images - use category defaults directly
-      const categoryAngles = getAnglesForCategory(category);
-      plan = {
-        assignments: categoryAngles.slice(0, template.outputCount).map((angle, index) => ({
-          targetAngle: angle,
-          sourceImageIndex: 0, // Won't be used
-          matchType: 'primary-fallback' as const
-        }))
-      };
-    }
+    // Step 3: Plan collection
+    const planResult = await planCollectionImages(images, template.outputCount, analysisCacheEnabled);
+    if (!isOk(planResult)) return planResult;
+    const plan = planResult.data;
 
-    // Step 3: Generate each image using plan assignments
-    // Create conversation session for this collection (separate factory, not on provider)
-    const session = createConversationSession();
-
-    // Use angle detection to label source images (soft hints, not hard coupling)
-    // This helps AI understand what each reference shows without prescribing usage
-    const labeledImages = resolvedSourceImagesForAnalysis.map((img, i) => ({
-      buffer: img.buffer,
-      mimeType: img.mimeType,
-      label: detectedAngles.sourceAngles[i]?.detectedAngle || `reference ${i + 1}`
-    }));
-
-    // Initialize with labeled reference images
-    await session.initialize(
-      labeledImages,
-      `Product: ${testCase.variables?.product || 'product'}
-Category: ${category}
-You have ${labeledImages.length} reference images of this product from different angles.
-You will be asked to generate ${template.outputCount} professional e-commerce photos, one at a time.
-Each photo must be visually unique from previous outputs.`
+    // Step 4: Generate images via session
+    const genResult = await generateCollectionWithSession(
+      template, testCase, plan, analysisContext, batchLabel, dryRun, dependencies
     );
+    if (!isOk(genResult)) return genResult;
 
-    // Generate each angle - AI chooses best reference naturally
-    const targetAngles = getAnglesForCategory(category).slice(0, template.outputCount);
-
-    for (let j = 0; j < targetAngles.length; j++) {
-      const angle = targetAngles[j];
-
-      // Compile prompt as before
-      const compileResult = compileTemplate(
-        template.templateData,
-        template.variablesSchema,
-        {
-          ...testCase.variables,
-          angle,
-          category,
-          outputIndex: j,
-          totalOutputs: template.outputCount
-        }
-      );
-      if (!isOk(compileResult)) {
-        return err(createError(
-          'COMPILATION_ERROR',
-          `Test ${i + 1}/${batch.tests.length}, image ${j + 1} failed to compile: ${compileResult.error.message}`,
-          { testId: `test-${i}-${j}` }
-        ));
-      }
-
-      // Build angle-specific prompt with diversity, scale, and brand instructions
-      const prompt = `Generate image ${j + 1}/${targetAngles.length}: ${angle} view.
-${scaleInstruction}
-${brandInstruction}
-This must be distinctly different from any previous images.
-${compileResult.data.prompt}`;
-
-      const idempotencyKey = generateIdempotencyKey(
-        template.slug,
-        template.version,
-        {
-          ...testCase.variables,
-          angle,
-          outputIndex: j,
-          detectedCategory: category,
-        },
-        batchLabel,
-        null // No specific source image hash for session-based generation
-      );
-
-      // Check for existing test
-      const { data: existingTest } = await supabase
-        .from('prompt_tests')
-        .select('*')
-        .eq('idempotency_key', idempotencyKey)
-        .single();
-
-      if (existingTest && (existingTest as any).status !== 'failed') {
-        skipped++;
-        tests.push(existingTest as any);
-        continue;
-      }
-
-      if (dryRun) {
-        completed++;
-        continue;
-      }
-
-      if (!template.id) {
-        return err(createError(
-          'VALIDATION_ERROR',
-          `Template ${template.slug} has no ID. Ensure template is synced to database first.`
-        ));
-      }
-
-      // Create test record
-      const { data: testRecord, error: insertError } = await (supabase
-        .from('prompt_tests')
-        .insert({
-          template_id: template.id,
-          idempotency_key: idempotencyKey,
-          status: 'generating',
-          inputs: {
-            ...testCase.variables,
-            angle,
-            outputIndex: j,
-            detectedCategory: category,
-          } as any,
-          final_prompt: prompt,
-          batch_label: batchLabel,
-          source_image_url: null, // Session-based, no specific source
-          source_image_key: null,
-        })
-        .select()
-        .single() as any);
-
-      if (insertError || !testRecord) {
-        return err(createError(
-          'DATABASE_ERROR',
-          `Test ${i + 1}/${batch.tests.length}, image ${j + 1} failed to create: ${insertError?.message || 'Unknown error'}`,
-          { testId: `test-${i}-${j}` }
-        ));
-      }
-
-      // Generate image using session
-      const generationStart = Date.now();
-      const generationResult = await session.generateNext(prompt, {
-        rawPrompt: true,
-        aspectRatio: '1:1' as const,
-        resolution: '1k' as const
-      });
-
-      if (!generationResult.success) {
-        await supabase
-          .from('prompt_tests')
-          .update({
-            status: 'failed',
-            error_message: generationResult.error,
-            completed_at: new Date().toISOString(),
-            duration_ms: Date.now() - generationStart,
-          })
-          .eq('id', testRecord.id);
-        failed++;
-        return err(createError(
-          'GENERATION_ERROR',
-          `Test ${i + 1}/${batch.tests.length}, image ${j + 1} failed: ${generationResult.error}`,
-          { testId: testRecord.id }
-        ));
-      }
-
-      // Upload and complete test
-      const imageKey = `prompt-tests/${testRecord.id}.png`;
-      const buffer = Buffer.from(generationResult.imageData, 'base64');
-      await uploadBuffer(buffer, imageKey, 'image/png');
-
-      let generationCost = 0;
-      if (generationResult.usage) {
-        const costResult = calculateCost('gemini-3-pro-image-preview', {
-          input: generationResult.usage.promptTokens,
-          output: generationResult.usage.completionTokens,
-        });
-        if (costResult.ok) {
-          generationCost = costResult.data.total;
-        }
-      } else {
-        const costResult = calculateCost('gemini-3-pro-image-preview', {
-          input: 1000,
-          output: 50000,
-        });
-        if (costResult.ok) {
-          generationCost = costResult.data.total;
-        }
-      }
-
-      const imageUrl = getPublicUrl(imageKey);
-      const updateData = {
-        status: 'completed' as const,
-        image_url: imageUrl,
-        image_key: imageKey,
-        completed_at: new Date().toISOString(),
-        duration_ms: Date.now() - generationStart,
-        cost_usd: generationCost,
-        input_tokens: generationResult.usage?.promptTokens,
-        output_tokens: generationResult.usage?.completionTokens,
-      };
-
-      const { data: updatedTest } = await supabase
-        .from('prompt_tests')
-        .update(updateData)
-        .eq('id', testRecord.id)
-        .select()
-        .single();
-
-      completed++;
-      // Use updated test record with fresh cost_usd from database
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tests.push((updatedTest || testRecord) as any);
-    }
+    completed += genResult.data.completed;
+    failed += genResult.data.failed;
+    skipped += genResult.data.skipped;
+    tests.push(...genResult.data.tests);
   }
 
   return ok({ completed, failed, skipped, tests });
@@ -1055,10 +1090,10 @@ const runCollectionPhase = async (
   analysisEnabled: boolean | undefined,
   analysisModel: string | undefined,
   analysisCacheEnabled: boolean | undefined,
+  deps: PipelineDependencies,
   onProgress?: ProgressCallback
 ): Promise<Result<RunPhaseResult>> => {
-  const supabase = createAdminClient();
-  const gemini = createGeminiProvider();
+  const { supabase, gemini } = deps;
 
   const result = await coordinateCollectionGeneration(
     template,
@@ -1083,9 +1118,10 @@ const runCollectionPhase = async (
 const evaluatePhase = async (
   batchLabel: string,
   evalModel: string,
+  deps: PipelineDependencies,
   onProgress?: ProgressCallback
 ): Promise<Result<EvalPhaseResult>> => {
-  const supabase = createAdminClient();
+  const { supabase } = deps;
 
   onProgress?.('evaluate', 0, 1, 'Fetching tests for evaluation...');
 
@@ -1203,11 +1239,12 @@ const evaluatePhase = async (
 
 const reportPhase = async (
   batchLabel: string,
+  deps: PipelineDependencies,
   onProgress?: ProgressCallback
 ): Promise<Result<BatchReport>> => {
   onProgress?.('report', 0, 1, 'Generating report...');
 
-  const supabase = createAdminClient();
+  const { supabase } = deps;
 
   // Fetch completed tests with evaluations
   const { data: tests, error } = await supabase
@@ -1274,6 +1311,17 @@ const reportPhase = async (
 // =============================================================================
 // Utility Functions
 // =============================================================================
+
+/**
+ * Merge analysis results into test case variables.
+ * Analysis results are used as defaults, manual test case variables take precedence.
+ */
+const mergeAnalysisIntoVariables = (testCase: TestCase, analysisResult: AnalysisResult): void => {
+  testCase.variables = {
+    ...analysisResult.merged,
+    ...testCase.variables
+  };
+};
 
 const loadBatchFile = (filePath: string): Result<BatchFile> => {
   const absolutePath = resolve(process.cwd(), filePath);
