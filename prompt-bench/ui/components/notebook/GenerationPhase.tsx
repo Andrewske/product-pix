@@ -70,10 +70,11 @@ export function GenerationPhase({
     aspectRatio: '1:1' as string,
     numberOfImages: 1,
   });
-  const [currentTemplateVersion, setCurrentTemplateVersion] = React.useState<number | null>(null);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
-  const previousTemplateSlugRef = React.useRef<string | null>(null);
+   const [currentTemplateVersion, setCurrentTemplateVersion] = React.useState<number | null>(null);
+   const [isSaving, setIsSaving] = React.useState(false);
+   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
+   const [showAllRuns, setShowAllRuns] = React.useState(false);
+   const previousTemplateSlugRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     fetch('/api/templates')
@@ -480,8 +481,10 @@ export function GenerationPhase({
                 )}
              </div>
              
-             <div className="grid grid-cols-1 gap-4">
-               {runs.map((run) => {
+              <div className="grid grid-cols-1 gap-4">
+                {[...runs].sort(
+                  (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                ).slice(0, showAllRuns ? runs.length : 1).map((run) => {
                  const isSelected = selectedRunId === run.id;
                  return (
                   <div
@@ -611,10 +614,23 @@ export function GenerationPhase({
                      </div>
                   </div>
                  );
-               })}
-             </div>
-          </div>
-        )}
+                })}
+              </div>
+
+              {runs.length > 1 && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllRuns(!showAllRuns)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {showAllRuns ? 'Show Less' : `Show ${runs.length - 1} More Run${runs.length - 1 !== 1 ? 's' : ''}`}
+                  </Button>
+                </div>
+              )}
+           </div>
+         )}
       </CardContent>
     </ShadcnCard>
   );

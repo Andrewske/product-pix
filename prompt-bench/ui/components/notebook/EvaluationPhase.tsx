@@ -359,8 +359,10 @@ export function EvaluationPhase({
                 )}
              </div>
              
-             <div className="grid grid-cols-1 gap-4">
-               {runs.map((run) => (
+              <div className="grid grid-cols-1 gap-4">
+                {[...runs].sort(
+                  (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                ).map((run) => (
                 <EvaluationRunCard
                   key={run.id}
                   run={run}
@@ -379,8 +381,10 @@ export function EvaluationPhase({
             <DialogHeader>
               <DialogTitle>Compare Evaluation Runs</DialogTitle>
             </DialogHeader>
-            <div className={cn('grid gap-6', runs.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
-              {runs.map((run) => {
+             <div className={cn('grid gap-6', runs.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
+               {[...runs].sort(
+                 (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+               ).map((run) => {
                 const evaluation = run.prompt_evaluations?.[0];
                 const details = (evaluation?.details || {}) as Record<string, unknown>;
                 return (

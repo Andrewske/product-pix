@@ -259,7 +259,9 @@ Extract product details accurately. If you cannot determine a field, use an empt
               onValueChange={onSelectRun}
               className="space-y-3"
             >
-              {runs.slice(0, showAllRuns ? runs.length : 1).map((run) => (
+              {[...runs].sort(
+                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              ).slice(0, showAllRuns ? runs.length : 1).map((run) => (
                 <Collapsible
                   key={run.id}
                   open={expandedRunId === run.id}
