@@ -776,7 +776,8 @@ export const coordinateCollectionGeneration = async (
 
       // Build brand instruction from merged analysis
       if (analysisResult.data.merged.brand) {
-        brandInstruction = `BRAND REQUIREMENT: Product shows "${analysisResult.data.merged.brand}" branding${analysisResult.data.merged.brandingDetails ? ` (${analysisResult.data.merged.brandingDetails})` : ''}. Preserve this exact brand text and placement.`;
+        const details = analysisResult.data.merged.brandingDetails ? ` ${analysisResult.data.merged.brandingDetails}` : '';
+        brandInstruction = `CRITICAL: The product MUST display "${analysisResult.data.merged.brand}" branding exactly as shown in the reference images.${details} This text must be clearly legible and accurately reproduced.`;
       }
 
       logger.debug('Step completed', {

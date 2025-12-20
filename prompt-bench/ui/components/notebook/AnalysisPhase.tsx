@@ -335,12 +335,56 @@ Extract product details accurately. If you cannot determine a field, use an empt
                     </div>
                     <CollapsibleContent>
                       <Separator />
-                      <div className="p-3 bg-muted/30 rounded-b-xl">
+                      <div className="p-3 bg-muted/30 rounded-b-xl space-y-3">
+                        {/* Category and Angles */}
+                        {(run.inputs?.category || run.inputs?.detectedAngles) && (
+                          <div className="space-y-2">
+                            {run.inputs.category && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-muted-foreground uppercase">Category:</span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {run.inputs.category}
+                                </Badge>
+                              </div>
+                            )}
+                            {run.inputs.detectedAngles?.sourceAngles && run.inputs.detectedAngles.sourceAngles.length > 0 && (
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-semibold text-muted-foreground uppercase">Detected Angles:</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {run.inputs.detectedAngles.sourceAngles.map((angle: any, idx: number) => (
+                                    <Badge
+                                      key={idx}
+                                      variant={angle.isPrimaryReference ? "default" : "outline"}
+                                      className="text-xs"
+                                    >
+                                      {angle.isPrimaryReference && '★ '}
+                                      {angle.detectedAngle}
+                                    </Badge>
+                                  ))}
+                                </div>
+                                <p className="text-xs text-muted-foreground italic">
+                                  ★ = Primary reference
+                                </p>
+                              </div>
+                            )}
+                            <Separator className="my-2" />
+                          </div>
+                        )}
+
+                        {/* Product Data */}
                         <div className="flex justify-between items-center mb-2">
-                             <h4 className="text-xs font-semibold text-muted-foreground uppercase">Extracted Data</h4>
+                             <h4 className="text-xs font-semibold text-muted-foreground uppercase">Product Data</h4>
                         </div>
                          <pre className="text-xs font-mono bg-background p-3 rounded-md border whitespace-pre-wrap break-words max-h-[300px] overflow-scroll">
-                           {JSON.stringify(run.inputs, null, 2)}
+                           {JSON.stringify(
+                             Object.fromEntries(
+                               Object.entries(run.inputs || {}).filter(
+                                 ([key]) => key !== 'category' && key !== 'detectedAngles' && key !== 'fixtureImageIds'
+                               )
+                             ),
+                             null,
+                             2
+                           )}
                          </pre>
                       </div>
                     </CollapsibleContent>

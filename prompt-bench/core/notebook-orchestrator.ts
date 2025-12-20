@@ -41,6 +41,8 @@ export interface AnalysisResult {
   runId: string;
   phaseRunNumber: number;
   analysis: Record<string, unknown>;
+  detectedAngles?: DetectedAngles;
+  category?: ProductCategory;
   tokens: { input: number; output: number };
   rawPrompt: string;
   rawResponse: unknown;
@@ -137,6 +139,9 @@ const downloadImagesFromR2 = async (fixtures: FixtureImage[]): Promise<Result<{ 
 
 /**
  * Get the next phase run number for a session
+ * Note: For notebook sessions, we want global phase numbering across all parents
+ * (e.g., if you run generation from Analysis 1, then from Analysis 2, they should be Gen 1, Gen 2)
+ * This ensures unique upload keys and prevents R2 cache collisions
  */
 const getNextPhaseRunNumber = async (
   supabase: ReturnType<typeof createAdminClient>,
@@ -144,14 +149,18 @@ const getNextPhaseRunNumber = async (
   phase: 'analysis' | 'generation' | 'evaluation',
   parentRunId?: string
 ): Promise<Result<number>> => {
+  // For notebook sessions: use global phase numbering (ignore parent)
+  // For CLI batch runs: use per-parent numbering (include parent filter)
+  const isNotebookSession = sessionId.startsWith('notebook-');
+
   let query = supabase
     .from('prompt_tests')
     .select('phase_run_number')
     .eq('session_id', sessionId)
     .eq('phase', phase);
 
-  // Add parent filter for child phases
-  if (parentRunId) {
+  // Only filter by parent for non-notebook sessions
+  if (parentRunId && !isNotebookSession) {
     query = query.eq('parent_run_id', parentRunId);
   }
 
@@ -246,7 +255,9 @@ const storeAnalysisResult = async (
   sourceImageUrl?: string,
   model?: string,
   durationMs?: number,
-  fixtureImageIds?: string[]
+  fixtureImageIds?: string[],
+  detectedAngles?: DetectedAngles,
+  category?: ProductCategory
 ): Promise<Result<unknown>> => {
   const { data: testRecord, error: insertError } = await supabase
     .from('prompt_tests')
@@ -256,7 +267,13 @@ const storeAnalysisResult = async (
       phase_run_number: phaseRunNumber,
       parent_run_id: null, // Analysis has no parent
       status: 'completed',
-      inputs: { ...merged, ...variables, fixtureImageIds },
+      inputs: {
+        ...merged,
+        ...variables,
+        fixtureImageIds,
+        detectedAngles,
+        category
+      },
       source_image_url: sourceImageUrl,
       final_prompt: '', // Analysis doesn't generate prompts
        debug_metadata: {
@@ -270,7 +287,9 @@ const storeAnalysisResult = async (
           })(),
          duration_ms: durationMs || 0,
          raw_prompt: '',
-         raw_response: analysisResult.data.raw
+         raw_response: analysisResult.data.raw,
+         detectedAngles,
+         category
        }
     })
     .select()
@@ -307,11 +326,13 @@ export const runAnalysisPhase = async (
   const imagesResult = await downloadImagesFromR2(fixtures);
   if (!isOk(imagesResult)) return imagesResult;
 
+  const fixtureImages = imagesResult.data;
+
   // 3. Run product analysis
   const model = request.model || 'gemini-3-flash-preview';
   const startTime = Date.now();
 
-  const analysisResult = await analyzeProductImages(imagesResult.data, {
+  const analysisResult = await analyzeProductImages(fixtureImages, {
     model,
     cacheEnabled: request.cacheEnabled ?? true,
     customPrompt: request.customPrompt,
@@ -331,7 +352,33 @@ export const runAnalysisPhase = async (
 
   const { merged } = analysisResult.data;
 
-  // 4. Get next phase run number
+  // 4. Detect angles from source images
+  const detectedAnglesResult = await detectSourceAngles(
+    fixtureImages.map((img) => ({
+      buffer: img.buffer,
+      mimeType: img.mimeType,
+      hash: '',
+      r2Key: '',
+      r2Url: ''
+    }))
+  );
+
+  if (!isOk(detectedAnglesResult)) {
+    logger.warn('Angle detection failed, will use fallback in generation', {
+      sessionId: request.sessionId,
+      error: detectedAnglesResult.error.message
+    });
+  }
+
+  const detectedAngles: DetectedAngles = isOk(detectedAnglesResult)
+    ? detectedAnglesResult.data
+    : { sourceAngles: [] };
+
+  // 5. Classify product category
+  const categoryResult = await classifyProduct(fixtures[0].r2_url);
+  const category: ProductCategory = isOk(categoryResult) ? categoryResult.data : 'generic';
+
+  // 6. Get next phase run number
   const phaseRunNumberResult = await getNextPhaseRunNumber(
     supabase,
     request.sessionId,
@@ -339,7 +386,7 @@ export const runAnalysisPhase = async (
   );
   if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
 
-  // 5. Store in database
+  // 7. Store in database
   const sourceImageUrl = fixtures && fixtures.length > 0 ? fixtures[0].r2_url : undefined;
   const storeResult = await storeAnalysisResult(
     supabase,
@@ -351,7 +398,9 @@ export const runAnalysisPhase = async (
     sourceImageUrl,
     model,
     durationMs,
-    request.fixtureImageIds
+    request.fixtureImageIds,
+    detectedAngles,
+    category
   );
   if (!isOk(storeResult)) return storeResult;
 
@@ -360,13 +409,17 @@ export const runAnalysisPhase = async (
    logger.info('Analysis phase complete', {
      sessionId: request.sessionId,
      runId: testRecord.id,
-     phaseRunNumber: phaseRunNumberResult.data
+     phaseRunNumber: phaseRunNumberResult.data,
+     category,
+     detectedAngles: detectedAngles.sourceAngles.length
    });
 
     return ok({
       runId: testRecord.id,
       phaseRunNumber: phaseRunNumberResult.data,
       analysis: merged,
+      detectedAngles,
+      category,
       tokens: analysisResult.data.usage || { input: 0, output: 0 },
       rawPrompt: '',
       rawResponse: analysisResult.data.raw,
@@ -473,6 +526,16 @@ export const runGenerationPhase = async (
     numberOfImages: 1,
   };
 
+  // Get phase run number before generating (needed for unique upload keys)
+  const phaseRunNumberResult = await getNextPhaseRunNumber(
+    supabase,
+    request.sessionId,
+    'generation',
+    request.parentRunId
+  );
+  if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
+  const phaseRunNumber = phaseRunNumberResult.data;
+
   const numberOfImages = config.numberOfImages || 1;
    const imageUrls: string[] = [];
    const imageKeys: string[] = [];
@@ -505,12 +568,12 @@ export const runGenerationPhase = async (
      // Collect thinking
      thinkingResults.push(genResult.thinking || null);
 
-     // Upload image to R2
+     // Upload image to R2 with run number to avoid overwriting previous generations
      const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
      const uploadResult = await uploadBase64Image(
        genResult.imageData,
        'notebook-user', // Use a test user ID for notebook
-       request.sessionId,
+       `${request.sessionId}-run${phaseRunNumber}-${i}`,
        format
      );
 
@@ -524,15 +587,7 @@ export const runGenerationPhase = async (
      }
    }
 
-  // 6. Get next phase run number
-  const phaseRunNumberResult = await getNextPhaseRunNumber(
-    supabase,
-    request.sessionId,
-    'generation',
-    request.parentRunId
-  );
-  if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
-  const phaseRunNumber = phaseRunNumberResult.data;
+  // Phase run number already retrieved before loop
 
   // 7. Store in database
   const { data: testRecord, error: insertError } = await supabase
@@ -765,56 +820,66 @@ export const runConversationGenerationPhase = async (
 
   const fixtureImages = imagesResult.data;
 
-  // 4. Product category classification
-  const firstFixtureImage = fixtureImages[0];
-  if (!firstFixtureImage) {
-    return err(createError('VALIDATION_ERROR', 'No fixture images available'));
-  }
+  // 4. Extract angles and category from parent analysis run
+  const detectedAngles: DetectedAngles = (parentRun.inputs as any)?.detectedAngles || { sourceAngles: [] };
+  const category: ProductCategory = (parentRun.inputs as any)?.category || 'generic';
 
-  const categoryResult = await classifyProduct(fixtures[0].r2_url);
-  const category: ProductCategory = isOk(categoryResult) ? categoryResult.data : 'generic';
+  logger.info('Using analysis results from parent run', {
+    sessionId: request.sessionId,
+    category,
+    detectedAnglesCount: detectedAngles.sourceAngles.length
+  });
 
-  // 5. Angle detection
-  const detectedAnglesResult = await detectSourceAngles(
-    fixtureImages.map((img) => ({
-      buffer: img.buffer,
-      mimeType: img.mimeType,
-      hash: '', // Not needed for detection
-      r2Key: '',
-      r2Url: ''
-    }))
-  );
-
-  if (!isOk(detectedAnglesResult)) {
-    // Fallback to category defaults
-    logger.warn('Angle detection failed, using category defaults', {
-      sessionId: request.sessionId,
-      error: detectedAnglesResult.error.message
-    });
-  }
-
-  const detectedAngles: DetectedAngles = isOk(detectedAnglesResult)
-    ? detectedAnglesResult.data
-    : { sourceAngles: [] };
-
-  // 6. Angle planning
+  // 5. Angle planning
   const anglePlan = planCollection(detectedAngles, category, request.outputCount);
 
-  // 7. Create conversation session
+  // 6. Create conversation session
   const session = createConversationSession();
 
-  // 8. Initialize session with reference images
-  const productName = (parentRun.inputs as any)?.productName || 'Product';
+  // 7. Initialize session with reference images
+  const productName = (parentRun.inputs as any)?.product || (parentRun.inputs as any)?.productName || 'Product';
+  const labeledImages = fixtureImages.map((img, idx) => ({
+    buffer: img.buffer,
+    mimeType: img.mimeType,
+    label: detectedAngles.sourceAngles[idx]?.detectedAngle || `Reference ${idx + 1}`
+  }));
+
   await session.initialize(
-    fixtureImages.map((img, idx) => ({
-      buffer: img.buffer,
-      mimeType: img.mimeType,
-      label: detectedAngles.sourceAngles[idx]?.detectedAngle || `Reference ${idx + 1}`
-    })),
-    `Product: ${productName}\nCategory: ${category}\nGenerating ${request.outputCount} images`
+    labeledImages,
+    `Product: ${productName}
+Category: ${category}
+You have ${labeledImages.length} reference images of this product from different angles.
+You will be asked to generate ${request.outputCount} professional e-commerce photos, one at a time.
+Each photo must be visually unique from previous outputs.`
   );
 
-  // 9. Generate each angle in loop
+  // 8. Build scale instruction from analysis
+  const analysisInputs = parentRun.inputs as any;
+  let scaleInstruction = 'SCALE REQUIREMENT: Maintain consistent realistic product dimensions across all generated images.';
+
+  // Check for scale references in individual image analyses (if available)
+  if (analysisInputs.hasScaleReference && analysisInputs.scaleDescription) {
+    scaleInstruction = `SCALE REQUIREMENT: Source shows scale reference (${analysisInputs.scaleDescription}). Maintain exact same physical product dimensions in all generated images.`;
+  }
+
+  // 9. Build brand instruction from analysis
+  let brandInstruction = '';
+  if (analysisInputs.brand) {
+    const details = analysisInputs.brandingDetails ? ` ${analysisInputs.brandingDetails}` : '';
+    brandInstruction = `CRITICAL: The product MUST display "${analysisInputs.brand}" branding exactly as shown in the reference images.${details} This text must be clearly legible and accurately reproduced.`;
+  }
+
+  // 10. Get phase run number BEFORE uploading (needed for unique upload keys)
+  const phaseRunNumberResult = await getNextPhaseRunNumber(
+    supabase,
+    request.sessionId,
+    'generation',
+    request.parentRunId
+  );
+  if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
+  const phaseRunNumber = phaseRunNumberResult.data;
+
+  // 11. Generate each angle in loop
   const imageUrls: string[] = [];
   const imageKeys: string[] = [];
   const angleSpecificPrompts: string[] = [];
@@ -852,8 +917,11 @@ export const runConversationGenerationPhase = async (
 
     const { prompt } = compileResult.data;
 
-    // Build angle-specific prompt
-    const angleSpecificPrompt = `Generate image ${i + 1}/${request.outputCount}: ${assignment.targetAngle} view.
+    // Build angle-specific prompt with scale and brand instructions
+    // Include run number to ensure unique prompts across multiple generation runs
+    const angleSpecificPrompt = `Generate image ${i + 1}/${request.outputCount} (Run ${phaseRunNumber}): ${assignment.targetAngle} view.
+${scaleInstruction}
+${brandInstruction}
 This must be distinctly different from any previous images.
 ${prompt}`;
 
@@ -882,12 +950,12 @@ ${prompt}`;
       return err(createError('GENERATION_ERROR', genResult.error));
     }
 
-    // Upload to R2
+    // Upload to R2 with run number to avoid overwriting previous generations
     const format = genResult.mimeType.split('/')[1] as 'png' | 'jpeg' | 'webp';
     const uploadResult = await uploadBase64Image(
       genResult.imageData,
       'notebook-user',
-      request.sessionId,
+      `${request.sessionId}-run${phaseRunNumber}-${i}`,
       format
     );
 
@@ -923,15 +991,7 @@ ${prompt}`;
     totalDurationMs += genDurationMs;
   }
 
-  // Get ONE phase run number (after loop)
-  const phaseRunNumberResult = await getNextPhaseRunNumber(
-    supabase,
-    request.sessionId,
-    'generation',
-    request.parentRunId
-  );
-  if (!isOk(phaseRunNumberResult)) return phaseRunNumberResult;
-  const phaseRunNumber = phaseRunNumberResult.data;
+  // 12. Store results (phaseRunNumber already retrieved before loop)
 
   // Prepare merged variables (common across all iterations)
   // Note: Per-iteration variables (angle, outputIndex, totalOutputs) are not stored here
@@ -976,7 +1036,6 @@ ${prompt}`;
     return err(createError('DATABASE_ERROR', `Failed to save generation: ${insertError.message}`));
   }
 
-  // 10. Return result
   logger.info('Conversation generation phase complete', {
     sessionId: request.sessionId,
     runId: request.parentRunId,
