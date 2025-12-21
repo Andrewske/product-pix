@@ -458,11 +458,13 @@ export const runGenerationPhase = async (
     return err(createError('VALIDATION_ERROR', 'Parent run must be an analysis phase'));
   }
 
-  // 2. Fetch template
+  // 2. Fetch template (latest version)
   const { data: template, error: templateError } = await supabase
     .from('prompt_templates')
     .select('*')
     .eq('slug', request.templateSlug)
+    .order('version', { ascending: false })
+    .limit(1)
     .single();
 
   if (templateError || !template) {
@@ -792,11 +794,13 @@ export const runConversationGenerationPhase = async (
     return err(createError('VALIDATION_ERROR', 'No fixture image IDs found in parent analysis run'));
   }
 
-  // 2. Fetch template from database
+  // 2. Fetch template from database (latest version)
   const { data: template, error: templateError } = await supabase
     .from('prompt_templates')
     .select('*')
     .eq('slug', request.templateSlug)
+    .order('version', { ascending: false })
+    .limit(1)
     .single();
 
   if (templateError || !template) {
@@ -837,12 +841,26 @@ export const runConversationGenerationPhase = async (
   const session = createConversationSession();
 
   // 7. Initialize session with reference images
+  // Filter out label/tag close-ups - they confuse the generation phase
   const productName = (parentRun.inputs as any)?.product || (parentRun.inputs as any)?.productName || 'Product';
-  const labeledImages = fixtureImages.map((img, idx) => ({
+  const allLabeledImages = fixtureImages.map((img, idx) => ({
     buffer: img.buffer,
     mimeType: img.mimeType,
     label: detectedAngles.sourceAngles[idx]?.detectedAngle || `Reference ${idx + 1}`
   }));
+
+  // Filter out images with labels/tags in the angle description
+  const labeledImages = allLabeledImages.filter((img) => {
+    const angleLower = img.label.toLowerCase();
+    return !angleLower.includes('label') && !angleLower.includes('tag') && !angleLower.includes('care instruction');
+  });
+
+  logger.info('Filtered reference images for generation', {
+    sessionId: request.sessionId,
+    totalImages: allLabeledImages.length,
+    filteredImages: labeledImages.length,
+    removedCount: allLabeledImages.length - labeledImages.length
+  });
 
   await session.initialize(
     labeledImages,
@@ -862,11 +880,44 @@ Each photo must be visually unique from previous outputs.`
     scaleInstruction = `SCALE REQUIREMENT: Source shows scale reference (${analysisInputs.scaleDescription}). Maintain exact same physical product dimensions in all generated images.`;
   }
 
-  // 9. Build brand instruction from analysis
+  // 9. Build brand/accuracy instruction from analysis
   let brandInstruction = '';
-  if (analysisInputs.brand) {
+  if (category === 'apparel') {
+    // For apparel: emphasize garment accuracy without mentioning interior labels
+    brandInstruction = `CRITICAL: The garment structure, cut, neckline, sleeves, and all design details must match the reference images exactly. Reproduce the exact silhouette and fit shown.`;
+  } else if (analysisInputs.brand) {
+    // For non-apparel: enforce branding as before
     const details = analysisInputs.brandingDetails ? ` ${analysisInputs.brandingDetails}` : '';
     brandInstruction = `CRITICAL: The product MUST display "${analysisInputs.brand}" branding exactly as shown in the reference images.${details} This text must be clearly legible and accurately reproduced.`;
+  }
+
+  // 9b. Build features instruction from analysis
+  let featuresInstruction = '';
+  const detailParts: string[] = [];
+
+  // Add color if available
+  if (analysisInputs.color) {
+    detailParts.push(`Color: ${analysisInputs.color}`);
+  }
+
+  // Add material if available
+  if (analysisInputs.material) {
+    detailParts.push(`Material: ${analysisInputs.material}`);
+  }
+
+  // Add shape if available
+  if (analysisInputs.shape) {
+    detailParts.push(`Shape/Cut: ${analysisInputs.shape}`);
+  }
+
+  // Add top features
+  if (analysisInputs.features && Array.isArray(analysisInputs.features) && analysisInputs.features.length > 0) {
+    const keyFeatures = analysisInputs.features.slice(0, 5).join(', ');
+    detailParts.push(`Key features: ${keyFeatures}`);
+  }
+
+  if (detailParts.length > 0) {
+    featuresInstruction = `IMPORTANT DETAILS: ${detailParts.join('; ')}.`;
   }
 
   // 10. Get phase run number BEFORE uploading (needed for unique upload keys)
@@ -917,11 +968,12 @@ Each photo must be visually unique from previous outputs.`
 
     const { prompt } = compileResult.data;
 
-    // Build angle-specific prompt with scale and brand instructions
+    // Build angle-specific prompt with scale, brand, and feature instructions
     // Include run number to ensure unique prompts across multiple generation runs
     const angleSpecificPrompt = `Generate image ${i + 1}/${request.outputCount} (Run ${phaseRunNumber}): ${assignment.targetAngle} view.
 ${scaleInstruction}
 ${brandInstruction}
+${featuresInstruction}
 This must be distinctly different from any previous images.
 ${prompt}`;
 
