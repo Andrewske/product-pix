@@ -1,6 +1,7 @@
 import { ECOMMERCE_BASE } from '@bench/templates/ecommerce-base';
 import { LIFESTYLE_PRODUCT } from '@bench/templates/lifestyle-product';
 import { multiAngleCategoryBased, multiAngleAiDecided, multiAngleHybrid } from '@bench/templates/multi-angle-collection';
+import { clothingModelWhite, clothingModelLifestyle } from '@bench/templates/clothing-model';
 import { type PromptTemplate } from '@bench/core/types';
 
 /**
@@ -12,6 +13,8 @@ export const TEMPLATE_REGISTRY: Record<string, Omit<PromptTemplate, 'id' | 'crea
   'multi-angle-category-based': multiAngleCategoryBased,
   'multi-angle-ai-decided': multiAngleAiDecided,
   'multi-angle-hybrid': multiAngleHybrid,
+  'clothing-model-white': clothingModelWhite,
+  'clothing-model-lifestyle': clothingModelLifestyle,
 };
 
 /**
@@ -33,3 +36,4 @@ export const getRegisteredSlugs = (): string[] => {
 // Re-export templates for convenience
 export { ECOMMERCE_BASE, LIFESTYLE_PRODUCT };
 export { multiAngleCategoryBased, multiAngleAiDecided, multiAngleHybrid };
+export { clothingModelWhite, clothingModelLifestyle };
