@@ -84,6 +84,36 @@ async function buildNotebookBundle(production = false): Promise<void> {
   }
 }
 
+// Build review bundle (ReviewView)
+async function buildReviewBundle(production = false): Promise<void> {
+  const entrypoint = join(UI_DIR, 'review.tsx');
+
+  console.log(`Building review bundle (${production ? 'production' : 'development'})...`);
+
+  try {
+    const result = await build({
+      entrypoints: [entrypoint],
+      outdir: DIST_DIR,
+      target: 'browser',
+      format: 'iife',
+      globalName: 'ReviewApp',
+      minify: production,
+      sourcemap: production ? 'none' : 'inline',
+      define: {
+        'process.env.NODE_ENV': JSON.stringify(production ? 'production' : 'development'),
+      },
+    });
+
+    if (result.success) {
+      console.log(`✅ Review bundle built successfully`);
+    } else {
+      console.error('❌ Review bundle build failed:', result.logs);
+    }
+  } catch (error) {
+    console.error('❌ Review bundle build error:', error);
+  }
+}
+
 // Build Tailwind CSS from bench.css (which imports globals.css + adds source paths)
 async function buildCSS(production = false): Promise<void> {
   console.log(`Building Tailwind CSS (${production ? 'production' : 'development'})...`);
@@ -120,6 +150,7 @@ async function buildAll(production = false): Promise<void> {
     buildCSS(production),
     buildExperimentBundle(production),
     buildNotebookBundle(production),
+    buildReviewBundle(production),
   ]);
 }
 

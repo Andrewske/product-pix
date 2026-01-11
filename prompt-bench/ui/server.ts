@@ -82,6 +82,7 @@ Bun.serve({
     if (url.pathname === '/') return serveHTML();
     if (url.pathname === '/results') return serveHTML(); // Same HTML, client-side routing
     if (url.pathname === '/notebook') return serveNotebookHTML();
+    if (url.pathname === '/review') return serveReviewHTML();
     if (url.pathname === '/api/batches') return handleBatches(req);
     if (url.pathname === '/api/templates') return handleTemplates(req);
     if (url.pathname === '/api/results') return handleResults(req);
@@ -95,6 +96,8 @@ Bun.serve({
     if (url.pathname === '/api/notebook/save-template' && req.method === 'POST') return handleSaveTemplate(req);
     if (url.pathname.match(/^\/api\/notebook\/session\/[^/]+$/)) return handleNotebookSession(req);
     if (url.pathname.match(/^\/api\/notebook\/runs\/[^/]+\/archive$/) && req.method === 'POST') return handleArchiveRun(req);
+    if (url.pathname === '/api/review/pending') return handleReviewPending(req);
+    if (url.pathname === '/api/review/rate' && req.method === 'POST') return handleReviewRate(req);
 
     return new Response('Not Found', { status: 404 });
   }
@@ -107,6 +110,9 @@ const serveHTML = (): Response =>
 
 const serveNotebookHTML = (): Response =>
   serveApp('notebook.js', 'Prompt Bench - Notebook', 'NotebookApp.mount();');
+
+const serveReviewHTML = (): Response =>
+  serveApp('review.js', 'Prompt Bench - Human Review', 'ReviewApp.mount();');
 const handleBatches = async (req: Request): Promise<Response> => {
   try {
     const fixturesDir = resolve(process.cwd(), 'prompt-bench/fixtures');
@@ -846,5 +852,160 @@ const handleArchiveRun = async (req: Request): Promise<Response> => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Archive run endpoint error', { error: message });
     return Response.json({ error: 'Failed to archive run: ' + message }, { status: 500 });
+  }
+};
+
+const handleReviewPending = async (req: Request): Promise<Response> => {
+  try {
+    const supabase = createAdminClient();
+
+    const { data: tests, error } = await supabase
+      .from('prompt_tests')
+      .select(`
+        id,
+        image_url,
+        final_prompt,
+        parent_run_id,
+        debug_metadata,
+        created_at,
+        prompt_evaluations!inner (
+          score_overall,
+          details
+        )
+      `)
+      .eq('phase', 'generation')
+      .eq('status', 'completed')
+      .eq('prompt_evaluations.evaluator_type', 'llm')
+      .not('prompt_evaluations', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      logger.error('Failed to fetch pending reviews', { error: error.message });
+      return Response.json({ error: `Database error: ${error.message}` }, { status: 500 });
+    }
+
+    // Filter out tests that already have human evaluations
+    const testIds = tests?.map(t => t.id) || [];
+    const { data: humanEvals, error: humanError } = await supabase
+      .from('prompt_evaluations')
+      .select('test_id')
+      .in('test_id', testIds)
+      .eq('evaluator_type', 'human');
+
+    if (humanError) {
+      logger.error('Failed to fetch human evaluations', { error: humanError.message });
+      return Response.json({ error: `Database error: ${humanError.message}` }, { status: 500 });
+    }
+
+    const ratedTestIds = new Set(humanEvals?.map(e => e.test_id) || []);
+    const unratedTests = tests?.filter(t => !ratedTestIds.has(t.id)) || [];
+
+    // Fetch parent runs to get source images
+    const parentRunIds = [...new Set(unratedTests.map(t => t.parent_run_id).filter(Boolean))];
+    const { data: parentRuns, error: parentError } = await supabase
+      .from('prompt_tests')
+      .select('id, source_image_url')
+      .in('id', parentRunIds);
+
+    if (parentError) {
+      logger.error('Failed to fetch parent runs', { error: parentError.message });
+    }
+
+    const parentRunMap = new Map(parentRuns?.map(p => [p.id, p.source_image_url]) || []);
+
+    // Transform to camelCase and enrich with source images
+    const pending = unratedTests.map(test => {
+      const llmEval = test.prompt_evaluations?.[0];
+      const debugMetadata = test.debug_metadata as any;
+      const imageUrls = debugMetadata?.image_urls as string[] | undefined;
+
+      return {
+        id: test.id,
+        imageUrl: test.image_url,
+        imageUrls: imageUrls && imageUrls.length > 0 ? imageUrls : undefined,
+        finalPrompt: test.final_prompt,
+        sourceImageUrl: test.parent_run_id ? parentRunMap.get(test.parent_run_id) || null : null,
+        llmScore: llmEval?.score_overall || 0,
+        llmDetails: llmEval?.details || {},
+        createdAt: test.created_at,
+      };
+    });
+
+    logger.info('Fetched pending reviews', { count: pending.length });
+    return Response.json({ pending });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Review pending endpoint error', { error: message });
+    return Response.json({ error: 'Failed to load pending reviews: ' + message }, { status: 500 });
+  }
+};
+
+const handleReviewRate = async (req: Request): Promise<Response> => {
+  try {
+    const body = await req.json();
+    const { testId, score, imageIndex, notes } = body;
+
+    // Validate required fields
+    if (!testId || typeof score !== 'number') {
+      return Response.json({ error: 'Missing required fields: testId, score' }, { status: 400 });
+    }
+
+    // Validate score range
+    if (score < 1 || score > 10) {
+      return Response.json({ error: 'Score must be between 1 and 10' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+
+    // UPSERT human evaluation
+    const humanEvaluation = {
+      test_id: testId,
+      score_overall: score,
+      details: { imageIndex, notes },
+      evaluator_type: 'human',
+      evaluator_model: null,
+      cost_usd: 0,
+      tokens_used: 0,
+    };
+
+    const { data: insertedEval, error: insertError } = await supabase
+      .from('prompt_evaluations')
+      .upsert(humanEvaluation, {
+        onConflict: 'test_id,evaluator_type',
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      logger.error('Failed to save human evaluation', {
+        testId,
+        error: insertError.message
+      });
+      return Response.json({ error: `Failed to save rating: ${insertError.message}` }, { status: 500 });
+    }
+
+    // Fetch corresponding LLM evaluation for comparison
+    const { data: llmEval, error: llmError } = await supabase
+      .from('prompt_evaluations')
+      .select('score_overall, details')
+      .eq('test_id', testId)
+      .eq('evaluator_type', 'llm')
+      .single();
+
+    if (llmError) {
+      logger.warn('LLM evaluation not found for comparison', { testId });
+    }
+
+    logger.info('Human rating saved', { testId, score });
+
+    return Response.json({
+      humanEvaluation: insertedEval,
+      llmEvaluation: llmEval || null,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Review rate endpoint error', { error: message });
+    return Response.json({ error: 'Failed to save rating: ' + message }, { status: 500 });
   }
 };

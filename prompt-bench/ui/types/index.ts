@@ -131,3 +131,22 @@ export interface TableProps {
 }
 
 // Add more prop types as needed during component extraction
+
+// Human Review Types
+export interface UnreviewedImage {
+  id: string;
+  imageUrl: string;
+  imageUrls?: string[];  // Multi-image runs
+  finalPrompt: string;
+  sourceImageUrl: string | null;
+  llmScore: number;
+  llmDetails: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface HumanRating {
+  testId: string;
+  imageIndex?: number;
+  score: number;
+  notes?: string;
+}
